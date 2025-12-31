@@ -1,0 +1,340 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  DOCTOR
+  PATIENT
+  RECEPTIONIST
+  USER
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  PARTIAL
+  REFUNDED
+  CANCELLED
+}
+
+enum AvailabilityType {
+  REGULAR
+  EXCEPTION
+  EXTRA
+}
+
+model User {
+  id            String    @id @default(uuid()) @db.Uuid
+  name          String
+  email         String    @unique
+  password      String
+  photo         String?
+  role          UserRole  @default(USER)
+  emailVerified Boolean   @default(false)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  profile Profile?
+
+  @@index([email])
+  @@index([role, deletedAt])
+}
+
+model Profile {
+  id String @id @default(uuid()) @db.Uuid
+
+  firstName String
+  lastName  String
+  birthday  DateTime?
+  gender    String?
+  nationality String?
+  photo       String?
+  phone       String?
+  address     String?
+
+  documentType   String?
+  documentNumber String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  userId String  @unique @db.Uuid
+  user   User    @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  patient Patient?
+  doctor  Doctor?
+
+  @@index([userId])
+  @@index([deletedAt])
+}
+
+model Patient {
+  id String @id @default(uuid()) @db.Uuid
+
+  emergencyContact String
+  bloodType        String
+  allergies        String?
+  chronicConditions String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  profileId String  @unique @db.Uuid
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Restrict)
+
+  appointments Appointment[]
+
+  @@index([profileId])
+  @@index([deletedAt])
+}
+
+model Doctor {
+  id String @id @default(uuid()) @db.Uuid
+
+  licenseNumber String  @unique
+  resume        String?
+  isActive      Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  profileId String  @unique @db.Uuid
+  profile   Profile @relation(fields: [profileId], references: [id], onDelete: Restrict)
+
+  specialties DoctorSpecialty[]
+  weeklyAvailability DoctorWeeklyAvailability[]
+  availabilityOverrides DoctorAvailabilityOverride[]
+  scheduleSlots ScheduleSlot[]
+
+  @@index([profileId])
+  @@index([isActive, deletedAt])
+}
+
+model Category {
+  id String @id @default(uuid()) @db.Uuid
+
+  name        String
+  description String?
+  icon        String?
+  color       String?
+  order       Int?
+  isActive    Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  specialties Specialty[]
+
+  @@index([isActive, deletedAt])
+  @@index([order])
+}
+
+model Specialty {
+  id String @id @default(uuid()) @db.Uuid
+
+  categoryId String @db.Uuid
+  name       String
+  description  String?
+  durationMin  Int?
+  price        Decimal? @db.Decimal(10, 2)
+  requirements String?
+  icon         String?
+  isActive     Boolean @default(true)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  doctorLinks DoctorSpecialty[]
+  weeklyAvailability DoctorWeeklyAvailability[]
+  availabilityOverrides DoctorAvailabilityOverride[]
+  scheduleSlots ScheduleSlot[]
+
+  @@index([categoryId, isActive])
+  @@index([deletedAt])
+}
+
+model DoctorSpecialty {
+  id String @id @default(uuid()) @db.Uuid
+
+  doctorId    String @db.Uuid
+  specialtyId String @db.Uuid
+
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  doctor    Doctor    @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  specialty Specialty @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+
+  @@unique([doctorId, specialtyId])
+  @@index([doctorId])
+  @@index([specialtyId])
+  @@index([deletedAt])
+}
+
+// Disponibilidad semanal recurrente (REGULAR)
+// Se guarda como minutos desde medianoche para evitar "time" sin fecha.
+model DoctorWeeklyAvailability {
+  id String @id @default(uuid()) @db.Uuid
+
+  doctorId    String   @db.Uuid
+  specialtyId String   @db.Uuid
+  dayOfWeek   DayOfWeek
+  startMinute Int
+  endMinute   Int
+  isAvailable Boolean @default(true)
+  type        AvailabilityType @default(REGULAR)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  doctor    Doctor    @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  specialty Specialty @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+
+  @@index([doctorId, dayOfWeek])
+  @@index([specialtyId])
+  @@index([deletedAt])
+}
+
+
+model DoctorAvailabilityOverride {
+  id String @id @default(uuid()) @db.Uuid
+
+  doctorId    String @db.Uuid
+  specialtyId String @db.Uuid
+  startsAt    DateTime
+  endsAt      DateTime
+  isAvailable Boolean @default(true)
+  type        AvailabilityType
+  reason      String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  doctor    Doctor    @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  specialty Specialty @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+
+  @@index([doctorId, startsAt, endsAt])
+  @@index([specialtyId])
+  @@index([deletedAt])
+}
+
+
+model ScheduleSlot {
+  id String @id @default(uuid()) @db.Uuid
+
+  doctorId    String @db.Uuid
+  specialtyId String @db.Uuid
+  startsAt    DateTime
+  endsAt      DateTime
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  doctor    Doctor    @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  specialty Specialty @relation(fields: [specialtyId], references: [id], onDelete: Restrict)
+  appointment Appointment?
+
+  @@unique([doctorId, startsAt, endsAt])
+  @@index([doctorId, startsAt])
+  @@index([specialtyId, startsAt])
+  @@index([deletedAt])
+}
+
+model Appointment {
+  id String @id @default(uuid()) @db.Uuid
+
+  patientId String @db.Uuid
+  slotId    String @unique @db.Uuid
+
+  reason String?
+  notes  String?
+  status AppointmentStatus @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
+  cancelReason String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  patient Patient      @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  slot    ScheduleSlot @relation(fields: [slotId], references: [id], onDelete: Restrict)
+  clinicalNotes ClinicalNote[]
+  payments Payment[]
+
+  @@index([patientId, createdAt])
+  @@index([status, paymentStatus])
+  @@index([deletedAt])
+}
+
+model ClinicalNote {
+  id String @id @default(uuid()) @db.Uuid
+
+  appointmentId String @db.Uuid
+  summary       String?
+  plan          String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([appointmentId])
+  @@index([deletedAt])
+}
+
+model Payment {
+  id String @id @default(uuid()) @db.Uuid
+
+  appointmentId String @db.Uuid
+  status        PaymentStatus @default(PENDING)
+  amount        Decimal       @db.Decimal(10, 2)
+  currency      String        @default("USD")
+
+  provider   String?
+  reference  String?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@index([appointmentId, status])
+  @@index([deletedAt])
+}
