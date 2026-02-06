@@ -8,7 +8,7 @@ import { UserEntity } from '../../domain/entities/user.entity.js';
 
 @Injectable()
 export class PrismaUserRepository implements IUserRepository {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async findByEmail(email: string): Promise<UserEntity | null> {
     return this.prisma.users.findUnique({

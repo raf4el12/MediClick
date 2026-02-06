@@ -21,7 +21,7 @@ export class CreateInternalUserUseCase {
   constructor(
     @Inject('IUserRepository')
     private readonly userRepository: IUserRepository,
-  ) { }
+  ) {}
 
   async execute(dto: CreateInternalUserDto): Promise<UserResponseDto> {
     if (!ALLOWED_INTERNAL_ROLES.includes(dto.role)) {

@@ -20,7 +20,7 @@ export class AuthController {
     private readonly loginUseCase: LoginUseCase,
     private readonly refreshTokenUseCase: RefreshTokenUseCase,
     private readonly logoutUseCase: LogoutUseCase,
-  ) { }
+  ) {}
 
   @Post('login')
   @HttpCode(HttpStatus.OK)

@@ -11,7 +11,7 @@ import { Auth } from '../../../../shared/decorators/index.js';
 export class UsersController {
   constructor(
     private readonly createInternalUserUseCase: CreateInternalUserUseCase,
-  ) { }
+  ) {}
 
   @Post('internal')
   @HttpCode(HttpStatus.CREATED)

@@ -12,7 +12,7 @@ export class LoginUseCase {
     private readonly userRepository: IUserRepository,
     private readonly passwordService: PasswordService,
     private readonly tokenService: TokenService,
-  ) { }
+  ) {}
 
   async execute(dto: LoginDto): Promise<AuthResponseDto> {
     const user = await this.userRepository.findByEmail(dto.email);
