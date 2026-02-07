@@ -166,6 +166,28 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     return count > 0;
   }
 
+  async findByDoctorAndDate(
+    doctorId: number,
+    date: Date,
+  ): Promise<AppointmentWithRelations[]> {
+    const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+
+    const rows = await this.prisma.appointments.findMany({
+      where: {
+        deleted: false,
+        schedule: {
+          doctorId,
+          scheduleDate: { gte: startOfDay, lt: endOfDay },
+        },
+      },
+      include: appointmentInclude,
+      orderBy: { schedule: { timeFrom: 'asc' } },
+    });
+
+    return rows.map((r) => this.mapToRelations(r));
+  }
+
   private mapToRelations(raw: any): AppointmentWithRelations {
     return {
       id: raw.id,

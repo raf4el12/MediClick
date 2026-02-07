@@ -157,4 +157,12 @@ export class PrismaDoctorRepository implements IDoctorRepository {
     });
     return count > 0;
   }
+
+  async findDoctorIdByUserId(userId: number): Promise<number | null> {
+    const profile = await this.prisma.profiles.findFirst({
+      where: { userId, deleted: false },
+      select: { doctor: { select: { id: true } } },
+    });
+    return profile?.doctor?.id ?? null;
+  }
 }

@@ -20,4 +20,8 @@ export interface IAppointmentRepository {
   ): Promise<AppointmentWithRelations>;
   softDelete(id: number): Promise<void>;
   existsAppointmentForSchedule(scheduleId: number, excludeId?: number): Promise<boolean>;
+  findByDoctorAndDate(
+    doctorId: number,
+    date: Date,
+  ): Promise<AppointmentWithRelations[]>;
 }

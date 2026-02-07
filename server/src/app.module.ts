@@ -10,6 +10,9 @@ import { AvailabilityModule } from './modules/availability/application/availabil
 import { SchedulesModule } from './modules/schedules/application/schedules.module.js';
 import { PatientsModule } from './modules/patients/application/patients.module.js';
 import { AppointmentsModule } from './modules/appointments/application/appointments.module.js';
+import { ClinicalNotesModule } from './modules/clinical-notes/application/clinical-notes.module.js';
+import { PrescriptionsModule } from './modules/prescriptions/application/prescriptions.module.js';
+import { ReportsModule } from './modules/reports/application/reports.module.js';
 
 @Module({
   imports: [
@@ -24,6 +27,9 @@ import { AppointmentsModule } from './modules/appointments/application/appointme
     SchedulesModule,
     PatientsModule,
     AppointmentsModule,
+    ClinicalNotesModule,
+    PrescriptionsModule,
+    ReportsModule,
   ],
   controllers: [],
   providers: [],

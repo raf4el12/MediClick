@@ -21,10 +21,12 @@ import { AppointmentResponseDto } from '../../application/dto/appointment-respon
 import { PaginatedAppointmentResponseDto } from '../../application/dto/paginated-appointment-response.dto.js';
 import { CreateAppointmentUseCase } from '../../application/use-cases/create-appointment.use-case.js';
 import { GetDashboardAppointmentsUseCase } from '../../application/use-cases/get-dashboard-appointments.use-case.js';
+import { GetDoctorDailyAppointmentsUseCase } from '../../application/use-cases/get-doctor-daily-appointments.use-case.js';
 import { CheckInAppointmentUseCase } from '../../application/use-cases/check-in-appointment.use-case.js';
 import { CancelAppointmentUseCase } from '../../application/use-cases/cancel-appointment.use-case.js';
 import { RescheduleAppointmentUseCase } from '../../application/use-cases/reschedule-appointment.use-case.js';
 import { CompleteAppointmentUseCase } from '../../application/use-cases/complete-appointment.use-case.js';
+import { CurrentUser } from '../../../../shared/decorators/current-user.decorator.js';
 
 @ApiTags('Appointments')
 @Controller('appointments')
@@ -32,6 +34,7 @@ export class AppointmentController {
   constructor(
     private readonly createAppointmentUseCase: CreateAppointmentUseCase,
     private readonly getDashboardAppointmentsUseCase: GetDashboardAppointmentsUseCase,
+    private readonly getDoctorDailyAppointmentsUseCase: GetDoctorDailyAppointmentsUseCase,
     private readonly checkInAppointmentUseCase: CheckInAppointmentUseCase,
     private readonly cancelAppointmentUseCase: CancelAppointmentUseCase,
     private readonly rescheduleAppointmentUseCase: RescheduleAppointmentUseCase,
@@ -48,6 +51,16 @@ export class AppointmentController {
     @Body() dto: CreateAppointmentDto,
   ): Promise<AppointmentResponseDto> {
     return this.createAppointmentUseCase.execute(dto);
+  }
+
+  @Get('doctor/today')
+  @Auth(UserRole.DOCTOR)
+  @ApiOperation({ summary: 'Citas del doctor autenticado para hoy' })
+  @ApiResponse({ status: 200, type: [AppointmentResponseDto] })
+  async getDoctorDaily(
+    @CurrentUser('id') userId: number,
+  ): Promise<AppointmentResponseDto[]> {
+    return this.getDoctorDailyAppointmentsUseCase.execute(userId);
   }
 
   @Get()

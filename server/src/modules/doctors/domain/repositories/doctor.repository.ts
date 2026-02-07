@@ -14,4 +14,5 @@ export interface IDoctorRepository {
   findById(id: number): Promise<DoctorWithRelations | null>;
   existsByLicenseNumber(licenseNumber: string): Promise<boolean>;
   existsByEmail(email: string): Promise<boolean>;
+  findDoctorIdByUserId(userId: number): Promise<number | null>;
 }
