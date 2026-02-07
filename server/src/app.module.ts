@@ -8,6 +8,8 @@ import { SpecialtiesModule } from './modules/specialties/application/specialties
 import { DoctorsModule } from './modules/doctors/application/doctors.module.js';
 import { AvailabilityModule } from './modules/availability/application/availability.module.js';
 import { SchedulesModule } from './modules/schedules/application/schedules.module.js';
+import { PatientsModule } from './modules/patients/application/patients.module.js';
+import { AppointmentsModule } from './modules/appointments/application/appointments.module.js';
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { SchedulesModule } from './modules/schedules/application/schedules.modul
     DoctorsModule,
     AvailabilityModule,
     SchedulesModule,
+    PatientsModule,
+    AppointmentsModule,
   ],
   controllers: [],
   providers: [],
