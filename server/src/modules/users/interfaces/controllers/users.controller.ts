@@ -1,6 +1,6 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { CreateInternalUserDto } from '../../application/dto/create-internal-user.dto.js';
 import { UserResponseDto } from '../../application/dto/user-response.dto.js';
 import { CreateInternalUserUseCase } from '../../application/use-cases/create-internal-user.use-case.js';

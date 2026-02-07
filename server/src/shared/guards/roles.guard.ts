@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '../domain/enums/user-role.enum.js';
 import { ROLES_KEY } from '../constants/roles.constant.js';
 
 interface AuthenticatedUser {

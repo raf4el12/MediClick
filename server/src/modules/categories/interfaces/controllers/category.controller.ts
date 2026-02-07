@@ -6,16 +6,20 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   ParseIntPipe,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth } from '../../../../shared/decorators/index.js';
+import { PaginationDto } from '../../../../shared/utils/dtos/pagination-dto.js';
+import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreateCategoryDto } from '../../application/dto/create-category.dto.js';
 import { UpdateCategoryDto } from '../../application/dto/update-category.dto.js';
 import { CategoryResponseDto } from '../../application/dto/category-response.dto.js';
+import { PaginatedCategoryResponseDto } from '../../application/dto/paginated-category-response.dto.js';
 import { CreateCategoryUseCase } from '../../application/use-cases/create-category.use-case.js';
 import { FindAllCategoriesUseCase } from '../../application/use-cases/find-all-categories.use-case.js';
 import { UpdateCategoryUseCase } from '../../application/use-cases/update-category.use-case.js';
@@ -45,14 +49,23 @@ export class CategoryController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar todas las categorías activas' })
+  @ApiOperation({ summary: 'Listar categorías con paginación' })
   @ApiResponse({
     status: 200,
-    description: 'Lista de categorías',
-    type: [CategoryResponseDto],
+    description: 'Lista paginada de categorías',
+    type: PaginatedCategoryResponseDto,
   })
-  async findAll(): Promise<CategoryResponseDto[]> {
-    return this.findAllCategoriesUseCase.execute();
+  async findAll(
+    @Query() paginationDto: PaginationDto,
+  ): Promise<PaginatedCategoryResponseDto> {
+    const pagination = new PaginationImproved(
+      paginationDto.searchValue,
+      paginationDto.currentPage,
+      paginationDto.pageSize,
+      paginationDto.orderBy,
+      paginationDto.orderByMode,
+    );
+    return this.findAllCategoriesUseCase.execute(pagination);
   }
 
   @Patch(':id')

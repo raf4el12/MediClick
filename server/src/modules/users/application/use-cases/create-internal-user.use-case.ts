@@ -4,11 +4,11 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
-import { UserRole } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
+import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { CreateInternalUserDto } from '../dto/create-internal-user.dto.js';
 import { UserResponseDto } from '../dto/user-response.dto.js';
 import type { IUserRepository } from '../../domain/repositories/user.repository.js';
+import type { IPasswordService } from '../../../../shared/domain/contracts/password-service.interface.js';
 
 const ALLOWED_INTERNAL_ROLES: UserRole[] = [
   UserRole.ADMIN,
@@ -21,6 +21,8 @@ export class CreateInternalUserUseCase {
   constructor(
     @Inject('IUserRepository')
     private readonly userRepository: IUserRepository,
+    @Inject('IPasswordService')
+    private readonly passwordService: IPasswordService,
   ) {}
 
   async execute(dto: CreateInternalUserDto): Promise<UserResponseDto> {
@@ -47,7 +49,7 @@ export class CreateInternalUserUseCase {
       }
     }
 
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const hashedPassword = await this.passwordService.hash(dto.password);
 
     const user = await this.userRepository.createInternalUser({
       name: dto.name,

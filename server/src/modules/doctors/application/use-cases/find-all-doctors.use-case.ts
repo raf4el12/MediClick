@@ -1,6 +1,8 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { DoctorResponseDto } from '../dto/doctor-response.dto.js';
+import { PaginatedDoctorResponseDto } from '../dto/paginated-doctor-response.dto.js';
 import type { IDoctorRepository } from '../../domain/repositories/doctor.repository.js';
+import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 
 @Injectable()
 export class FindAllDoctorsUseCase {
@@ -9,10 +11,24 @@ export class FindAllDoctorsUseCase {
     private readonly doctorRepository: IDoctorRepository,
   ) {}
 
-  async execute(): Promise<DoctorResponseDto[]> {
-    const doctors = await this.doctorRepository.findAll();
+  async execute(
+    pagination: PaginationImproved,
+    specialtyId?: number,
+  ): Promise<PaginatedDoctorResponseDto> {
+    const { limit, offset } = pagination.getOffsetLimit();
 
-    return doctors.map((d) => ({
+    const result = await this.doctorRepository.findAllPaginated(
+      {
+        offset,
+        limit,
+        searchValue: pagination.searchValue,
+        orderBy: pagination.orderBy,
+        orderByMode: pagination.orderByMode,
+      },
+      specialtyId,
+    );
+
+    const rows: DoctorResponseDto[] = result.rows.map((d) => ({
       id: d.id,
       licenseNumber: d.licenseNumber,
       resume: d.resume,
@@ -29,5 +45,12 @@ export class FindAllDoctorsUseCase {
       user: d.profile.user,
       specialties: d.specialties.map((ds) => ds.specialty),
     }));
+
+    return {
+      totalRows: result.totalRows,
+      rows,
+      totalPages: result.totalPages,
+      currentPage: result.currentPage,
+    };
   }
 }

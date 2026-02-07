@@ -1,25 +1,28 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
-import {
-  IUserRepository,
-  CreateInternalUserData,
-} from '../../domain/repositories/user.repository.js';
+import { IUserRepository } from '../../domain/repositories/user.repository.js';
+import { CreateInternalUserData } from '../../domain/interfaces/user-data.interface.js';
 import { UserEntity } from '../../domain/entities/user.entity.js';
+import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
+
+function mapToUserEntity(prismaUser: any): UserEntity {
+  const entity = new UserEntity();
+  Object.assign(entity, { ...prismaUser, role: prismaUser.role as UserRole });
+  return entity;
+}
 
 @Injectable()
 export class PrismaUserRepository implements IUserRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async findByEmail(email: string): Promise<UserEntity | null> {
-    return this.prisma.users.findUnique({
-      where: { email },
-    });
+    const user = await this.prisma.users.findUnique({ where: { email } });
+    return user ? mapToUserEntity(user) : null;
   }
 
   async findById(id: number): Promise<UserEntity | null> {
-    return this.prisma.users.findUnique({
-      where: { id },
-    });
+    const user = await this.prisma.users.findUnique({ where: { id } });
+    return user ? mapToUserEntity(user) : null;
   }
 
   async updateRefreshToken(
@@ -33,9 +36,7 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   async existsByEmail(email: string): Promise<boolean> {
-    const count = await this.prisma.users.count({
-      where: { email },
-    });
+    const count = await this.prisma.users.count({ where: { email } });
     return count > 0;
   }
 
@@ -73,7 +74,7 @@ export class PrismaUserRepository implements IUserRepository {
         },
       });
 
-      return user;
+      return mapToUserEntity(user);
     });
   }
 }

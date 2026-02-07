@@ -1,8 +1,8 @@
 import { Injectable, Inject, UnauthorizedException } from '@nestjs/common';
 import { LoginDto } from '../dto/login.dto.js';
 import { AuthResponseDto } from '../dto/auth-response.dto.js';
-import { PasswordService } from '../../domain/services/password.service.js';
-import { TokenService } from '../../domain/services/token.service.js';
+import type { IPasswordService } from '../../../../shared/domain/contracts/password-service.interface.js';
+import type { ITokenService } from '../../domain/contracts/token-service.interface.js';
 import type { IUserRepository } from '../../../users/domain/repositories/user.repository.js';
 
 @Injectable()
@@ -10,8 +10,10 @@ export class LoginUseCase {
   constructor(
     @Inject('IUserRepository')
     private readonly userRepository: IUserRepository,
-    private readonly passwordService: PasswordService,
-    private readonly tokenService: TokenService,
+    @Inject('IPasswordService')
+    private readonly passwordService: IPasswordService,
+    @Inject('ITokenService')
+    private readonly tokenService: ITokenService,
   ) {}
 
   async execute(dto: LoginDto): Promise<AuthResponseDto> {

@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
+import { IDoctorRepository } from '../../domain/repositories/doctor.repository.js';
 import {
-  IDoctorRepository,
   OnboardDoctorData,
   DoctorWithRelations,
-} from '../../domain/repositories/doctor.repository.js';
+} from '../../domain/interfaces/doctor-data.interface.js';
+import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
+import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
 
 const doctorInclude = {
   profile: {
@@ -77,12 +79,62 @@ export class PrismaDoctorRepository implements IDoctorRepository {
     });
   }
 
-  async findAll(): Promise<DoctorWithRelations[]> {
-    return this.prisma.doctors.findMany({
-      where: { deleted: false },
-      include: doctorInclude,
-      orderBy: { createdAt: 'desc' },
-    });
+  async findAllPaginated(
+    params: PaginationParams,
+    specialtyId?: number,
+  ): Promise<PaginatedResult<DoctorWithRelations>> {
+    const { limit, offset, searchValue, orderBy, orderByMode } = params;
+
+    const where = {
+      deleted: false,
+      ...(specialtyId && {
+        specialties: {
+          some: { specialtyId, deleted: false },
+        },
+      }),
+      ...(searchValue && {
+        profile: {
+          OR: [
+            {
+              name: {
+                contains: searchValue,
+                mode: 'insensitive' as const,
+              },
+            },
+            {
+              lastName: {
+                contains: searchValue,
+                mode: 'insensitive' as const,
+              },
+            },
+            {
+              email: {
+                contains: searchValue,
+                mode: 'insensitive' as const,
+              },
+            },
+          ],
+        },
+      }),
+    };
+
+    const [rows, count] = await Promise.all([
+      this.prisma.doctors.findMany({
+        where,
+        include: doctorInclude,
+        skip: offset,
+        take: limit,
+        orderBy: { [orderBy || 'createdAt']: orderByMode || 'desc' },
+      }),
+      this.prisma.doctors.count({ where }),
+    ]);
+
+    return {
+      totalRows: count,
+      rows,
+      totalPages: Math.ceil(count / limit),
+      currentPage: Math.floor(offset / limit) + 1,
+    };
   }
 
   async findById(id: number): Promise<DoctorWithRelations | null> {

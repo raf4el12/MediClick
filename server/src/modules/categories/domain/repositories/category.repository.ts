@@ -1,25 +1,16 @@
 import { CategoryEntity } from '../entities/category.entity.js';
-
-export interface CreateCategoryData {
-  name: string;
-  description?: string;
-  icon?: string;
-  color?: string;
-  order?: number;
-}
-
-export interface UpdateCategoryData {
-  name?: string;
-  description?: string;
-  icon?: string;
-  color?: string;
-  order?: number;
-  isActive?: boolean;
-}
+import {
+  CreateCategoryData,
+  UpdateCategoryData,
+} from '../interfaces/category-data.interface.js';
+import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
+import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
 
 export interface ICategoryRepository {
   create(data: CreateCategoryData): Promise<CategoryEntity>;
-  findAll(): Promise<CategoryEntity[]>;
+  findAllPaginated(
+    params: PaginationParams,
+  ): Promise<PaginatedResult<CategoryEntity>>;
   findById(id: number): Promise<CategoryEntity | null>;
   existsByName(name: string): Promise<boolean>;
   existsByNameExcluding(name: string, excludeId: number): Promise<boolean>;

@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
+import { ICategoryRepository } from '../../domain/repositories/category.repository.js';
 import {
-  ICategoryRepository,
   CreateCategoryData,
   UpdateCategoryData,
-} from '../../domain/repositories/category.repository.js';
+} from '../../domain/interfaces/category-data.interface.js';
 import { CategoryEntity } from '../../domain/entities/category.entity.js';
+import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
+import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
 
 @Injectable()
 export class PrismaCategoryRepository implements ICategoryRepository {
@@ -15,11 +17,47 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     return this.prisma.categories.create({ data });
   }
 
-  async findAll(): Promise<CategoryEntity[]> {
-    return this.prisma.categories.findMany({
-      where: { deleted: false },
-      orderBy: [{ order: 'asc' }, { name: 'asc' }],
-    });
+  async findAllPaginated(
+    params: PaginationParams,
+  ): Promise<PaginatedResult<CategoryEntity>> {
+    const { limit, offset, searchValue, orderBy, orderByMode } = params;
+
+    const where = {
+      deleted: false,
+      ...(searchValue && {
+        OR: [
+          {
+            name: {
+              contains: searchValue,
+              mode: 'insensitive' as const,
+            },
+          },
+          {
+            description: {
+              contains: searchValue,
+              mode: 'insensitive' as const,
+            },
+          },
+        ],
+      }),
+    };
+
+    const [rows, count] = await Promise.all([
+      this.prisma.categories.findMany({
+        where,
+        skip: offset,
+        take: limit,
+        orderBy: { [orderBy || 'name']: orderByMode || 'desc' },
+      }),
+      this.prisma.categories.count({ where }),
+    ]);
+
+    return {
+      totalRows: count,
+      rows,
+      totalPages: Math.ceil(count / limit),
+      currentPage: Math.floor(offset / limit) + 1,
+    };
   }
 
   async findById(id: number): Promise<CategoryEntity | null> {

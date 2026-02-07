@@ -1,20 +1,5 @@
-import { UserRole } from '@prisma/client';
 import { UserEntity } from '../entities/user.entity.js';
-
-export interface CreateInternalUserData {
-  name: string;
-  email: string;
-  password: string;
-  role: UserRole;
-  profile: {
-    name: string;
-    lastName: string;
-    email: string;
-    phone?: string;
-    typeDocument?: string;
-    numberDocument?: string;
-  };
-}
+import { CreateInternalUserData } from '../interfaces/user-data.interface.js';
 
 export interface IUserRepository {
   findByEmail(email: string): Promise<UserEntity | null>;

@@ -27,26 +27,25 @@ export class UpdateSpecialtyUseCase {
       throw new NotFoundException('Especialidad no encontrada');
     }
 
-    if (dto.categoryId) {
-      const category = await this.categoryRepository.findById(dto.categoryId);
-      if (!category) {
-        throw new BadRequestException('La categoría especificada no existe');
-      }
+    const categoryId = dto.categoryId ?? existing.categoryId;
+    const category = await this.categoryRepository.findById(categoryId);
+    if (!category) {
+      throw new BadRequestException('La categoría especificada no existe');
     }
 
-    const updated = await this.specialtyRepository.update(id, dto);
+    const savedEntity = await this.specialtyRepository.update(id, dto);
 
     return {
-      id: updated.id,
-      name: updated.name,
-      description: updated.description,
-      duration: updated.duration,
-      price: updated.price ? Number(updated.price) : null,
-      requirements: updated.requirements,
-      icon: updated.icon,
-      isActive: updated.isActive,
-      createdAt: updated.createdAt,
-      category: updated.category,
+      id: savedEntity.id,
+      name: savedEntity.name,
+      description: savedEntity.description,
+      duration: savedEntity.duration,
+      price: savedEntity.price ? Number(savedEntity.price) : null,
+      requirements: savedEntity.requirements,
+      icon: savedEntity.icon,
+      isActive: savedEntity.isActive,
+      createdAt: savedEntity.createdAt,
+      category: { id: category.id, name: category.name },
     };
   }
 }

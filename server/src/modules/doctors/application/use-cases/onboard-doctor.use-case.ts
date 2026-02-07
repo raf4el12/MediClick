@@ -4,11 +4,11 @@ import {
   ConflictException,
   BadRequestException,
 } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
 import { OnboardDoctorDto } from '../dto/onboard-doctor.dto.js';
 import { DoctorResponseDto } from '../dto/doctor-response.dto.js';
 import type { IDoctorRepository } from '../../domain/repositories/doctor.repository.js';
 import type { ISpecialtyRepository } from '../../../specialties/domain/repositories/specialty.repository.js';
+import type { IPasswordService } from '../../../../shared/domain/contracts/password-service.interface.js';
 
 @Injectable()
 export class OnboardDoctorUseCase {
@@ -17,6 +17,8 @@ export class OnboardDoctorUseCase {
     private readonly doctorRepository: IDoctorRepository,
     @Inject('ISpecialtyRepository')
     private readonly specialtyRepository: ISpecialtyRepository,
+    @Inject('IPasswordService')
+    private readonly passwordService: IPasswordService,
   ) {}
 
   async execute(dto: OnboardDoctorDto): Promise<DoctorResponseDto> {
@@ -47,7 +49,7 @@ export class OnboardDoctorUseCase {
       );
     }
 
-    const hashedPassword = await bcrypt.hash(dto.user.password, 10);
+    const hashedPassword = await this.passwordService.hash(dto.user.password);
 
     const doctor = await this.doctorRepository.onboard({
       user: {

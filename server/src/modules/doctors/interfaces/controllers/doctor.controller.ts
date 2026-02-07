@@ -4,13 +4,17 @@ import {
   Post,
   Body,
   Param,
+  Query,
   ParseIntPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { UserRole } from '@prisma/client';
+import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth } from '../../../../shared/decorators/index.js';
+import { PaginationDto } from '../../../../shared/utils/dtos/pagination-dto.js';
+import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { OnboardDoctorDto } from '../../application/dto/onboard-doctor.dto.js';
 import { DoctorResponseDto } from '../../application/dto/doctor-response.dto.js';
+import { PaginatedDoctorResponseDto } from '../../application/dto/paginated-doctor-response.dto.js';
 import { OnboardDoctorUseCase } from '../../application/use-cases/onboard-doctor.use-case.js';
 import { FindAllDoctorsUseCase } from '../../application/use-cases/find-all-doctors.use-case.js';
 import { FindDoctorByIdUseCase } from '../../application/use-cases/find-doctor-by-id.use-case.js';
@@ -43,14 +47,31 @@ export class DoctorController {
 
   @Get()
   @Auth(UserRole.ADMIN)
-  @ApiOperation({ summary: 'Listar todos los doctores' })
+  @ApiOperation({ summary: 'Listar doctores con paginación' })
+  @ApiQuery({
+    name: 'specialtyId',
+    required: false,
+    type: Number,
+    description: 'Filtrar por ID de especialidad',
+  })
   @ApiResponse({
     status: 200,
-    description: 'Lista de doctores',
-    type: [DoctorResponseDto],
+    description: 'Lista paginada de doctores',
+    type: PaginatedDoctorResponseDto,
   })
-  async findAll(): Promise<DoctorResponseDto[]> {
-    return this.findAllDoctorsUseCase.execute();
+  async findAll(
+    @Query() paginationDto: PaginationDto,
+    @Query('specialtyId') specialtyId?: string,
+  ): Promise<PaginatedDoctorResponseDto> {
+    const pagination = new PaginationImproved(
+      paginationDto.searchValue,
+      paginationDto.currentPage,
+      paginationDto.pageSize,
+      paginationDto.orderBy,
+      paginationDto.orderByMode,
+    );
+    const specId = specialtyId ? parseInt(specialtyId, 10) : undefined;
+    return this.findAllDoctorsUseCase.execute(pagination, specId);
   }
 
   @Get(':id')

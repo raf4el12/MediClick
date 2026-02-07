@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { JwtPayload } from '../interfaces/jwt-payload.interface.js';
-import { AuthTokens } from '../entities/auth-tokens.entity.js';
+import { JwtPayload } from '../../domain/interfaces/jwt-payload.interface.js';
+import { AuthTokens } from '../../domain/entities/auth-tokens.entity.js';
+import { ITokenService } from '../../domain/contracts/token-service.interface.js';
 
 @Injectable()
-export class TokenService {
+export class TokenService implements ITokenService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,

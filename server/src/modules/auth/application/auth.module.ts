@@ -1,11 +1,11 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 import { JwtStrategy } from '../infrastructure/strategies/jwt.strategy.js';
-import { PasswordService } from '../domain/services/password.service.js';
-import { TokenService } from '../domain/services/token.service.js';
+import { PasswordService } from '../infrastructure/services/password.service.js';
+import { TokenService } from '../infrastructure/services/token.service.js';
 import { LoginUseCase } from './use-cases/login.use-case.js';
 import { RefreshTokenUseCase } from './use-cases/refresh-token.use-case.js';
 import { LogoutUseCase } from './use-cases/logout.use-case.js';
@@ -26,17 +26,23 @@ import { UsersModule } from '../../users/application/users.module.js';
         },
       }),
     }),
-    UsersModule,
+    forwardRef(() => UsersModule),
   ],
   controllers: [AuthController],
   providers: [
     JwtStrategy,
-    PasswordService,
-    TokenService,
+    {
+      provide: 'IPasswordService',
+      useClass: PasswordService,
+    },
+    {
+      provide: 'ITokenService',
+      useClass: TokenService,
+    },
     LoginUseCase,
     RefreshTokenUseCase,
     LogoutUseCase,
   ],
-  exports: [PasswordService, TokenService],
+  exports: ['IPasswordService', 'ITokenService'],
 })
 export class AuthModule {}
