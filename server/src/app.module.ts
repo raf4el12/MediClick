@@ -6,6 +6,8 @@ import { UsersModule } from './modules/users/application/users.module.js';
 import { CategoriesModule } from './modules/categories/application/categories.module.js';
 import { SpecialtiesModule } from './modules/specialties/application/specialties.module.js';
 import { DoctorsModule } from './modules/doctors/application/doctors.module.js';
+import { AvailabilityModule } from './modules/availability/application/availability.module.js';
+import { SchedulesModule } from './modules/schedules/application/schedules.module.js';
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { DoctorsModule } from './modules/doctors/application/doctors.module.js';
     CategoriesModule,
     SpecialtiesModule,
     DoctorsModule,
+    AvailabilityModule,
+    SchedulesModule,
   ],
   controllers: [],
   providers: [],
