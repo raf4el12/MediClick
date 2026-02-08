@@ -51,7 +51,9 @@ export class UpdateAvailabilityUseCase {
     const newTimeTo = updateData.timeTo ?? existing.timeTo;
 
     if (newTimeFrom >= newTimeTo) {
-      throw new BadRequestException('La hora de inicio debe ser menor a la hora de fin');
+      throw new BadRequestException(
+        'La hora de inicio debe ser menor a la hora de fin',
+      );
     }
 
     if (dto.timeFrom || dto.timeTo) {

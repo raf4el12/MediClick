@@ -27,7 +27,13 @@ export interface IAvailabilityRepository {
     dayOfWeek: DayOfWeek,
   ): Promise<AvailabilityEntity[]>;
   findActiveByDoctorIds(doctorIds: number[]): Promise<AvailabilityEntity[]>;
-  update(id: number, data: UpdateAvailabilityData): Promise<AvailabilityWithRelations>;
+  update(
+    id: number,
+    data: UpdateAvailabilityData,
+  ): Promise<AvailabilityWithRelations>;
   softDelete(id: number): Promise<void>;
-  existsDoctorSpecialty(doctorId: number, specialtyId: number): Promise<boolean>;
+  existsDoctorSpecialty(
+    doctorId: number,
+    specialtyId: number,
+  ): Promise<boolean>;
 }

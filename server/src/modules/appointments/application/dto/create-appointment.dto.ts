@@ -15,7 +15,10 @@ export class CreateAppointmentDto {
   @IsNotEmpty({ message: 'El scheduleId es obligatorio' })
   scheduleId: number;
 
-  @ApiPropertyOptional({ example: 'Dolor de cabeza frecuente', description: 'Motivo de consulta' })
+  @ApiPropertyOptional({
+    example: 'Dolor de cabeza frecuente',
+    description: 'Motivo de consulta',
+  })
   @IsString()
   @IsOptional()
   reason?: string;

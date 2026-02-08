@@ -26,7 +26,11 @@ export class PrescriptionController {
   @Post()
   @Auth(UserRole.DOCTOR)
   @ApiOperation({ summary: 'Crear receta médica (auto-completa la cita)' })
-  @ApiResponse({ status: 201, description: 'Receta creada y cita completada', type: PrescriptionResponseDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Receta creada y cita completada',
+    type: PrescriptionResponseDto,
+  })
   @ApiResponse({ status: 403, description: 'No es el doctor de esta cita' })
   @ApiResponse({ status: 404, description: 'Cita no encontrada' })
   @ApiResponse({ status: 409, description: 'Ya existe receta para esta cita' })

@@ -3,7 +3,10 @@ import { IsInt, IsNotEmpty, IsOptional } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class GenerateSchedulesDto {
-  @ApiPropertyOptional({ example: 1, description: 'ID del doctor (null = todos los doctores)' })
+  @ApiPropertyOptional({
+    example: 1,
+    description: 'ID del doctor (null = todos los doctores)',
+  })
   @Type(() => Number)
   @IsInt()
   @IsOptional()

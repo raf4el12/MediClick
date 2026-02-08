@@ -12,10 +12,16 @@ export class WeeklyAppointmentReportDto {
 }
 
 export class RevenueReportDto {
-  @ApiProperty({ example: 5000.00, description: 'Ingresos proyectados (sum de appointment.amount)' })
+  @ApiProperty({
+    example: 5000.0,
+    description: 'Ingresos proyectados (sum de appointment.amount)',
+  })
   projectedRevenue: number;
 
-  @ApiProperty({ example: 3500.00, description: 'Ingresos reales (transactions PAID)' })
+  @ApiProperty({
+    example: 3500.0,
+    description: 'Ingresos reales (transactions PAID)',
+  })
   actualRevenue: number;
 
   @ApiProperty({ example: 'PEN', description: 'Moneda' })
@@ -32,6 +38,9 @@ export class TopDoctorReportDto {
   @ApiProperty({ type: [String], example: ['Cardiología', 'Medicina General'] })
   specialties: string[];
 
-  @ApiProperty({ example: 45, description: 'Total de citas completadas en el mes' })
+  @ApiProperty({
+    example: 45,
+    description: 'Total de citas completadas en el mes',
+  })
   completedAppointments: number;
 }

@@ -44,7 +44,11 @@ export class AppointmentController {
   @Post()
   @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST)
   @ApiOperation({ summary: 'Crear cita médica' })
-  @ApiResponse({ status: 201, description: 'Cita creada', type: AppointmentResponseDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Cita creada',
+    type: AppointmentResponseDto,
+  })
   @ApiResponse({ status: 400, description: 'Paciente u horario inválido' })
   @ApiResponse({ status: 409, description: 'Horario ya tiene cita asignada' })
   async create(
@@ -83,7 +87,9 @@ export class AppointmentController {
 
   @Patch(':id/check-in')
   @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST)
-  @ApiOperation({ summary: 'Check-in de paciente (PENDING/CONFIRMED → IN_PROGRESS)' })
+  @ApiOperation({
+    summary: 'Check-in de paciente (PENDING/CONFIRMED → IN_PROGRESS)',
+  })
   @ApiResponse({ status: 200, type: AppointmentResponseDto })
   @ApiResponse({ status: 400, description: 'Estado no permite check-in' })
   @ApiResponse({ status: 404, description: 'Cita no encontrada' })

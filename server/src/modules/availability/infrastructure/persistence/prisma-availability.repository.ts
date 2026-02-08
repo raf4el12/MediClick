@@ -25,7 +25,9 @@ const availabilityInclude = {
 export class PrismaAvailabilityRepository implements IAvailabilityRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: CreateAvailabilityData): Promise<AvailabilityWithRelations> {
+  async create(
+    data: CreateAvailabilityData,
+  ): Promise<AvailabilityWithRelations> {
     return this.prisma.availability.create({
       data: {
         doctorId: data.doctorId,
@@ -113,7 +115,9 @@ export class PrismaAvailabilityRepository implements IAvailabilityRepository {
     }) as any;
   }
 
-  async findActiveByDoctorIds(doctorIds: number[]): Promise<AvailabilityEntity[]> {
+  async findActiveByDoctorIds(
+    doctorIds: number[],
+  ): Promise<AvailabilityEntity[]> {
     return this.prisma.availability.findMany({
       where: {
         ...(doctorIds.length > 0 && { doctorId: { in: doctorIds } }),
@@ -140,7 +144,10 @@ export class PrismaAvailabilityRepository implements IAvailabilityRepository {
     });
   }
 
-  async existsDoctorSpecialty(doctorId: number, specialtyId: number): Promise<boolean> {
+  async existsDoctorSpecialty(
+    doctorId: number,
+    specialtyId: number,
+  ): Promise<boolean> {
     const count = await this.prisma.doctorsSpecialties.count({
       where: { doctorId, specialtyId, deleted: false },
     });

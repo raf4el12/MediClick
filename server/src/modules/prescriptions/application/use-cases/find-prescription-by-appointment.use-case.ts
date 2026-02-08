@@ -24,16 +24,21 @@ export class FindPrescriptionByAppointmentUseCase {
   ): Promise<PrescriptionResponseDto> {
     const doctorId = await this.doctorRepository.findDoctorIdByUserId(userId);
     if (!doctorId) {
-      throw new BadRequestException('No se encontró un doctor asociado a este usuario');
+      throw new BadRequestException(
+        'No se encontró un doctor asociado a este usuario',
+      );
     }
 
     const appointmentDoctorId =
       await this.prescriptionRepository.findAppointmentDoctorId(appointmentId);
     if (appointmentDoctorId !== null && appointmentDoctorId !== doctorId) {
-      throw new ForbiddenException('No tiene permiso para ver recetas de esta cita');
+      throw new ForbiddenException(
+        'No tiene permiso para ver recetas de esta cita',
+      );
     }
 
-    const prescription = await this.prescriptionRepository.findByAppointmentId(appointmentId);
+    const prescription =
+      await this.prescriptionRepository.findByAppointmentId(appointmentId);
     if (!prescription) {
       throw new NotFoundException('No se encontró receta para esta cita');
     }

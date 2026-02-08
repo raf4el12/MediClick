@@ -70,7 +70,10 @@ export class PrescriptionResponseDto {
   @ApiProperty()
   scheduleDate: Date;
 
-  @ApiProperty({ example: 'COMPLETED', description: 'Estado de la cita (auto-completado)' })
+  @ApiProperty({
+    example: 'COMPLETED',
+    description: 'Estado de la cita (auto-completado)',
+  })
   appointmentStatus: string;
 
   @ApiProperty()

@@ -81,10 +81,29 @@ export class PrismaPatientRepository implements IPatientRepository {
       deleted: false,
       ...(searchValue && {
         OR: [
-          { profile: { name: { contains: searchValue, mode: 'insensitive' as const } } },
-          { profile: { lastName: { contains: searchValue, mode: 'insensitive' as const } } },
-          { profile: { email: { contains: searchValue, mode: 'insensitive' as const } } },
-          { profile: { numberDocument: { contains: searchValue, mode: 'insensitive' as const } } },
+          {
+            profile: {
+              name: { contains: searchValue, mode: 'insensitive' as const },
+            },
+          },
+          {
+            profile: {
+              lastName: { contains: searchValue, mode: 'insensitive' as const },
+            },
+          },
+          {
+            profile: {
+              email: { contains: searchValue, mode: 'insensitive' as const },
+            },
+          },
+          {
+            profile: {
+              numberDocument: {
+                contains: searchValue,
+                mode: 'insensitive' as const,
+              },
+            },
+          },
         ],
       }),
     };

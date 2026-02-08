@@ -7,7 +7,15 @@ import {
   TopDoctorReport,
 } from '../../domain/interfaces/report-data.interface.js';
 
-const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const DAY_NAMES = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+];
 
 @Injectable()
 export class PrismaReportRepository implements IReportRepository {
@@ -132,7 +140,12 @@ export class PrismaReportRepository implements IReportRepository {
     // Aggregate by doctor
     const doctorMap = new Map<
       number,
-      { name: string; lastName: string; specialties: Set<string>; count: number }
+      {
+        name: string;
+        lastName: string;
+        specialties: Set<string>;
+        count: number;
+      }
     >();
 
     for (const appt of completedAppointments) {
@@ -141,7 +154,9 @@ export class PrismaReportRepository implements IReportRepository {
 
       if (existing) {
         existing.count++;
-        doc.specialties.forEach((s) => existing.specialties.add(s.specialty.name));
+        doc.specialties.forEach((s) =>
+          existing.specialties.add(s.specialty.name),
+        );
       } else {
         const specSet = new Set<string>();
         doc.specialties.forEach((s) => specSet.add(s.specialty.name));

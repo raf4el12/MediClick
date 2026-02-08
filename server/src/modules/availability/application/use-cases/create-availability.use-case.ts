@@ -36,10 +36,11 @@ export class CreateAvailabilityUseCase {
       throw new BadRequestException('El doctor especificado no existe');
     }
 
-    const hasDoctorSpecialty = await this.availabilityRepository.existsDoctorSpecialty(
-      dto.doctorId,
-      dto.specialtyId,
-    );
+    const hasDoctorSpecialty =
+      await this.availabilityRepository.existsDoctorSpecialty(
+        dto.doctorId,
+        dto.specialtyId,
+      );
     if (!hasDoctorSpecialty) {
       throw new BadRequestException(
         'El doctor no tiene asignada la especialidad especificada',
@@ -50,14 +51,18 @@ export class CreateAvailabilityUseCase {
     const timeTo = timeStringToDate(dto.timeTo);
 
     if (timeFrom >= timeTo) {
-      throw new BadRequestException('La hora de inicio debe ser menor a la hora de fin');
+      throw new BadRequestException(
+        'La hora de inicio debe ser menor a la hora de fin',
+      );
     }
 
     const startDate = new Date(dto.startDate);
     const endDate = new Date(dto.endDate);
 
     if (startDate >= endDate) {
-      throw new BadRequestException('La fecha de inicio debe ser menor a la fecha de fin');
+      throw new BadRequestException(
+        'La fecha de inicio debe ser menor a la fecha de fin',
+      );
     }
 
     const overlapping = await this.availabilityRepository.findOverlapping(

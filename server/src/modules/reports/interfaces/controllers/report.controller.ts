@@ -46,7 +46,9 @@ export class ReportController {
 
   @Get('top-doctors')
   @Auth(UserRole.ADMIN)
-  @ApiOperation({ summary: 'Ranking de doctores con más citas completadas en el mes' })
+  @ApiOperation({
+    summary: 'Ranking de doctores con más citas completadas en el mes',
+  })
   @ApiQuery({ name: 'month', required: true, type: Number, example: 2 })
   @ApiQuery({ name: 'year', required: true, type: Number, example: 2026 })
   @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })

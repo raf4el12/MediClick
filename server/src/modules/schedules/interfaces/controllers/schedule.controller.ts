@@ -1,10 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Query,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth } from '../../../../shared/decorators/index.js';
@@ -26,13 +20,18 @@ export class ScheduleController {
 
   @Post('generate')
   @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST)
-  @ApiOperation({ summary: 'Generar horarios concretos basados en disponibilidad' })
+  @ApiOperation({
+    summary: 'Generar horarios concretos basados en disponibilidad',
+  })
   @ApiResponse({
     status: 201,
     description: 'Horarios generados',
     type: GenerateSchedulesResponseDto,
   })
-  @ApiResponse({ status: 400, description: 'Parámetros inválidos o doctor no encontrado' })
+  @ApiResponse({
+    status: 400,
+    description: 'Parámetros inválidos o doctor no encontrado',
+  })
   async generate(
     @Body() dto: GenerateSchedulesDto,
   ): Promise<GenerateSchedulesResponseDto> {

@@ -36,7 +36,9 @@ const clinicalNoteInclude = {
 export class PrismaClinicalNoteRepository implements IClinicalNoteRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: CreateClinicalNoteData): Promise<ClinicalNoteWithAppointment> {
+  async create(
+    data: CreateClinicalNoteData,
+  ): Promise<ClinicalNoteWithAppointment> {
     return this.prisma.clinicalNotes.create({
       data: {
         appointmentId: data.appointmentId,

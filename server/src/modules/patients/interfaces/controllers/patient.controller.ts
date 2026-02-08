@@ -41,7 +41,11 @@ export class PatientController {
   @Post()
   @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST)
   @ApiOperation({ summary: 'Crear paciente con perfil y usuario' })
-  @ApiResponse({ status: 201, description: 'Paciente creado', type: PatientResponseDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Paciente creado',
+    type: PatientResponseDto,
+  })
   @ApiResponse({ status: 409, description: 'Email o DNI duplicado' })
   async create(@Body() dto: CreatePatientDto): Promise<PatientResponseDto> {
     return this.createPatientUseCase.execute(dto);

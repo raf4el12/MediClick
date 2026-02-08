@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Inject,
-  ConflictException,
-} from '@nestjs/common';
+import { Injectable, Inject, ConflictException } from '@nestjs/common';
 import { CreatePatientDto } from '../dto/create-patient.dto.js';
 import { PatientResponseDto } from '../dto/patient-response.dto.js';
 import type { IPatientRepository } from '../../domain/repositories/patient.repository.js';
@@ -29,7 +25,9 @@ export class CreatePatientUseCase {
         dto.numberDocument,
       );
       if (dniExists) {
-        throw new ConflictException('El documento de identidad ya está registrado');
+        throw new ConflictException(
+          'El documento de identidad ya está registrado',
+        );
       }
     }
 

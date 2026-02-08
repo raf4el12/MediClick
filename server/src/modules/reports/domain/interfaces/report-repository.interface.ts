@@ -7,5 +7,9 @@ import {
 export interface IReportRepository {
   getWeeklyAppointments(): Promise<WeeklyAppointmentReport[]>;
   getRevenue(month: number, year: number): Promise<RevenueReport>;
-  getTopDoctors(month: number, year: number, limit: number): Promise<TopDoctorReport[]>;
+  getTopDoctors(
+    month: number,
+    year: number,
+    limit: number,
+  ): Promise<TopDoctorReport[]>;
 }

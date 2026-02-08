@@ -27,7 +27,10 @@ export class CheckInAppointmentUseCase {
       throw new NotFoundException('Cita no encontrada');
     }
 
-    const allowedStatuses = [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED];
+    const allowedStatuses = [
+      AppointmentStatus.PENDING,
+      AppointmentStatus.CONFIRMED,
+    ];
     if (!allowedStatuses.includes(appointment.status)) {
       throw new BadRequestException(
         `No se puede hacer check-in. Estado actual: ${appointment.status}. Solo se permite desde PENDING o CONFIRMED`,

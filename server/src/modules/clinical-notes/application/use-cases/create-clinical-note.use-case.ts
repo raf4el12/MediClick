@@ -26,7 +26,9 @@ export class CreateClinicalNoteUseCase {
     userId: number,
     dto: CreateClinicalNoteDto,
   ): Promise<ClinicalNoteResponseDto> {
-    const appointment = await this.appointmentRepository.findById(dto.appointmentId);
+    const appointment = await this.appointmentRepository.findById(
+      dto.appointmentId,
+    );
     if (!appointment) {
       throw new NotFoundException('Cita no encontrada');
     }
@@ -34,11 +36,15 @@ export class CreateClinicalNoteUseCase {
     // Verificar que el doctor autenticado es dueño de esta cita
     const doctorId = await this.doctorRepository.findDoctorIdByUserId(userId);
     if (!doctorId) {
-      throw new BadRequestException('No se encontró un doctor asociado a este usuario');
+      throw new BadRequestException(
+        'No se encontró un doctor asociado a este usuario',
+      );
     }
 
     if (appointment.schedule.doctor.id !== doctorId) {
-      throw new ForbiddenException('No tiene permiso para crear notas en esta cita');
+      throw new ForbiddenException(
+        'No tiene permiso para crear notas en esta cita',
+      );
     }
 
     const note = await this.clinicalNoteRepository.create({

@@ -26,7 +26,11 @@ export class ClinicalNoteController {
   @Post()
   @Auth(UserRole.DOCTOR)
   @ApiOperation({ summary: 'Crear nota clínica para una cita' })
-  @ApiResponse({ status: 201, description: 'Nota creada', type: ClinicalNoteResponseDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Nota creada',
+    type: ClinicalNoteResponseDto,
+  })
   @ApiResponse({ status: 403, description: 'No es el doctor de esta cita' })
   @ApiResponse({ status: 404, description: 'Cita no encontrada' })
   async create(

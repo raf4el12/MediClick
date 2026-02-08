@@ -28,7 +28,9 @@ export class CreatePrescriptionUseCase {
     userId: number,
     dto: CreatePrescriptionDto,
   ): Promise<PrescriptionResponseDto> {
-    const appointment = await this.appointmentRepository.findById(dto.appointmentId);
+    const appointment = await this.appointmentRepository.findById(
+      dto.appointmentId,
+    );
     if (!appointment) {
       throw new NotFoundException('Cita no encontrada');
     }
@@ -36,39 +38,45 @@ export class CreatePrescriptionUseCase {
     // Verificar que el doctor autenticado es dueño de esta cita
     const doctorId = await this.doctorRepository.findDoctorIdByUserId(userId);
     if (!doctorId) {
-      throw new BadRequestException('No se encontró un doctor asociado a este usuario');
+      throw new BadRequestException(
+        'No se encontró un doctor asociado a este usuario',
+      );
     }
 
     if (appointment.schedule.doctor.id !== doctorId) {
-      throw new ForbiddenException('No tiene permiso para crear recetas en esta cita');
+      throw new ForbiddenException(
+        'No tiene permiso para crear recetas en esta cita',
+      );
     }
 
     // Verificar que la cita esté en un estado válido para recetar
     if (appointment.status === AppointmentStatus.CANCELLED) {
-      throw new BadRequestException('No se puede crear receta para una cita cancelada');
+      throw new BadRequestException(
+        'No se puede crear receta para una cita cancelada',
+      );
     }
 
     // Verificar que no exista ya una receta para esta cita (relación @unique)
-    const existingPrescription = await this.prescriptionRepository.findByAppointmentId(
-      dto.appointmentId,
-    );
+    const existingPrescription =
+      await this.prescriptionRepository.findByAppointmentId(dto.appointmentId);
     if (existingPrescription) {
       throw new ConflictException('Ya existe una receta para esta cita');
     }
 
     // Transacción: Crear receta + items + auto-completar cita
-    const prescription = await this.prescriptionRepository.createWithAutoComplete({
-      appointmentId: dto.appointmentId,
-      instructions: dto.instructions,
-      validUntil: dto.validUntil ? new Date(dto.validUntil) : undefined,
-      items: dto.items.map((item) => ({
-        medication: item.medication,
-        dosage: item.dosage,
-        frequency: item.frequency,
-        duration: item.duration,
-        notes: item.notes,
-      })),
-    });
+    const prescription =
+      await this.prescriptionRepository.createWithAutoComplete({
+        appointmentId: dto.appointmentId,
+        instructions: dto.instructions,
+        validUntil: dto.validUntil ? new Date(dto.validUntil) : undefined,
+        items: dto.items.map((item) => ({
+          medication: item.medication,
+          dosage: item.dosage,
+          frequency: item.frequency,
+          duration: item.duration,
+          notes: item.notes,
+        })),
+      });
 
     return this.toResponse(prescription);
   }

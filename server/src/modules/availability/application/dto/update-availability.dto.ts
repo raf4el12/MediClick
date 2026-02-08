@@ -22,13 +22,17 @@ export class UpdateAvailabilityDto {
 
   @ApiPropertyOptional({ example: '09:00' })
   @IsString()
-  @Matches(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: 'timeFrom debe tener formato HH:mm' })
+  @Matches(/^([01]\d|2[0-3]):([0-5]\d)$/, {
+    message: 'timeFrom debe tener formato HH:mm',
+  })
   @IsOptional()
   timeFrom?: string;
 
   @ApiPropertyOptional({ example: '15:00' })
   @IsString()
-  @Matches(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: 'timeTo debe tener formato HH:mm' })
+  @Matches(/^([01]\d|2[0-3]):([0-5]\d)$/, {
+    message: 'timeTo debe tener formato HH:mm',
+  })
   @IsOptional()
   timeTo?: string;
 

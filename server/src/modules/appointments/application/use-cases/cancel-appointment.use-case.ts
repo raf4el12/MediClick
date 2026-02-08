@@ -31,7 +31,10 @@ export class CancelAppointmentUseCase {
       throw new NotFoundException('Cita no encontrada');
     }
 
-    const forbiddenStatuses = [AppointmentStatus.COMPLETED, AppointmentStatus.CANCELLED];
+    const forbiddenStatuses = [
+      AppointmentStatus.COMPLETED,
+      AppointmentStatus.CANCELLED,
+    ];
     if (forbiddenStatuses.includes(appointment.status)) {
       throw new BadRequestException(
         `No se puede cancelar. Estado actual: ${appointment.status}`,

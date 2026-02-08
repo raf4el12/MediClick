@@ -38,9 +38,10 @@ export class CreateAppointmentUseCase {
       throw new BadRequestException('El horario especificado no existe');
     }
 
-    const hasAppointment = await this.appointmentRepository.existsAppointmentForSchedule(
-      dto.scheduleId,
-    );
+    const hasAppointment =
+      await this.appointmentRepository.existsAppointmentForSchedule(
+        dto.scheduleId,
+      );
     if (hasAppointment) {
       throw new ConflictException('El horario ya tiene una cita asignada');
     }

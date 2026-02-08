@@ -72,7 +72,8 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       ...((filters.dateFrom || filters.dateTo) && {
         schedule: {
           ...((filters.doctorId && { doctorId: filters.doctorId }) || {}),
-          ...((filters.specialtyId && { specialtyId: filters.specialtyId }) || {}),
+          ...((filters.specialtyId && { specialtyId: filters.specialtyId }) ||
+            {}),
           scheduleDate: {
             ...(filters.dateFrom && { gte: filters.dateFrom }),
             ...(filters.dateTo && { lte: filters.dateTo }),
@@ -134,7 +135,9 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       where: { id },
       data: {
         ...(data.status && { status: data.status }),
-        ...(data.cancelReason !== undefined && { cancelReason: data.cancelReason }),
+        ...(data.cancelReason !== undefined && {
+          cancelReason: data.cancelReason,
+        }),
         ...(data.scheduleId && { scheduleId: data.scheduleId }),
         ...(data.notes !== undefined && { notes: data.notes }),
         updatedAt: data.updatedAt ?? new Date(),
@@ -170,8 +173,16 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     doctorId: number,
     date: Date,
   ): Promise<AppointmentWithRelations[]> {
-    const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-    const endOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+    const startOfDay = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+    );
+    const endOfDay = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate() + 1,
+    );
 
     const rows = await this.prisma.appointments.findMany({
       where: {

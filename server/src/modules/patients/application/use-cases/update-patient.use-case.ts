@@ -11,7 +11,10 @@ export class UpdatePatientUseCase {
     private readonly patientRepository: IPatientRepository,
   ) {}
 
-  async execute(id: number, dto: UpdatePatientDto): Promise<PatientResponseDto> {
+  async execute(
+    id: number,
+    dto: UpdatePatientDto,
+  ): Promise<PatientResponseDto> {
     const existing = await this.patientRepository.findById(id);
     if (!existing) {
       throw new NotFoundException('Paciente no encontrado');
@@ -19,7 +22,14 @@ export class UpdatePatientUseCase {
 
     const updateData: UpdatePatientData = {};
 
-    if (dto.name || dto.lastName || dto.phone || dto.birthday || dto.gender || dto.address) {
+    if (
+      dto.name ||
+      dto.lastName ||
+      dto.phone ||
+      dto.birthday ||
+      dto.gender ||
+      dto.address
+    ) {
       updateData.profile = {
         ...(dto.name && { name: dto.name }),
         ...(dto.lastName && { lastName: dto.lastName }),
@@ -40,7 +50,9 @@ export class UpdatePatientUseCase {
         ...(dto.emergencyContact && { emergencyContact: dto.emergencyContact }),
         ...(dto.bloodType && { bloodType: dto.bloodType }),
         ...(dto.allergies !== undefined && { allergies: dto.allergies }),
-        ...(dto.chronicConditions !== undefined && { chronicConditions: dto.chronicConditions }),
+        ...(dto.chronicConditions !== undefined && {
+          chronicConditions: dto.chronicConditions,
+        }),
       };
     }
 

@@ -35,24 +35,32 @@ export class RescheduleAppointmentUseCase {
       throw new NotFoundException('Cita no encontrada');
     }
 
-    const forbiddenStatuses = [AppointmentStatus.COMPLETED, AppointmentStatus.CANCELLED];
+    const forbiddenStatuses = [
+      AppointmentStatus.COMPLETED,
+      AppointmentStatus.CANCELLED,
+    ];
     if (forbiddenStatuses.includes(appointment.status)) {
       throw new BadRequestException(
         `No se puede reagendar. Estado actual: ${appointment.status}`,
       );
     }
 
-    const newSchedule = await this.scheduleRepository.findById(dto.newScheduleId);
+    const newSchedule = await this.scheduleRepository.findById(
+      dto.newScheduleId,
+    );
     if (!newSchedule) {
       throw new BadRequestException('El nuevo horario especificado no existe');
     }
 
-    const hasAppointment = await this.appointmentRepository.existsAppointmentForSchedule(
-      dto.newScheduleId,
-      id,
-    );
+    const hasAppointment =
+      await this.appointmentRepository.existsAppointmentForSchedule(
+        dto.newScheduleId,
+        id,
+      );
     if (hasAppointment) {
-      throw new ConflictException('El nuevo horario ya tiene una cita asignada');
+      throw new ConflictException(
+        'El nuevo horario ya tiene una cita asignada',
+      );
     }
 
     const updated = await this.appointmentRepository.update(id, {

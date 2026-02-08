@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Inject,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type { IDoctorRepository } from '../../../doctors/domain/repositories/doctor.repository.js';
@@ -25,7 +21,9 @@ export class GetDoctorDailyAppointmentsUseCase {
   async execute(userId: number): Promise<AppointmentResponseDto[]> {
     const doctorId = await this.doctorRepository.findDoctorIdByUserId(userId);
     if (!doctorId) {
-      throw new BadRequestException('No se encontró un doctor asociado a este usuario');
+      throw new BadRequestException(
+        'No se encontró un doctor asociado a este usuario',
+      );
     }
 
     const today = new Date();

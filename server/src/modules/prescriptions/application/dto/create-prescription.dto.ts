@@ -32,7 +32,10 @@ export class PrescriptionItemDto {
   @IsNotEmpty({ message: 'La duración es obligatoria' })
   duration: string;
 
-  @ApiPropertyOptional({ example: 'Tomar después de comer', description: 'Notas adicionales' })
+  @ApiPropertyOptional({
+    example: 'Tomar después de comer',
+    description: 'Notas adicionales',
+  })
   @IsString()
   @IsOptional()
   notes?: string;
@@ -45,17 +48,26 @@ export class CreatePrescriptionDto {
   @IsNotEmpty({ message: 'El appointmentId es obligatorio' })
   appointmentId: number;
 
-  @ApiPropertyOptional({ example: 'Reposo absoluto por 3 días', description: 'Indicaciones generales' })
+  @ApiPropertyOptional({
+    example: 'Reposo absoluto por 3 días',
+    description: 'Indicaciones generales',
+  })
   @IsString()
   @IsOptional()
   instructions?: string;
 
-  @ApiPropertyOptional({ example: '2026-03-15', description: 'Fecha de validez' })
+  @ApiPropertyOptional({
+    example: '2026-03-15',
+    description: 'Fecha de validez',
+  })
   @IsDateString()
   @IsOptional()
   validUntil?: string;
 
-  @ApiProperty({ type: [PrescriptionItemDto], description: 'Lista de medicamentos' })
+  @ApiProperty({
+    type: [PrescriptionItemDto],
+    description: 'Lista de medicamentos',
+  })
   @IsArray()
   @ValidateNested({ each: true })
   @ArrayMinSize(1, { message: 'Debe incluir al menos un medicamento' })

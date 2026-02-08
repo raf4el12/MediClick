@@ -9,7 +9,10 @@ export class RescheduleAppointmentDto {
   @IsNotEmpty({ message: 'El nuevo scheduleId es obligatorio' })
   newScheduleId: number;
 
-  @ApiPropertyOptional({ example: 'Cambio por disponibilidad', description: 'Motivo del reagendamiento' })
+  @ApiPropertyOptional({
+    example: 'Cambio por disponibilidad',
+    description: 'Motivo del reagendamiento',
+  })
   @IsString()
   @IsOptional()
   reason?: string;

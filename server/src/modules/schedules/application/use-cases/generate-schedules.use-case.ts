@@ -28,7 +28,9 @@ export class GenerateSchedulesUseCase {
     private readonly doctorRepository: IDoctorRepository,
   ) {}
 
-  async execute(dto: GenerateSchedulesDto): Promise<GenerateSchedulesResponseDto> {
+  async execute(
+    dto: GenerateSchedulesDto,
+  ): Promise<GenerateSchedulesResponseDto> {
     if (dto.month < 1 || dto.month > 12) {
       throw new BadRequestException('El mes debe estar entre 1 y 12');
     }
@@ -46,12 +48,17 @@ export class GenerateSchedulesUseCase {
       doctorIds = [dto.doctorId];
     } else {
       // Obtener todos los doctores con disponibilidad activa
-      const allAvailabilities = await this.availabilityRepository.findActiveByDoctorIds([]);
+      const allAvailabilities =
+        await this.availabilityRepository.findActiveByDoctorIds([]);
       doctorIds = [...new Set(allAvailabilities.map((a) => a.doctorId))];
     }
 
     if (doctorIds.length === 0) {
-      return { generated: 0, skipped: 0, message: 'No hay doctores con disponibilidad activa' };
+      return {
+        generated: 0,
+        skipped: 0,
+        message: 'No hay doctores con disponibilidad activa',
+      };
     }
 
     // Obtener días del mes
@@ -66,7 +73,8 @@ export class GenerateSchedulesUseCase {
 
     for (const doctorId of doctorIds) {
       // Obtener todas las availability rules del doctor
-      const availabilities = await this.availabilityRepository.findActiveByDoctorIds([doctorId]);
+      const availabilities =
+        await this.availabilityRepository.findActiveByDoctorIds([doctorId]);
       if (availabilities.length === 0) continue;
 
       // Obtener schedules existentes para evitar duplicados
@@ -93,9 +101,21 @@ export class GenerateSchedulesUseCase {
           if (a.dayOfWeek !== dayOfWeek) return false;
           if (!a.isAvailable) return false;
           // Verificar que la fecha está dentro del rango de vigencia
-          const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-          const startOnly = new Date(a.startDate.getFullYear(), a.startDate.getMonth(), a.startDate.getDate());
-          const endOnly = new Date(a.endDate.getFullYear(), a.endDate.getMonth(), a.endDate.getDate());
+          const dateOnly = new Date(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate(),
+          );
+          const startOnly = new Date(
+            a.startDate.getFullYear(),
+            a.startDate.getMonth(),
+            a.startDate.getDate(),
+          );
+          const endOnly = new Date(
+            a.endDate.getFullYear(),
+            a.endDate.getMonth(),
+            a.endDate.getDate(),
+          );
           return dateOnly >= startOnly && dateOnly <= endOnly;
         });
 
@@ -119,7 +139,8 @@ export class GenerateSchedulesUseCase {
       }
 
       if (schedulesToCreate.length > 0) {
-        const created = await this.scheduleRepository.createMany(schedulesToCreate);
+        const created =
+          await this.scheduleRepository.createMany(schedulesToCreate);
         totalGenerated += created;
       }
     }
