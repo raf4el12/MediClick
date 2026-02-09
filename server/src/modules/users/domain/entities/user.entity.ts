@@ -10,7 +10,6 @@ export class UserEntity {
   isActive: boolean;
   validateEmail: boolean;
   deleted: boolean;
-  refreshToken: string | null;
   createdAt: Date;
   updatedAt: Date | null;
 }

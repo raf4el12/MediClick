@@ -25,16 +25,6 @@ export class PrismaUserRepository implements IUserRepository {
     return user ? mapToUserEntity(user) : null;
   }
 
-  async updateRefreshToken(
-    userId: number,
-    refreshToken: string | null,
-  ): Promise<void> {
-    await this.prisma.users.update({
-      where: { id: userId },
-      data: { refreshToken },
-    });
-  }
-
   async existsByEmail(email: string): Promise<boolean> {
     const count = await this.prisma.users.count({ where: { email } });
     return count > 0;

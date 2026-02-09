@@ -12,4 +12,12 @@ export class LoginDto {
   @IsNotEmpty({ message: 'La contraseña es obligatoria' })
   @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres' })
   password: string;
+
+  @ApiProperty({
+    example: 'browser-abc123',
+    description: 'Identificador único del dispositivo',
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'El deviceId es obligatorio' })
+  deviceId: string;
 }

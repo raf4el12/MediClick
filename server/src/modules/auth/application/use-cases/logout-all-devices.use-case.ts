@@ -2,13 +2,13 @@ import { Injectable, Inject } from '@nestjs/common';
 import type { IRefreshTokenRepository } from '../../domain/contracts/refresh-token-repository.interface.js';
 
 @Injectable()
-export class LogoutUseCase {
+export class LogoutAllDevicesUseCase {
   constructor(
     @Inject('IRefreshTokenRepository')
     private readonly refreshTokenRepository: IRefreshTokenRepository,
   ) {}
 
-  async execute(userId: number, deviceId: string): Promise<void> {
-    await this.refreshTokenRepository.deleteByUserDevice(userId, deviceId);
+  async execute(userId: number): Promise<void> {
+    await this.refreshTokenRepository.deleteAllByUser(userId);
   }
 }

@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 
 export class AuthUserDto {
@@ -19,8 +19,11 @@ export class AuthResponseDto {
   @ApiProperty()
   accessToken: string;
 
-  @ApiProperty()
-  refreshToken: string;
+  @ApiPropertyOptional({
+    description:
+      'Solo presente en respuestas internas. El refresh token se envía via cookie HttpOnly.',
+  })
+  refreshToken?: string;
 
   @ApiProperty({ type: AuthUserDto })
   user: AuthUserDto;

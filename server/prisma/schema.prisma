@@ -69,7 +69,6 @@ model Users {
   isActive      Boolean   @default(true)
   validateEmail Boolean   @default(false)
   deleted       Boolean   @default(false)
-  refreshToken  String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime?
   profiles      Profiles[]

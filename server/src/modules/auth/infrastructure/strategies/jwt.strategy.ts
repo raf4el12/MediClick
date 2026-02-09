@@ -13,7 +13,6 @@ function extractTokenFromCookieOrHeader(req: Request): string | null {
     return cookieToken;
   }
 
-  // 2. Fallback to Authorization header
   return ExtractJwt.fromAuthHeaderAsBearerToken()(req);
 }
 
