@@ -4,42 +4,40 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-  specialtySchema,
-  type SpecialtyFormValues,
-} from '../functions/specialty.schema';
+  categorySchema,
+  type CategoryFormValues,
+} from '../functions/category.schema';
 import { useAppDispatch } from '@/redux-store/hooks';
 import {
-  createSpecialtyThunk,
-  updateSpecialtyThunk,
-} from '@/redux-store/thunks/specialties.thunks';
-import type { Specialty } from '../types';
+  createCategoryThunk,
+  updateCategoryThunk,
+} from '@/redux-store/thunks/categories.thunks';
+import type { Category } from '../types';
 
-interface UseSpecialtyFormProps {
-  drawerData: { data: Specialty | null; action: 'Create' | 'Update' };
+interface UseCategoryFormProps {
+  drawerData: { data: Category | null; action: 'Create' | 'Update' };
   onSuccess: () => void;
   onClose: () => void;
 }
 
-export function useSpecialtyForm({
+export function useCategoryForm({
   drawerData,
   onSuccess,
   onClose,
-}: UseSpecialtyFormProps) {
+}: UseCategoryFormProps) {
   const dispatch = useAppDispatch();
   const [isLoading, setIsLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const { control, handleSubmit, reset, formState } =
-    useForm<SpecialtyFormValues>({
-      resolver: zodResolver(specialtySchema),
+    useForm<CategoryFormValues>({
+      resolver: zodResolver(categorySchema),
       defaultValues: {
-        categoryId: 0,
         name: '',
         description: '',
-        duration: 30,
-        price: 0,
-        requirements: '',
         icon: '',
+        color: '',
+        order: undefined,
       },
       mode: 'onBlur',
     });
@@ -47,28 +45,24 @@ export function useSpecialtyForm({
   useEffect(() => {
     if (drawerData.action === 'Update' && drawerData.data) {
       reset({
-        categoryId: drawerData.data.category.id,
         name: drawerData.data.name,
         description: drawerData.data.description ?? '',
-        duration: drawerData.data.duration ?? 30,
-        price: drawerData.data.price ?? 0,
-        requirements: drawerData.data.requirements ?? '',
         icon: drawerData.data.icon ?? '',
+        color: drawerData.data.color ?? '',
+        order: drawerData.data.order ?? undefined,
       });
     } else {
       reset({
-        categoryId: 0,
         name: '',
         description: '',
-        duration: 30,
-        price: 0,
-        requirements: '',
         icon: '',
+        color: '',
+        order: undefined,
       });
     }
   }, [drawerData, reset]);
 
-  const onSubmit = async (formData: SpecialtyFormValues) => {
+  const onSubmit = async (formData: CategoryFormValues) => {
     try {
       setIsLoading(true);
       setSubmitError(null);
@@ -76,34 +70,34 @@ export function useSpecialtyForm({
       const payload = {
         ...formData,
         description: formData.description || undefined,
-        requirements: formData.requirements || undefined,
         icon: formData.icon || undefined,
+        color: formData.color || undefined,
       };
 
       let result;
 
       if (drawerData.action === 'Update' && drawerData.data) {
         result = await dispatch(
-          updateSpecialtyThunk({ id: drawerData.data.id, payload }),
+          updateCategoryThunk({ id: drawerData.data.id, payload }),
         );
       } else {
-        result = await dispatch(createSpecialtyThunk(payload));
+        result = await dispatch(createCategoryThunk(payload));
       }
 
       if (
-        createSpecialtyThunk.fulfilled.match(result) ||
-        updateSpecialtyThunk.fulfilled.match(result)
+        createCategoryThunk.fulfilled.match(result) ||
+        updateCategoryThunk.fulfilled.match(result)
       ) {
         reset();
         onSuccess();
         onClose();
       } else {
         setSubmitError(
-          (result.payload as string) ?? 'Error al guardar la especialidad',
+          (result.payload as string) ?? 'Error al guardar la categoría',
         );
       }
     } catch {
-      setSubmitError('Error al guardar la especialidad');
+      setSubmitError('Error al guardar la categoría');
     } finally {
       setIsLoading(false);
     }

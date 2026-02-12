@@ -4,32 +4,29 @@ import { useEffect, useState, useCallback } from 'react';
 import { debounce } from '@/utils/debounce';
 import { useAppDispatch, useAppSelector } from '@/redux-store/hooks';
 import {
-  selectSpecialtiesData,
-  selectCategories,
-  selectSpecialtiesLoading,
-  selectSpecialtiesError,
-  selectSpecialtiesPagination,
-  setPagination as setPaginationAction,
-} from '@/redux-store/slices/specialties';
+  selectCategoriesData,
+  selectCategoriesLoading,
+  selectCategoriesError,
+  selectCategoriesPagination,
+  setCategoriesPagination,
+} from '@/redux-store/slices/categories';
 import {
-  fetchSpecialtiesThunk,
-  fetchCategoriesThunk,
-  deleteSpecialtyThunk,
-} from '@/redux-store/thunks/specialties.thunks';
-import type { Specialty } from '../types';
+  fetchCategoriesPaginatedThunk,
+  deleteCategoryThunk,
+} from '@/redux-store/thunks/categories.thunks';
+import type { Category } from '../types';
 
-export function useSpecialties() {
+export function useCategories() {
   const dispatch = useAppDispatch();
 
-  const data = useAppSelector(selectSpecialtiesData);
-  const categories = useAppSelector(selectCategories);
-  const loading = useAppSelector(selectSpecialtiesLoading);
-  const error = useAppSelector(selectSpecialtiesError);
-  const pagination = useAppSelector(selectSpecialtiesPagination);
+  const data = useAppSelector(selectCategoriesData);
+  const loading = useAppSelector(selectCategoriesLoading);
+  const error = useAppSelector(selectCategoriesError);
+  const pagination = useAppSelector(selectCategoriesPagination);
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerData, setDrawerData] = useState<{
-    data: Specialty | null;
+    data: Category | null;
     action: 'Create' | 'Update';
   }>({ data: null, action: 'Create' });
 
@@ -38,15 +35,12 @@ export function useSpecialties() {
 
   const fetchData = useCallback(() => {
     void dispatch(
-      fetchSpecialtiesThunk({
-        pagination: {
-          searchValue: pagination.searchValue || undefined,
-          currentPage: pagination.currentPage,
-          pageSize: pagination.pageSize,
-          orderBy: pagination.orderBy,
-          orderByMode: pagination.orderByMode,
-        },
-        categoryId: pagination.categoryId,
+      fetchCategoriesPaginatedThunk({
+        searchValue: pagination.searchValue || undefined,
+        currentPage: pagination.currentPage,
+        pageSize: pagination.pageSize,
+        orderBy: pagination.orderBy,
+        orderByMode: pagination.orderByMode,
       }),
     );
   }, [
@@ -56,20 +50,15 @@ export function useSpecialties() {
     pagination.pageSize,
     pagination.orderBy,
     pagination.orderByMode,
-    pagination.categoryId,
   ]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  useEffect(() => {
-    void dispatch(fetchCategoriesThunk());
-  }, [dispatch]);
-
   const updatePagination = useCallback(
-    (updates: Parameters<typeof setPaginationAction>[0]) => {
-      dispatch(setPaginationAction(updates));
+    (updates: Parameters<typeof setCategoriesPagination>[0]) => {
+      dispatch(setCategoriesPagination(updates));
     },
     [dispatch],
   );
@@ -81,17 +70,13 @@ export function useSpecialties() {
     [updatePagination],
   );
 
-  const handleCategoryFilter = (categoryId: number | undefined) => {
-    updatePagination({ categoryId, currentPage: 1 });
-  };
-
   const openCreateDrawer = () => {
     setDrawerData({ data: null, action: 'Create' });
     setDrawerOpen(true);
   };
 
-  const openEditDrawer = (specialty: Specialty) => {
-    setDrawerData({ data: specialty, action: 'Update' });
+  const openEditDrawer = (category: Category) => {
+    setDrawerData({ data: category, action: 'Update' });
     setDrawerOpen(true);
   };
 
@@ -106,9 +91,9 @@ export function useSpecialties() {
 
   const handleDelete = async (confirmed: boolean) => {
     if (confirmed && selectedDeleteId) {
-      const result = await dispatch(deleteSpecialtyThunk(selectedDeleteId));
+      const result = await dispatch(deleteCategoryThunk(selectedDeleteId));
 
-      if (deleteSpecialtyThunk.fulfilled.match(result)) {
+      if (deleteCategoryThunk.fulfilled.match(result)) {
         const totalAfter = data.totalRows - 1;
         const newTotalPages = Math.ceil(totalAfter / pagination.pageSize);
 
@@ -126,17 +111,15 @@ export function useSpecialties() {
 
   return {
     data,
-    categories,
     loading,
     error,
     pagination,
     setPagination: (updater: React.SetStateAction<typeof pagination>) => {
       const newVal =
         typeof updater === 'function' ? updater(pagination) : updater;
-      dispatch(setPaginationAction(newVal));
+      dispatch(setCategoriesPagination(newVal));
     },
     debouncedSearch,
-    handleCategoryFilter,
     drawerOpen,
     drawerData,
     openCreateDrawer,

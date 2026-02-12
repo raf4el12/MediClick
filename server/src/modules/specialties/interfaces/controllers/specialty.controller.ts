@@ -14,7 +14,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth } from '../../../../shared/decorators/index.js';
-import { PaginationDto } from '../../../../shared/utils/dtos/pagination-dto.js';
+import { FindAllSpecialtiesQueryDto } from '../../application/dto/find-all-specialties-query.dto.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreateSpecialtyDto } from '../../application/dto/create-specialty.dto.js';
 import { UpdateSpecialtyDto } from '../../application/dto/update-specialty.dto.js';
@@ -62,18 +62,19 @@ export class SpecialtyController {
     type: PaginatedSpecialtyResponseDto,
   })
   async findAll(
-    @Query() paginationDto: PaginationDto,
-    @Query('categoryId') categoryId?: string,
+    @Query() queryDto: FindAllSpecialtiesQueryDto,
   ): Promise<PaginatedSpecialtyResponseDto> {
     const pagination = new PaginationImproved(
-      paginationDto.searchValue,
-      paginationDto.currentPage,
-      paginationDto.pageSize,
-      paginationDto.orderBy,
-      paginationDto.orderByMode,
+      queryDto.searchValue,
+      queryDto.currentPage,
+      queryDto.pageSize,
+      queryDto.orderBy,
+      queryDto.orderByMode,
     );
-    const catId = categoryId ? parseInt(categoryId, 10) : undefined;
-    return this.findAllSpecialtiesUseCase.execute(pagination, catId);
+    return this.findAllSpecialtiesUseCase.execute(
+      pagination,
+      queryDto.categoryId,
+    );
   }
 
   @Patch(':id')
