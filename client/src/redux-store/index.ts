@@ -4,6 +4,7 @@ import storage from 'redux-persist/lib/storage';
 import { authSlice } from './slices/auth';
 import { specialtiesSlice } from './slices/specialties';
 import { categoriesSlice } from './slices/categories';
+import { doctorsSlice } from './slices/doctors';
 
 const authPersistConfig = {
   key: 'auth',
@@ -15,6 +16,7 @@ const rootReducer = combineReducers({
   auth: persistReducer(authPersistConfig, authSlice.reducer),
   specialties: specialtiesSlice.reducer,
   categories: categoriesSlice.reducer,
+  doctors: doctorsSlice.reducer,
 });
 
 export const makeStore = () => {
