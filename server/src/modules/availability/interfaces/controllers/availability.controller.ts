@@ -14,7 +14,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth } from '../../../../shared/decorators/index.js';
-import { PaginationDto } from '../../../../shared/utils/dtos/pagination-dto.js';
+import { FindAllAvailabilityQueryDto } from '../../application/dto/find-all-availability-query.dto.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreateAvailabilityDto } from '../../application/dto/create-availability.dto.js';
 import { UpdateAvailabilityDto } from '../../application/dto/update-availability.dto.js';
@@ -66,18 +66,19 @@ export class AvailabilityController {
     type: PaginatedAvailabilityResponseDto,
   })
   async findAll(
-    @Query() paginationDto: PaginationDto,
-    @Query('doctorId') doctorId?: string,
+    @Query() queryDto: FindAllAvailabilityQueryDto,
   ): Promise<PaginatedAvailabilityResponseDto> {
     const pagination = new PaginationImproved(
-      paginationDto.searchValue,
-      paginationDto.currentPage,
-      paginationDto.pageSize,
-      paginationDto.orderBy,
-      paginationDto.orderByMode,
+      queryDto.searchValue,
+      queryDto.currentPage,
+      queryDto.pageSize,
+      queryDto.orderBy,
+      queryDto.orderByMode,
     );
-    const docId = doctorId ? parseInt(doctorId, 10) : undefined;
-    return this.findAllAvailabilityUseCase.execute(pagination, docId);
+    return this.findAllAvailabilityUseCase.execute(
+      pagination,
+      queryDto.doctorId,
+    );
   }
 
   @Patch(':id')

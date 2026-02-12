@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth } from '../../../../shared/decorators/index.js';
-import { PaginationDto } from '../../../../shared/utils/dtos/pagination-dto.js';
+import { FindAllSchedulesQueryDto } from '../../application/dto/find-all-schedules-query.dto.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { GenerateSchedulesDto } from '../../application/dto/generate-schedules.dto.js';
 import { GenerateSchedulesResponseDto } from '../../application/dto/generate-schedules-response.dto.js';
@@ -61,25 +61,21 @@ export class ScheduleController {
     type: PaginatedScheduleResponseDto,
   })
   async findAll(
-    @Query() paginationDto: PaginationDto,
-    @Query('doctorId') doctorId?: string,
-    @Query('specialtyId') specialtyId?: string,
-    @Query('dateFrom') dateFrom?: string,
-    @Query('dateTo') dateTo?: string,
+    @Query() queryDto: FindAllSchedulesQueryDto,
   ): Promise<PaginatedScheduleResponseDto> {
     const pagination = new PaginationImproved(
-      paginationDto.searchValue,
-      paginationDto.currentPage,
-      paginationDto.pageSize,
-      paginationDto.orderBy,
-      paginationDto.orderByMode,
+      queryDto.searchValue,
+      queryDto.currentPage,
+      queryDto.pageSize,
+      queryDto.orderBy,
+      queryDto.orderByMode,
     );
 
     return this.findAllSchedulesUseCase.execute(pagination, {
-      doctorId: doctorId ? parseInt(doctorId, 10) : undefined,
-      specialtyId: specialtyId ? parseInt(specialtyId, 10) : undefined,
-      dateFrom,
-      dateTo,
+      doctorId: queryDto.doctorId,
+      specialtyId: queryDto.specialtyId,
+      dateFrom: queryDto.dateFrom,
+      dateTo: queryDto.dateTo,
     });
   }
 }
