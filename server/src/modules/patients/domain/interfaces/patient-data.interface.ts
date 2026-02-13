@@ -46,6 +46,7 @@ export interface PatientWithRelations {
   bloodType: string;
   allergies: string | null;
   chronicConditions: string | null;
+  isActive: boolean;
   deleted: boolean;
   createdAt: Date;
   updatedAt: Date | null;

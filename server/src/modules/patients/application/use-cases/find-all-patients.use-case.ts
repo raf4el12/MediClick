@@ -13,6 +13,7 @@ export class FindAllPatientsUseCase {
 
   async execute(
     pagination: PaginationImproved,
+    isActive?: boolean,
   ): Promise<PaginatedPatientResponseDto> {
     const { limit, offset } = pagination.getOffsetLimit();
 
@@ -22,6 +23,7 @@ export class FindAllPatientsUseCase {
       searchValue: pagination.searchValue,
       orderBy: pagination.orderBy,
       orderByMode: pagination.orderByMode,
+      isActive,
     });
 
     const rows: PatientResponseDto[] = result.rows.map((p) => ({
@@ -30,6 +32,7 @@ export class FindAllPatientsUseCase {
       bloodType: p.bloodType,
       allergies: p.allergies,
       chronicConditions: p.chronicConditions,
+      isActive: p.isActive,
       profile: {
         id: p.profile.id,
         name: p.profile.name,
@@ -49,6 +52,8 @@ export class FindAllPatientsUseCase {
       rows,
       totalPages: result.totalPages,
       currentPage: result.currentPage,
+      activeCount: result.activeCount,
+      inactiveCount: result.inactiveCount,
     };
   }
 }

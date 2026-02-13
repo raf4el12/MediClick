@@ -57,6 +57,7 @@ export class PatientController {
   @ApiResponse({ status: 200, type: PaginatedPatientResponseDto })
   async findAll(
     @Query() paginationDto: PaginationDto,
+    @Query('isActive') isActive?: string,
   ): Promise<PaginatedPatientResponseDto> {
     const pagination = new PaginationImproved(
       paginationDto.searchValue,
@@ -65,7 +66,9 @@ export class PatientController {
       paginationDto.orderBy,
       paginationDto.orderByMode,
     );
-    return this.findAllPatientsUseCase.execute(pagination);
+    const isActiveFilter =
+      isActive === 'true' ? true : isActive === 'false' ? false : undefined;
+    return this.findAllPatientsUseCase.execute(pagination, isActiveFilter);
   }
 
   @Get(':id/history')

@@ -4,6 +4,7 @@ export interface PaginationParams {
   pageSize?: number;
   orderBy?: string;
   orderByMode?: 'asc' | 'desc';
+  isActive?: boolean;
 }
 
 export interface PaginatedResponse<T> {
@@ -11,4 +12,6 @@ export interface PaginatedResponse<T> {
   rows: T[];
   totalPages: number;
   currentPage: number;
+  activeCount?: number;
+  inactiveCount?: number;
 }

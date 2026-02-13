@@ -110,6 +110,7 @@ model Patients {
   bloodType          String
   allergies          String?
   chronic_conditions String?
+  isActive           Boolean        @default(true)
   deleted            Boolean        @default(false)
   createdAt          DateTime       @default(now())
   updatedAt          DateTime?

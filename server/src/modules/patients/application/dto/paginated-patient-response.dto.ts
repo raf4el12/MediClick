@@ -13,4 +13,10 @@ export class PaginatedPatientResponseDto {
 
   @ApiProperty()
   currentPage: number;
+
+  @ApiProperty()
+  activeCount: number;
+
+  @ApiProperty()
+  inactiveCount: number;
 }

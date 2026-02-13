@@ -45,6 +45,9 @@ export class PatientResponseDto {
   @ApiPropertyOptional()
   chronicConditions: string | null;
 
+  @ApiProperty()
+  isActive: boolean;
+
   @ApiProperty({ type: PatientProfileDto })
   profile: PatientProfileDto;
 

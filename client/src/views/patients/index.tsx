@@ -1,0 +1,31 @@
+'use client';
+
+import Grid from '@mui/material/Grid';
+import Collapse from '@mui/material/Collapse';
+import { usePatients } from './hooks/usePatients';
+import { PatientsTable } from './components/PatientsTable';
+import { PatientDetailDialog } from './components/PatientDetailDialog';
+
+export default function PatientsView() {
+  const controller = usePatients();
+  const hasDetail = !!controller.detailPatient;
+
+  return (
+    <Grid container spacing={3}>
+      <Grid size={{ xs: 12, md: hasDetail ? 8 : 12 }} sx={{ transition: 'all 0.3s ease' }}>
+        <PatientsTable {...controller} />
+      </Grid>
+
+      {hasDetail && (
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Collapse in={hasDetail} orientation="horizontal" unmountOnExit>
+            <PatientDetailDialog
+              patient={controller.detailPatient}
+              onClose={controller.closeDetail}
+            />
+          </Collapse>
+        </Grid>
+      )}
+    </Grid>
+  );
+}

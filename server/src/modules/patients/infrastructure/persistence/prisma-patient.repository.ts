@@ -73,11 +73,49 @@ export class PrismaPatientRepository implements IPatientRepository {
   }
 
   async findAllPaginated(
-    params: PaginationParams,
-  ): Promise<PaginatedResult<PatientWithRelations>> {
-    const { limit, offset, searchValue, orderBy, orderByMode } = params;
+    params: PaginationParams & { isActive?: boolean },
+  ): Promise<
+    PaginatedResult<PatientWithRelations> & {
+      activeCount: number;
+      inactiveCount: number;
+    }
+  > {
+    const { limit, offset, searchValue, orderBy, orderByMode, isActive } =
+      params;
 
-    const where = {
+    const baseWhere = {
+      deleted: false,
+      ...(isActive !== undefined && { isActive }),
+      ...(searchValue && {
+        OR: [
+          {
+            profile: {
+              name: { contains: searchValue, mode: 'insensitive' as const },
+            },
+          },
+          {
+            profile: {
+              lastName: { contains: searchValue, mode: 'insensitive' as const },
+            },
+          },
+          {
+            profile: {
+              email: { contains: searchValue, mode: 'insensitive' as const },
+            },
+          },
+          {
+            profile: {
+              numberDocument: {
+                contains: searchValue,
+                mode: 'insensitive' as const,
+              },
+            },
+          },
+        ],
+      }),
+    };
+
+    const searchWhere = {
       deleted: false,
       ...(searchValue && {
         OR: [
@@ -108,15 +146,19 @@ export class PrismaPatientRepository implements IPatientRepository {
       }),
     };
 
-    const [rows, count] = await Promise.all([
+    const [rows, count, activeCount, inactiveCount] = await Promise.all([
       this.prisma.patients.findMany({
-        where,
+        where: baseWhere,
         include: patientInclude,
         skip: offset,
         take: limit,
         orderBy: { [orderBy || 'createdAt']: orderByMode || 'desc' },
       }),
-      this.prisma.patients.count({ where }),
+      this.prisma.patients.count({ where: baseWhere }),
+      this.prisma.patients.count({ where: { ...searchWhere, isActive: true } }),
+      this.prisma.patients.count({
+        where: { ...searchWhere, isActive: false },
+      }),
     ]);
 
     return {
@@ -124,6 +166,8 @@ export class PrismaPatientRepository implements IPatientRepository {
       rows: rows.map((r) => this.mapToRelations(r)),
       totalPages: Math.ceil(count / limit),
       currentPage: Math.floor(offset / limit) + 1,
+      activeCount,
+      inactiveCount,
     };
   }
 
@@ -245,6 +289,7 @@ export class PrismaPatientRepository implements IPatientRepository {
       bloodType: raw.bloodType,
       allergies: raw.allergies,
       chronicConditions: raw.chronic_conditions,
+      isActive: raw.isActive,
       deleted: raw.deleted,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,
