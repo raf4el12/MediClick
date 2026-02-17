@@ -1,15 +1,15 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsOptional,
-  IsString,
   IsDateString,
   IsInt,
   IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
+import { PaginationDto } from '../../../../shared/utils/dtos/pagination-dto.js';
 
-export class AppointmentDashboardFilterDto {
+export class AppointmentDashboardFilterDto extends PaginationDto {
   @ApiPropertyOptional({
     example: '2026-03-01',
     description: 'Fecha desde (YYYY-MM-DD)',

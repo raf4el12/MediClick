@@ -11,7 +11,6 @@ import {
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth } from '../../../../shared/decorators/index.js';
-import { PaginationDto } from '../../../../shared/utils/dtos/pagination-dto.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreateAppointmentDto } from '../../application/dto/create-appointment.dto.js';
 import { AppointmentDashboardFilterDto } from '../../application/dto/appointment-dashboard-filter.dto.js';
@@ -72,15 +71,14 @@ export class AppointmentController {
   @ApiOperation({ summary: 'Dashboard de citas con filtros' })
   @ApiResponse({ status: 200, type: PaginatedAppointmentResponseDto })
   async findAll(
-    @Query() paginationDto: PaginationDto,
     @Query() filterDto: AppointmentDashboardFilterDto,
   ): Promise<PaginatedAppointmentResponseDto> {
     const pagination = new PaginationImproved(
-      paginationDto.searchValue,
-      paginationDto.currentPage,
-      paginationDto.pageSize,
-      paginationDto.orderBy,
-      paginationDto.orderByMode,
+      filterDto.searchValue,
+      filterDto.currentPage,
+      filterDto.pageSize,
+      filterDto.orderBy,
+      filterDto.orderByMode,
     );
     return this.getDashboardAppointmentsUseCase.execute(pagination, filterDto);
   }

@@ -48,8 +48,8 @@ export function useSchedules() {
   }, [dispatch]);
 
   // Date range for current week
-  const dateFrom = useMemo(() => formatDateKey(weekDays[0]), [weekDays]);
-  const dateTo = useMemo(() => formatDateKey(weekDays[6]), [weekDays]);
+  const dateFrom = useMemo(() => formatDateKey(weekDays[0]!), [weekDays]);
+  const dateTo = useMemo(() => formatDateKey(weekDays[6]!), [weekDays]);
 
   // Fetch schedules when filters/week change
   useEffect(() => {

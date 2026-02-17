@@ -9,6 +9,7 @@ import { availabilitySlice } from './slices/availability';
 import { schedulesSlice } from './slices/schedules';
 import { usersSlice } from './slices/users';
 import { patientsSlice } from './slices/patients';
+import { appointmentsSlice } from './slices/appointments';
 
 const authPersistConfig = {
   key: 'auth',
@@ -25,6 +26,7 @@ const rootReducer = combineReducers({
   schedules: schedulesSlice.reducer,
   users: usersSlice.reducer,
   patients: patientsSlice.reducer,
+  appointments: appointmentsSlice.reducer,
 });
 
 export const makeStore = () => {

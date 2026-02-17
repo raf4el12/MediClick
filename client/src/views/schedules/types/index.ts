@@ -95,8 +95,8 @@ export const HOUR_SLOTS = Array.from({ length: 15 }, (_, i) => i + 6); // 6..20
 
 /** Parse "HH:mm" → fractional hour, e.g. "08:30" → 8.5 */
 export function parseTime(t: string): number {
-  const [h, m] = t.split(':').map(Number);
-  return h + m / 60;
+  const parts = t.split(':').map(Number);
+  return (parts[0] ?? 0) + (parts[1] ?? 0) / 60;
 }
 
 /** Assign a stable colour to a doctor id. */
