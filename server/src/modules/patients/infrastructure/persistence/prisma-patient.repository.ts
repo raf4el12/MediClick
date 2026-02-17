@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { IPatientRepository } from '../../domain/repositories/patient.repository.js';
 import {
@@ -155,9 +156,11 @@ export class PrismaPatientRepository implements IPatientRepository {
         orderBy: { [orderBy || 'createdAt']: orderByMode || 'desc' },
       }),
       this.prisma.patients.count({ where: baseWhere }),
-      this.prisma.patients.count({ where: { ...searchWhere, isActive: true } }),
       this.prisma.patients.count({
-        where: { ...searchWhere, isActive: false },
+        where: { ...searchWhere, isActive: true } as Prisma.PatientsWhereInput,
+      }),
+      this.prisma.patients.count({
+        where: { ...searchWhere, isActive: false } as Prisma.PatientsWhereInput,
       }),
     ]);
 

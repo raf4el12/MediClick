@@ -27,6 +27,7 @@ export class GetPatientHistoryUseCase {
       bloodType: patient.bloodType,
       allergies: patient.allergies,
       chronicConditions: patient.chronicConditions,
+      isActive: patient.isActive,
       profile: {
         id: patient.profile.id,
         name: patient.profile.name,

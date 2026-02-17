@@ -14,7 +14,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth } from '../../../../shared/decorators/index.js';
-import { PaginationDto } from '../../../../shared/utils/dtos/pagination-dto.js';
+import { FindAllPatientsQueryDto } from '../../application/dto/find-all-patients-query.dto.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreatePatientDto } from '../../application/dto/create-patient.dto.js';
 import { UpdatePatientDto } from '../../application/dto/update-patient.dto.js';
@@ -56,18 +56,21 @@ export class PatientController {
   @ApiOperation({ summary: 'Listar pacientes con paginación' })
   @ApiResponse({ status: 200, type: PaginatedPatientResponseDto })
   async findAll(
-    @Query() paginationDto: PaginationDto,
-    @Query('isActive') isActive?: string,
+    @Query() query: FindAllPatientsQueryDto,
   ): Promise<PaginatedPatientResponseDto> {
     const pagination = new PaginationImproved(
-      paginationDto.searchValue,
-      paginationDto.currentPage,
-      paginationDto.pageSize,
-      paginationDto.orderBy,
-      paginationDto.orderByMode,
+      query.searchValue,
+      query.currentPage,
+      query.pageSize,
+      query.orderBy,
+      query.orderByMode,
     );
     const isActiveFilter =
-      isActive === 'true' ? true : isActive === 'false' ? false : undefined;
+      query.isActive === 'true'
+        ? true
+        : query.isActive === 'false'
+          ? false
+          : undefined;
     return this.findAllPatientsUseCase.execute(pagination, isActiveFilter);
   }
 

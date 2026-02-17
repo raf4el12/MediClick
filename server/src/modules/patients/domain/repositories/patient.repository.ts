@@ -10,8 +10,13 @@ import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-
 export interface IPatientRepository {
   create(data: CreatePatientData): Promise<PatientWithRelations>;
   findAllPaginated(
-    params: PaginationParams,
-  ): Promise<PaginatedResult<PatientWithRelations>>;
+    params: PaginationParams & { isActive?: boolean },
+  ): Promise<
+    PaginatedResult<PatientWithRelations> & {
+      activeCount: number;
+      inactiveCount: number;
+    }
+  >;
   findById(id: number): Promise<PatientWithRelations | null>;
   findByIdWithHistory(id: number): Promise<PatientWithHistory | null>;
   update(id: number, data: UpdatePatientData): Promise<PatientWithRelations>;

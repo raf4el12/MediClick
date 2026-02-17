@@ -67,6 +67,7 @@ export class CreatePatientUseCase {
       bloodType: p.bloodType,
       allergies: p.allergies,
       chronicConditions: p.chronicConditions,
+      isActive: p.isActive,
       profile: {
         id: p.profile.id,
         name: p.profile.name,

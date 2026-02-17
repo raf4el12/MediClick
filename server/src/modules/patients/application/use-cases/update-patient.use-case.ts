@@ -64,6 +64,7 @@ export class UpdatePatientUseCase {
       bloodType: updated.bloodType,
       allergies: updated.allergies,
       chronicConditions: updated.chronicConditions,
+      isActive: updated.isActive,
       profile: {
         id: updated.profile.id,
         name: updated.profile.name,
