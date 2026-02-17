@@ -27,7 +27,7 @@ export function DoctorDetailDialog({ doctor, onClose }: DoctorDetailDialogProps)
           alignItems: 'center',
         }}
       >
-        <Typography variant="h6" fontWeight={600}>
+        <Typography component="span" variant="h6" fontWeight={600}>
           Detalle del Doctor
         </Typography>
         <IconButton size="small" onClick={onClose}>

@@ -24,6 +24,7 @@ export class FindAllSchedulesUseCase {
       specialtyId?: number;
       dateFrom?: string;
       dateTo?: string;
+      onlyAvailable?: boolean;
     },
   ): Promise<PaginatedScheduleResponseDto> {
     const { limit, offset } = pagination.getOffsetLimit();
@@ -41,6 +42,7 @@ export class FindAllSchedulesUseCase {
         specialtyId: filters.specialtyId,
         dateFrom: filters.dateFrom ? new Date(filters.dateFrom) : undefined,
         dateTo: filters.dateTo ? new Date(filters.dateTo) : undefined,
+        onlyAvailable: filters.onlyAvailable,
       },
     );
 

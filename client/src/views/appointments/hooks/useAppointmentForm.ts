@@ -11,6 +11,7 @@ import type { Specialty } from '@/views/specialties/types';
 import type { Doctor } from '@/views/doctors/types';
 import type { Schedule } from '@/views/schedules/types';
 import type { Patient } from '@/views/patients/types';
+import { filterAvailableSlots } from '../functions/filterAvailableSlots';
 
 interface UseAppointmentFormProps {
   open: boolean;
@@ -75,20 +76,32 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
       .finally(() => setLoadingDoctors(false));
   }, [selectedSpecialtyId]);
 
-  // Step 2: Load schedules when doctor selected
+  // Step 2: Load schedules when doctor selected (solo disponibles, sin fechas pasadas)
   useEffect(() => {
     if (!selectedDoctorId || !selectedSpecialtyId) {
       setSchedules([]);
       return;
     }
     setLoadingSchedules(true);
-    const today = new Date().toISOString().split('T')[0];
+    const nowPeru = new Date(
+      new Date().toLocaleString('en-US', { timeZone: 'America/Lima' }),
+    );
+    const y = nowPeru.getFullYear();
+    const m = (nowPeru.getMonth() + 1).toString().padStart(2, '0');
+    const d = nowPeru.getDate().toString().padStart(2, '0');
+    const today = `${y}-${m}-${d}`;
+
     schedulesService
       .findAllPaginated(
         { pageSize: 100 },
-        { doctorId: selectedDoctorId, specialtyId: selectedSpecialtyId, dateFrom: today },
+        {
+          doctorId: selectedDoctorId,
+          specialtyId: selectedSpecialtyId,
+          dateFrom: today,
+          onlyAvailable: true,
+        },
       )
-      .then((res) => setSchedules(res.rows))
+      .then((res) => setSchedules(filterAvailableSlots(res.rows)))
       .catch(() => setSchedules([]))
       .finally(() => setLoadingSchedules(false));
   }, [selectedDoctorId, selectedSpecialtyId]);

@@ -23,6 +23,7 @@ export const schedulesService = {
     if (filters?.specialtyId) queryParams.specialtyId = filters.specialtyId;
     if (filters?.dateFrom) queryParams.dateFrom = filters.dateFrom;
     if (filters?.dateTo) queryParams.dateTo = filters.dateTo;
+    if (filters?.onlyAvailable) queryParams.onlyAvailable = 'true';
 
     const response = await api.get<PaginatedResponse<Schedule>>(
       '/schedules',

@@ -27,6 +27,9 @@ export class CreateAppointmentUseCase {
     private readonly scheduleRepository: IScheduleRepository,
   ) {}
 
+  /** Buffer mínimo en milisegundos (2 horas) */
+  private static readonly MIN_BUFFER_MS = 2 * 60 * 60 * 1000;
+
   async execute(dto: CreateAppointmentDto): Promise<AppointmentResponseDto> {
     const patient = await this.patientRepository.findById(dto.patientId);
     if (!patient) {
@@ -36,6 +39,47 @@ export class CreateAppointmentUseCase {
     const schedule = await this.scheduleRepository.findById(dto.scheduleId);
     if (!schedule) {
       throw new BadRequestException('El horario especificado no existe');
+    }
+
+    // ── Validación de fecha/hora (zona horaria Perú UTC-5) ──
+    const nowPeru = new Date(
+      new Date().toLocaleString('en-US', { timeZone: 'America/Lima' }),
+    );
+    const scheduleDate = new Date(schedule.scheduleDate);
+    const todayStart = new Date(
+      nowPeru.getFullYear(),
+      nowPeru.getMonth(),
+      nowPeru.getDate(),
+    );
+    const scheduleDayStart = new Date(
+      scheduleDate.getFullYear(),
+      scheduleDate.getMonth(),
+      scheduleDate.getDate(),
+    );
+
+    // No permitir agendar en fechas pasadas
+    if (scheduleDayStart < todayStart) {
+      throw new BadRequestException(
+        'No se puede agendar una cita en una fecha pasada',
+      );
+    }
+
+    // Si es hoy, validar hora con buffer de 2 horas
+    if (scheduleDayStart.getTime() === todayStart.getTime()) {
+      const timeFrom = new Date(schedule.timeFrom);
+      const scheduleDateTime = new Date(
+        scheduleDate.getFullYear(),
+        scheduleDate.getMonth(),
+        scheduleDate.getDate(),
+        timeFrom.getHours(),
+        timeFrom.getMinutes(),
+      );
+      const diff = scheduleDateTime.getTime() - nowPeru.getTime();
+      if (diff < CreateAppointmentUseCase.MIN_BUFFER_MS) {
+        throw new BadRequestException(
+          'Debe haber al menos 2 horas de anticipación para agendar una cita',
+        );
+      }
     }
 
     const hasAppointment =

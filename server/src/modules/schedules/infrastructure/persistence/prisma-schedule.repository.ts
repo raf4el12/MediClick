@@ -43,17 +43,41 @@ export class PrismaScheduleRepository implements IScheduleRepository {
       specialtyId?: number;
       dateFrom?: Date;
       dateTo?: Date;
+      onlyAvailable?: boolean;
     },
   ): Promise<PaginatedResult<ScheduleWithRelations>> {
     const { limit, offset, orderBy, orderByMode } = params;
 
-    const where = {
+    // Zona horaria Perú (UTC-5)
+    const nowPeru = new Date(
+      new Date().toLocaleString('en-US', { timeZone: 'America/Lima' }),
+    );
+    const todayStart = new Date(
+      nowPeru.getFullYear(),
+      nowPeru.getMonth(),
+      nowPeru.getDate(),
+    );
+
+    // Nunca devolver fechas pasadas: forzar dateFrom >= hoy
+    const effectiveDateFrom =
+      filters.dateFrom && filters.dateFrom > todayStart
+        ? filters.dateFrom
+        : todayStart;
+
+    const where: Record<string, any> = {
       ...(filters.doctorId && { doctorId: filters.doctorId }),
       ...(filters.specialtyId && { specialtyId: filters.specialtyId }),
-      ...((filters.dateFrom || filters.dateTo) && {
-        scheduleDate: {
-          ...(filters.dateFrom && { gte: filters.dateFrom }),
-          ...(filters.dateTo && { lte: filters.dateTo }),
+      scheduleDate: {
+        gte: effectiveDateFrom,
+        ...(filters.dateTo && { lte: filters.dateTo }),
+      },
+      // Excluir horarios que ya tienen cita activa
+      ...(filters.onlyAvailable && {
+        appointments: {
+          none: {
+            status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+            deleted: false,
+          },
         },
       }),
     };

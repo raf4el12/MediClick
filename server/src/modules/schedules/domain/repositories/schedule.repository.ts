@@ -14,6 +14,7 @@ export interface IScheduleRepository {
       specialtyId?: number;
       dateFrom?: Date;
       dateTo?: Date;
+      onlyAvailable?: boolean;
     },
   ): Promise<PaginatedResult<ScheduleWithRelations>>;
   findById(id: number): Promise<ScheduleWithRelations | null>;

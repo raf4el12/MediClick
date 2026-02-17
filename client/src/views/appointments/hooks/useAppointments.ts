@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { debounce } from '@/utils/debounce';
 import { useAppDispatch, useAppSelector } from '@/redux-store/hooks';
 import {
@@ -72,12 +72,13 @@ export function useAppointments() {
     [dispatch],
   );
 
-  const debouncedSearch = useCallback(
+  const debouncedSearch = useMemo(
+  () =>
     debounce((value: string) => {
       updatePagination({ searchValue: value, currentPage: 1 });
     }, 500),
-    [updatePagination],
-  );
+  [updatePagination]
+)
 
   const openCreateDialog = () => setCreateDialogOpen(true);
   const closeCreateDialog = () => setCreateDialogOpen(false);

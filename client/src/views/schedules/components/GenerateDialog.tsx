@@ -64,11 +64,11 @@ export function GenerateDialog({
       <DialogTitle sx={{ pb: 1 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <i className="ri-magic-line" style={{ fontSize: 20, color: 'var(--mui-palette-primary-main)' }} />
-          <Typography variant="h6" fontWeight={600}>
+          <Typography component="span" variant="h6" fontWeight={600}>
             Generar Horarios
           </Typography>
         </Box>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+        <Typography component="p" variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
           Genera los bloques horarios automáticamente a partir de las reglas de disponibilidad.
         </Typography>
       </DialogTitle>

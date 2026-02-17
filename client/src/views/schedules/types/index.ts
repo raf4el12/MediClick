@@ -38,6 +38,7 @@ export interface ScheduleFilters {
   specialtyId?: number;
   dateFrom?: string;
   dateTo?: string;
+  onlyAvailable?: boolean;
 }
 
 // ── Calendar helpers ──

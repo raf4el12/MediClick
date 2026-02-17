@@ -76,6 +76,7 @@ export class ScheduleController {
       specialtyId: queryDto.specialtyId,
       dateFrom: queryDto.dateFrom,
       dateTo: queryDto.dateTo,
+      onlyAvailable: queryDto.onlyAvailable,
     });
   }
 }

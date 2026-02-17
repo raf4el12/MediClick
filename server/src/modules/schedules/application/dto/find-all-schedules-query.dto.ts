@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
+import { IsInt, IsOptional, IsString, IsBoolean } from 'class-validator';
 import { PaginationDto } from '../../../../shared/utils/dtos/pagination-dto.js';
 
 export class FindAllSchedulesQueryDto extends PaginationDto {
@@ -37,4 +37,13 @@ export class FindAllSchedulesQueryDto extends PaginationDto {
   @IsOptional()
   @IsString()
   dateTo?: string;
+
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Solo horarios sin cita activa',
+  })
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  @IsBoolean()
+  onlyAvailable?: boolean;
 }
