@@ -3,12 +3,15 @@ import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth } from '../../../../shared/decorators/index.js';
 import { FindAllSchedulesQueryDto } from '../../application/dto/find-all-schedules-query.dto.js';
+import { GetTimeSlotsQueryDto } from '../../application/dto/get-time-slots-query.dto.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { GenerateSchedulesDto } from '../../application/dto/generate-schedules.dto.js';
 import { GenerateSchedulesResponseDto } from '../../application/dto/generate-schedules-response.dto.js';
 import { PaginatedScheduleResponseDto } from '../../application/dto/paginated-schedule-response.dto.js';
+import { TimeSlotResponseDto } from '../../application/dto/time-slot-response.dto.js';
 import { GenerateSchedulesUseCase } from '../../application/use-cases/generate-schedules.use-case.js';
 import { FindAllSchedulesUseCase } from '../../application/use-cases/find-all-schedules.use-case.js';
+import { GetAvailableTimeSlotsUseCase } from '../../application/use-cases/get-available-time-slots.use-case.js';
 
 @ApiTags('Schedules')
 @Controller('schedules')
@@ -16,12 +19,17 @@ export class ScheduleController {
   constructor(
     private readonly generateSchedulesUseCase: GenerateSchedulesUseCase,
     private readonly findAllSchedulesUseCase: FindAllSchedulesUseCase,
+    private readonly getAvailableTimeSlotsUseCase: GetAvailableTimeSlotsUseCase,
   ) {}
 
   @Post('generate')
   @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST)
   @ApiOperation({
     summary: 'Generar horarios concretos basados en disponibilidad',
+    description:
+      'Fragmenta cada regla de disponibilidad en time slots individuales ' +
+      'según la duración configurada en la especialidad (Specialties.duration). ' +
+      'Si la especialidad no tiene duración configurada, crea un único slot con el rango completo.',
   })
   @ApiResponse({
     status: 201,
@@ -78,5 +86,27 @@ export class ScheduleController {
       dateTo: queryDto.dateTo,
       onlyAvailable: queryDto.onlyAvailable,
     });
+  }
+
+  @Get('time-slots')
+  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.DOCTOR)
+  @ApiOperation({
+    summary: 'Obtener time slots disponibles para un doctor en una fecha',
+    description:
+      'Fragmenta el rango timeFrom–timeTo en intervalos de durationMinutes minutos ' +
+      'y cruza el resultado con los horarios reales del doctor en esa fecha para ' +
+      'indicar cuáles están disponibles (available: true) o ya tienen cita activa (available: false).',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Array de time slots con estado de disponibilidad',
+    type: TimeSlotResponseDto,
+    isArray: true,
+  })
+  @ApiResponse({ status: 400, description: 'Parámetros inválidos' })
+  async getAvailableTimeSlots(
+    @Query() queryDto: GetTimeSlotsQueryDto,
+  ): Promise<TimeSlotResponseDto[]> {
+    return this.getAvailableTimeSlotsUseCase.execute(queryDto);
   }
 }

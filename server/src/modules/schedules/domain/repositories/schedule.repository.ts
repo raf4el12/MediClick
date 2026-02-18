@@ -1,5 +1,6 @@
 import {
   ScheduleWithRelations,
+  ScheduleWithAvailability,
   CreateScheduleData,
 } from '../interfaces/schedule-data.interface.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
@@ -28,4 +29,15 @@ export interface IScheduleRepository {
     doctorId: number,
     dates: Date[],
   ): Promise<{ scheduleDate: Date; timeFrom: Date; timeTo: Date }[]>;
+
+  /**
+   * Devuelve todos los horarios de un doctor para una fecha específica,
+   * indicando si cada uno ya tiene una cita activa asignada.
+   * Ordenados por timeFrom ASC.
+   */
+  findByDoctorAndDate(
+    doctorId: number,
+    date: Date,
+    specialtyId?: number,
+  ): Promise<ScheduleWithAvailability[]>;
 }

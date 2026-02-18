@@ -41,6 +41,23 @@ export interface ScheduleFilters {
   onlyAvailable?: boolean;
 }
 
+/** Respuesta del endpoint GET /schedules/time-slots */
+export interface TimeSlot {
+  startTime: string;  // HH:mm
+  endTime: string;    // HH:mm
+  available: boolean;
+}
+
+/** Parámetros para GET /schedules/time-slots */
+export interface GetTimeSlotsParams {
+  doctorId: number;
+  specialtyId?: number;
+  date: string;           // YYYY-MM-DD
+  timeFrom: string;       // HH:mm — inicio del turno
+  timeTo: string;         // HH:mm — fin del turno
+  durationMinutes: number;
+}
+
 // ── Calendar helpers ──
 
 export const MONTH_NAMES = [

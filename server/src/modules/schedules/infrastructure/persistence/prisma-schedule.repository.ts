@@ -3,6 +3,7 @@ import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { IScheduleRepository } from '../../domain/repositories/schedule.repository.js';
 import {
   ScheduleWithRelations,
+  ScheduleWithAvailability,
   CreateScheduleData,
 } from '../../domain/interfaces/schedule-data.interface.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
@@ -137,5 +138,50 @@ export class PrismaScheduleRepository implements IScheduleRepository {
       },
       select: { scheduleDate: true, timeFrom: true, timeTo: true },
     });
+  }
+
+  async findByDoctorAndDate(
+    doctorId: number,
+    date: Date,
+    specialtyId?: number,
+  ): Promise<ScheduleWithAvailability[]> {
+    const startOfDay = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+    );
+    const endOfDay = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate() + 1,
+    );
+
+    const rows = await this.prisma.schedules.findMany({
+      where: {
+        doctorId,
+        ...(specialtyId && { specialtyId }),
+        scheduleDate: { gte: startOfDay, lt: endOfDay },
+      },
+      include: {
+        appointments: {
+          where: {
+            deleted: false,
+            status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+          },
+          select: { id: true },
+        },
+      },
+      orderBy: { timeFrom: 'asc' },
+    });
+
+    return rows.map((s) => ({
+      id: s.id,
+      doctorId: s.doctorId,
+      specialtyId: s.specialtyId,
+      scheduleDate: s.scheduleDate,
+      timeFrom: s.timeFrom,
+      timeTo: s.timeTo,
+      hasActiveAppointment: (s as any).appointments.length > 0,
+    }));
   }
 }

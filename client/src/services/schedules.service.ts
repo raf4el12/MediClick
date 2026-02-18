@@ -5,6 +5,8 @@ import type {
   ScheduleFilters,
   GenerateSchedulesPayload,
   GenerateSchedulesResponse,
+  TimeSlot,
+  GetTimeSlotsParams,
 } from '@/views/schedules/types';
 
 export const schedulesService = {
@@ -40,6 +42,27 @@ export const schedulesService = {
       '/schedules/generate',
       payload,
     );
+
+    return response.data;
+  },
+
+  /**
+   * Obtiene todos los time slots (disponibles y ocupados) para un doctor
+   * en una fecha y rango horario específico, fragmentados por durationMinutes.
+   *
+   * GET /schedules/time-slots
+   */
+  getTimeSlots: async (params: GetTimeSlotsParams): Promise<TimeSlot[]> => {
+    const response = await api.get<TimeSlot[]>('/schedules/time-slots', {
+      params: {
+        doctorId: params.doctorId,
+        ...(params.specialtyId && { specialtyId: params.specialtyId }),
+        date: params.date,
+        timeFrom: params.timeFrom,
+        timeTo: params.timeTo,
+        durationMinutes: params.durationMinutes,
+      },
+    });
 
     return response.data;
   },

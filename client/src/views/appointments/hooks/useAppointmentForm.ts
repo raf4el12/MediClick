@@ -9,7 +9,7 @@ import { patientsService } from '@/services/patients.service';
 import { createAppointmentThunk } from '@/redux-store/thunks/appointments.thunks';
 import type { Specialty } from '@/views/specialties/types';
 import type { Doctor } from '@/views/doctors/types';
-import type { Schedule } from '@/views/schedules/types';
+import type { Schedule, TimeSlot } from '@/views/schedules/types';
 import type { Patient } from '@/views/patients/types';
 import { filterAvailableSlots } from '../functions/filterAvailableSlots';
 
@@ -32,11 +32,15 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
 
+  // Time slots del nuevo endpoint (disponibles + ocupados)
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
+
   // Loading states
   const [loadingSpecialties, setLoadingSpecialties] = useState(false);
   const [loadingDoctors, setLoadingDoctors] = useState(false);
   const [loadingSchedules, setLoadingSchedules] = useState(false);
   const [loadingPatients, setLoadingPatients] = useState(false);
+  const [loadingTimeSlots, setLoadingTimeSlots] = useState(false);
 
   // Selections
   const [selectedSpecialtyId, setSelectedSpecialtyId] = useState<number | null>(null);
@@ -44,12 +48,23 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
   const [selectedScheduleId, setSelectedScheduleId] = useState<number | null>(null);
   const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
   const [reason, setReason] = useState('');
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
   // Derived data for summary
   const selectedSpecialty = specialties.find((s) => s.id === selectedSpecialtyId) ?? null;
   const selectedDoctor = doctors.find((d) => d.id === selectedDoctorId) ?? null;
   const selectedSchedule = schedules.find((s) => s.id === selectedScheduleId) ?? null;
   const selectedPatient = patients.find((p) => p.id === selectedPatientId) ?? null;
+
+  // Computed: unique available dates from schedules
+  const availableDates = Array.from(
+    new Set(schedules.map((s) => s.scheduleDate.split('T')[0] ?? s.scheduleDate)),
+  ).sort();
+
+  // Computed: schedules filtered by selected date (para mapeo scheduleId ↔ timeFrom)
+  const slotsForSelectedDate = selectedDate
+    ? schedules.filter((s) => (s.scheduleDate.split('T')[0] ?? s.scheduleDate) === selectedDate)
+    : [];
 
   // Step 0: Load specialties when dialog opens
   useEffect(() => {
@@ -93,7 +108,7 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
 
     schedulesService
       .findAllPaginated(
-        { pageSize: 100 },
+        { pageSize: 200 },
         {
           doctorId: selectedDoctorId,
           specialtyId: selectedSpecialtyId,
@@ -105,6 +120,67 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
       .catch(() => setSchedules([]))
       .finally(() => setLoadingSchedules(false));
   }, [selectedDoctorId, selectedSpecialtyId]);
+
+  // Step 2: Cargar time-slots del nuevo endpoint cuando se selecciona una fecha.
+  // Se ejecuta solo si la especialidad tiene duración configurada.
+  // Los schedules son accedidos desde el closure; dado que selectedDate siempre
+  // cambia DESPUÉS de que schedules se actualiza, el valor es fresco.
+  useEffect(() => {
+    const duration = selectedSpecialty?.duration;
+
+    if (!selectedDate || !selectedDoctorId || !selectedSpecialtyId || !duration) {
+      setTimeSlots([]);
+      return;
+    }
+
+    // Derivar rango del turno desde los schedules disponibles de esa fecha
+    const daySchedules = schedules.filter(
+      (s) => (s.scheduleDate.split('T')[0] ?? s.scheduleDate) === selectedDate,
+    );
+
+    if (daySchedules.length === 0) {
+      setTimeSlots([]);
+      return;
+    }
+
+    const sorted = [...daySchedules].sort((a, b) => a.timeFrom.localeCompare(b.timeFrom));
+    const shiftStart = sorted[0]!.timeFrom;
+    const shiftEnd = sorted[sorted.length - 1]!.timeTo;
+
+    setLoadingTimeSlots(true);
+    schedulesService
+      .getTimeSlots({
+        doctorId: selectedDoctorId,
+        specialtyId: selectedSpecialtyId,
+        date: selectedDate,
+        timeFrom: shiftStart,
+        timeTo: shiftEnd,
+        durationMinutes: duration,
+      })
+      .then(setTimeSlots)
+      .catch(() => setTimeSlots([]))
+      // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
+      .finally(() => setLoadingTimeSlots(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, selectedDoctorId, selectedSpecialtyId, selectedSpecialty?.duration]);
+  // `schedules` se omite intencionalmente de las deps: selectedDate siempre
+  // se actualiza después de que schedules carga, por lo que el closure es fresco.
+
+  // Auto-select first available date when schedules load
+  useEffect(() => {
+    if (availableDates.length > 0) {
+      setSelectedDate(availableDates[0]!);
+    } else {
+      setSelectedDate(null);
+    }
+  }, [availableDates.join(',')]);
+
+  // Reset selectedDate y timeSlots when doctor changes
+  useEffect(() => {
+    setSelectedDate(null);
+    setSelectedScheduleId(null);
+    setTimeSlots([]);
+  }, [selectedDoctorId]);
 
   const searchPatients = useCallback(async (query: string) => {
     if (!query || query.length < 2) {
@@ -193,10 +269,12 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
     setSelectedScheduleId(null);
     setSelectedPatientId(null);
     setReason('');
+    setSelectedDate(null);
     setSpecialties([]);
     setDoctors([]);
     setSchedules([]);
     setPatients([]);
+    setTimeSlots([]);
     setError(null);
     setSubmitting(false);
   };
@@ -215,10 +293,12 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
     doctors,
     schedules,
     patients,
+    timeSlots,
     loadingSpecialties,
     loadingDoctors,
     loadingSchedules,
     loadingPatients,
+    loadingTimeSlots,
     selectedSpecialtyId,
     selectedDoctorId,
     selectedScheduleId,
@@ -228,10 +308,14 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
     selectedDoctor,
     selectedSchedule,
     selectedPatient,
+    selectedDate,
+    availableDates,
+    slotsForSelectedDate,
     setSelectedSpecialtyId,
     setSelectedDoctorId,
     setSelectedScheduleId,
     setSelectedPatientId,
+    setSelectedDate,
     setReason,
     searchPatients,
     canGoNext,
