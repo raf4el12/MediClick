@@ -68,8 +68,13 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError);
 
-        // Redirect to login on refresh failure
         if (typeof window !== 'undefined') {
+          // Eliminar el estado persistido de Redux para que redux-persist
+          // no rehidrate con datos obsoletos (isAuthenticated: true, user stale).
+          // Si no se limpia, al recargar la app puede quedar en un estado
+          // inconsistente que produce pantalla blanca.
+          localStorage.removeItem('persist:auth');
+
           window.location.href = '/login';
         }
 

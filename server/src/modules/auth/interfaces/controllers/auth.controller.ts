@@ -117,21 +117,31 @@ export class AuthController {
     const rawRefreshToken = cookies?.refreshToken;
 
     if (!rawRefreshToken) {
+      // Limpiar cookies antes de lanzar para evitar redirect loop en el cliente
+      this.clearTokenCookies(res);
       throw new UnauthorizedException('Refresh token no encontrado');
     }
 
-    const result = await this.refreshTokenUseCase.execute(
-      rawRefreshToken,
-      userId,
-      dto.deviceId,
-    );
+    try {
+      const result = await this.refreshTokenUseCase.execute(
+        rawRefreshToken,
+        userId,
+        dto.deviceId,
+      );
 
-    this.setTokenCookies(res, result.accessToken, result.refreshToken!);
+      this.setTokenCookies(res, result.accessToken, result.refreshToken!);
 
-    return {
-      accessToken: result.accessToken,
-      user: result.user,
-    };
+      return {
+        accessToken: result.accessToken,
+        user: result.user,
+      };
+    } catch (error) {
+      // Garantizar que las cookies inválidas se eliminen antes del 401.
+      // Sin esto, el browser mantiene la cookie y el middleware de Next.js
+      // redirige indefinidamente a '/', produciendo pantalla blanca.
+      this.clearTokenCookies(res);
+      throw error;
+    }
   }
 
   @Post('logout')
