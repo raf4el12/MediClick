@@ -5,6 +5,8 @@ import {
   WeeklyAppointmentReport,
   RevenueReport,
   TopDoctorReport,
+  AppointmentsSummaryReport,
+  ScheduleOccupancyReport,
 } from '../../domain/interfaces/report-data.interface.js';
 
 const DAY_NAMES = [
@@ -180,5 +182,95 @@ export class PrismaReportRepository implements IReportRepository {
       specialties: [...data.specialties],
       completedAppointments: data.count,
     }));
+  }
+
+  async getAppointmentsSummary(
+    month: number,
+    year: number,
+  ): Promise<AppointmentsSummaryReport> {
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 1);
+
+    // Agrupar por status
+    const grouped = await this.prisma.appointments.groupBy({
+      by: ['status'],
+      _count: { id: true },
+      where: {
+        deleted: false,
+        schedule: {
+          scheduleDate: { gte: startDate, lt: endDate },
+        },
+      },
+    });
+
+    const byStatus: Record<string, number> = {};
+    let total = 0;
+    for (const row of grouped) {
+      byStatus[row.status] = row._count.id;
+      total += row._count.id;
+    }
+
+    // Citas por día del mes
+    const appointments = await this.prisma.appointments.findMany({
+      where: {
+        deleted: false,
+        schedule: {
+          scheduleDate: { gte: startDate, lt: endDate },
+        },
+      },
+      select: {
+        schedule: {
+          select: { scheduleDate: true },
+        },
+      },
+    });
+
+    const dailyMap = new Map<string, number>();
+    for (const appt of appointments) {
+      const dateKey = appt.schedule.scheduleDate
+        .toISOString()
+        .split('T')[0];
+      dailyMap.set(dateKey, (dailyMap.get(dateKey) ?? 0) + 1);
+    }
+
+    const daily = [...dailyMap.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([date, count]) => ({ date, count }));
+
+    return { total, byStatus, daily };
+  }
+
+  async getScheduleOccupancy(
+    month: number,
+    year: number,
+  ): Promise<ScheduleOccupancyReport> {
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 1);
+
+    const totalSlots = await this.prisma.schedules.count({
+      where: {
+        scheduleDate: { gte: startDate, lt: endDate },
+      },
+    });
+
+    const bookedSlots = await this.prisma.schedules.count({
+      where: {
+        scheduleDate: { gte: startDate, lt: endDate },
+        appointments: {
+          some: {
+            deleted: false,
+            status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+          },
+        },
+      },
+    });
+
+    const availableSlots = totalSlots - bookedSlots;
+    const occupancyRate =
+      totalSlots > 0
+        ? Math.round((bookedSlots / totalSlots) * 1000) / 10
+        : 0;
+
+    return { totalSlots, bookedSlots, availableSlots, occupancyRate };
   }
 }

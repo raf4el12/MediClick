@@ -6,10 +6,14 @@ import {
   WeeklyAppointmentReportDto,
   RevenueReportDto,
   TopDoctorReportDto,
+  AppointmentsSummaryReportDto,
+  ScheduleOccupancyReportDto,
 } from '../../application/dto/report-response.dto.js';
 import { GetWeeklyAppointmentsUseCase } from '../../application/use-cases/get-weekly-appointments.use-case.js';
 import { GetRevenueUseCase } from '../../application/use-cases/get-revenue.use-case.js';
 import { GetTopDoctorsUseCase } from '../../application/use-cases/get-top-doctors.use-case.js';
+import { GetAppointmentsSummaryUseCase } from '../../application/use-cases/get-appointments-summary.use-case.js';
+import { GetScheduleOccupancyUseCase } from '../../application/use-cases/get-schedule-occupancy.use-case.js';
 
 @ApiTags('Reports')
 @Controller('reports')
@@ -18,6 +22,8 @@ export class ReportController {
     private readonly getWeeklyAppointmentsUseCase: GetWeeklyAppointmentsUseCase,
     private readonly getRevenueUseCase: GetRevenueUseCase,
     private readonly getTopDoctorsUseCase: GetTopDoctorsUseCase,
+    private readonly getAppointmentsSummaryUseCase: GetAppointmentsSummaryUseCase,
+    private readonly getScheduleOccupancyUseCase: GetScheduleOccupancyUseCase,
   ) {}
 
   @Get('appointments-weekly')
@@ -62,6 +68,38 @@ export class ReportController {
       parseInt(month, 10),
       parseInt(year, 10),
       limit ? parseInt(limit, 10) : 10,
+    );
+  }
+
+  @Get('appointments-summary')
+  @Auth(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Resumen de citas del mes (por estado y por día)' })
+  @ApiQuery({ name: 'month', required: true, type: Number, example: 2 })
+  @ApiQuery({ name: 'year', required: true, type: Number, example: 2026 })
+  @ApiResponse({ status: 200, type: AppointmentsSummaryReportDto })
+  async getAppointmentsSummary(
+    @Query('month') month: string,
+    @Query('year') year: string,
+  ): Promise<AppointmentsSummaryReportDto> {
+    return this.getAppointmentsSummaryUseCase.execute(
+      parseInt(month, 10),
+      parseInt(year, 10),
+    );
+  }
+
+  @Get('schedule-occupancy')
+  @Auth(UserRole.ADMIN)
+  @ApiOperation({ summary: 'Ocupación de horarios del mes' })
+  @ApiQuery({ name: 'month', required: true, type: Number, example: 2 })
+  @ApiQuery({ name: 'year', required: true, type: Number, example: 2026 })
+  @ApiResponse({ status: 200, type: ScheduleOccupancyReportDto })
+  async getScheduleOccupancy(
+    @Query('month') month: string,
+    @Query('year') year: string,
+  ): Promise<ScheduleOccupancyReportDto> {
+    return this.getScheduleOccupancyUseCase.execute(
+      parseInt(month, 10),
+      parseInt(year, 10),
     );
   }
 }

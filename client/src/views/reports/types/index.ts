@@ -1,4 +1,4 @@
-export interface WeeklyAppointmentReport {
+export interface WeeklyAppointment {
   dayOfWeek: string;
   date: string;
   count: number;
@@ -10,22 +10,32 @@ export interface RevenueReport {
   currency: string;
 }
 
-export interface TopDoctorReport {
+export interface TopDoctor {
   doctorId: number;
   doctorName: string;
   specialties: string[];
   completedAppointments: number;
 }
 
-export interface AppointmentsSummaryReport {
-  total: number;
-  byStatus: Record<string, number>;
-  daily: { date: string; count: number }[];
+export interface DailyCount {
+  date: string;
+  count: number;
 }
 
-export interface ScheduleOccupancyReport {
+export interface AppointmentsSummary {
+  total: number;
+  byStatus: Record<string, number>;
+  daily: DailyCount[];
+}
+
+export interface ScheduleOccupancy {
   totalSlots: number;
   bookedSlots: number;
   availableSlots: number;
   occupancyRate: number;
+}
+
+export interface ReportFilters {
+  month: number;
+  year: number;
 }
