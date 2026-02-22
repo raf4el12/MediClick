@@ -16,7 +16,7 @@ export default function PatientsView() {
         <PatientsTable {...controller} />
       </Grid>
 
-      {hasDetail && (
+      {hasDetail ? (
         <Grid size={{ xs: 12, md: 4 }}>
           <Collapse in={hasDetail} orientation="horizontal" unmountOnExit>
             <PatientDetailDialog
@@ -25,7 +25,7 @@ export default function PatientsView() {
             />
           </Collapse>
         </Grid>
-      )}
+      ) : null}
     </Grid>
   );
 }

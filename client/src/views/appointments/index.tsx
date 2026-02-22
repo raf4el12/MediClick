@@ -1,13 +1,21 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import Grid from '@mui/material/Grid';
 import Collapse from '@mui/material/Collapse';
 import { useAppointments } from './hooks/useAppointments';
 import { AppointmentsTable } from './components/AppointmentsTable';
 import { AppointmentDetailDialog } from './components/AppointmentDetailDialog';
-import { CreateAppointmentDialog } from './components/CreateAppointmentDialog';
-import { CancelAppointmentDialog } from './components/CancelAppointmentDialog';
-import { RescheduleAppointmentDialog } from './components/RescheduleAppointmentDialog';
+
+const CreateAppointmentDialog = dynamic(
+  () => import('./components/CreateAppointmentDialog').then((m) => m.CreateAppointmentDialog),
+);
+const CancelAppointmentDialog = dynamic(
+  () => import('./components/CancelAppointmentDialog').then((m) => m.CancelAppointmentDialog),
+);
+const RescheduleAppointmentDialog = dynamic(
+  () => import('./components/RescheduleAppointmentDialog').then((m) => m.RescheduleAppointmentDialog),
+);
 
 export default function AppointmentsView() {
   const controller = useAppointments();
@@ -35,7 +43,7 @@ export default function AppointmentsView() {
           />
         </Grid>
 
-        {hasDetail && (
+        {hasDetail ? (
           <Grid size={{ xs: 12, md: 4 }}>
             <Collapse in={hasDetail} orientation="horizontal" unmountOnExit>
               <AppointmentDetailDialog
@@ -44,7 +52,7 @@ export default function AppointmentsView() {
               />
             </Collapse>
           </Grid>
-        )}
+        ) : null}
       </Grid>
 
       <CreateAppointmentDialog

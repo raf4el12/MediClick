@@ -46,7 +46,7 @@ export default function PrescriptionsView() {
           />
         </Grid>
 
-        {hasDetail && (
+        {hasDetail ? (
           <Grid size={{ xs: 12, md: 4 }}>
             <Collapse in={hasDetail} orientation="horizontal" unmountOnExit>
               <PrescriptionPanel
@@ -60,7 +60,7 @@ export default function PrescriptionsView() {
               />
             </Collapse>
           </Grid>
-        )}
+        ) : null}
       </Grid>
     </>
   );

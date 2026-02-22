@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
@@ -7,7 +8,10 @@ import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import { useSchedules } from './hooks/useSchedules';
 import { ScheduleCalendar } from './components/ScheduleCalendar';
-import { GenerateDialog } from './components/GenerateDialog';
+
+const GenerateDialog = dynamic(
+  () => import('./components/GenerateDialog').then((m) => m.GenerateDialog),
+);
 
 export default function SchedulesView() {
   const {

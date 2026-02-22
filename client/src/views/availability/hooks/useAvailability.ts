@@ -84,9 +84,12 @@ export function useAvailability() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data.rows, selectedDoctorId]);
 
+  // Doctor index map for O(1) lookup
+  const doctorMap = useMemo(() => new Map(doctors.map((d) => [d.id, d])), [doctors]);
+
   const selectedDoctor = useMemo(
-    () => doctors.find((d) => d.id === selectedDoctorId) ?? null,
-    [doctors, selectedDoctorId],
+    () => doctorMap.get(selectedDoctorId as number) ?? null,
+    [doctorMap, selectedDoctorId],
   );
 
   const doctorSpecialties: Array<{ id: number; name: string }> = useMemo(
@@ -214,17 +217,18 @@ export function useAvailability() {
 
       if (createBulkAvailabilityThunk.fulfilled.match(result)) {
         setSaveSuccess(true);
-        // Reload availability
-        void dispatch(
-          fetchAvailabilityThunk({
-            pagination: { pageSize: 100, currentPage: 1 },
-            doctorId: selectedDoctorId as number,
-          }),
-        );
       }
     } else {
       setSaveSuccess(true);
     }
+
+    // Reload availability in parallel with success state
+    void dispatch(
+      fetchAvailabilityThunk({
+        pagination: { pageSize: 100, currentPage: 1 },
+        doctorId: selectedDoctorId as number,
+      }),
+    );
 
     setSaving(false);
   }, [dispatch, selectedDoctorId, selectedSpecialtyId, dateRange, schedule, data.rows]);

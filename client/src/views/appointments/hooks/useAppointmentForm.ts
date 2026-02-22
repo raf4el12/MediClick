@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAppDispatch } from '@/redux-store/hooks';
 import { specialtiesService } from '@/services/specialties.service';
 import { doctorsService } from '@/services/doctors.service';
@@ -50,11 +50,17 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
   const [reason, setReason] = useState('');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
+  // Index maps for O(1) lookups
+  const specialtyMap = useMemo(() => new Map(specialties.map((s) => [s.id, s])), [specialties]);
+  const doctorMap = useMemo(() => new Map(doctors.map((d) => [d.id, d])), [doctors]);
+  const scheduleMap = useMemo(() => new Map(schedules.map((s) => [s.id, s])), [schedules]);
+  const patientMap = useMemo(() => new Map(patients.map((p) => [p.id, p])), [patients]);
+
   // Derived data for summary
-  const selectedSpecialty = specialties.find((s) => s.id === selectedSpecialtyId) ?? null;
-  const selectedDoctor = doctors.find((d) => d.id === selectedDoctorId) ?? null;
-  const selectedSchedule = schedules.find((s) => s.id === selectedScheduleId) ?? null;
-  const selectedPatient = patients.find((p) => p.id === selectedPatientId) ?? null;
+  const selectedSpecialty = specialtyMap.get(selectedSpecialtyId!) ?? null;
+  const selectedDoctor = doctorMap.get(selectedDoctorId!) ?? null;
+  const selectedSchedule = scheduleMap.get(selectedScheduleId!) ?? null;
+  const selectedPatient = patientMap.get(selectedPatientId!) ?? null;
 
   // Computed: unique available dates from schedules
   const availableDates = Array.from(

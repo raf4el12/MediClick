@@ -8,12 +8,13 @@ import primaryColorConfig from '@/configs/primaryColorConfig';
 export const SettingsContext = createContext<SettingsContextValue | null>(null);
 
 const COOKIE_NAME = themeConfig.settingsCookieName;
+const COOKIE_PATTERN = new RegExp(`(?:^|; )${COOKIE_NAME}=([^;]*)`);
 
 function readCookie(): Partial<Settings> | null {
   if (typeof window === 'undefined') return null;
 
   try {
-    const match = document.cookie.match(new RegExp(`(?:^|; )${COOKIE_NAME}=([^;]*)`));
+    const match = document.cookie.match(COOKIE_PATTERN);
     if (match?.[1]) return JSON.parse(decodeURIComponent(match[1]));
   } catch {
     // ignore

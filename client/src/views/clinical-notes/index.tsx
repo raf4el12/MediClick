@@ -50,7 +50,7 @@ export default function ClinicalNotesView() {
           />
         </Grid>
 
-        {hasDetail && (
+        {hasDetail ? (
           <Grid size={{ xs: 12, md: 4 }}>
             <Collapse in={hasDetail} orientation="horizontal" unmountOnExit>
               <ClinicalNotePanel
@@ -64,7 +64,7 @@ export default function ClinicalNotesView() {
               />
             </Collapse>
           </Grid>
-        )}
+        ) : null}
       </Grid>
     </>
   );

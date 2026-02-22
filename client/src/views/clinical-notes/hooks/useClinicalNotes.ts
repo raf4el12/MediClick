@@ -123,8 +123,7 @@ export function useClinicalNotes() {
       setLoadingCreate(true);
       try {
         await clinicalNotesService.create(payload);
-        await loadNotes(payload.appointmentId);
-        void fetchData();
+        await Promise.all([loadNotes(payload.appointmentId), fetchData()]);
       } finally {
         setLoadingCreate(false);
       }

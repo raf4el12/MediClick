@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -8,11 +9,12 @@ import TextField from '@mui/material/TextField';
 import Divider from '@mui/material/Divider';
 import { useReports } from './hooks/useReports';
 import KpiCards from './components/KpiCards';
-import AppointmentsTrendChart from './components/AppointmentsTrendChart';
-import AppointmentsByStatusChart from './components/AppointmentsByStatusChart';
-import RevenueComparisonChart from './components/RevenueComparisonChart';
-import TopDoctorsChart from './components/TopDoctorsChart';
-import ScheduleOccupancyChart from './components/ScheduleOccupancyChart';
+
+const AppointmentsTrendChart = dynamic(() => import('./components/AppointmentsTrendChart'), { ssr: false });
+const AppointmentsByStatusChart = dynamic(() => import('./components/AppointmentsByStatusChart'), { ssr: false });
+const RevenueComparisonChart = dynamic(() => import('./components/RevenueComparisonChart'), { ssr: false });
+const TopDoctorsChart = dynamic(() => import('./components/TopDoctorsChart'), { ssr: false });
+const ScheduleOccupancyChart = dynamic(() => import('./components/ScheduleOccupancyChart'), { ssr: false });
 
 const MONTHS = [
   { value: 1, label: 'Enero' },

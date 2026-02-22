@@ -126,8 +126,7 @@ export function usePrescriptions() {
       setLoadingCreate(true);
       try {
         await prescriptionsService.create(payload);
-        await loadPrescription(payload.appointmentId);
-        void fetchData();
+        await Promise.all([loadPrescription(payload.appointmentId), fetchData()]);
       } finally {
         setLoadingCreate(false);
       }

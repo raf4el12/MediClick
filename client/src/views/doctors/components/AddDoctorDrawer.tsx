@@ -16,6 +16,7 @@ import FormHelperText from '@mui/material/FormHelperText';
 import Chip from '@mui/material/Chip';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import Alert from '@mui/material/Alert';
+import { useMemo } from 'react';
 import { Controller } from 'react-hook-form';
 import { useDoctorForm } from '../hooks/useDoctorForm';
 import type { Specialty } from '@/views/specialties/types';
@@ -35,6 +36,8 @@ export function AddDoctorDrawer({
 }: AddDoctorDrawerProps) {
   const { control, errors, handleSubmit, isLoading, submitError, handleReset } =
     useDoctorForm({ onSuccess, onClose });
+
+  const specialtyMap = useMemo(() => new Map(specialties.map((s) => [s.id, s])), [specialties]);
 
   return (
     <Drawer
@@ -255,16 +258,13 @@ export function AddDoctorDrawer({
                 input={<OutlinedInput label="Especialidades" />}
                 renderValue={(selected) => (
                   <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {(selected as number[]).map((id) => {
-                      const spec = specialties.find((s) => s.id === id);
-                      return (
-                        <Chip
-                          key={id}
-                          label={spec?.name ?? id}
-                          size="small"
-                        />
-                      );
-                    })}
+                    {(selected as number[]).map((id) => (
+                      <Chip
+                        key={id}
+                        label={specialtyMap.get(id)?.name ?? id}
+                        size="small"
+                      />
+                    ))}
                   </Box>
                 )}
               >

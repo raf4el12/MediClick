@@ -121,10 +121,12 @@ export function useSchedules() {
     });
   }, []);
 
-  // Doctor helpers
+  // Doctor index map for O(1) lookup
+  const doctorMap = useMemo(() => new Map(doctors.map((d) => [d.id, d])), [doctors]);
+
   const selectedDoctor = useMemo(
-    () => doctors.find((d) => d.id === selectedDoctorId) ?? null,
-    [doctors, selectedDoctorId],
+    () => doctorMap.get(selectedDoctorId as number) ?? null,
+    [doctorMap, selectedDoctorId],
   );
 
   const doctorSpecialties = useMemo(
