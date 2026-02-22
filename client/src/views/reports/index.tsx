@@ -67,7 +67,7 @@ export default function ReportsView() {
             Análisis y estadísticas del sistema
           </Typography>
         </Box>
-        <Box display="flex" gap={2}>
+        <Box display="flex" gap={2} flexWrap="wrap" sx={{ width: { xs: '100%', sm: 'auto' } }}>
           <TextField
             select
             size="small"
@@ -76,7 +76,7 @@ export default function ReportsView() {
             onChange={(e) =>
               setFilters((f) => ({ ...f, month: Number(e.target.value) }))
             }
-            sx={{ minWidth: 130 }}
+            sx={{ minWidth: { xs: '100%', sm: 130 } }}
           >
             {MONTHS.map((m) => (
               <MenuItem key={m.value} value={m.value}>
@@ -92,7 +92,7 @@ export default function ReportsView() {
             onChange={(e) =>
               setFilters((f) => ({ ...f, year: Number(e.target.value) }))
             }
-            sx={{ minWidth: 100 }}
+            sx={{ minWidth: { xs: '100%', sm: 100 } }}
           >
             {YEARS.map((y) => (
               <MenuItem key={y} value={y}>

@@ -9,6 +9,7 @@ import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
 import { useAppSelector } from '@/redux-store/hooks';
 import { selectUser } from '@/redux-store/slices/auth';
+import { alpha, useTheme } from '@mui/material/styles';
 
 interface StatCardProps {
   title: string;
@@ -63,6 +64,7 @@ const StatCard = ({ title, value, subtitle, icon, color, bgColor }: StatCardProp
 
 const DashboardView = () => {
   const user = useAppSelector(selectUser);
+  const theme = useTheme();
 
   const stats: StatCardProps[] = [
     {
@@ -70,32 +72,32 @@ const DashboardView = () => {
       value: '0',
       subtitle: 'Ninguna cita programada',
       icon: 'ri-calendar-check-line',
-      color: '#2563EB',
-      bgColor: 'rgba(37, 99, 235, 0.1)',
+      color: theme.palette.primary.main,
+      bgColor: alpha(theme.palette.primary.main, 0.1),
     },
     {
       title: 'Pacientes',
       value: '0',
       subtitle: 'Total registrados',
       icon: 'ri-user-heart-line',
-      color: '#10B981',
-      bgColor: 'rgba(16, 185, 129, 0.1)',
+      color: theme.palette.success.main,
+      bgColor: alpha(theme.palette.success.main, 0.1),
     },
     {
       title: 'Doctores',
       value: '0',
       subtitle: 'Activos en el sistema',
       icon: 'ri-stethoscope-line',
-      color: '#7C3AED',
-      bgColor: 'rgba(124, 58, 237, 0.1)',
+      color: theme.palette.secondary.main,
+      bgColor: alpha(theme.palette.secondary.main, 0.1),
     },
     {
       title: 'Especialidades',
       value: '0',
       subtitle: 'Áreas médicas',
       icon: 'ri-heart-pulse-line',
-      color: '#F59E0B',
-      bgColor: 'rgba(245, 158, 11, 0.1)',
+      color: theme.palette.warning.main,
+      bgColor: alpha(theme.palette.warning.main, 0.1),
     },
   ];
 
@@ -105,32 +107,32 @@ const DashboardView = () => {
       description: 'Crear nueva cita médica',
       icon: 'ri-calendar-todo-line',
       href: '/appointments',
-      color: '#3B82F6',
-      bgColor: 'rgba(59, 130, 246, 0.08)',
+      color: theme.palette.info.main,
+      bgColor: alpha(theme.palette.info.main, 0.08),
     },
     {
       label: 'Ver Pacientes',
       description: 'Gestionar pacientes',
       icon: 'ri-user-heart-line',
       href: '/patients',
-      color: '#10B981',
-      bgColor: 'rgba(16, 185, 129, 0.08)',
+      color: theme.palette.success.main,
+      bgColor: alpha(theme.palette.success.main, 0.08),
     },
     {
       label: 'Especialidades',
       description: 'Administrar áreas',
       icon: 'ri-heart-pulse-line',
       href: '/specialties',
-      color: '#F59E0B',
-      bgColor: 'rgba(245, 158, 11, 0.08)',
+      color: theme.palette.warning.main,
+      bgColor: alpha(theme.palette.warning.main, 0.08),
     },
     {
       label: 'Reportes',
       description: 'Estadísticas del sistema',
       icon: 'ri-bar-chart-box-line',
       href: '/reports',
-      color: '#8B5CF6',
-      bgColor: 'rgba(139, 92, 246, 0.08)',
+      color: theme.palette.secondary.main,
+      bgColor: alpha(theme.palette.secondary.main, 0.08),
     },
   ];
 
@@ -144,7 +146,7 @@ const DashboardView = () => {
             theme.palette.mode === 'dark'
               ? 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)'
               : 'linear-gradient(135deg, #1E293B 0%, #334155 100%)',
-          color: '#fff',
+          color: theme.palette.common.white,
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -172,7 +174,7 @@ const DashboardView = () => {
           }}
         />
         <CardContent sx={{ position: 'relative', zIndex: 1, p: { xs: 3, md: 4 } }}>
-          <Typography variant="body2" sx={{ color: '#94A3B8', mb: 0.5 }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5 }}>
             {new Date().toLocaleDateString('es-ES', {
               weekday: 'long',
               year: 'numeric',
@@ -183,7 +185,7 @@ const DashboardView = () => {
           <Typography variant="h4" fontWeight={700} gutterBottom>
             Bienvenido, {user?.name ?? 'Usuario'}
           </Typography>
-          <Typography variant="body2" sx={{ color: '#94A3B8' }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             Resumen general de tu sistema médico MediClick
           </Typography>
         </CardContent>
@@ -252,7 +254,7 @@ const DashboardView = () => {
                         {action.description}
                       </Typography>
                     </Box>
-                    <i className="ri-arrow-right-s-line" style={{ fontSize: 18, color: '#94A3B8' }} />
+                    <i className="ri-arrow-right-s-line" style={{ fontSize: 18, color: theme.palette.text.secondary }} />
                   </Box>
                 ))}
               </Box>
@@ -269,9 +271,9 @@ const DashboardView = () => {
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {[
-                  { label: 'Citas completadas hoy', value: 0, total: 0, color: '#3B82F6' },
-                  { label: 'Disponibilidad doctores', value: 0, total: 0, color: '#10B981' },
-                  { label: 'Ocupación consultorios', value: 0, total: 100, color: '#8B5CF6' },
+                  { label: 'Citas completadas hoy', value: 0, total: 0, color: theme.palette.info.main },
+                  { label: 'Disponibilidad doctores', value: 0, total: 0, color: theme.palette.success.main },
+                  { label: 'Ocupación consultorios', value: 0, total: 100, color: theme.palette.secondary.main },
                 ].map((item) => (
                   <Box key={item.label}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
@@ -309,7 +311,7 @@ const DashboardView = () => {
                     textAlign: 'center',
                   }}
                 >
-                  <i className="ri-bar-chart-grouped-line" style={{ fontSize: 28, color: '#94A3B8', display: 'block', marginBottom: 4 }} />
+                  <i className="ri-bar-chart-grouped-line" style={{ fontSize: 28, color: theme.palette.text.disabled, display: 'block', marginBottom: 4 }} />
                   <Typography variant="body2" color="text.secondary">
                     Los datos se actualizarán con información en tiempo real
                   </Typography>

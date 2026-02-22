@@ -141,7 +141,7 @@ export function AppointmentFilters({
           Listado de Citas
         </Typography>
 
-        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', width: { xs: '100%', sm: 'auto' } }}>
           <TextField
             type="date"
             size="small"
@@ -151,7 +151,7 @@ export function AppointmentFilters({
               onFilterChange({ dateFrom: e.target.value || undefined })
             }
             slotProps={{ inputLabel: { shrink: true } }}
-            sx={{ minWidth: 150 }}
+            sx={{ minWidth: { xs: '100%', sm: 150 } }}
           />
 
           <TextField
@@ -163,10 +163,10 @@ export function AppointmentFilters({
               onFilterChange({ dateTo: e.target.value || undefined })
             }
             slotProps={{ inputLabel: { shrink: true } }}
-            sx={{ minWidth: 150 }}
+            sx={{ minWidth: { xs: '100%', sm: 150 } }}
           />
 
-          <FormControl size="small" sx={{ minWidth: 140 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 140 } }}>
             <Select
               value={filters.status ?? ''}
               onChange={(e) =>
@@ -187,7 +187,7 @@ export function AppointmentFilters({
           <DebouncedInput
             placeholder="Buscar..."
             onChange={onSearch}
-            sx={{ minWidth: 200 }}
+            sx={{ minWidth: { xs: '100%', sm: 200 } }}
             InputProps={{
               startAdornment: (
                 <i

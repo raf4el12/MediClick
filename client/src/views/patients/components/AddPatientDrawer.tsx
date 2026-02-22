@@ -50,7 +50,7 @@ export function AddPatientDrawer({
         }}
       >
         <Typography variant="h5">Nuevo Paciente</Typography>
-        <IconButton size="small" onClick={handleReset}>
+        <IconButton size="small" onClick={handleReset} aria-label="Cerrar formulario de paciente">
           <i className="ri-close-line" style={{ fontSize: 24 }} />
         </IconButton>
       </Box>
@@ -70,7 +70,7 @@ export function AddPatientDrawer({
           Datos Personales
         </Typography>
 
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
           <Controller
             name="name"
             control={control}
@@ -118,7 +118,7 @@ export function AddPatientDrawer({
           )}
         />
 
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
           <Controller
             name="phone"
             control={control}
@@ -174,7 +174,7 @@ export function AddPatientDrawer({
           )}
         />
 
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
           <FormControl fullWidth error={!!errors.typeDocument}>
             <InputLabel id="patient-doc-type-label">Tipo documento</InputLabel>
             <Controller
@@ -219,7 +219,7 @@ export function AddPatientDrawer({
           Información Médica
         </Typography>
 
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
           <Controller
             name="emergencyContact"
             control={control}

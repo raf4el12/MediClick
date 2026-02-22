@@ -4,20 +4,30 @@ import Grid from '@mui/material/Grid';
 import { useUsers } from './hooks/useUsers';
 import { UsersTable } from './components/UsersTable';
 import { UserDetailDialog } from './components/UserDetailDialog';
+import { useSnackbar } from '@/hooks/useSnackbar';
+import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
 
 export default function UsersView() {
   const controller = useUsers();
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
+
+  const handleSuccess = () => {
+    controller.refreshData();
+    showSnackbar('Operación realizada exitosamente', 'success');
+  };
 
   return (
     <Grid container spacing={3}>
       <Grid size={12}>
-        <UsersTable {...controller} />
+        <UsersTable {...controller} refreshData={handleSuccess} />
       </Grid>
 
       <UserDetailDialog
         user={controller.detailUser}
         onClose={controller.closeDetail}
       />
+
+      <SuccessSnackbar snackbar={snackbar} onClose={closeSnackbar} />
     </Grid>
   );
 }

@@ -58,7 +58,7 @@ export function AddDoctorDrawer({
         }}
       >
         <Typography variant="h5">Nuevo Doctor</Typography>
-        <IconButton size="small" onClick={handleReset}>
+        <IconButton size="small" onClick={handleReset} aria-label="Cerrar formulario de doctor">
           <i className="ri-close-line" style={{ fontSize: 24 }} />
         </IconButton>
       </Box>
@@ -132,7 +132,7 @@ export function AddDoctorDrawer({
           Datos del Perfil
         </Typography>
 
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
           <Controller
             name="profileName"
             control={control}
@@ -164,7 +164,7 @@ export function AddDoctorDrawer({
           />
         </Box>
 
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
           <Controller
             name="phone"
             control={control}

@@ -14,6 +14,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableSortLabel from '@mui/material/TableSortLabel';
 import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
 import {
   createColumnHelper,
   flexRender,
@@ -157,6 +158,7 @@ export function PatientsTable({
             {formatGender(row.original.profile.gender)}
           </Typography>
         ),
+        meta: { hiddenOnMobile: true },
       }),
       columnHelper.accessor('bloodType', {
         header: 'Sangre',
@@ -168,6 +170,7 @@ export function PatientsTable({
             color={bloodTypeColors[row.original.bloodType] ?? 'default'}
           />
         ),
+        meta: { hiddenOnMobile: true },
       }),
       columnHelper.display({
         id: 'lastVisit',
@@ -177,6 +180,7 @@ export function PatientsTable({
             {formatDate(row.original.createdAt)}
           </Typography>
         ),
+        meta: { hiddenOnMobile: true },
       }),
       columnHelper.accessor('isActive', {
         header: 'Estado',
@@ -223,47 +227,64 @@ export function PatientsTable({
       <Card>
         <Box sx={{ p: 3 }}>
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert
+              severity="error"
+              sx={{ mb: 2 }}
+              action={
+                <Button color="inherit" size="small" onClick={refreshData}>
+                  Reintentar
+                </Button>
+              }
+            >
               {error}
             </Alert>
           )}
 
-          <TableContainer>
-            <Table>
+          <TableContainer sx={{ overflowX: 'auto' }}>
+            <Table sx={{ minWidth: 700 }}>
               <TableHead>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableCell key={header.id} sx={{ fontWeight: 600 }}>
-                        {header.isPlaceholder ? null : (
-                          <TableSortLabel
-                            active={pagination.orderBy === header.id}
-                            direction={
-                              pagination.orderBy === header.id
-                                ? pagination.orderByMode
-                                : 'asc'
-                            }
-                            onClick={() => {
-                              setPagination((prev) => ({
-                                ...prev,
-                                orderBy: header.id,
-                                orderByMode:
-                                  prev.orderBy === header.id &&
-                                  prev.orderByMode === 'asc'
-                                    ? 'desc'
-                                    : 'asc',
-                                currentPage: 1,
-                              }));
-                            }}
-                          >
-                            {flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                          </TableSortLabel>
-                        )}
-                      </TableCell>
-                    ))}
+                    {headerGroup.headers.map((header) => {
+                      const isHiddenOnMobile = (header.column.columnDef.meta as Record<string, boolean> | undefined)?.hiddenOnMobile;
+                      return (
+                        <TableCell
+                          key={header.id}
+                          sx={{
+                            fontWeight: 600,
+                            ...(isHiddenOnMobile && { display: { xs: 'none', sm: 'table-cell' } }),
+                          }}
+                        >
+                          {header.isPlaceholder ? null : (
+                            <TableSortLabel
+                              active={pagination.orderBy === header.id}
+                              direction={
+                                pagination.orderBy === header.id
+                                  ? pagination.orderByMode
+                                  : 'asc'
+                              }
+                              onClick={() => {
+                                setPagination((prev) => ({
+                                  ...prev,
+                                  orderBy: header.id,
+                                  orderByMode:
+                                    prev.orderBy === header.id &&
+                                      prev.orderByMode === 'asc'
+                                      ? 'desc'
+                                      : 'asc',
+                                  currentPage: 1,
+                                }));
+                              }}
+                            >
+                              {flexRender(
+                                header.column.columnDef.header,
+                                header.getContext(),
+                              )}
+                            </TableSortLabel>
+                          )}
+                        </TableCell>
+                      );
+                    })}
                   </TableRow>
                 ))}
               </TableHead>
@@ -278,17 +299,30 @@ export function PatientsTable({
                     <TableRow
                       key={row.id}
                       hover
+                      tabIndex={0}
                       sx={{ cursor: 'pointer' }}
                       onClick={() => openDetail(row.original)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          openDetail(row.original);
+                        }
+                      }}
                     >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </TableCell>
-                      ))}
+                      {row.getVisibleCells().map((cell) => {
+                        const isHiddenOnMobile = (cell.column.columnDef.meta as Record<string, boolean> | undefined)?.hiddenOnMobile;
+                        return (
+                          <TableCell
+                            key={cell.id}
+                            sx={isHiddenOnMobile ? { display: { xs: 'none', sm: 'table-cell' } } : undefined}
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </TableCell>
+                        );
+                      })}
                     </TableRow>
                   ))
                 ) : (

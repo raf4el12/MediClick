@@ -130,6 +130,7 @@ export function AppointmentsTable({
             {row.original.schedule.specialty.name}
           </Typography>
         ),
+        meta: { hiddenOnMobile: true },
       }),
       columnHelper.display({
         id: 'date',
@@ -148,6 +149,7 @@ export function AppointmentsTable({
             {row.original.schedule.timeFrom} - {row.original.schedule.timeTo}
           </Typography>
         ),
+        meta: { hiddenOnMobile: true },
       }),
       columnHelper.accessor('status', {
         header: 'Estado',
@@ -180,7 +182,7 @@ export function AppointmentsTable({
             <Box sx={{ display: 'flex', gap: 0.5 }} onClick={(e) => e.stopPropagation()}>
               {canCheckIn && (
                 <Tooltip title="Check-in">
-                  <IconButton size="small" color="primary" onClick={() => handleCheckIn(id)}>
+                  <IconButton size="small" color="primary" aria-label="Registrar entrada" onClick={() => handleCheckIn(id)}>
                     <i className="ri-login-box-line" style={{ fontSize: 18 }} />
                   </IconButton>
                 </Tooltip>
@@ -190,6 +192,7 @@ export function AppointmentsTable({
                   <IconButton
                     size="small"
                     color="info"
+                    aria-label="Reagendar cita"
                     onClick={() => openRescheduleDialog(row.original)}
                   >
                     <i className="ri-calendar-schedule-line" style={{ fontSize: 18 }} />
@@ -198,7 +201,7 @@ export function AppointmentsTable({
               )}
               {canComplete && (
                 <Tooltip title="Completar">
-                  <IconButton size="small" color="success" onClick={() => handleComplete(id)}>
+                  <IconButton size="small" color="success" aria-label="Completar cita" onClick={() => handleComplete(id)}>
                     <i className="ri-check-double-line" style={{ fontSize: 18 }} />
                   </IconButton>
                 </Tooltip>
@@ -208,6 +211,7 @@ export function AppointmentsTable({
                   <IconButton
                     size="small"
                     color="error"
+                    aria-label="Cancelar cita"
                     onClick={() => openCancelDialog(row.original)}
                   >
                     <i className="ri-close-circle-line" style={{ fontSize: 18 }} />
@@ -254,42 +258,51 @@ export function AppointmentsTable({
             </Alert>
           )}
 
-          <TableContainer>
-            <Table>
+          <TableContainer sx={{ overflowX: 'auto' }}>
+            <Table sx={{ minWidth: 700 }}>
               <TableHead>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableCell key={header.id} sx={{ fontWeight: 600 }}>
-                        {header.isPlaceholder ? null : (
-                          <TableSortLabel
-                            active={pagination.orderBy === header.id}
-                            direction={
-                              pagination.orderBy === header.id
-                                ? pagination.orderByMode
-                                : 'asc'
-                            }
-                            onClick={() => {
-                              setPagination((prev) => ({
-                                ...prev,
-                                orderBy: header.id,
-                                orderByMode:
-                                  prev.orderBy === header.id &&
-                                  prev.orderByMode === 'asc'
-                                    ? 'desc'
-                                    : 'asc',
-                                currentPage: 1,
-                              }));
-                            }}
-                          >
-                            {flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                          </TableSortLabel>
-                        )}
-                      </TableCell>
-                    ))}
+                    {headerGroup.headers.map((header) => {
+                      const isHiddenOnMobile = (header.column.columnDef.meta as Record<string, boolean> | undefined)?.hiddenOnMobile;
+                      return (
+                        <TableCell
+                          key={header.id}
+                          sx={{
+                            fontWeight: 600,
+                            ...(isHiddenOnMobile && { display: { xs: 'none', sm: 'table-cell' } }),
+                          }}
+                        >
+                          {header.isPlaceholder ? null : (
+                            <TableSortLabel
+                              active={pagination.orderBy === header.id}
+                              direction={
+                                pagination.orderBy === header.id
+                                  ? pagination.orderByMode
+                                  : 'asc'
+                              }
+                              onClick={() => {
+                                setPagination((prev) => ({
+                                  ...prev,
+                                  orderBy: header.id,
+                                  orderByMode:
+                                    prev.orderBy === header.id &&
+                                      prev.orderByMode === 'asc'
+                                      ? 'desc'
+                                      : 'asc',
+                                  currentPage: 1,
+                                }));
+                              }}
+                            >
+                              {flexRender(
+                                header.column.columnDef.header,
+                                header.getContext(),
+                              )}
+                            </TableSortLabel>
+                          )}
+                        </TableCell>
+                      );
+                    })}
                   </TableRow>
                 ))}
               </TableHead>
@@ -304,17 +317,30 @@ export function AppointmentsTable({
                     <TableRow
                       key={row.id}
                       hover
+                      tabIndex={0}
                       sx={{ cursor: 'pointer' }}
                       onClick={() => openDetail(row.original)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          openDetail(row.original);
+                        }
+                      }}
                     >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </TableCell>
-                      ))}
+                      {row.getVisibleCells().map((cell) => {
+                        const isHiddenOnMobile = (cell.column.columnDef.meta as Record<string, boolean> | undefined)?.hiddenOnMobile;
+                        return (
+                          <TableCell
+                            key={cell.id}
+                            sx={isHiddenOnMobile ? { display: { xs: 'none', sm: 'table-cell' } } : undefined}
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </TableCell>
+                        );
+                      })}
                     </TableRow>
                   ))
                 ) : (

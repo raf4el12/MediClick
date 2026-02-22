@@ -128,7 +128,12 @@ const navigationItems: NavSection[] = [
   },
 ];
 
-export default function Navigation() {
+interface NavigationProps {
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
+}
+
+export default function Navigation({ mobileOpen = false, onMobileClose }: NavigationProps) {
   const pathname = usePathname();
   const user = useAppSelector(selectUser);
   const { settings } = useSettings();
@@ -156,23 +161,8 @@ export default function Navigation() {
     }))
     .filter((section) => section.items.length > 0);
 
-  return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width: DRAWER_WIDTH,
-        flexShrink: 0,
-        '& .MuiDrawer-paper': {
-          width: DRAWER_WIDTH,
-          boxSizing: 'border-box',
-          borderRight: '0 none',
-          bgcolor: bgColor,
-          color: textColor,
-          boxShadow: isDark ? '4px 0 8px rgba(0, 0, 0, 0.2)' : '0 2px 8px rgba(0, 0, 0, 0.04)',
-          transition: 'background-color 300ms ease, box-shadow 300ms ease',
-        },
-      }}
-    >
+  const drawerContent = (
+    <>
       {/* Logo */}
       <Box
         sx={{
@@ -240,6 +230,7 @@ export default function Navigation() {
                       component={Link}
                       href={item.path}
                       selected={isActive}
+                      onClick={onMobileClose}
                       sx={{
                         borderRadius: '8px',
                         py: 0.75,
@@ -316,6 +307,9 @@ export default function Navigation() {
                   '0%, 100%': { transform: 'translateY(0px)' },
                   '50%': { transform: 'translateY(-2px)' },
                 },
+                '@media (prefers-reduced-motion: reduce)': {
+                  animation: 'none',
+                },
               }}
             >
               {user?.name ? getInitials(user.name) : 'U'}
@@ -359,6 +353,47 @@ export default function Navigation() {
           </Box>
         </Box>
       </Box>
-    </Drawer>
+    </>
+  );
+
+  const drawerPaperStyles = {
+    width: DRAWER_WIDTH,
+    boxSizing: 'border-box',
+    borderRight: '0 none',
+    bgcolor: bgColor,
+    color: textColor,
+    boxShadow: isDark ? '4px 0 8px rgba(0, 0, 0, 0.2)' : '0 2px 8px rgba(0, 0, 0, 0.04)',
+    transition: 'background-color 300ms ease, box-shadow 300ms ease',
+  };
+
+  return (
+    <>
+      {/* Mobile Drawer (temporary) — xs and sm */}
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={onMobileClose}
+        ModalProps={{ keepMounted: true }}
+        sx={{
+          display: { xs: 'block', md: 'none' },
+          '& .MuiDrawer-paper': drawerPaperStyles,
+        }}
+      >
+        {drawerContent}
+      </Drawer>
+
+      {/* Desktop Drawer (permanent) — md and up */}
+      <Drawer
+        variant="permanent"
+        sx={{
+          display: { xs: 'none', md: 'block' },
+          width: DRAWER_WIDTH,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': drawerPaperStyles,
+        }}
+      >
+        {drawerContent}
+      </Drawer>
+    </>
   );
 }

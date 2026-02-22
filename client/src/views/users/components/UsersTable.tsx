@@ -15,6 +15,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TableSortLabel from '@mui/material/TableSortLabel';
 import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
 import {
   createColumnHelper,
   flexRender,
@@ -136,6 +137,7 @@ export function UsersTable({
             {row.original.profile?.phone ?? 'N/A'}
           </Typography>
         ),
+        meta: { hiddenOnMobile: true },
       }),
       columnHelper.accessor('isActive', {
         header: 'Estado',
@@ -155,6 +157,7 @@ export function UsersTable({
             <IconButton
               size="small"
               color="primary"
+              aria-label="Ver detalle de usuario"
               onClick={() => openDetail(row.original)}
             >
               <i className="ri-eye-line" style={{ fontSize: 18 }} />
@@ -162,6 +165,7 @@ export function UsersTable({
             <IconButton
               size="small"
               color="info"
+              aria-label="Editar usuario"
               onClick={() => openEditDrawer(row.original)}
             >
               <i className="ri-pencil-line" style={{ fontSize: 18 }} />
@@ -169,6 +173,7 @@ export function UsersTable({
             <IconButton
               size="small"
               color="error"
+              aria-label="Eliminar usuario"
               onClick={() => setDeleteTarget(row.original)}
             >
               <i className="ri-delete-bin-line" style={{ fontSize: 18 }} />
@@ -206,49 +211,66 @@ export function UsersTable({
           />
 
           {error && (
-            <Alert severity="error" sx={{ mb: 2 }}>
+            <Alert
+              severity="error"
+              sx={{ mb: 2 }}
+              action={
+                <Button color="inherit" size="small" onClick={refreshData}>
+                  Reintentar
+                </Button>
+              }
+            >
               {error}
             </Alert>
           )}
 
-          <TableContainer>
-            <Table>
+          <TableContainer sx={{ overflowX: 'auto' }}>
+            <Table sx={{ minWidth: 600 }}>
               <TableHead>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableCell key={header.id} sx={{ fontWeight: 600 }}>
-                        {header.isPlaceholder ? null : (
-                          <TableSortLabel
-                            active={pagination.orderBy === header.id}
-                            direction={
-                              pagination.orderBy === header.id
-                                ? pagination.orderByMode
-                                : 'asc'
-                            }
-                            onClick={() => {
-                              if (header.id === 'actions') return;
-                              setPagination((prev) => ({
-                                ...prev,
-                                orderBy: header.id,
-                                orderByMode:
-                                  prev.orderBy === header.id &&
-                                  prev.orderByMode === 'asc'
-                                    ? 'desc'
-                                    : 'asc',
-                                currentPage: 1,
-                              }));
-                            }}
-                            hideSortIcon={header.id === 'actions'}
-                          >
-                            {flexRender(
-                              header.column.columnDef.header,
-                              header.getContext(),
-                            )}
-                          </TableSortLabel>
-                        )}
-                      </TableCell>
-                    ))}
+                    {headerGroup.headers.map((header) => {
+                      const isHiddenOnMobile = (header.column.columnDef.meta as Record<string, boolean> | undefined)?.hiddenOnMobile;
+                      return (
+                        <TableCell
+                          key={header.id}
+                          sx={{
+                            fontWeight: 600,
+                            ...(isHiddenOnMobile && { display: { xs: 'none', sm: 'table-cell' } }),
+                          }}
+                        >
+                          {header.isPlaceholder ? null : (
+                            <TableSortLabel
+                              active={pagination.orderBy === header.id}
+                              direction={
+                                pagination.orderBy === header.id
+                                  ? pagination.orderByMode
+                                  : 'asc'
+                              }
+                              onClick={() => {
+                                if (header.id === 'actions') return;
+                                setPagination((prev) => ({
+                                  ...prev,
+                                  orderBy: header.id,
+                                  orderByMode:
+                                    prev.orderBy === header.id &&
+                                      prev.orderByMode === 'asc'
+                                      ? 'desc'
+                                      : 'asc',
+                                  currentPage: 1,
+                                }));
+                              }}
+                              hideSortIcon={header.id === 'actions'}
+                            >
+                              {flexRender(
+                                header.column.columnDef.header,
+                                header.getContext(),
+                              )}
+                            </TableSortLabel>
+                          )}
+                        </TableCell>
+                      );
+                    })}
                   </TableRow>
                 ))}
               </TableHead>
@@ -261,14 +283,20 @@ export function UsersTable({
                 ) : table.getRowModel().rows.length > 0 ? (
                   table.getRowModel().rows.map((row) => (
                     <TableRow key={row.id} hover>
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </TableCell>
-                      ))}
+                      {row.getVisibleCells().map((cell) => {
+                        const isHiddenOnMobile = (cell.column.columnDef.meta as Record<string, boolean> | undefined)?.hiddenOnMobile;
+                        return (
+                          <TableCell
+                            key={cell.id}
+                            sx={isHiddenOnMobile ? { display: { xs: 'none', sm: 'table-cell' } } : undefined}
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </TableCell>
+                        );
+                      })}
                     </TableRow>
                   ))
                 ) : (

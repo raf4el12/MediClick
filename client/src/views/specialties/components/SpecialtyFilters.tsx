@@ -68,7 +68,7 @@ export function SpecialtyFilters({
           flexWrap: 'wrap',
         }}
       >
-        <FormControl size="small" sx={{ minWidth: 200 }}>
+        <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 200 } }}>
           <InputLabel id="category-filter-label">
             Filtrar por Categoría
           </InputLabel>
@@ -90,7 +90,7 @@ export function SpecialtyFilters({
         <DebouncedInput
           placeholder="Buscar especialidades..."
           onChange={onSearch}
-          sx={{ minWidth: 250 }}
+          sx={{ minWidth: { xs: '100%', sm: 250 } }}
         />
       </Box>
     </Box>

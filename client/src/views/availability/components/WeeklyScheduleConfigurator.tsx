@@ -236,6 +236,7 @@ export function WeeklyScheduleConfigurator({
                           {dayData.slots.length > 1 && (
                             <IconButton
                               size="small"
+                              aria-label="Eliminar horario"
                               onClick={() => onRemoveSlot(day, idx)}
                               sx={{
                                 width: 28,

@@ -6,6 +6,7 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
+import { alpha } from '@mui/material/styles';
 import Skeleton from '@mui/material/Skeleton';
 import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
@@ -278,10 +279,10 @@ export function ScheduleCalendar({
 
         {/* Right – Navigation */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <IconButton size="small" onClick={isAllDoctors ? onPrevDay : onPrevWeek}>
+          <IconButton size="small" aria-label="Período anterior" onClick={isAllDoctors ? onPrevDay : onPrevWeek}>
             <i className="ri-arrow-left-s-line" style={{ fontSize: 20 }} />
           </IconButton>
-          <IconButton size="small" onClick={isAllDoctors ? onNextDay : onNextWeek}>
+          <IconButton size="small" aria-label="Período siguiente" onClick={isAllDoctors ? onNextDay : onNextWeek}>
             <i className="ri-arrow-right-s-line" style={{ fontSize: 20 }} />
           </IconButton>
           <Typography
@@ -327,6 +328,15 @@ export function ScheduleCalendar({
               <Box
                 key={idx}
                 onClick={() => onSelectDate(day)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onSelectDate(day);
+                  }
+                }}
+                tabIndex={0}
+                role="button"
+                aria-label={`${(WEEKDAY_FULL[weekdayIdx] ?? '')} ${day.getDate()}`}
                 sx={{
                   minWidth: 56,
                   py: 0.75,
@@ -400,33 +410,36 @@ export function ScheduleCalendar({
           label={`Disponible: ${totalSchedules} bloques`}
           size="small"
           sx={{
-            bgcolor: '#e8f5e9',
-            color: '#2e7d32',
+            bgcolor: (theme) => alpha(theme.palette.success.main, 0.1),
+            color: 'success.dark',
             fontWeight: 600,
             fontSize: '0.75rem',
-            border: '1px solid #a5d6a7',
+            border: '1px solid',
+            borderColor: (theme) => alpha(theme.palette.success.main, 0.3),
           }}
         />
         <Chip
           label={`Doctores: ${uniqueDoctors}`}
           size="small"
           sx={{
-            bgcolor: '#e3f2fd',
-            color: '#1565c0',
+            bgcolor: (theme) => alpha(theme.palette.info.main, 0.1),
+            color: 'info.dark',
             fontWeight: 600,
             fontSize: '0.75rem',
-            border: '1px solid #90caf9',
+            border: '1px solid',
+            borderColor: (theme) => alpha(theme.palette.info.main, 0.3),
           }}
         />
         <Chip
           label={`Días: ${scheduledDays}`}
           size="small"
           sx={{
-            bgcolor: '#fff3e0',
-            color: '#e65100',
+            bgcolor: (theme) => alpha(theme.palette.warning.main, 0.1),
+            color: 'warning.dark',
             fontWeight: 600,
             fontSize: '0.75rem',
-            border: '1px solid #ffcc80',
+            border: '1px solid',
+            borderColor: (theme) => alpha(theme.palette.warning.main, 0.3),
           }}
         />
       </Box>

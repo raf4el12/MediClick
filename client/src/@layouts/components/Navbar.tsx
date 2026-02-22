@@ -135,6 +135,9 @@ export default function Navbar() {
                     '0%, 100%': { transform: 'translateY(0px)' },
                     '50%': { transform: 'translateY(-2px)' },
                   },
+                  '@media (prefers-reduced-motion: reduce)': {
+                    animation: 'none',
+                  },
                 }}
               >
                 {user?.name ? getInitials(user.name) : 'U'}
@@ -176,6 +179,7 @@ export default function Navbar() {
             <IconButton
               onClick={handleLogout}
               size="small"
+              aria-label="Cerrar sesión"
               sx={{
                 color: 'text.secondary',
                 width: 36,

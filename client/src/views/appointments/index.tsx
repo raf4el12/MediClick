@@ -6,6 +6,8 @@ import Collapse from '@mui/material/Collapse';
 import { useAppointments } from './hooks/useAppointments';
 import { AppointmentsTable } from './components/AppointmentsTable';
 import { AppointmentDetailDialog } from './components/AppointmentDetailDialog';
+import { useSnackbar } from '@/hooks/useSnackbar';
+import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
 
 const CreateAppointmentDialog = dynamic(
   () => import('./components/CreateAppointmentDialog').then((m) => m.CreateAppointmentDialog),
@@ -20,6 +22,12 @@ const RescheduleAppointmentDialog = dynamic(
 export default function AppointmentsView() {
   const controller = useAppointments();
   const hasDetail = !!controller.detailAppointment;
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
+
+  const handleRefreshWithToast = () => {
+    controller.refreshData();
+    showSnackbar('Operación realizada exitosamente', 'success');
+  };
 
   return (
     <>
@@ -58,7 +66,7 @@ export default function AppointmentsView() {
       <CreateAppointmentDialog
         open={controller.createDialogOpen}
         onClose={controller.closeCreateDialog}
-        onSuccess={controller.refreshData}
+        onSuccess={handleRefreshWithToast}
       />
 
       <CancelAppointmentDialog
@@ -74,6 +82,8 @@ export default function AppointmentsView() {
         onClose={controller.closeRescheduleDialog}
         onConfirm={controller.handleReschedule}
       />
+
+      <SuccessSnackbar snackbar={snackbar} onClose={closeSnackbar} />
     </>
   );
 }
