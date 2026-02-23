@@ -95,6 +95,7 @@ export default function Navbar() {
           <i
             className="ri-arrow-right-s-line"
             style={{ fontSize: 16, opacity: 0.4 }}
+            aria-hidden="true"
           />
           <Typography
             variant="body2"
@@ -110,7 +111,7 @@ export default function Navbar() {
           {/* User info */}
           <Box
             sx={{
-              display: { xs: 'none', sm: 'flex' },
+              display: 'flex',
               alignItems: 'center',
               gap: 1.5,
               py: 0.5,
@@ -156,7 +157,7 @@ export default function Navbar() {
                 }}
               />
             </Box>
-            <Box>
+            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
               <Typography
                 variant="body2"
                 fontWeight={600}

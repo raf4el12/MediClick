@@ -40,10 +40,10 @@ export function SuccessSnackbar({
                 variant="filled"
                 onClose={onClose}
                 icon={<i className={iconMap[snackbar.severity]} style={{ fontSize: 20 }} />}
-                sx={{
+                sx={(theme) => ({
                     width: '100%',
                     minWidth: 280,
-                    boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+                    boxShadow: `0 8px 32px ${theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0.18)'}`,
                     borderRadius: 2,
                     fontWeight: 500,
                     fontSize: '0.875rem',
@@ -51,7 +51,7 @@ export function SuccessSnackbar({
                     '& .MuiAlert-action': {
                         pt: 0,
                     },
-                }}
+                })}
             >
                 {snackbar.message}
             </Alert>

@@ -46,7 +46,7 @@ export function ClinicalNoteForm({ appointmentId, loading, onSubmit }: ClinicalN
 
   return (
     <Box component="form" onSubmit={(e) => { void handleSubmit(e); }} sx={{ mt: 1 }}>
-      <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
+      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>
         Agregar nueva nota
       </Typography>
 

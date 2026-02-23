@@ -51,7 +51,7 @@ function KpiCard({ title, value, subtitle, icon, color, loading }: KpiCardProps)
           </Grid>
           <Grid>
             <Typography fontSize={36} color={color}>
-              <i className={icon} />
+              <i className={icon} aria-hidden="true" />
             </Typography>
           </Grid>
         </Grid>

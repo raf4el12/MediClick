@@ -47,7 +47,7 @@ const StatCard = ({ title, value, subtitle, icon, color, bgColor }: StatCardProp
           sx={{
             width: 48,
             height: 48,
-            borderRadius: '12px',
+            borderRadius: 3,
             bgcolor: bgColor,
             display: 'flex',
             alignItems: 'center',
@@ -159,7 +159,7 @@ const DashboardView = () => {
             width: 180,
             height: 180,
             borderRadius: '50%',
-            background: 'rgba(59, 130, 246, 0.1)',
+            background: alpha(theme.palette.primary.main, 0.1),
           }}
         />
         <Box
@@ -170,7 +170,7 @@ const DashboardView = () => {
             width: 120,
             height: 120,
             borderRadius: '50%',
-            background: 'rgba(139, 92, 246, 0.08)',
+            background: alpha(theme.palette.secondary.main, 0.08),
           }}
         />
         <CardContent sx={{ position: 'relative', zIndex: 1, p: { xs: 3, md: 4 } }}>
@@ -216,7 +216,7 @@ const DashboardView = () => {
                     href={action.href}
                     sx={{
                       p: 2,
-                      borderRadius: '10px',
+                      borderRadius: 2.5,
                       border: '1px solid',
                       borderColor: 'divider',
                       display: 'flex',
@@ -236,7 +236,7 @@ const DashboardView = () => {
                       sx={{
                         width: 40,
                         height: 40,
-                        borderRadius: '10px',
+                        borderRadius: 2.5,
                         bgcolor: action.bgColor,
                         display: 'flex',
                         alignItems: 'center',
@@ -304,7 +304,7 @@ const DashboardView = () => {
                   sx={{
                     mt: 1,
                     p: 2.5,
-                    borderRadius: '10px',
+                    borderRadius: 2.5,
                     bgcolor: 'action.hover',
                     border: '1px dashed',
                     borderColor: 'divider',

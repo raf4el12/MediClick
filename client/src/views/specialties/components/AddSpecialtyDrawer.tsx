@@ -223,7 +223,10 @@ export function AddSpecialtyDrawer({
             sx={{ minWidth: 120 }}
           >
             {isLoading ? (
-              <CircularProgress size={20} color="inherit" />
+              <>
+                <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
+                Guardando...
+              </>
             ) : drawerData.action === 'Update' ? (
               'Actualizar'
             ) : (

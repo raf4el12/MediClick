@@ -140,6 +140,7 @@ export function DoctorsTable({
               color="primary"
               aria-label="Ver detalle del doctor"
               onClick={() => openDetail(row.original)}
+              sx={{ minWidth: 44, minHeight: 44 }}
             >
               <i className="ri-eye-line" style={{ fontSize: 18 }} />
             </IconButton>
@@ -248,7 +249,7 @@ export function DoctorsTable({
                   />
                 ) : table.getRowModel().rows.length > 0 ? (
                   table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id} hover>
+                    <TableRow key={row.id} hover sx={{ cursor: 'pointer' }}>
                       {row.getVisibleCells().map((cell) => {
                         const isHiddenOnMobile = (cell.column.columnDef.meta as Record<string, boolean> | undefined)?.hiddenOnMobile;
                         return (
@@ -269,11 +270,20 @@ export function DoctorsTable({
                   <TableRow>
                     <TableCell
                       colSpan={columns.length}
-                      sx={{ textAlign: 'center', py: 4 }}
+                      sx={{ textAlign: 'center', py: 6 }}
                     >
-                      <Typography color="text.secondary">
+                      <i className="ri-user-heart-line" style={{ fontSize: 48, display: 'block', marginBottom: 8 }} />
+                      <Typography color="text.secondary" sx={{ mb: 2 }}>
                         No hay doctores disponibles
                       </Typography>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<i className="ri-add-line" />}
+                        onClick={openCreateDrawer}
+                      >
+                        Registrar doctor
+                      </Button>
                     </TableCell>
                   </TableRow>
                 )}

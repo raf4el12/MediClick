@@ -16,6 +16,7 @@ import Alert from '@mui/material/Alert';
 import Divider from '@mui/material/Divider';
 import Avatar from '@mui/material/Avatar';
 import IconButton from '@mui/material/IconButton';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme, alpha } from '@mui/material/styles';
 import { debounce } from '@/utils/debounce';
 import { useAppointmentForm } from '../hooks/useAppointmentForm';
@@ -66,6 +67,7 @@ export function CreateAppointmentDialog({
   onSuccess,
 }: CreateAppointmentDialogProps) {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const form = useAppointmentForm({ open, onSuccess, onClose });
   const [patientSearch, setPatientSearch] = useState('');
   const dateScrollRef = useRef<HTMLDivElement>(null);
@@ -230,9 +232,12 @@ export function CreateAppointmentDialog({
                 })}
                 {form.specialties.length === 0 && (
                   <Grid size={12}>
-                    <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
-                      No hay especialidades disponibles
-                    </Typography>
+                    <Box sx={{ textAlign: 'center', py: 4 }}>
+                      <i className="ri-stethoscope-line" style={{ fontSize: 48, display: 'block', marginBottom: 8, opacity: 0.3 }} />
+                      <Typography color="text.secondary">
+                        No hay especialidades disponibles
+                      </Typography>
+                    </Box>
                   </Grid>
                 )}
               </Grid>
@@ -331,9 +336,12 @@ export function CreateAppointmentDialog({
                   );
                 })}
                 {form.doctors.length === 0 && (
-                  <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
-                    No hay doctores disponibles para esta especialidad
-                  </Typography>
+                  <Box sx={{ textAlign: 'center', py: 4 }}>
+                    <i className="ri-user-heart-line" style={{ fontSize: 48, display: 'block', marginBottom: 8, opacity: 0.3 }} />
+                    <Typography color="text.secondary">
+                      No hay doctores disponibles para esta especialidad
+                    </Typography>
+                  </Box>
                 )}
               </Box>
             )}
@@ -384,7 +392,7 @@ export function CreateAppointmentDialog({
                     const isOccupied = !slot.available;
 
                     return (
-                      <Grid size={{ xs: 3 }} key={`${slot.startTime}-${slot.endTime}`}>
+                      <Grid size={{ xs: 4, sm: 3 }} key={`${slot.startTime}-${slot.endTime}`}>
                         <Button
                           fullWidth
                           variant={isSelected ? 'contained' : 'outlined'}
@@ -425,7 +433,7 @@ export function CreateAppointmentDialog({
                 {form.slotsForSelectedDate.map((slot) => {
                   const isSelected = form.selectedScheduleId === slot.id;
                   return (
-                    <Grid size={{ xs: 3 }} key={slot.id}>
+                    <Grid size={{ xs: 4, sm: 3 }} key={slot.id}>
                       <Button
                         fullWidth
                         variant={isSelected ? 'contained' : 'outlined'}
@@ -447,9 +455,12 @@ export function CreateAppointmentDialog({
           }
 
           return (
-            <Typography color="text.secondary" textAlign="center" sx={{ py: 3 }}>
-              No hay horarios disponibles para esta fecha
-            </Typography>
+            <Box sx={{ textAlign: 'center', py: 3 }}>
+              <i className="ri-time-line" style={{ fontSize: 48, display: 'block', marginBottom: 8, opacity: 0.3 }} />
+              <Typography color="text.secondary">
+                No hay horarios disponibles para esta fecha
+              </Typography>
+            </Box>
           );
         };
 
@@ -577,9 +588,12 @@ export function CreateAppointmentDialog({
                 )}
               </Box>
             ) : (
-              <Typography color="text.secondary" textAlign="center" sx={{ py: 4 }}>
-                No hay horarios disponibles para este doctor
-              </Typography>
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <i className="ri-calendar-close-line" style={{ fontSize: 48, display: 'block', marginBottom: 8, opacity: 0.3 }} />
+                <Typography color="text.secondary">
+                  No hay horarios disponibles para este doctor
+                </Typography>
+              </Box>
             )}
           </Box>
         );
@@ -772,7 +786,7 @@ export function CreateAppointmentDialog({
   const isLastStep = form.activeStep === 3;
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" fullScreen={isMobile}>
       {/* Header con título + stepper */}
       <Box sx={{ px: 3, pt: 3, pb: 1 }}>
         <Typography variant="h6" fontWeight={700} textAlign="center" sx={{ mb: 2 }}>
@@ -817,7 +831,7 @@ export function CreateAppointmentDialog({
         )}
       </Box>
 
-      <DialogContent sx={{ px: 3, pt: 2 }}>
+      <DialogContent sx={{ px: 3, pt: 2, maxHeight: isMobile ? undefined : '70vh', overflowY: 'auto' }}>
         {form.error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {form.error}

@@ -3,7 +3,7 @@
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
-import { useTheme } from '@mui/material/styles';
+import { useTheme, alpha } from '@mui/material/styles';
 import { LoginForm } from './LoginForm';
 
 const features = [
@@ -58,7 +58,7 @@ const LoginView = () => {
             width: 300,
             height: 300,
             borderRadius: '50%',
-            bgcolor: 'rgba(255, 255, 255, 0.06)',
+            bgcolor: alpha(theme.palette.common.white, 0.06),
           }}
         />
         <Box
@@ -69,7 +69,7 @@ const LoginView = () => {
             width: 220,
             height: 220,
             borderRadius: '50%',
-            bgcolor: 'rgba(255, 255, 255, 0.04)',
+            bgcolor: alpha(theme.palette.common.white, 0.04),
           }}
         />
 
@@ -79,8 +79,8 @@ const LoginView = () => {
               sx={{
                 width: 48,
                 height: 48,
-                borderRadius: '12px',
-                bgcolor: 'rgba(255, 255, 255, 0.2)',
+                borderRadius: 3,
+                bgcolor: alpha(theme.palette.common.white, 0.2),
                 backdropFilter: 'blur(8px)',
                 display: 'flex',
                 alignItems: 'center',
@@ -117,13 +117,13 @@ const LoginView = () => {
                   alignItems: 'flex-start',
                   gap: 2,
                   p: 2.5,
-                  borderRadius: '12px',
-                  bgcolor: 'rgba(255, 255, 255, 0.1)',
+                  borderRadius: 3,
+                  bgcolor: alpha(theme.palette.common.white, 0.1),
                   backdropFilter: 'blur(4px)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  border: `1px solid ${alpha(theme.palette.common.white, 0.1)}`,
                   transition: 'all 200ms ease',
                   '&:hover': {
-                    bgcolor: 'rgba(255, 255, 255, 0.15)',
+                    bgcolor: alpha(theme.palette.common.white, 0.15),
                     transform: 'translateX(4px)',
                   },
                 }}
@@ -132,8 +132,8 @@ const LoginView = () => {
                   sx={{
                     width: 40,
                     height: 40,
-                    borderRadius: '10px',
-                    bgcolor: 'rgba(255, 255, 255, 0.2)',
+                    borderRadius: 2.5,
+                    bgcolor: alpha(theme.palette.common.white, 0.2),
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -183,7 +183,7 @@ const LoginView = () => {
               sx={{
                 width: 56,
                 height: 56,
-                borderRadius: '14px',
+                borderRadius: 3.5,
                 bgcolor: 'primary.main',
                 display: { xs: 'flex', md: 'none' },
                 alignItems: 'center',

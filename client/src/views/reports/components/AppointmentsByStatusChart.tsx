@@ -92,7 +92,7 @@ export default function AppointmentsByStatusChart({
                   borderRadius: 8,
                   fontSize: 12,
                 }}
-                formatter={(value: number, name: string) => [value, name]}
+                formatter={(value, name) => [value, name]}
               />
               <Legend
                 iconType="circle"

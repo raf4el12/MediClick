@@ -239,8 +239,8 @@ export function WeeklyScheduleConfigurator({
                               aria-label="Eliminar horario"
                               onClick={() => onRemoveSlot(day, idx)}
                               sx={{
-                                width: 28,
-                                height: 28,
+                                minWidth: 44,
+                                minHeight: 44,
                                 color: 'error.light',
                                 '&:hover': { color: 'error.main' },
                               }}

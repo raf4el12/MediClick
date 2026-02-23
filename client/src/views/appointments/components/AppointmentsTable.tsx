@@ -13,6 +13,7 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableSortLabel from '@mui/material/TableSortLabel';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
@@ -182,7 +183,7 @@ export function AppointmentsTable({
             <Box sx={{ display: 'flex', gap: 0.5 }} onClick={(e) => e.stopPropagation()}>
               {canCheckIn && (
                 <Tooltip title="Check-in">
-                  <IconButton size="small" color="primary" aria-label="Registrar entrada" onClick={() => handleCheckIn(id)}>
+                  <IconButton size="small" color="primary" aria-label="Registrar entrada" onClick={() => handleCheckIn(id)} sx={{ minWidth: 44, minHeight: 44 }}>
                     <i className="ri-login-box-line" style={{ fontSize: 18 }} />
                   </IconButton>
                 </Tooltip>
@@ -194,6 +195,7 @@ export function AppointmentsTable({
                     color="info"
                     aria-label="Reagendar cita"
                     onClick={() => openRescheduleDialog(row.original)}
+                    sx={{ minWidth: 44, minHeight: 44 }}
                   >
                     <i className="ri-calendar-schedule-line" style={{ fontSize: 18 }} />
                   </IconButton>
@@ -201,7 +203,7 @@ export function AppointmentsTable({
               )}
               {canComplete && (
                 <Tooltip title="Completar">
-                  <IconButton size="small" color="success" aria-label="Completar cita" onClick={() => handleComplete(id)}>
+                  <IconButton size="small" color="success" aria-label="Completar cita" onClick={() => handleComplete(id)} sx={{ minWidth: 44, minHeight: 44 }}>
                     <i className="ri-check-double-line" style={{ fontSize: 18 }} />
                   </IconButton>
                 </Tooltip>
@@ -213,6 +215,7 @@ export function AppointmentsTable({
                     color="error"
                     aria-label="Cancelar cita"
                     onClick={() => openCancelDialog(row.original)}
+                    sx={{ minWidth: 44, minHeight: 44 }}
                   >
                     <i className="ri-close-circle-line" style={{ fontSize: 18 }} />
                   </IconButton>
@@ -347,11 +350,20 @@ export function AppointmentsTable({
                   <TableRow>
                     <TableCell
                       colSpan={columns.length}
-                      sx={{ textAlign: 'center', py: 4 }}
+                      sx={{ textAlign: 'center', py: 6 }}
                     >
-                      <Typography color="text.secondary">
+                      <i className="ri-calendar-check-line" style={{ fontSize: 48, display: 'block', marginBottom: 8 }} />
+                      <Typography color="text.secondary" sx={{ mb: 2 }}>
                         No hay citas disponibles
                       </Typography>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<i className="ri-add-line" />}
+                        onClick={openCreateDialog}
+                      >
+                        Crear cita
+                      </Button>
                     </TableCell>
                   </TableRow>
                 )}

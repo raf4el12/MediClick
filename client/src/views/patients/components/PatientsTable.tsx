@@ -164,6 +164,7 @@ export function PatientsTable({
         header: 'Sangre',
         cell: ({ row }) => (
           <Chip
+            icon={<i className="ri-drop-line" aria-hidden="true" style={{ fontSize: 14 }} />}
             label={row.original.bloodType}
             size="small"
             variant="outlined"
@@ -329,11 +330,20 @@ export function PatientsTable({
                   <TableRow>
                     <TableCell
                       colSpan={columns.length}
-                      sx={{ textAlign: 'center', py: 4 }}
+                      sx={{ textAlign: 'center', py: 6 }}
                     >
-                      <Typography color="text.secondary">
+                      <i className="ri-user-add-line" style={{ fontSize: 48, display: 'block', marginBottom: 8 }} />
+                      <Typography color="text.secondary" sx={{ mb: 2 }}>
                         No hay pacientes disponibles
                       </Typography>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<i className="ri-add-line" />}
+                        onClick={openCreateDrawer}
+                      >
+                        Registrar paciente
+                      </Button>
                     </TableCell>
                   </TableRow>
                 )}

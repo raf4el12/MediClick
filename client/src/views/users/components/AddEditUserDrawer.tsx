@@ -267,7 +267,10 @@ export function AddEditUserDrawer({
             sx={{ minWidth: 120 }}
           >
             {isLoading ? (
-              <CircularProgress size={20} color="inherit" />
+              <>
+                <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
+                Guardando...
+              </>
             ) : isEdit ? (
               'Guardar'
             ) : (
