@@ -44,6 +44,8 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       data: {
         patientId: data.patientId,
         scheduleId: data.scheduleId,
+        startTime: data.startTime,
+        endTime: data.endTime,
         reason: data.reason,
       },
       include: appointmentInclude,
@@ -169,6 +171,26 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     return count > 0;
   }
 
+  async hasOverlappingAppointment(
+    scheduleId: number,
+    startTime: Date,
+    endTime: Date,
+    excludeId?: number,
+  ): Promise<boolean> {
+    const count = await this.prisma.appointments.count({
+      where: {
+        scheduleId,
+        deleted: false,
+        status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+        // Overlap: A.start < B.end AND A.end > B.start
+        startTime: { lt: endTime },
+        endTime: { gt: startTime },
+        ...(excludeId && { id: { not: excludeId } }),
+      },
+    });
+    return count > 0;
+  }
+
   async findByDoctorAndDate(
     doctorId: number,
     date: Date,
@@ -204,6 +226,8 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       id: raw.id,
       patientId: raw.patientId,
       scheduleId: raw.scheduleId,
+      startTime: raw.startTime,
+      endTime: raw.endTime,
       reason: raw.reason,
       notes: raw.notes,
       status: raw.status as AppointmentStatus,

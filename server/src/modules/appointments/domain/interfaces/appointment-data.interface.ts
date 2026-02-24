@@ -3,6 +3,8 @@ import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-s
 export interface CreateAppointmentData {
   patientId: number;
   scheduleId: number;
+  startTime: Date;
+  endTime: Date;
   reason?: string;
 }
 
@@ -18,6 +20,8 @@ export interface AppointmentWithRelations {
   id: number;
   patientId: number;
   scheduleId: number;
+  startTime: Date;
+  endTime: Date;
   reason: string | null;
   notes: string | null;
   status: AppointmentStatus;

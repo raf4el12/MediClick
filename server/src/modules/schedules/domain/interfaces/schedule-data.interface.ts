@@ -35,3 +35,17 @@ export interface ScheduleWithAvailability {
   timeTo: Date;
   hasActiveAppointment: boolean;
 }
+
+/**
+ * Horario enriquecido con los rangos exactos de las citas activas ya agendadas.
+ * Usado para calcular disponibilidad de slots dentro de un bloque horario.
+ */
+export interface ScheduleWithBookedSlots {
+  id: number;
+  doctorId: number;
+  specialtyId: number;
+  scheduleDate: Date;
+  timeFrom: Date;
+  timeTo: Date;
+  bookedSlots: { startTime: Date; endTime: Date }[];
+}

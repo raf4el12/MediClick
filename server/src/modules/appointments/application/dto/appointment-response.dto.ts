@@ -63,6 +63,12 @@ export class AppointmentResponseDto {
   @ApiProperty()
   scheduleId: number;
 
+  @ApiProperty({ example: '08:20', description: 'Hora inicio del slot (HH:mm)' })
+  startTime: string;
+
+  @ApiProperty({ example: '08:40', description: 'Hora fin del slot (HH:mm)' })
+  endTime: string;
+
   @ApiPropertyOptional()
   reason: string | null;
 

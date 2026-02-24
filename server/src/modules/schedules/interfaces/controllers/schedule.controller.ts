@@ -93,9 +93,9 @@ export class ScheduleController {
   @ApiOperation({
     summary: 'Obtener time slots disponibles para un doctor en una fecha',
     description:
-      'Fragmenta el rango timeFrom–timeTo en intervalos de durationMinutes minutos ' +
-      'y cruza el resultado con los horarios reales del doctor en esa fecha para ' +
-      'indicar cuáles están disponibles (available: true) o ya tienen cita activa (available: false).',
+      'Busca los bloques horarios del doctor para la fecha y especialidad dadas, ' +
+      'obtiene la duración de la especialidad, fragmenta cada bloque en slots y ' +
+      'cruza con las citas existentes para indicar disponibilidad.',
   })
   @ApiResponse({
     status: 200,

@@ -23,6 +23,16 @@ export interface IAppointmentRepository {
     scheduleId: number,
     excludeId?: number,
   ): Promise<boolean>;
+  /**
+   * Verifica si existe una cita activa que se superponga con el rango dado
+   * dentro del mismo schedule. Usa lógica de overlap: A.start < B.end AND A.end > B.start.
+   */
+  hasOverlappingAppointment(
+    scheduleId: number,
+    startTime: Date,
+    endTime: Date,
+    excludeId?: number,
+  ): Promise<boolean>;
   findByDoctorAndDate(
     doctorId: number,
     date: Date,

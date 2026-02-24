@@ -1,6 +1,7 @@
 import {
   ScheduleWithRelations,
   ScheduleWithAvailability,
+  ScheduleWithBookedSlots,
   CreateScheduleData,
 } from '../interfaces/schedule-data.interface.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
@@ -40,4 +41,14 @@ export interface IScheduleRepository {
     date: Date,
     specialtyId?: number,
   ): Promise<ScheduleWithAvailability[]>;
+
+  /**
+   * Devuelve los horarios de un doctor para una fecha y especialidad,
+   * junto con los rangos exactos (startTime, endTime) de las citas activas.
+   */
+  findByDoctorDateWithBookedSlots(
+    doctorId: number,
+    date: Date,
+    specialtyId: number,
+  ): Promise<ScheduleWithBookedSlots[]>;
 }

@@ -77,6 +77,8 @@ export class RescheduleAppointmentUseCase {
       id: a.id,
       patientId: a.patientId,
       scheduleId: a.scheduleId,
+      startTime: dateToTimeString(a.startTime),
+      endTime: dateToTimeString(a.endTime),
       reason: a.reason,
       notes: a.notes,
       status: a.status,

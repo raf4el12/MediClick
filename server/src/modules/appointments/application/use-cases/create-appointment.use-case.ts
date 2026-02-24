@@ -10,6 +10,14 @@ import type { IAppointmentRepository } from '../../domain/repositories/appointme
 import type { IPatientRepository } from '../../../patients/domain/repositories/patient.repository.js';
 import type { IScheduleRepository } from '../../../schedules/domain/repositories/schedule.repository.js';
 
+/**
+ * Convierte una cadena HH:mm al objeto Date de referencia (base 1970-01-01).
+ */
+function parseHHmm(hhmm: string): Date {
+  const [hours, minutes] = hhmm.split(':').map(Number);
+  return new Date(1970, 0, 1, hours, minutes, 0, 0);
+}
+
 function dateToTimeString(date: Date): string {
   const h = date.getHours().toString().padStart(2, '0');
   const m = date.getMinutes().toString().padStart(2, '0');
@@ -41,6 +49,35 @@ export class CreateAppointmentUseCase {
       throw new BadRequestException('El horario especificado no existe');
     }
 
+    // ── Parsear horas del slot ──
+    const slotStart = parseHHmm(dto.startTime);
+    const slotEnd = parseHHmm(dto.endTime);
+
+    if (slotStart.getTime() >= slotEnd.getTime()) {
+      throw new BadRequestException(
+        'startTime debe ser anterior a endTime',
+      );
+    }
+
+    // ── Validar que el slot cabe dentro del rango del schedule ──
+    const schedTimeFrom = new Date(schedule.timeFrom);
+    const schedTimeTo = new Date(schedule.timeTo);
+
+    const schedFromMinutes =
+      schedTimeFrom.getHours() * 60 + schedTimeFrom.getMinutes();
+    const schedToMinutes =
+      schedTimeTo.getHours() * 60 + schedTimeTo.getMinutes();
+    const slotStartMinutes =
+      slotStart.getHours() * 60 + slotStart.getMinutes();
+    const slotEndMinutes = slotEnd.getHours() * 60 + slotEnd.getMinutes();
+
+    if (slotStartMinutes < schedFromMinutes || slotEndMinutes > schedToMinutes) {
+      throw new BadRequestException(
+        `El slot ${dto.startTime}-${dto.endTime} está fuera del rango del turno ` +
+          `${dateToTimeString(schedTimeFrom)}-${dateToTimeString(schedTimeTo)}`,
+      );
+    }
+
     // ── Validación de fecha/hora (zona horaria Perú UTC-5) ──
     const nowPeru = new Date(
       new Date().toLocaleString('en-US', { timeZone: 'America/Lima' }),
@@ -66,13 +103,12 @@ export class CreateAppointmentUseCase {
 
     // Si es hoy, validar hora con buffer de 2 horas
     if (scheduleDayStart.getTime() === todayStart.getTime()) {
-      const timeFrom = new Date(schedule.timeFrom);
       const scheduleDateTime = new Date(
         scheduleDate.getFullYear(),
         scheduleDate.getMonth(),
         scheduleDate.getDate(),
-        timeFrom.getHours(),
-        timeFrom.getMinutes(),
+        slotStart.getHours(),
+        slotStart.getMinutes(),
       );
       const diff = scheduleDateTime.getTime() - nowPeru.getTime();
       if (diff < CreateAppointmentUseCase.MIN_BUFFER_MS) {
@@ -82,17 +118,24 @@ export class CreateAppointmentUseCase {
       }
     }
 
-    const hasAppointment =
-      await this.appointmentRepository.existsAppointmentForSchedule(
+    // ── Verificar colisión con citas existentes en el mismo schedule ──
+    const hasOverlap =
+      await this.appointmentRepository.hasOverlappingAppointment(
         dto.scheduleId,
+        slotStart,
+        slotEnd,
       );
-    if (hasAppointment) {
-      throw new ConflictException('El horario ya tiene una cita asignada');
+    if (hasOverlap) {
+      throw new ConflictException(
+        'Ya existe una cita que se superpone con el horario seleccionado',
+      );
     }
 
     const appointment = await this.appointmentRepository.create({
       patientId: dto.patientId,
       scheduleId: dto.scheduleId,
+      startTime: slotStart,
+      endTime: slotEnd,
       reason: dto.reason,
     });
 
@@ -104,6 +147,8 @@ export class CreateAppointmentUseCase {
       id: a.id,
       patientId: a.patientId,
       scheduleId: a.scheduleId,
+      startTime: dateToTimeString(a.startTime),
+      endTime: dateToTimeString(a.endTime),
       reason: a.reason,
       notes: a.notes,
       status: a.status,

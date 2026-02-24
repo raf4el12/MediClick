@@ -4,6 +4,8 @@ export class AppointmentEntity {
   id: number;
   patientId: number;
   scheduleId: number;
+  startTime: Date;
+  endTime: Date;
   reason: string | null;
   notes: string | null;
   status: AppointmentStatus;

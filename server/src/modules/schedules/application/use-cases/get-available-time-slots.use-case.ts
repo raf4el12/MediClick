@@ -1,17 +1,15 @@
-import { Injectable, Inject, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { GetTimeSlotsQueryDto } from '../dto/get-time-slots-query.dto.js';
 import { TimeSlotResponseDto } from '../dto/time-slot-response.dto.js';
 import type { IScheduleRepository } from '../../domain/repositories/schedule.repository.js';
+import type { ISpecialtyRepository } from '../../../specialties/domain/repositories/specialty.repository.js';
 import { TimeSlotCalculatorService } from '../../domain/services/time-slot-calculator.service.js';
-
-/**
- * Convierte una cadena HH:mm al objeto Date de referencia (base 1970-01-01).
- * Mantiene la misma convención que el resto del proyecto.
- */
-function parseHHmm(hhmm: string): Date {
-  const [hours, minutes] = hhmm.split(':').map(Number);
-  return new Date(1970, 0, 1, hours, minutes, 0, 0);
-}
+import type { ScheduleWithBookedSlots } from '../../domain/interfaces/schedule-data.interface.js';
 
 /**
  * Formatea un objeto Date como cadena HH:mm (extrae horas y minutos locales).
@@ -23,67 +21,99 @@ function formatHHmm(date: Date): string {
 }
 
 /**
+ * Verifica si dos rangos de tiempo se superponen.
+ * Usa la fórmula: A.start < B.end AND A.end > B.start
+ */
+function rangesOverlap(
+  aStart: Date,
+  aEnd: Date,
+  bStart: Date,
+  bEnd: Date,
+): boolean {
+  return aStart.getTime() < bEnd.getTime() && aEnd.getTime() > bStart.getTime();
+}
+
+/**
  * Use Case: Obtener time slots disponibles para un doctor en una fecha.
  *
- * Lógica:
- *  1. Delega al servicio de dominio puro (TimeSlotCalculatorService) la
- *     fragmentación del rango timeFrom–timeTo en intervalos de durationMinutes.
- *  2. Consulta la base de datos para obtener los horarios reales del doctor
- *     ese día, junto con el estado de ocupación de cada uno.
- *  3. Cruza los slots teóricos con los horarios del DB para marcar cuáles
- *     ya tienen una cita activa (available: false).
+ * Lógica auto-contenida:
+ *  1. Busca los horarios (bloques generales) del doctor para la fecha y especialidad.
+ *  2. Obtiene la duración de la especialidad.
+ *  3. Fragmenta cada bloque en slots usando TimeSlotCalculatorService.
+ *  4. Cruza con las citas existentes para marcar slots ocupados.
  */
 @Injectable()
 export class GetAvailableTimeSlotsUseCase {
   constructor(
     @Inject('IScheduleRepository')
     private readonly scheduleRepository: IScheduleRepository,
+    @Inject('ISpecialtyRepository')
+    private readonly specialtyRepository: ISpecialtyRepository,
   ) {}
 
   async execute(dto: GetTimeSlotsQueryDto): Promise<TimeSlotResponseDto[]> {
-    // 1. Parsear y validar el rango de tiempo
-    const timeFrom = parseHHmm(dto.timeFrom);
-    const timeTo = parseHHmm(dto.timeTo);
-
-    if (timeFrom.getTime() >= timeTo.getTime()) {
+    // 1. Obtener la duración de la especialidad
+    const specialty = await this.specialtyRepository.findById(dto.specialtyId);
+    if (!specialty) {
+      throw new NotFoundException('La especialidad especificada no existe');
+    }
+    if (!specialty.duration || specialty.duration <= 0) {
       throw new BadRequestException(
-        'timeFrom debe ser anterior a timeTo',
+        'La especialidad no tiene una duración configurada',
       );
     }
 
-    // 2. Generar slots teóricos usando el servicio de dominio puro
-    const theoreticalSlots = TimeSlotCalculatorService.generate(
-      timeFrom,
-      timeTo,
-      dto.durationMinutes,
-    );
+    // 2. Buscar los horarios del doctor para esa fecha y especialidad,
+    //    junto con las citas activas ya agendadas
+    const date = new Date(dto.date);
+    const schedules =
+      await this.scheduleRepository.findByDoctorDateWithBookedSlots(
+        dto.doctorId,
+        date,
+        dto.specialtyId,
+      );
 
-    if (theoreticalSlots.length === 0) {
+    if (schedules.length === 0) {
       return [];
     }
 
-    // 3. Consultar horarios reales del doctor en esa fecha (con estado de cita)
-    const date = new Date(dto.date);
-    const existingSchedules = await this.scheduleRepository.findByDoctorAndDate(
-      dto.doctorId,
-      date,
-      dto.specialtyId,
+    // 3. Generar slots y cruzar con citas existentes para cada bloque
+    const result: TimeSlotResponseDto[] = [];
+
+    for (const schedule of schedules) {
+      const slots = this.generateSlotsForSchedule(
+        schedule,
+        specialty.duration,
+      );
+      result.push(...slots);
+    }
+
+    return result;
+  }
+
+  /**
+   * Genera los time slots para un bloque horario y marca como ocupados
+   * los que se superponen con citas existentes.
+   */
+  private generateSlotsForSchedule(
+    schedule: ScheduleWithBookedSlots,
+    durationMinutes: number,
+  ): TimeSlotResponseDto[] {
+    const theoreticalSlots = TimeSlotCalculatorService.generate(
+      schedule.timeFrom,
+      schedule.timeTo,
+      durationMinutes,
     );
 
-    // 4. Construir set de claves "HH:mm_HH:mm" de los slots ya ocupados
-    const occupiedKeys = new Set<string>(
-      existingSchedules
-        .filter((s) => s.hasActiveAppointment)
-        .map((s) => `${formatHHmm(s.timeFrom)}_${formatHHmm(s.timeTo)}`),
-    );
-
-    // 5. Cruzar slots teóricos con los datos del DB
     return theoreticalSlots.map((slot) => {
-      const key = `${formatHHmm(slot.startTime)}_${formatHHmm(slot.endTime)}`;
+      const isOccupied = schedule.bookedSlots.some((booked) =>
+        rangesOverlap(slot.startTime, slot.endTime, booked.startTime, booked.endTime),
+      );
+
       return {
         startTime: formatHHmm(slot.startTime),
         endTime: formatHHmm(slot.endTime),
-        available: !occupiedKeys.has(key),
+        available: !isOccupied,
       };
     });
   }

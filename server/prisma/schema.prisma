@@ -236,26 +236,28 @@ model Appointments {
   id            Int             @id @default(autoincrement())
   patientId     Int
   scheduleId    Int
+  startTime     DateTime        // Hora inicio exacta del slot de la cita
+  endTime       DateTime        // Hora fin exacta del slot de la cita
   reason        String?
-  notes         String?        
-  status        AppointmentStatus @default(PENDING) 
-  paymentStatus PaymentStatus   @default(PENDING)   
-  amount        Decimal?        @db.Decimal(10, 2)  
-  cancelReason  String?         
+  notes         String?
+  status        AppointmentStatus @default(PENDING)
+  paymentStatus PaymentStatus   @default(PENDING)
+  amount        Decimal?        @db.Decimal(10, 2)
+  cancelReason  String?
   deleted       Boolean         @default(false)
   createdAt     DateTime        @default(now())
   updatedAt     DateTime?
-  
+
   patient       Patients        @relation(fields: [patientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   schedule      Schedules       @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
-  
+
   // Relaciones Core
-  clinicalNotes ClinicalNotes[] 
-  prescription  Prescriptions?  
-  transactions  Transactions[]  
+  clinicalNotes ClinicalNotes[]
+  prescription  Prescriptions?
+  transactions  Transactions[]
 
   @@index([patientId, status])
-  @@index([scheduleId])
+  @@index([scheduleId, startTime, endTime])
   @@index([createdAt])
   @@index([status, paymentStatus])
 }
