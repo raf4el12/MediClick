@@ -9,7 +9,7 @@ import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
 import { useAppSelector } from '@/redux-store/hooks';
 import { selectUser } from '@/redux-store/slices/auth';
-import { alpha, useTheme } from '@mui/material/styles';
+import { alpha, darken, useTheme } from '@mui/material/styles';
 
 interface StatCardProps {
   title: string;
@@ -142,11 +142,8 @@ const DashboardView = () => {
       <Card
         sx={{
           mb: 3,
-          background: (theme) =>
-            theme.palette.mode === 'dark'
-              ? 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)'
-              : 'linear-gradient(135deg, #1E293B 0%, #334155 100%)',
-          color: theme.palette.common.white,
+          background: `linear-gradient(135deg, ${darken(theme.palette.primary.main, 0.55)} 0%, ${darken(theme.palette.primary.main, 0.35)} 100%)`,
+          color: '#fff',
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -174,7 +171,7 @@ const DashboardView = () => {
           }}
         />
         <CardContent sx={{ position: 'relative', zIndex: 1, p: { xs: 3, md: 4 } }}>
-          <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5 }}>
+          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', mb: 0.5 }}>
             {new Date().toLocaleDateString('es-ES', {
               weekday: 'long',
               year: 'numeric',
@@ -185,7 +182,7 @@ const DashboardView = () => {
           <Typography variant="h4" fontWeight={700} gutterBottom>
             Bienvenido, {user?.name ?? 'Usuario'}
           </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.65)' }}>
             Resumen general de tu sistema médico MediClick
           </Typography>
         </CardContent>

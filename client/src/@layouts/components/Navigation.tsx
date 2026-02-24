@@ -145,12 +145,12 @@ export default function Navigation({ mobileOpen = false, onMobileClose }: Naviga
 
   const isDark = settings.semiDark || settings.mode === 'dark';
 
-  const bgColor = isDark ? '#2F3349' : 'background.paper';
-  const textColor = isDark ? 'rgba(225, 222, 245, 0.9)' : 'text.primary';
-  const secondaryText = isDark ? 'rgba(225, 222, 245, 0.5)' : 'text.secondary';
-  const dividerColor = isDark ? 'rgba(225, 222, 245, 0.12)' : 'divider';
-  const hoverBg = isDark ? 'rgba(225, 222, 245, 0.06)' : 'action.hover';
-  const activeBg = isDark ? 'rgba(225, 222, 245, 0.08)' : 'action.selected';
+  const bgColor = isDark ? '#0F1B2D' : 'background.paper';
+  const textColor = isDark ? 'rgba(255, 255, 255, 0.9)' : 'text.primary';
+  const secondaryText = isDark ? 'rgba(255, 255, 255, 0.5)' : 'text.secondary';
+  const dividerColor = isDark ? 'rgba(255, 255, 255, 0.12)' : 'divider';
+  const hoverBg = isDark ? 'rgba(255, 255, 255, 0.06)' : 'action.hover';
+  const activeBg = isDark ? 'rgba(255, 255, 255, 0.08)' : 'action.selected';
 
   const filteredSections = navigationItems
     .map((section) => ({
@@ -346,8 +346,8 @@ export default function Navigation({ mobileOpen = false, onMobileClose }: Naviga
                 height: 20,
                 fontSize: '0.65rem',
                 mt: 0.25,
-                borderColor: isDark ? 'rgba(225, 222, 245, 0.2)' : undefined,
-                color: isDark ? 'rgba(225, 222, 245, 0.7)' : undefined,
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : undefined,
+                color: isDark ? 'rgba(255, 255, 255, 0.7)' : undefined,
               }}
             />
           </Box>

@@ -115,9 +115,8 @@ const Customizer = () => {
                 {primaryColorConfig.map((item) => (
                   <div
                     key={item.name}
-                    className={`${styles.primaryColorWrapper} ${
-                      settings.primaryColor === item.main ? styles.active : ''
-                    }`}
+                    className={`${styles.primaryColorWrapper} ${settings.primaryColor === item.main ? styles.active : ''
+                      }`}
                     onClick={() => handleChange('primaryColor', item.main)}
                   >
                     <div
@@ -140,9 +139,8 @@ const Customizer = () => {
                   return (
                     <div key={mode} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
                       <div
-                        className={`${styles.itemWrapper} ${styles.modeWrapper} ${
-                          settings.mode === mode ? styles.active : ''
-                        }`}
+                        className={`${styles.itemWrapper} ${styles.modeWrapper} ${settings.mode === mode ? styles.active : ''
+                          }`}
                         onClick={() => handleChange('mode', mode)}
                       >
                         <i className={icons[mode]} style={{ fontSize: 30 }} />
@@ -173,13 +171,13 @@ const Customizer = () => {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
                   <div
-                    className={`${styles.itemWrapper} ${settings.skin === 'bordered' ? styles.active : ''}`}
-                    onClick={() => handleChange('skin', 'bordered')}
+                    className={`${styles.itemWrapper} ${settings.skin === 'shadow' ? styles.active : ''}`}
+                    onClick={() => handleChange('skin', 'shadow')}
                   >
                     <SkinBordered />
                   </div>
-                  <p className={styles.itemLabel} onClick={() => handleChange('skin', 'bordered')}>
-                    Bordeado
+                  <p className={styles.itemLabel} onClick={() => handleChange('skin', 'shadow')}>
+                    Shadow
                   </p>
                 </div>
               </div>

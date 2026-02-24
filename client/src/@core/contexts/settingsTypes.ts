@@ -1,6 +1,6 @@
 export interface Settings {
   mode: 'light' | 'dark' | 'system';
-  skin: 'default' | 'bordered';
+  skin: 'default' | 'shadow';
   semiDark: boolean;
   layout: 'vertical' | 'collapsed';
   navbarContentWidth: 'compact' | 'wide';

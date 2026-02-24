@@ -40,6 +40,11 @@ function ThemeWrapper({ children }: { children: React.ReactNode }) {
     root.style.setProperty('--primary-color', theme.palette.primary.main);
     root.style.setProperty('--border-color', theme.palette.divider);
     root.style.setProperty('--border-radius', `${theme.shape.borderRadius}px`);
+    root.style.setProperty('--background-paper', theme.palette.background.paper);
+    root.style.setProperty('--background-default', theme.palette.background.default);
+    root.style.setProperty('--text-primary', theme.palette.text.primary);
+    root.style.setProperty('--text-secondary', theme.palette.text.secondary);
+    root.style.setProperty('--action-active', theme.palette.action.active);
   }, [theme]);
 
   return (

@@ -3,7 +3,7 @@ const themeConfig = {
   settingsCookieName: 'mediclick-settings',
   homePageUrl: '/',
   mode: 'light' as 'light' | 'dark' | 'system',
-  skin: 'default' as 'default' | 'bordered',
+  skin: 'default' as 'default' | 'shadow',
   semiDark: true,
   layout: 'vertical' as 'vertical' | 'collapsed',
   layoutPadding: 24,

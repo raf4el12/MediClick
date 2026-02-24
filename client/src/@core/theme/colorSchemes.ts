@@ -39,11 +39,11 @@ const colorSchemes = (): ColorSchemes => ({
         dark: '#059669',
       },
       background: {
-        default: '#F8FAFC',
+        default: '#F0F4F8',
         paper: '#FFFFFF',
       },
       text: {
-        primary: '#1E293B',
+        primary: '#1B2537',
         secondary: '#64748B',
         disabled: '#94A3B8',
       },
