@@ -46,10 +46,16 @@ export const SettingsProvider = ({ children, mode }: SettingsProviderProps) => {
     primaryColor: primaryColorConfig[0]?.main ?? '#2563EB',
   };
 
-  const [settingsState, setSettingsState] = useState<Settings>(() => {
+  // Always initialize with default settings to match SSR output and avoid hydration mismatch
+  const [settingsState, setSettingsState] = useState<Settings>(initialSettings);
+
+  // Hydrate from cookie after mount (client-only) to restore user preferences
+  useEffect(() => {
     const cookieSettings = readCookie();
-    return cookieSettings ? { ...initialSettings, ...cookieSettings } : initialSettings;
-  });
+    if (cookieSettings) {
+      setSettingsState((prev) => ({ ...prev, ...cookieSettings }));
+    }
+  }, []);
 
   useEffect(() => {
     writeCookie(settingsState);

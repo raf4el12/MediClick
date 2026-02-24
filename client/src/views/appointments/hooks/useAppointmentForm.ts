@@ -49,6 +49,7 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
   const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
   const [reason, setReason] = useState('');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [selectedSlotTime, setSelectedSlotTime] = useState<{ startTime: string; endTime: string } | null>(null);
 
   // Index maps for O(1) lookups
   const specialtyMap = useMemo(() => new Map(specialties.map((s) => [s.id, s])), [specialties]);
@@ -246,7 +247,7 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
   };
 
   const handleSubmit = async () => {
-    if (!selectedPatientId || !selectedScheduleId) return;
+    if (!selectedPatientId || !selectedScheduleId || !selectedSlotTime) return;
     setSubmitting(true);
     setError(null);
     try {
@@ -254,6 +255,8 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
         createAppointmentThunk({
           patientId: selectedPatientId,
           scheduleId: selectedScheduleId,
+          startTime: selectedSlotTime.startTime,
+          endTime: selectedSlotTime.endTime,
           reason: reason || undefined,
         }),
       ).unwrap();
@@ -274,6 +277,7 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
     setSelectedDoctorId(null);
     setSelectedScheduleId(null);
     setSelectedPatientId(null);
+    setSelectedSlotTime(null);
     setReason('');
     setSelectedDate(null);
     setSpecialties([]);
@@ -321,6 +325,7 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
     setSelectedDoctorId,
     setSelectedScheduleId,
     setSelectedPatientId,
+    setSelectedSlotTime,
     setSelectedDate,
     setReason,
     searchPatients,

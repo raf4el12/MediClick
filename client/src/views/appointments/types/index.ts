@@ -52,6 +52,8 @@ export interface Appointment {
 export interface CreateAppointmentPayload {
   patientId: number;
   scheduleId: number;
+  startTime: string;  // HH:mm
+  endTime: string;    // HH:mm
   reason?: string;
 }
 

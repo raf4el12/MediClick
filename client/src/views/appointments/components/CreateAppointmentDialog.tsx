@@ -398,7 +398,10 @@ export function CreateAppointmentDialog({
                           variant={isSelected ? 'contained' : 'outlined'}
                           disabled={isOccupied || scheduleId === null}
                           onClick={() => {
-                            if (scheduleId !== null) form.setSelectedScheduleId(scheduleId);
+                            if (scheduleId !== null) {
+                              form.setSelectedScheduleId(scheduleId);
+                              form.setSelectedSlotTime({ startTime: slot.startTime, endTime: slot.endTime });
+                            }
                           }}
                           sx={{
                             borderRadius: 2,
@@ -437,7 +440,10 @@ export function CreateAppointmentDialog({
                       <Button
                         fullWidth
                         variant={isSelected ? 'contained' : 'outlined'}
-                        onClick={() => form.setSelectedScheduleId(slot.id)}
+                        onClick={() => {
+                          form.setSelectedScheduleId(slot.id);
+                          form.setSelectedSlotTime({ startTime: slot.timeFrom, endTime: slot.timeTo });
+                        }}
                         sx={{
                           borderRadius: 2,
                           py: 1,
@@ -505,6 +511,7 @@ export function CreateAppointmentDialog({
                           onClick={() => {
                             form.setSelectedDate(dateStr);
                             form.setSelectedScheduleId(null);
+                            form.setSelectedSlotTime(null);
                           }}
                           sx={{
                             minWidth: 64,
