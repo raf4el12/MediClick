@@ -8,8 +8,6 @@ import { StoreProvider } from '@/redux-store/StoreProvider';
 import { SettingsProvider } from '@/@core/contexts/settingsContext';
 import { useSettings } from '@/@core/hooks/useSettings';
 import SessionValidator from '@/components/SessionValidator';
-import Customizer from '@/@core/components/customizer';
-
 interface ProvidersProps {
   children: React.ReactNode;
 }
@@ -61,7 +59,6 @@ export default function Providers({ children }: ProvidersProps) {
       <SettingsProvider>
         <ThemeWrapper>
           <SessionValidator />
-          <Customizer />
           {children}
         </ThemeWrapper>
       </SettingsProvider>

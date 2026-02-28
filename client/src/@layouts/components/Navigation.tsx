@@ -41,7 +41,7 @@ const navigationItems: NavSection[] = [
     items: [
       {
         title: 'Dashboard',
-        path: '/',
+        path: '/dashboard',
         icon: 'ri-dashboard-line',
       },
     ],

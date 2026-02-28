@@ -3,6 +3,7 @@ import VerticalLayout from '@/@layouts/VerticalLayout';
 import Navigation from '@/@layouts/components/Navigation';
 import Navbar from '@/@layouts/components/Navbar';
 import Footer from '@/@layouts/components/Footer';
+import Customizer from '@/@core/components/customizer';
 
 export default function MenuLayout({
   children,
@@ -17,6 +18,7 @@ export default function MenuLayout({
           navbar={<Navbar />}
           footer={<Footer />}
         >
+          <Customizer />
           {children}
         </VerticalLayout>
       }
