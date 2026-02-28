@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Box from '@mui/material/Box';
+import Avatar from '@mui/material/Avatar';
 import Drawer from '@mui/material/Drawer';
 import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
@@ -11,11 +12,14 @@ import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
-import { useAppSelector } from '@/redux-store/hooks';
+import { useAppSelector, useAppDispatch } from '@/redux-store/hooks';
 import { selectUser } from '@/redux-store/slices/auth';
+import { logoutThunk } from '@/redux-store/thunks/auth.thunks';
 import { UserRole } from '@/types/auth.types';
 import { useSettings } from '@/@core/hooks/useSettings';
 
@@ -133,11 +137,14 @@ interface NavigationProps {
 
 export default function Navigation({ mobileOpen = false, onMobileClose }: NavigationProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const dispatch = useAppDispatch();
   const user = useAppSelector(selectUser);
   const { settings, updateSettings } = useSettings();
   const userRole = user?.role;
 
   const [isHovered, setIsHovered] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
   const isCollapsed = settings.layout === 'collapsed';
   const showText = !isCollapsed || isHovered;
   const currentWidth = isCollapsed && !isHovered ? 80 : DRAWER_WIDTH;
@@ -149,6 +156,21 @@ export default function Navigation({ mobileOpen = false, onMobileClose }: Naviga
   const secondaryText = isDark ? 'rgba(255, 255, 255, 0.5)' : 'text.secondary';
   const dividerColor = isDark ? 'rgba(255, 255, 255, 0.12)' : 'divider';
   const hoverBg = isDark ? 'rgba(255, 255, 255, 0.06)' : 'action.hover';
+
+  const handleLogout = async () => {
+    setMenuAnchor(null);
+    await dispatch(logoutThunk());
+    router.push('/login');
+  };
+
+  const roleLabels: Record<string, string> = {
+    ADMIN: 'Administrador',
+    DOCTOR: 'Doctor',
+    RECEPTIONIST: 'Recepcionista',
+    PATIENT: 'Paciente',
+  };
+
+  const avatarSrc = user?.avatarUrl || '/images/avatarSidebar.jpg';
 
   const filteredSections = navigationItems
     .map((section) => ({
@@ -308,9 +330,129 @@ export default function Navigation({ mobileOpen = false, onMobileClose }: Naviga
         ))}
       </Box>
 
-      {/* User Info completely removed as per previous redundancy request, layout cleaned up */}
-    </Box >
+      {/* User Profile */}
+      <Divider sx={{ borderColor: dividerColor, mx: showText ? 2 : 1, opacity: 0.6 }} />
+      <Box sx={{ p: showText ? 1.5 : 1 }}>
+        <Box
+          onClick={(e) => setMenuAnchor(e.currentTarget)}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            p: showText ? 1.5 : 1,
+            borderRadius: '10px',
+            cursor: 'pointer',
+            transition: 'background-color 200ms ease',
+            justifyContent: showText ? 'flex-start' : 'center',
+            '&:hover': {
+              bgcolor: hoverBg,
+            },
+          }}
+        >
+          <Tooltip title={!showText ? (user?.name ?? 'Usuario') : ''} placement="right">
+            <Avatar
+              src={avatarSrc}
+              alt={user?.name ?? 'Usuario'}
+              sx={{
+                width: 40,
+                height: 40,
+                flexShrink: 0,
+                border: '2px solid',
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'divider',
+              }}
+            />
+          </Tooltip>
+          {showText && (
+            <>
+              <Box sx={{ minWidth: 0, flex: 1 }}>
+                <Typography
+                  variant="body2"
+                  fontWeight={600}
+                  noWrap
+                  sx={{ color: textColor, lineHeight: 1.3 }}
+                >
+                  {user?.name ?? 'Usuario'}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  noWrap
+                  sx={{
+                    color: secondaryText,
+                    fontSize: '0.7rem',
+                    lineHeight: 1.3,
+                    display: 'block',
+                  }}
+                >
+                  {roleLabels[user?.role ?? ''] ?? user?.role ?? 'Sin rol'}
+                </Typography>
+              </Box>
+              <IconButton
+                size="small"
+                sx={{
+                  color: secondaryText,
+                  flexShrink: 0,
+                  '&:hover': { color: textColor },
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuAnchor(e.currentTarget);
+                }}
+              >
+                <i className="ri-more-2-fill" style={{ fontSize: 18 }} />
+              </IconButton>
+            </>
+          )}
+        </Box>
 
+        {/* Context Menu */}
+        <Menu
+          anchorEl={menuAnchor}
+          open={Boolean(menuAnchor)}
+          onClose={() => setMenuAnchor(null)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+          slotProps={{
+            paper: {
+              sx: {
+                minWidth: 180,
+                mt: -1,
+                borderRadius: 2,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
+              },
+            },
+          }}
+        >
+          <Box sx={{ px: 2, py: 1.5 }}>
+            <Typography variant="body2" fontWeight={600}>
+              {user?.name ?? 'Usuario'}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {user?.email ?? ''}
+            </Typography>
+          </Box>
+          <Divider />
+          <MenuItem
+            onClick={() => {
+              setMenuAnchor(null);
+              void handleLogout();
+            }}
+            sx={{
+              gap: 1.5,
+              py: 1,
+              color: 'error.main',
+              '&:hover': { bgcolor: 'error.lighter' },
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 0, color: 'inherit' }}>
+              <i className="ri-logout-box-r-line" style={{ fontSize: 18 }} />
+            </ListItemIcon>
+            <Typography variant="body2" fontWeight={500}>
+              Cerrar Sesión
+            </Typography>
+          </MenuItem>
+        </Menu>
+      </Box>
+    </Box>
   );
 
   const drawerPaperStyles = {
