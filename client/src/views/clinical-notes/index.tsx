@@ -7,7 +7,11 @@ import Box from '@mui/material/Box';
 import Collapse from '@mui/material/Collapse';
 import { useClinicalNotes } from './hooks/useClinicalNotes';
 import { ClinicalNotesTable } from './components/ClinicalNotesTable';
-import { ClinicalNotePanel } from './components/ClinicalNotePanel';
+import dynamic from 'next/dynamic';
+
+const ClinicalNotePanel = dynamic(
+  () => import('./components/ClinicalNotePanel').then((m) => m.ClinicalNotePanel),
+);
 
 export default function ClinicalNotesView() {
   const controller = useClinicalNotes();

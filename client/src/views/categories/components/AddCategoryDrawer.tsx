@@ -13,6 +13,8 @@ import { Controller } from 'react-hook-form';
 import { useCategoryForm } from '../hooks/useCategoryForm';
 import type { Category } from '../types';
 
+const KEEP_MOUNTED = { keepMounted: true };
+
 interface AddCategoryDrawerProps {
   open: boolean;
   drawerData: { data: Category | null; action: 'Create' | 'Update' };
@@ -35,7 +37,7 @@ export function AddCategoryDrawer({
       anchor="right"
       variant="temporary"
       onClose={handleReset}
-      ModalProps={{ keepMounted: true }}
+      ModalProps={KEEP_MOUNTED}
       sx={{ '& .MuiDrawer-paper': { width: { xs: 320, sm: 420 } } }}
     >
       <Box

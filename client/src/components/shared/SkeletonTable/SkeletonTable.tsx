@@ -13,9 +13,9 @@ export function SkeletonTable({ rowsNum, colNum }: SkeletonTableProps) {
   return (
     <>
       {Array.from({ length: rowsNum }).map((_, rowIndex) => (
-        <TableRow key={rowIndex}>
+        <TableRow key={`skeleton-row-${rowIndex}`}>
           {Array.from({ length: colNum }).map((_, colIndex) => (
-            <TableCell key={colIndex}>
+            <TableCell key={`skeleton-cell-${colIndex}`}>
               <Skeleton variant="text" />
             </TableCell>
           ))}

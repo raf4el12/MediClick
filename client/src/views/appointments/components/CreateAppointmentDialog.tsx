@@ -813,7 +813,7 @@ export function CreateAppointmentDialog({
             }}
           >
             {breadcrumbs.map((crumb, idx) => (
-              <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box key={crumb} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 {idx > 0 && (
                   <i
                     className="ri-arrow-right-s-line"

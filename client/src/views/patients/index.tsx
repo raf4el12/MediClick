@@ -4,9 +4,13 @@ import Grid from '@mui/material/Grid';
 import Collapse from '@mui/material/Collapse';
 import { usePatients } from './hooks/usePatients';
 import { PatientsTable } from './components/PatientsTable';
-import { PatientDetailDialog } from './components/PatientDetailDialog';
+import dynamic from 'next/dynamic';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
+
+const PatientDetailDialog = dynamic(
+  () => import('./components/PatientDetailDialog').then((m) => m.PatientDetailDialog),
+);
 
 export default function PatientsView() {
   const controller = usePatients();

@@ -1,15 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAppDispatch } from '@/redux-store/hooks';
 import { specialtiesService } from '@/services/specialties.service';
 import { doctorsService } from '@/services/doctors.service';
 import { schedulesService } from '@/services/schedules.service';
 import { patientsService } from '@/services/patients.service';
 import { createAppointmentThunk } from '@/redux-store/thunks/appointments.thunks';
-import type { Specialty } from '@/views/specialties/types';
-import type { Doctor } from '@/views/doctors/types';
-import type { Schedule, TimeSlot } from '@/views/schedules/types';
 import type { Patient } from '@/views/patients/types';
 import { filterAvailableSlots } from '../functions/filterAvailableSlots';
 
@@ -19,6 +17,17 @@ interface UseAppointmentFormProps {
   onClose: () => void;
 }
 
+function getTodayPeru(): string {
+  const nowPeru = new Date(
+    new Date().toLocaleString('en-US', { timeZone: 'America/Lima' }),
+  );
+  const y = nowPeru.getFullYear();
+  const m = (nowPeru.getMonth() + 1).toString().padStart(2, '0');
+  const d = nowPeru.getDate().toString().padStart(2, '0');
+
+  return `${y}-${m}-${d}`;
+}
+
 export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentFormProps) {
   const dispatch = useAppDispatch();
 
@@ -26,21 +35,9 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Data lists
-  const [specialties, setSpecialties] = useState<Specialty[]>([]);
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
+  // Patient search (mantiene estado manual por ser on-demand)
   const [patients, setPatients] = useState<Patient[]>([]);
-
-  // Time slots del nuevo endpoint (disponibles + ocupados)
-  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
-
-  // Loading states
-  const [loadingSpecialties, setLoadingSpecialties] = useState(false);
-  const [loadingDoctors, setLoadingDoctors] = useState(false);
-  const [loadingSchedules, setLoadingSchedules] = useState(false);
   const [loadingPatients, setLoadingPatients] = useState(false);
-  const [loadingTimeSlots, setLoadingTimeSlots] = useState(false);
 
   // Selections
   const [selectedSpecialtyId, setSelectedSpecialtyId] = useState<number | null>(null);
@@ -50,6 +47,51 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
   const [reason, setReason] = useState('');
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedSlotTime, setSelectedSlotTime] = useState<{ startTime: string; endTime: string } | null>(null);
+
+  // ── React Query: Specialties (se cachean 5 min) ──
+  const {
+    data: specialties = [],
+    isLoading: loadingSpecialties,
+  } = useQuery({
+    queryKey: ['specialties', 'appointment-form'],
+    queryFn: () => specialtiesService.findAllPaginated({ pageSize: 100 }).then((res) => res.rows),
+    enabled: open,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // ── React Query: Doctors por specialty (se cachean por specialtyId) ──
+  const {
+    data: doctors = [],
+    isLoading: loadingDoctors,
+  } = useQuery({
+    queryKey: ['doctors', 'by-specialty', selectedSpecialtyId],
+    queryFn: () => doctorsService.findAllPaginated({ pageSize: 100 }, selectedSpecialtyId!).then((res) => res.rows),
+    enabled: open && selectedSpecialtyId !== null,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // ── React Query: Schedules por doctor + specialty ──
+  const today = getTodayPeru();
+  const {
+    data: schedules = [],
+    isLoading: loadingSchedules,
+  } = useQuery({
+    queryKey: ['schedules', 'available', selectedDoctorId, selectedSpecialtyId, today],
+    queryFn: () =>
+      schedulesService
+        .findAllPaginated(
+          { pageSize: 200 },
+          {
+            doctorId: selectedDoctorId!,
+            specialtyId: selectedSpecialtyId!,
+            dateFrom: today,
+            onlyAvailable: true,
+          },
+        )
+        .then((res) => filterAvailableSlots(res.rows)),
+    enabled: open && selectedDoctorId !== null && selectedSpecialtyId !== null,
+    staleTime: 2 * 60 * 1000,
+  });
 
   // Index maps for O(1) lookups
   const specialtyMap = useMemo(() => new Map(specialties.map((s) => [s.id, s])), [specialties]);
@@ -64,114 +106,61 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
   const selectedPatient = patientMap.get(selectedPatientId!) ?? null;
 
   // Computed: unique available dates from schedules
-  const availableDates = Array.from(
-    new Set(schedules.map((s) => s.scheduleDate.split('T')[0] ?? s.scheduleDate)),
-  ).sort();
+  const availableDates = useMemo(
+    () =>
+      Array.from(
+        new Set(schedules.map((s) => s.scheduleDate.split('T')[0] ?? s.scheduleDate)),
+      ).sort(),
+    [schedules],
+  );
 
-  // Computed: schedules filtered by selected date (para mapeo scheduleId ↔ timeFrom)
+  // Computed: schedules filtered by selected date
   const slotsForSelectedDate = selectedDate
     ? schedules.filter((s) => (s.scheduleDate.split('T')[0] ?? s.scheduleDate) === selectedDate)
     : [];
 
-  // Step 0: Load specialties when dialog opens
-  useEffect(() => {
-    if (!open) return;
-    setLoadingSpecialties(true);
-    specialtiesService
-      .findAllPaginated({ pageSize: 100 })
-      .then((res) => setSpecialties(res.rows))
-      .catch(() => setSpecialties([]))
-      .finally(() => setLoadingSpecialties(false));
-  }, [open]);
+  // ── React Query: Time slots por fecha seleccionada ──
+  const duration = selectedSpecialty?.duration;
+  const daySchedules = useMemo(
+    () =>
+      selectedDate
+        ? schedules.filter(
+            (s) => (s.scheduleDate.split('T')[0] ?? s.scheduleDate) === selectedDate,
+          )
+        : [],
+    [schedules, selectedDate],
+  );
 
-  // Step 1: Load doctors when specialty selected
-  useEffect(() => {
-    if (!selectedSpecialtyId) {
-      setDoctors([]);
-      return;
-    }
-    setLoadingDoctors(true);
-    doctorsService
-      .findAllPaginated({ pageSize: 100 }, selectedSpecialtyId)
-      .then((res) => setDoctors(res.rows))
-      .catch(() => setDoctors([]))
-      .finally(() => setLoadingDoctors(false));
-  }, [selectedSpecialtyId]);
-
-  // Step 2: Load schedules when doctor selected (solo disponibles, sin fechas pasadas)
-  useEffect(() => {
-    if (!selectedDoctorId || !selectedSpecialtyId) {
-      setSchedules([]);
-      return;
-    }
-    setLoadingSchedules(true);
-    const nowPeru = new Date(
-      new Date().toLocaleString('en-US', { timeZone: 'America/Lima' }),
-    );
-    const y = nowPeru.getFullYear();
-    const m = (nowPeru.getMonth() + 1).toString().padStart(2, '0');
-    const d = nowPeru.getDate().toString().padStart(2, '0');
-    const today = `${y}-${m}-${d}`;
-
-    schedulesService
-      .findAllPaginated(
-        { pageSize: 200 },
-        {
-          doctorId: selectedDoctorId,
-          specialtyId: selectedSpecialtyId,
-          dateFrom: today,
-          onlyAvailable: true,
-        },
-      )
-      .then((res) => setSchedules(filterAvailableSlots(res.rows)))
-      .catch(() => setSchedules([]))
-      .finally(() => setLoadingSchedules(false));
-  }, [selectedDoctorId, selectedSpecialtyId]);
-
-  // Step 2: Cargar time-slots del nuevo endpoint cuando se selecciona una fecha.
-  // Se ejecuta solo si la especialidad tiene duración configurada.
-  // Los schedules son accedidos desde el closure; dado que selectedDate siempre
-  // cambia DESPUÉS de que schedules se actualiza, el valor es fresco.
-  useEffect(() => {
-    const duration = selectedSpecialty?.duration;
-
-    if (!selectedDate || !selectedDoctorId || !selectedSpecialtyId || !duration) {
-      setTimeSlots([]);
-      return;
-    }
-
-    // Derivar rango del turno desde los schedules disponibles de esa fecha
-    const daySchedules = schedules.filter(
-      (s) => (s.scheduleDate.split('T')[0] ?? s.scheduleDate) === selectedDate,
-    );
-
-    if (daySchedules.length === 0) {
-      setTimeSlots([]);
-      return;
-    }
-
+  const shiftRange = useMemo(() => {
+    if (daySchedules.length === 0) return null;
     const sorted = [...daySchedules].sort((a, b) => a.timeFrom.localeCompare(b.timeFrom));
-    const shiftStart = sorted[0]!.timeFrom;
-    const shiftEnd = sorted[sorted.length - 1]!.timeTo;
 
-    setLoadingTimeSlots(true);
-    schedulesService
-      .getTimeSlots({
-        doctorId: selectedDoctorId,
-        specialtyId: selectedSpecialtyId,
-        date: selectedDate,
-        timeFrom: shiftStart,
-        timeTo: shiftEnd,
-        durationMinutes: duration,
-      })
-      .then(setTimeSlots)
-      .catch(() => setTimeSlots([]))
-      // eslint-disable-next-line @typescript-eslint/no-confusing-void-expression
-      .finally(() => setLoadingTimeSlots(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, selectedDoctorId, selectedSpecialtyId, selectedSpecialty?.duration]);
-  // `schedules` se omite intencionalmente de las deps: selectedDate siempre
-  // se actualiza después de que schedules carga, por lo que el closure es fresco.
+    return { start: sorted[0]!.timeFrom, end: sorted[sorted.length - 1]!.timeTo };
+  }, [daySchedules]);
+
+  const {
+    data: timeSlots = [],
+    isLoading: loadingTimeSlots,
+  } = useQuery({
+    queryKey: ['time-slots', selectedDoctorId, selectedSpecialtyId, selectedDate, duration, shiftRange?.start, shiftRange?.end],
+    queryFn: () =>
+      schedulesService.getTimeSlots({
+        doctorId: selectedDoctorId!,
+        specialtyId: selectedSpecialtyId!,
+        date: selectedDate!,
+        timeFrom: shiftRange!.start,
+        timeTo: shiftRange!.end,
+        durationMinutes: duration!,
+      }),
+    enabled:
+      open &&
+      selectedDate !== null &&
+      selectedDoctorId !== null &&
+      selectedSpecialtyId !== null &&
+      duration !== undefined &&
+      shiftRange !== null,
+    staleTime: 2 * 60 * 1000,
+  });
 
   // Auto-select first available date when schedules load
   useEffect(() => {
@@ -186,12 +175,12 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
   useEffect(() => {
     setSelectedDate(null);
     setSelectedScheduleId(null);
-    setTimeSlots([]);
   }, [selectedDoctorId]);
 
   const searchPatients = useCallback(async (query: string) => {
     if (!query || query.length < 2) {
       setPatients([]);
+
       return;
     }
     setLoadingPatients(true);
@@ -280,11 +269,7 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
     setSelectedSlotTime(null);
     setReason('');
     setSelectedDate(null);
-    setSpecialties([]);
-    setDoctors([]);
-    setSchedules([]);
     setPatients([]);
-    setTimeSlots([]);
     setError(null);
     setSubmitting(false);
   };

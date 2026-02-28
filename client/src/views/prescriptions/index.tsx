@@ -6,7 +6,11 @@ import Box from '@mui/material/Box';
 import Collapse from '@mui/material/Collapse';
 import { usePrescriptions } from './hooks/usePrescriptions';
 import { PrescriptionsTable } from './components/PrescriptionsTable';
-import { PrescriptionPanel } from './components/PrescriptionPanel';
+import dynamic from 'next/dynamic';
+
+const PrescriptionPanel = dynamic(
+  () => import('./components/PrescriptionPanel').then((m) => m.PrescriptionPanel),
+);
 
 export default function PrescriptionsView() {
   const controller = usePrescriptions();

@@ -5,6 +5,8 @@ import Alert from '@mui/material/Alert';
 import Slide from '@mui/material/Slide';
 import type { SnackbarState, SnackbarSeverity } from '@/hooks/useSnackbar';
 
+const SNACKBAR_ANCHOR = { vertical: 'bottom' as const, horizontal: 'right' as const };
+
 interface SuccessSnackbarProps {
     snackbar: SnackbarState;
     onClose: () => void;
@@ -32,7 +34,7 @@ export function SuccessSnackbar({
             open={snackbar.open}
             autoHideDuration={autoHideDuration}
             onClose={onClose}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            anchorOrigin={SNACKBAR_ANCHOR}
             TransitionComponent={SlideTransition}
         >
             <Alert

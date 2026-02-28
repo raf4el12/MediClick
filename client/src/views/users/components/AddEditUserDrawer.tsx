@@ -20,6 +20,8 @@ import { Controller } from 'react-hook-form';
 import { useUserForm } from '../hooks/useUserForm';
 import type { User } from '../types';
 
+const KEEP_MOUNTED = { keepMounted: true };
+
 interface AddEditUserDrawerProps {
   open: boolean;
   editUser: User | null;
@@ -42,7 +44,7 @@ export function AddEditUserDrawer({
       anchor="right"
       variant="temporary"
       onClose={handleReset}
-      ModalProps={{ keepMounted: true }}
+      ModalProps={KEEP_MOUNTED}
       sx={{ '& .MuiDrawer-paper': { width: { xs: 320, sm: 480 } } }}
     >
       <Box

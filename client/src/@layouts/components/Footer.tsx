@@ -5,6 +5,8 @@ import Typography from '@mui/material/Typography';
 import themeConfig from '@/configs/themeConfig';
 import { useSettings } from '@/@core/hooks/useSettings';
 
+const CURRENT_YEAR = new Date().getFullYear();
+
 export default function Footer() {
   const { settings } = useSettings();
 
@@ -33,7 +35,7 @@ export default function Footer() {
         }}
       >
         <Typography variant="caption" color="text.secondary">
-          © {new Date().getFullYear()} {themeConfig.templateName}. Todos los derechos reservados.
+          © {CURRENT_YEAR} {themeConfig.templateName}. Todos los derechos reservados.
         </Typography>
         <Typography variant="caption" color="text.disabled">
           v1.0.0

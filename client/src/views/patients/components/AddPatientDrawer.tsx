@@ -17,6 +17,8 @@ import Alert from '@mui/material/Alert';
 import { Controller } from 'react-hook-form';
 import { usePatientForm } from '../hooks/usePatientForm';
 
+const KEEP_MOUNTED = { keepMounted: true };
+
 interface AddPatientDrawerProps {
   open: boolean;
   onClose: () => void;
@@ -37,7 +39,7 @@ export function AddPatientDrawer({
       anchor="right"
       variant="temporary"
       onClose={handleReset}
-      ModalProps={{ keepMounted: true }}
+      ModalProps={KEEP_MOUNTED}
       sx={{ '& .MuiDrawer-paper': { width: { xs: 320, sm: 480 } } }}
     >
       <Box

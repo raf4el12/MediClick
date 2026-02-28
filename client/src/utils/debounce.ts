@@ -1,11 +1,22 @@
+interface DebouncedFunction<T extends (...args: Parameters<T>) => void> {
+  (...args: Parameters<T>): void;
+  cancel: () => void;
+}
+
 export function debounce<T extends (...args: Parameters<T>) => void>(
   fn: T,
   delay: number,
-): (...args: Parameters<T>) => void {
+): DebouncedFunction<T> {
   let timer: ReturnType<typeof setTimeout>;
 
-  return (...args: Parameters<T>) => {
+  const debounced = (...args: Parameters<T>) => {
     clearTimeout(timer);
     timer = setTimeout(() => fn(...args), delay);
   };
+
+  debounced.cancel = () => {
+    clearTimeout(timer);
+  };
+
+  return debounced;
 }

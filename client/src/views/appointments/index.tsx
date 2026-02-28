@@ -5,10 +5,12 @@ import Grid from '@mui/material/Grid';
 import Collapse from '@mui/material/Collapse';
 import { useAppointments } from './hooks/useAppointments';
 import { AppointmentsTable } from './components/AppointmentsTable';
-import { AppointmentDetailDialog } from './components/AppointmentDetailDialog';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
 
+const AppointmentDetailDialog = dynamic(
+  () => import('./components/AppointmentDetailDialog').then((m) => m.AppointmentDetailDialog),
+);
 const CreateAppointmentDialog = dynamic(
   () => import('./components/CreateAppointmentDialog').then((m) => m.CreateAppointmentDialog),
 );

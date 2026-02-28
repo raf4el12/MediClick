@@ -81,8 +81,8 @@ export default function AppointmentsByStatusChart({
                 paddingAngle={3}
                 dataKey="value"
               >
-                {data.map((_, index) => (
-                  <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                {data.map((entry, index) => (
+                  <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
                 ))}
               </Pie>
               <Tooltip

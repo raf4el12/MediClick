@@ -21,6 +21,8 @@ import { Controller } from 'react-hook-form';
 import { useDoctorForm } from '../hooks/useDoctorForm';
 import type { Specialty } from '@/views/specialties/types';
 
+const KEEP_MOUNTED = { keepMounted: true };
+
 interface AddDoctorDrawerProps {
   open: boolean;
   specialties: Specialty[];
@@ -45,7 +47,7 @@ export function AddDoctorDrawer({
       anchor="right"
       variant="temporary"
       onClose={handleReset}
-      ModalProps={{ keepMounted: true }}
+      ModalProps={KEEP_MOUNTED}
       sx={{ '& .MuiDrawer-paper': { width: { xs: 320, sm: 480 } } }}
     >
       <Box

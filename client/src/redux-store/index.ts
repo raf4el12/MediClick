@@ -14,6 +14,7 @@ import { appointmentsSlice } from './slices/appointments';
 const authPersistConfig = {
   key: 'auth',
   storage,
+  version: 1,
   whitelist: ['user', 'accessToken', 'isAuthenticated'],
 };
 

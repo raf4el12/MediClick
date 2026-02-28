@@ -24,6 +24,19 @@ import { UserRole } from '@/types/auth.types';
 import { useSettings } from '@/@core/hooks/useSettings';
 
 const DRAWER_WIDTH = 260;
+const KEEP_MOUNTED = { keepMounted: true };
+const MENU_ANCHOR_ORIGIN = { vertical: 'top' as const, horizontal: 'right' as const };
+const MENU_TRANSFORM_ORIGIN = { vertical: 'bottom' as const, horizontal: 'left' as const };
+const MENU_PAPER_PROPS = {
+  paper: {
+    sx: {
+      minWidth: 180,
+      mt: -1,
+      borderRadius: 2,
+      boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
+    },
+  },
+};
 
 interface NavItem {
   title: string;
@@ -409,18 +422,9 @@ export default function Navigation({ mobileOpen = false, onMobileClose }: Naviga
           anchorEl={menuAnchor}
           open={Boolean(menuAnchor)}
           onClose={() => setMenuAnchor(null)}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-          transformOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-          slotProps={{
-            paper: {
-              sx: {
-                minWidth: 180,
-                mt: -1,
-                borderRadius: 2,
-                boxShadow: '0 4px 20px rgba(0,0,0,0.12)',
-              },
-            },
-          }}
+          anchorOrigin={MENU_ANCHOR_ORIGIN}
+          transformOrigin={MENU_TRANSFORM_ORIGIN}
+          slotProps={MENU_PAPER_PROPS}
         >
           <Box sx={{ px: 2, py: 1.5 }}>
             <Typography variant="body2" fontWeight={600}>
@@ -473,7 +477,7 @@ export default function Navigation({ mobileOpen = false, onMobileClose }: Naviga
         variant="temporary"
         open={mobileOpen}
         onClose={onMobileClose}
-        ModalProps={{ keepMounted: true }}
+        ModalProps={KEEP_MOUNTED}
         sx={{
           display: { xs: 'block', md: 'none' },
           '& .MuiDrawer-paper': drawerPaperStyles,

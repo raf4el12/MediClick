@@ -19,6 +19,8 @@ import {
 import { useTheme } from '@mui/material/styles';
 import type { RevenueReport } from '../types';
 
+const CHART_MARGIN = { top: 4, right: 8, left: 0, bottom: 0 };
+
 interface RevenueComparisonChartProps {
   revenue: RevenueReport | null;
   loading: boolean;
@@ -68,7 +70,7 @@ export default function RevenueComparisonChart({
           </Box>
         ) : (
           <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={data} margin={{ top: 4, right: 8, left: 0, bottom: 0 }} barCategoryGap="30%">
+            <BarChart data={data} margin={CHART_MARGIN} barCategoryGap="30%">
               <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
               <XAxis
                 dataKey="name"

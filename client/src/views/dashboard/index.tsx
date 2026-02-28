@@ -13,6 +13,13 @@ import { selectUser } from '@/redux-store/slices/auth';
 import { alpha, darken, useTheme } from '@mui/material/styles';
 import { useDashboard } from './hooks/useDashboard';
 
+const TODAY_LABEL = new Date().toLocaleDateString('es-ES', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+
 interface StatCardProps {
   title: string;
   value: string;
@@ -207,12 +214,7 @@ const DashboardView = () => {
         />
         <CardContent sx={{ position: 'relative', zIndex: 1, p: { xs: 3, md: 4 } }}>
           <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)', mb: 0.5 }}>
-            {new Date().toLocaleDateString('es-ES', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })}
+            {TODAY_LABEL}
           </Typography>
           <Typography variant="h4" fontWeight={700} gutterBottom>
             Bienvenido, {user?.name ?? 'Usuario'}

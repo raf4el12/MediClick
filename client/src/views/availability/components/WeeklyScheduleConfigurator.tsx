@@ -13,6 +13,8 @@ import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
+
+const SNACKBAR_ANCHOR = { vertical: 'bottom' as const, horizontal: 'right' as const };
 import Snackbar from '@mui/material/Snackbar';
 import {
   type DayOfWeek,
@@ -263,7 +265,7 @@ export function WeeklyScheduleConfigurator({
         open={saveSuccess}
         autoHideDuration={3000}
         onClose={onSaveSuccessClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        anchorOrigin={SNACKBAR_ANCHOR}
       >
         <Alert severity="success" variant="filled" onClose={onSaveSuccessClose}>
           Disponibilidad guardada correctamente

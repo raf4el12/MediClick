@@ -19,6 +19,8 @@ import { Controller } from 'react-hook-form';
 import { useSpecialtyForm } from '../hooks/useSpecialtyForm';
 import type { Specialty, Category } from '../types';
 
+const KEEP_MOUNTED = { keepMounted: true };
+
 interface AddSpecialtyDrawerProps {
   open: boolean;
   drawerData: { data: Specialty | null; action: 'Create' | 'Update' };
@@ -43,7 +45,7 @@ export function AddSpecialtyDrawer({
       anchor="right"
       variant="temporary"
       onClose={handleReset}
-      ModalProps={{ keepMounted: true }}
+      ModalProps={KEEP_MOUNTED}
       sx={{ '& .MuiDrawer-paper': { width: { xs: 320, sm: 420 } } }}
     >
       <Box

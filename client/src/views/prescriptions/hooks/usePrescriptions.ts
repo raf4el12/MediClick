@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import { debounce } from '@/utils/debounce';
+import { useEffect, useState, useCallback } from 'react';
+import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { appointmentsService } from '@/services/appointments.service';
 import { prescriptionsService } from '@/services/prescriptions.service';
 import type { PaginatedResponse } from '@/types/pagination.types';
@@ -72,12 +72,9 @@ export function usePrescriptions() {
     void fetchData();
   }, [fetchData]);
 
-  const debouncedSearch = useMemo(
-    () =>
-      debounce((value: string) => {
-        setPagination((prev) => ({ ...prev, searchValue: value, currentPage: 1 }));
-      }, 500),
-    [],
+  const debouncedSearch = useDebouncedCallback(
+    (value: string) => setPagination((prev) => ({ ...prev, searchValue: value, currentPage: 1 })),
+    500,
   );
 
   const updateFilters = useCallback((updates: Partial<AppointmentFilters>) => {

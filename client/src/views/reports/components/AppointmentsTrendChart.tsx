@@ -18,6 +18,8 @@ import {
 import { useTheme } from '@mui/material/styles';
 import type { DailyCount } from '../types';
 
+const CHART_MARGIN = { top: 4, right: 8, left: -16, bottom: 0 };
+
 interface AppointmentsTrendChartProps {
   daily: DailyCount[];
   loading: boolean;
@@ -53,7 +55,7 @@ export default function AppointmentsTrendChart({
           </Box>
         ) : (
           <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={data} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+            <BarChart data={data} margin={CHART_MARGIN}>
               <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} />
               <XAxis
                 dataKey="label"

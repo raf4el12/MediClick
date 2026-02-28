@@ -7,6 +7,8 @@ import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import { useSchedules } from './hooks/useSchedules';
+
+const SNACKBAR_ANCHOR = { vertical: 'bottom' as const, horizontal: 'right' as const };
 import { ScheduleCalendar } from './components/ScheduleCalendar';
 
 const GenerateDialog = dynamic(
@@ -115,7 +117,7 @@ export default function SchedulesView() {
         open={generateSuccess}
         autoHideDuration={3000}
         onClose={() => setGenerateSuccess(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        anchorOrigin={SNACKBAR_ANCHOR}
       >
         <Alert severity="success" variant="filled" onClose={() => setGenerateSuccess(false)}>
           Horarios generados correctamente

@@ -3,9 +3,13 @@
 import Grid from '@mui/material/Grid';
 import { useUsers } from './hooks/useUsers';
 import { UsersTable } from './components/UsersTable';
-import { UserDetailDialog } from './components/UserDetailDialog';
+import dynamic from 'next/dynamic';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
+
+const UserDetailDialog = dynamic(
+  () => import('./components/UserDetailDialog').then((m) => m.UserDetailDialog),
+);
 
 export default function UsersView() {
   const controller = useUsers();

@@ -5,6 +5,7 @@ import { ThemeProvider as MuiThemeProvider, createTheme } from '@mui/material/st
 import CssBaseline from '@mui/material/CssBaseline';
 import coreTheme from '@/@core/theme';
 import { StoreProvider } from '@/redux-store/StoreProvider';
+import { QueryProvider } from '@/components/QueryProvider';
 import { SettingsProvider } from '@/@core/contexts/settingsContext';
 import { useSettings } from '@/@core/hooks/useSettings';
 import SessionValidator from '@/components/SessionValidator';
@@ -55,13 +56,15 @@ function ThemeWrapper({ children }: { children: React.ReactNode }) {
 
 export default function Providers({ children }: ProvidersProps) {
   return (
-    <StoreProvider>
-      <SettingsProvider>
-        <ThemeWrapper>
-          <SessionValidator />
-          {children}
-        </ThemeWrapper>
-      </SettingsProvider>
-    </StoreProvider>
+    <QueryProvider>
+      <StoreProvider>
+        <SettingsProvider>
+          <ThemeWrapper>
+            <SessionValidator />
+            {children}
+          </ThemeWrapper>
+        </SettingsProvider>
+      </StoreProvider>
+    </QueryProvider>
   );
 }

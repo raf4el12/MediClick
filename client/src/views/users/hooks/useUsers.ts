@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { debounce } from '@/utils/debounce';
+import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { useAppDispatch, useAppSelector } from '@/redux-store/hooks';
 import {
   selectUsersData,
@@ -59,11 +59,9 @@ export function useUsers() {
     [dispatch],
   );
 
-  const debouncedSearch = useCallback(
-    debounce((value: string) => {
-      updatePagination({ searchValue: value, currentPage: 1 });
-    }, 500),
-    [updatePagination],
+  const debouncedSearch = useDebouncedCallback(
+    (value: string) => updatePagination({ searchValue: value, currentPage: 1 }),
+    500,
   );
 
   const handleRoleFilter = (role: string | undefined) => {

@@ -18,6 +18,8 @@ import {
 import { useTheme } from '@mui/material/styles';
 import type { TopDoctor } from '../types';
 
+const CHART_MARGIN = { top: 4, right: 24, left: 8, bottom: 0 };
+
 interface TopDoctorsChartProps {
   topDoctors: TopDoctor[];
   loading: boolean;
@@ -58,7 +60,7 @@ export default function TopDoctorsChart({
             <BarChart
               layout="vertical"
               data={data}
-              margin={{ top: 4, right: 24, left: 8, bottom: 0 }}
+              margin={CHART_MARGIN}
             >
               <CartesianGrid strokeDasharray="3 3" stroke={theme.palette.divider} horizontal={false} />
               <XAxis
