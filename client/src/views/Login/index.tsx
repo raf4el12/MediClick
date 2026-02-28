@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Paper from '@mui/material/Paper';
@@ -25,11 +26,16 @@ const LoginView = () => {
           flex: 1,
           position: 'relative',
           overflow: 'hidden',
-          backgroundImage: 'url(/images/login-hero.jpg)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
         }}
       >
+        <Image
+          src="/images/login-hero.jpg"
+          alt=""
+          fill
+          style={{ objectFit: 'cover' }}
+          priority
+          unoptimized={true}
+        />
         {/* Dark overlay */}
         <Box
           sx={{
