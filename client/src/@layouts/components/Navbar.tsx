@@ -1,6 +1,5 @@
 'use client';
 
-import { useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
@@ -8,13 +7,9 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
-import { useAppDispatch, useAppSelector } from '@/redux-store/hooks';
-import { selectUser } from '@/redux-store/slices/auth';
+import { useAppDispatch } from '@/redux-store/hooks';
 import { logoutThunk } from '@/redux-store/thunks/auth.thunks';
 import themeConfig from '@/configs/themeConfig';
-import CustomAvatar from '@/@core/components/mui/Avatar';
-import { getInitials } from '@/utils/getInitials';
-import { getDefaultAvatarDataUri } from '@/utils/avatar';
 
 const pageTitles: Record<string, string> = {
   '/': 'Dashboard',
@@ -33,13 +28,8 @@ const pageTitles: Record<string, string> = {
 
 export default function Navbar() {
   const dispatch = useAppDispatch();
-  const user = useAppSelector(selectUser);
   const pathname = usePathname();
   const pageTitle = pageTitles[pathname] ?? 'MediClick';
-  const defaultAvatar = useMemo(
-    () => getDefaultAvatarDataUri(user?.email ?? user?.name ?? 'user'),
-    [user?.email, user?.name],
-  );
 
   const handleLogout = () => {
     void dispatch(logoutThunk());
@@ -108,73 +98,6 @@ export default function Navbar() {
 
         {/* Right side */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          {/* User info */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
-              py: 0.5,
-              px: 1.5,
-              borderRadius: '10px',
-              cursor: 'pointer',
-              '&:hover': { bgcolor: 'action.hover' },
-              transition: 'background-color 150ms ease',
-            }}
-          >
-            <Box sx={{ position: 'relative' }}>
-              <CustomAvatar
-                color="primary"
-                skin="filled"
-                size={34}
-                src={user?.avatarUrl ?? defaultAvatar}
-                sx={{
-                  borderRadius: '10px',
-                  fontWeight: 700,
-                  animation: 'avatarFloat 3.2s ease-in-out infinite',
-                  '@keyframes avatarFloat': {
-                    '0%, 100%': { transform: 'translateY(0px)' },
-                    '50%': { transform: 'translateY(-2px)' },
-                  },
-                  '@media (prefers-reduced-motion: reduce)': {
-                    animation: 'none',
-                  },
-                }}
-              >
-                {user?.name ? getInitials(user.name) : 'U'}
-              </CustomAvatar>
-              <Box
-                sx={{
-                  position: 'absolute',
-                  right: -2,
-                  bottom: -2,
-                  width: 10,
-                  height: 10,
-                  borderRadius: '50%',
-                  bgcolor: 'success.main',
-                  border: '2px solid',
-                  borderColor: 'background.paper',
-                }}
-              />
-            </Box>
-            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-              <Typography
-                variant="body2"
-                fontWeight={600}
-                sx={{ lineHeight: 1.2, fontSize: '0.8125rem' }}
-              >
-                {user?.name}
-              </Typography>
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                sx={{ fontSize: '0.7rem' }}
-              >
-                {user?.role}
-              </Typography>
-            </Box>
-          </Box>
-
           {/* Logout */}
           <Tooltip title="Cerrar Sesión">
             <IconButton
