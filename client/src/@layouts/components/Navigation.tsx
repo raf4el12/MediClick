@@ -1,10 +1,11 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
+import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
@@ -12,14 +13,11 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
-import Chip from '@mui/material/Chip';
+import Tooltip from '@mui/material/Tooltip';
 import { useAppSelector } from '@/redux-store/hooks';
 import { selectUser } from '@/redux-store/slices/auth';
 import { UserRole } from '@/types/auth.types';
 import { useSettings } from '@/@core/hooks/useSettings';
-import CustomAvatar from '@/@core/components/mui/Avatar';
-import { getInitials } from '@/utils/getInitials';
-import { getDefaultAvatarDataUri } from '@/utils/avatar';
 
 const DRAWER_WIDTH = 260;
 
@@ -136,12 +134,13 @@ interface NavigationProps {
 export default function Navigation({ mobileOpen = false, onMobileClose }: NavigationProps) {
   const pathname = usePathname();
   const user = useAppSelector(selectUser);
-  const { settings } = useSettings();
+  const { settings, updateSettings } = useSettings();
   const userRole = user?.role;
-  const defaultAvatar = useMemo(
-    () => getDefaultAvatarDataUri(user?.email ?? user?.name ?? 'user'),
-    [user?.email, user?.name],
-  );
+
+  const [isHovered, setIsHovered] = useState(false);
+  const isCollapsed = settings.layout === 'collapsed';
+  const showText = !isCollapsed || isHovered;
+  const currentWidth = isCollapsed && !isHovered ? 80 : DRAWER_WIDTH;
 
   const isDark = settings.semiDark || settings.mode === 'dark';
 
@@ -150,7 +149,6 @@ export default function Navigation({ mobileOpen = false, onMobileClose }: Naviga
   const secondaryText = isDark ? 'rgba(255, 255, 255, 0.5)' : 'text.secondary';
   const dividerColor = isDark ? 'rgba(255, 255, 255, 0.12)' : 'divider';
   const hoverBg = isDark ? 'rgba(255, 255, 255, 0.06)' : 'action.hover';
-  const activeBg = isDark ? 'rgba(255, 255, 255, 0.08)' : 'action.selected';
 
   const filteredSections = navigationItems
     .map((section) => ({
@@ -162,114 +160,146 @@ export default function Navigation({ mobileOpen = false, onMobileClose }: Naviga
     .filter((section) => section.items.length > 0);
 
   const drawerContent = (
-    <>
+    <Box
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}
+    >
       {/* Logo */}
       <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
-          gap: 1.5,
-          px: 3,
+          justifyContent: showText ? 'space-between' : 'center',
+          px: showText ? 3 : 0,
           py: 2.5,
           minHeight: 64,
         }}
       >
-        <Box
-          sx={{
-            width: 34,
-            height: 34,
-            borderRadius: '8px',
-            bgcolor: settings.primaryColor,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <i
-            className="ri-heart-pulse-line"
-            style={{ fontSize: 20, color: '#fff' }}
-          />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box
+            sx={{
+              width: 34,
+              height: 34,
+              borderRadius: '8px',
+              bgcolor: settings.primaryColor,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <i
+              className="ri-heart-pulse-line"
+              style={{ fontSize: 20, color: '#fff' }}
+            />
+          </Box>
+          {showText && (
+            <Typography
+              variant="h6"
+              fontWeight={700}
+              sx={{ color: textColor, letterSpacing: '-0.3px', whiteSpace: 'nowrap' }}
+            >
+              MediClick
+            </Typography>
+          )}
         </Box>
-        <Typography
-          variant="h6"
-          fontWeight={700}
-          sx={{ color: textColor, letterSpacing: '-0.3px' }}
-        >
-          MediClick
-        </Typography>
+        {showText && (
+          <IconButton
+            size="small"
+            onClick={() => updateSettings({ layout: isCollapsed ? 'vertical' : 'collapsed' })}
+            sx={{ color: secondaryText, '&:hover': { color: textColor } }}
+          >
+            <i className={isCollapsed ? 'ri-checkbox-blank-circle-line' : 'ri-record-circle-line'} style={{ fontSize: 20 }} />
+          </IconButton>
+        )}
       </Box>
 
-      <Divider sx={{ borderColor: dividerColor, mx: 2, opacity: 0.6 }} />
+      <Divider sx={{ borderColor: dividerColor, mx: showText ? 2 : 1, opacity: 0.6 }} />
 
       {/* Navigation Items */}
-      <Box sx={{ overflow: 'auto', py: 1.5, flex: 1, px: 0.5 }}>
+      <Box sx={{ overflow: 'auto', py: 1.5, flex: 1, px: showText ? 0.5 : 1 }}>
         {filteredSections.map((section) => (
           <Box key={section.section} sx={{ mb: 0.5 }}>
-            <Typography
-              variant="caption"
-              fontWeight={700}
-              sx={{
-                px: 3,
-                py: 1.5,
-                display: 'block',
-                color: secondaryText,
-                textTransform: 'uppercase',
-                letterSpacing: '0.8px',
-                fontSize: '0.68rem',
-              }}
-            >
-              {section.section}
-            </Typography>
+            {showText ? (
+              <Typography
+                variant="caption"
+                fontWeight={700}
+                sx={{
+                  px: 3,
+                  py: 1.5,
+                  display: 'block',
+                  color: secondaryText,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.8px',
+                  fontSize: '0.68rem',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {section.section}
+              </Typography>
+            ) : (
+              <Box sx={{ py: 1.5, display: 'flex', justifyContent: 'center' }}>
+                <Divider sx={{ width: 24, borderColor: dividerColor }} />
+              </Box>
+            )}
             <List disablePadding>
               {section.items.map((item) => {
                 const isActive = pathname === item.path;
 
                 return (
-                  <ListItem key={item.path} disablePadding sx={{ px: 1.5, mb: '2px' }}>
-                    <ListItemButton
-                      component={Link}
-                      href={item.path}
-                      selected={isActive}
-                      onClick={onMobileClose}
-                      sx={{
-                        borderRadius: '8px',
-                        py: 0.75,
-                        px: 2,
-                        color: textColor,
-                        transition: 'all 200ms ease',
-                        '&.Mui-selected': {
-                          bgcolor: 'primary.main',
-                          color: 'primary.contrastText',
-                          boxShadow: '0 2px 6px rgba(0, 0, 0, 0.16)',
-                          '&:hover': {
-                            bgcolor: 'primary.dark',
-                          },
-                          '& .MuiListItemIcon-root': {
-                            color: 'primary.contrastText',
-                          },
-                        },
-                        '&:not(.Mui-selected):hover': {
-                          bgcolor: hoverBg,
-                        },
-                      }}
-                    >
-                      <ListItemIcon
+                  <ListItem key={item.path} disablePadding sx={{ px: showText ? 1.5 : 0, mb: '2px', display: 'flex', justifyContent: 'center' }}>
+                    <Tooltip title={!showText ? item.title : ''} placement="right">
+                      <ListItemButton
+                        component={Link}
+                        href={item.path}
+                        selected={isActive}
+                        onClick={onMobileClose}
                         sx={{
-                          minWidth: 34,
-                          color: isActive ? 'inherit' : secondaryText,
-                          transition: 'color 200ms ease',
+                          borderRadius: '8px',
+                          py: 0.75,
+                          px: showText ? 2 : 1,
+                          justifyContent: showText ? 'flex-start' : 'center',
+                          color: textColor,
+                          transition: 'all 200ms ease',
+                          '&.Mui-selected': {
+                            bgcolor: 'primary.main',
+                            color: 'primary.contrastText',
+                            boxShadow: '0 2px 6px rgba(0, 0, 0, 0.16)',
+                            '&:hover': {
+                              bgcolor: 'primary.dark',
+                            },
+                            '& .MuiListItemIcon-root': {
+                              color: 'primary.contrastText',
+                            },
+                          },
+                          '&:not(.Mui-selected):hover': {
+                            bgcolor: hoverBg,
+                          },
                         }}
                       >
-                        <i className={item.icon} style={{ fontSize: 20 }} />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={item.title}
-                        primaryTypographyProps={{
-                          fontSize: '0.875rem',
-                          fontWeight: isActive ? 600 : 400,
-                        }}
-                      />
-                    </ListItemButton>
+                        <ListItemIcon
+                          sx={{
+                            minWidth: showText ? 34 : 0,
+                            color: isActive ? 'inherit' : secondaryText,
+                            transition: 'color 200ms ease',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <i className={item.icon} style={{ fontSize: 20 }} />
+                        </ListItemIcon>
+                        {showText && (
+                          <ListItemText
+                            primary={item.title}
+                            primaryTypographyProps={{
+                              fontSize: '0.875rem',
+                              fontWeight: isActive ? 600 : 400,
+                              whiteSpace: 'nowrap',
+                            }}
+                          />
+                        )}
+                      </ListItemButton>
+                    </Tooltip>
                   </ListItem>
                 );
               })}
@@ -278,86 +308,14 @@ export default function Navigation({ mobileOpen = false, onMobileClose }: Naviga
         ))}
       </Box>
 
-      <Divider sx={{ borderColor: dividerColor, mx: 2, opacity: 0.6 }} />
+      {/* User Info completely removed as per previous redundancy request, layout cleaned up */}
+    </Box >
 
-      {/* User Info at Bottom */}
-      <Box sx={{ p: 2 }}>
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1.5,
-            p: 1.5,
-            borderRadius: '10px',
-            bgcolor: activeBg,
-            transition: 'background-color 200ms ease',
-          }}
-        >
-          <Box sx={{ position: 'relative' }}>
-            <CustomAvatar
-              color="primary"
-              skin="filled"
-              size={38}
-              src={user?.avatarUrl ?? defaultAvatar}
-              sx={{
-                borderRadius: '10px',
-                fontWeight: 700,
-                animation: 'avatarFloat 3.2s ease-in-out infinite',
-                '@keyframes avatarFloat': {
-                  '0%, 100%': { transform: 'translateY(0px)' },
-                  '50%': { transform: 'translateY(-2px)' },
-                },
-                '@media (prefers-reduced-motion: reduce)': {
-                  animation: 'none',
-                },
-              }}
-            >
-              {user?.name ? getInitials(user.name) : 'U'}
-            </CustomAvatar>
-            <Box
-              sx={{
-                position: 'absolute',
-                right: -2,
-                bottom: -2,
-                width: 10,
-                height: 10,
-                borderRadius: '50%',
-                bgcolor: 'success.main',
-                border: '2px solid',
-                borderColor: bgColor,
-              }}
-            />
-          </Box>
-          <Box sx={{ minWidth: 0, flex: 1 }}>
-            <Typography
-              variant="body2"
-              fontWeight={600}
-              noWrap
-              sx={{ color: textColor, lineHeight: 1.3 }}
-            >
-              {user?.name ?? 'Usuario'}
-            </Typography>
-            <Chip
-              label={user?.role ?? 'N/A'}
-              size="small"
-              color="primary"
-              variant="outlined"
-              sx={{
-                height: 20,
-                fontSize: '0.65rem',
-                mt: 0.25,
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.2)' : undefined,
-                color: isDark ? 'rgba(255, 255, 255, 0.7)' : undefined,
-              }}
-            />
-          </Box>
-        </Box>
-      </Box>
-    </>
   );
 
   const drawerPaperStyles = {
-    width: DRAWER_WIDTH,
+    width: currentWidth,
+    overflowX: 'hidden' as const,
     boxSizing: 'border-box',
     borderRight: '0 none',
     bgcolor: bgColor,
@@ -387,9 +345,10 @@ export default function Navigation({ mobileOpen = false, onMobileClose }: Naviga
         variant="permanent"
         sx={{
           display: { xs: 'none', md: 'block' },
-          width: DRAWER_WIDTH,
+          width: currentWidth,
           flexShrink: 0,
           '& .MuiDrawer-paper': drawerPaperStyles,
+          transition: 'width 300ms ease',
         }}
       >
         {drawerContent}

@@ -63,7 +63,7 @@ export function PrescriptionForm({ appointmentId, loading, onSubmit }: Prescript
     }
 
     for (let i = 0; i < items.length; i++) {
-      const item = items[i];
+      const item = items[i]!;
 
       if (!item.medication.trim() || !item.dosage.trim() || !item.frequency.trim() || !item.duration.trim()) {
         setFormError(`El medicamento #${i + 1} tiene campos obligatorios incompletos (medicamento, dosis, frecuencia, duración).`);

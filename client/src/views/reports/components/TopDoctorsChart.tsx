@@ -83,9 +83,9 @@ export default function TopDoctorsChart({
                   borderRadius: 8,
                   fontSize: 12,
                 }}
-                formatter={(value: number, _name: string, props: { payload?: { specialties?: string } }) => [
-                  value,
-                  `Citas${props.payload?.specialties ? ` · ${props.payload.specialties}` : ''}`,
+                formatter={(value, _name, props) => [
+                  value as number,
+                  `Citas${(props as { payload?: { specialties?: string } }).payload?.specialties ? ` · ${(props as { payload?: { specialties?: string } }).payload?.specialties}` : ''}`,
                 ]}
                 labelFormatter={(_label, payload) =>
                   payload?.[0]?.payload?.fullName ?? _label

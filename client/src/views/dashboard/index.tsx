@@ -7,9 +7,11 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Grid from '@mui/material/Grid';
 import LinearProgress from '@mui/material/LinearProgress';
+import Skeleton from '@mui/material/Skeleton';
 import { useAppSelector } from '@/redux-store/hooks';
 import { selectUser } from '@/redux-store/slices/auth';
 import { alpha, darken, useTheme } from '@mui/material/styles';
+import { useDashboard } from './hooks/useDashboard';
 
 interface StatCardProps {
   title: string;
@@ -18,9 +20,10 @@ interface StatCardProps {
   icon: string;
   color: string;
   bgColor: string;
+  loading?: boolean;
 }
 
-const StatCard = ({ title, value, subtitle, icon, color, bgColor }: StatCardProps) => (
+const StatCard = ({ title, value, subtitle, icon, color, bgColor, loading }: StatCardProps) => (
   <Card
     sx={{
       transition: 'all 200ms ease',
@@ -36,9 +39,13 @@ const StatCard = ({ title, value, subtitle, icon, color, bgColor }: StatCardProp
           <Typography variant="body2" color="text.secondary" fontWeight={500} sx={{ mb: 1 }}>
             {title}
           </Typography>
-          <Typography variant="h4" fontWeight={800} sx={{ lineHeight: 1 }}>
-            {value}
-          </Typography>
+          {loading ? (
+            <Skeleton variant="text" width={60} height={40} />
+          ) : (
+            <Typography variant="h4" fontWeight={800} sx={{ lineHeight: 1 }}>
+              {value}
+            </Typography>
+          )}
           <Typography variant="caption" color="text.disabled" sx={{ mt: 0.5, display: 'block' }}>
             {subtitle}
           </Typography>
@@ -65,19 +72,26 @@ const StatCard = ({ title, value, subtitle, icon, color, bgColor }: StatCardProp
 const DashboardView = () => {
   const user = useAppSelector(selectUser);
   const theme = useTheme();
+  const { stats, summary, occupancy, loading } = useDashboard();
 
-  const stats: StatCardProps[] = [
+  const completedToday = summary?.byStatus?.COMPLETED ?? 0;
+  const totalToday = stats.todayAppointments;
+  const bookedSlots = occupancy?.bookedSlots ?? 0;
+  const totalSlots = occupancy?.totalSlots ?? 0;
+  const occupancyRate = occupancy?.occupancyRate ?? 0;
+
+  const statCards: StatCardProps[] = [
     {
       title: 'Citas Hoy',
-      value: '0',
-      subtitle: 'Ninguna cita programada',
+      value: String(stats.todayAppointments),
+      subtitle: stats.todayAppointments === 1 ? '1 cita programada' : `${stats.todayAppointments} citas programadas`,
       icon: 'ri-calendar-check-line',
       color: theme.palette.primary.main,
       bgColor: alpha(theme.palette.primary.main, 0.1),
     },
     {
       title: 'Pacientes',
-      value: '0',
+      value: String(stats.totalPatients),
       subtitle: 'Total registrados',
       icon: 'ri-user-heart-line',
       color: theme.palette.success.main,
@@ -85,7 +99,7 @@ const DashboardView = () => {
     },
     {
       title: 'Doctores',
-      value: '0',
+      value: String(stats.totalDoctors),
       subtitle: 'Activos en el sistema',
       icon: 'ri-stethoscope-line',
       color: theme.palette.secondary.main,
@@ -93,7 +107,7 @@ const DashboardView = () => {
     },
     {
       title: 'Especialidades',
-      value: '0',
+      value: String(stats.totalSpecialties),
       subtitle: 'Áreas médicas',
       icon: 'ri-heart-pulse-line',
       color: theme.palette.warning.main,
@@ -133,6 +147,27 @@ const DashboardView = () => {
       href: '/reports',
       color: theme.palette.secondary.main,
       bgColor: alpha(theme.palette.secondary.main, 0.08),
+    },
+  ];
+
+  const systemStatus = [
+    {
+      label: 'Citas completadas hoy',
+      value: completedToday,
+      total: totalToday,
+      color: theme.palette.info.main,
+    },
+    {
+      label: 'Doctores activos',
+      value: stats.totalDoctors,
+      total: stats.totalDoctors,
+      color: theme.palette.success.main,
+    },
+    {
+      label: 'Ocupación de horarios',
+      value: bookedSlots,
+      total: totalSlots,
+      color: theme.palette.secondary.main,
     },
   ];
 
@@ -190,9 +225,9 @@ const DashboardView = () => {
 
       {/* Stats */}
       <Grid container spacing={3} sx={{ mb: 3 }}>
-        {stats.map((stat) => (
+        {statCards.map((stat) => (
           <Grid size={{ xs: 12, sm: 6, lg: 3 }} key={stat.title}>
-            <StatCard {...stat} />
+            <StatCard {...stat} loading={loading} />
           </Grid>
         ))}
       </Grid>
@@ -267,52 +302,100 @@ const DashboardView = () => {
                 Estado del Sistema
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                {[
-                  { label: 'Citas completadas hoy', value: 0, total: 0, color: theme.palette.info.main },
-                  { label: 'Disponibilidad doctores', value: 0, total: 0, color: theme.palette.success.main },
-                  { label: 'Ocupación consultorios', value: 0, total: 100, color: theme.palette.secondary.main },
-                ].map((item) => (
-                  <Box key={item.label}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        {item.label}
-                      </Typography>
-                      <Typography variant="body2" fontWeight={600}>
-                        {item.value}/{item.total}
-                      </Typography>
-                    </Box>
-                    <LinearProgress
-                      variant="determinate"
-                      value={item.total > 0 ? (item.value / item.total) * 100 : 0}
-                      sx={{
-                        height: 8,
-                        borderRadius: 4,
-                        bgcolor: 'action.hover',
-                        '& .MuiLinearProgress-bar': {
+                {loading ? (
+                  <>
+                    <Skeleton variant="rectangular" height={40} sx={{ borderRadius: 1 }} />
+                    <Skeleton variant="rectangular" height={40} sx={{ borderRadius: 1 }} />
+                    <Skeleton variant="rectangular" height={40} sx={{ borderRadius: 1 }} />
+                  </>
+                ) : (
+                  systemStatus.map((item) => (
+                    <Box key={item.label}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          {item.label}
+                        </Typography>
+                        <Typography variant="body2" fontWeight={600}>
+                          {item.value}/{item.total}
+                        </Typography>
+                      </Box>
+                      <LinearProgress
+                        variant="determinate"
+                        value={item.total > 0 ? (item.value / item.total) * 100 : 0}
+                        sx={{
+                          height: 8,
                           borderRadius: 4,
-                          bgcolor: item.color,
-                        },
-                      }}
-                    />
-                  </Box>
-                ))}
+                          bgcolor: 'action.hover',
+                          '& .MuiLinearProgress-bar': {
+                            borderRadius: 4,
+                            bgcolor: item.color,
+                          },
+                        }}
+                      />
+                    </Box>
+                  ))
+                )}
 
-                <Box
-                  sx={{
-                    mt: 1,
-                    p: 2.5,
-                    borderRadius: 2.5,
-                    bgcolor: 'action.hover',
-                    border: '1px dashed',
-                    borderColor: 'divider',
-                    textAlign: 'center',
-                  }}
-                >
-                  <i className="ri-bar-chart-grouped-line" style={{ fontSize: 28, color: theme.palette.text.disabled, display: 'block', marginBottom: 4 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    Los datos se actualizarán con información en tiempo real
-                  </Typography>
-                </Box>
+                {!loading && summary && (
+                  <Box
+                    sx={{
+                      mt: 1,
+                      p: 2,
+                      borderRadius: 2.5,
+                      bgcolor: alpha(theme.palette.info.main, 0.06),
+                      border: '1px solid',
+                      borderColor: alpha(theme.palette.info.main, 0.15),
+                    }}
+                  >
+                    <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+                      Resumen del mes
+                    </Typography>
+                    <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                      <Box>
+                        <Typography variant="h6" fontWeight={700} color="primary.main">
+                          {summary.total}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Total citas
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="h6" fontWeight={700} color="success.main">
+                          {summary.byStatus?.COMPLETED ?? 0}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Completadas
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="h6" fontWeight={700} color="warning.main">
+                          {summary.byStatus?.PENDING ?? 0}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Pendientes
+                        </Typography>
+                      </Box>
+                      <Box>
+                        <Typography variant="h6" fontWeight={700} color="error.main">
+                          {summary.byStatus?.CANCELLED ?? 0}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Canceladas
+                        </Typography>
+                      </Box>
+                      {occupancy && (
+                        <Box>
+                          <Typography variant="h6" fontWeight={700} color="secondary.main">
+                            {Math.round(occupancyRate)}%
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Ocupación
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  </Box>
+                )}
               </Box>
             </CardContent>
           </Card>

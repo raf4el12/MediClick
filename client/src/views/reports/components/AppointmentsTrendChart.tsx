@@ -74,7 +74,7 @@ export default function AppointmentsTrendChart({
                   borderRadius: 8,
                   fontSize: 12,
                 }}
-                formatter={(value: number) => [value, 'Citas']}
+                formatter={(value) => [value as number, 'Citas']}
                 labelFormatter={(label) => `Día ${label}`}
               />
               <Bar

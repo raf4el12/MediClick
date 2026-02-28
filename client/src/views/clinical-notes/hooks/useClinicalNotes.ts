@@ -13,7 +13,7 @@ const DEFAULT_PAGINATION = {
   currentPage: 1,
   pageSize: 8,
   orderBy: 'id',
-  orderByMode: 'desc' as const,
+  orderByMode: 'desc' as 'asc' | 'desc',
   totalPages: 1,
 };
 

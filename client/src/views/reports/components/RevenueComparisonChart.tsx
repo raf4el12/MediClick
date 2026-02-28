@@ -89,9 +89,9 @@ export default function RevenueComparisonChart({
                   borderRadius: 8,
                   fontSize: 12,
                 }}
-                formatter={(value: number, name: string) => [
-                  `S/ ${value.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`,
-                  name,
+                formatter={(value, name) => [
+                  `S/ ${(value as number).toLocaleString('es-PE', { minimumFractionDigits: 2 })}`,
+                  name as string,
                 ]}
               />
               <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
