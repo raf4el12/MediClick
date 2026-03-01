@@ -5,6 +5,7 @@ import type {
   LogoutRequest,
   RefreshTokenRequest,
 } from '@/types/auth.types';
+import type { ProfileResponse, UpdateProfileData } from '@/types/profile.types';
 
 export const authService = {
   async login(data: LoginRequest): Promise<AuthResponse> {
@@ -26,5 +27,15 @@ export const authService = {
 
   async logoutAllDevices(): Promise<void> {
     await api.post('/auth/logout-all');
+  },
+
+  async getProfile(): Promise<ProfileResponse> {
+    const response = await api.get<ProfileResponse>('/auth/me');
+    return response.data;
+  },
+
+  async updateProfile(data: UpdateProfileData): Promise<ProfileResponse> {
+    const response = await api.patch<ProfileResponse>('/auth/profile', data);
+    return response.data;
   },
 };

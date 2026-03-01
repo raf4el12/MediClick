@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { AuthUser } from '@/types/auth.types';
 import { loginThunk, logoutThunk } from '../thunks/auth.thunks';
 
@@ -31,6 +31,11 @@ export const authSlice = createSlice({
     resetAuth() {
       return initialState;
     },
+    updateUserProfile(state, action: PayloadAction<Partial<AuthUser>>) {
+      if (state.user) {
+        state.user = { ...state.user, ...action.payload };
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -54,7 +59,7 @@ export const authSlice = createSlice({
   },
 });
 
-export const { clearError, clearAuth, resetAuth } = authSlice.actions;
+export const { clearError, clearAuth, resetAuth, updateUserProfile } = authSlice.actions;
 
 // Selectors
 export const selectAuth = (state: { auth: AuthState }) => state.auth;

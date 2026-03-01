@@ -11,6 +11,8 @@ import { LoginUseCase } from './use-cases/login.use-case.js';
 import { RefreshTokenUseCase } from './use-cases/refresh-token.use-case.js';
 import { LogoutUseCase } from './use-cases/logout.use-case.js';
 import { LogoutAllDevicesUseCase } from './use-cases/logout-all-devices.use-case.js';
+import { GetProfileUseCase } from './use-cases/get-profile.use-case.js';
+import { UpdateProfileUseCase } from './use-cases/update-profile.use-case.js';
 import { AuthController } from '../interfaces/controllers/auth.controller.js';
 import { UsersModule } from '../../users/application/users.module.js';
 
@@ -49,6 +51,8 @@ import { UsersModule } from '../../users/application/users.module.js';
     RefreshTokenUseCase,
     LogoutUseCase,
     LogoutAllDevicesUseCase,
+    GetProfileUseCase,
+    UpdateProfileUseCase,
   ],
   exports: ['IPasswordService', 'ITokenService'],
 })

@@ -1,6 +1,8 @@
 import {
   Controller,
   Post,
+  Get,
+  Patch,
   Body,
   HttpCode,
   HttpStatus,
@@ -25,6 +27,9 @@ import { LoginUseCase } from '../../application/use-cases/login.use-case.js';
 import { RefreshTokenUseCase } from '../../application/use-cases/refresh-token.use-case.js';
 import { LogoutUseCase } from '../../application/use-cases/logout.use-case.js';
 import { LogoutAllDevicesUseCase } from '../../application/use-cases/logout-all-devices.use-case.js';
+import { GetProfileUseCase } from '../../application/use-cases/get-profile.use-case.js';
+import { UpdateProfileUseCase } from '../../application/use-cases/update-profile.use-case.js';
+import { UpdateMyProfileDto } from '../../application/dto/update-profile.dto.js';
 import { Auth, CurrentUser } from '../../../../shared/decorators/index.js';
 
 @ApiTags('Auth')
@@ -35,6 +40,8 @@ export class AuthController {
     private readonly refreshTokenUseCase: RefreshTokenUseCase,
     private readonly logoutUseCase: LogoutUseCase,
     private readonly logoutAllDevicesUseCase: LogoutAllDevicesUseCase,
+    private readonly getProfileUseCase: GetProfileUseCase,
+    private readonly updateProfileUseCase: UpdateProfileUseCase,
     private readonly configService: ConfigService,
   ) {}
 
@@ -175,5 +182,28 @@ export class AuthController {
     await this.logoutAllDevicesUseCase.execute(userId);
     this.clearTokenCookies(res);
     return { message: 'Todas las sesiones han sido cerradas' };
+  }
+
+  @Get('me')
+  @Auth()
+  @ApiOperation({ summary: 'Obtener perfil del usuario autenticado' })
+  @ApiResponse({ status: 200, description: 'Perfil del usuario' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
+  async getProfile(@CurrentUser('id') userId: number) {
+    return this.getProfileUseCase.execute(userId);
+  }
+
+  @Patch('profile')
+  @Auth()
+  @ApiOperation({ summary: 'Actualizar perfil del usuario autenticado' })
+  @ApiResponse({ status: 200, description: 'Perfil actualizado' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
+  async updateProfile(
+    @CurrentUser('id') userId: number,
+    @Body() dto: UpdateMyProfileDto,
+  ) {
+    return this.updateProfileUseCase.execute(userId, dto);
   }
 }

@@ -22,6 +22,7 @@ import { selectUser } from '@/redux-store/slices/auth';
 import { logoutThunk } from '@/redux-store/thunks/auth.thunks';
 import { UserRole } from '@/types/auth.types';
 import { useSettings } from '@/@core/hooks/useSettings';
+import { ProfileDrawer } from '@/views/profile/components/ProfileDrawer';
 
 const DRAWER_WIDTH = 260;
 const KEEP_MOUNTED = { keepMounted: true };
@@ -158,6 +159,7 @@ export default function Navigation({ mobileOpen = false, onMobileClose }: Naviga
 
   const [isHovered, setIsHovered] = useState(false);
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
   const isCollapsed = settings.layout === 'collapsed';
   const showText = !isCollapsed || isHovered;
   const currentWidth = isCollapsed && !isHovered ? 80 : DRAWER_WIDTH;
@@ -438,6 +440,20 @@ export default function Navigation({ mobileOpen = false, onMobileClose }: Naviga
           <MenuItem
             onClick={() => {
               setMenuAnchor(null);
+              setProfileOpen(true);
+            }}
+            sx={{ gap: 1.5, py: 1 }}
+          >
+            <ListItemIcon sx={{ minWidth: 0, color: 'inherit' }}>
+              <i className="ri-user-settings-line" style={{ fontSize: 18 }} />
+            </ListItemIcon>
+            <Typography variant="body2" fontWeight={500}>
+              Mi Perfil
+            </Typography>
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              setMenuAnchor(null);
               void handleLogout();
             }}
             sx={{
@@ -499,6 +515,9 @@ export default function Navigation({ mobileOpen = false, onMobileClose }: Naviga
       >
         {drawerContent}
       </Drawer>
+
+      {/* Profile Drawer */}
+      <ProfileDrawer open={profileOpen} onClose={() => setProfileOpen(false)} />
     </>
   );
 }
