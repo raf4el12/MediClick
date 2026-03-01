@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Typography from '@mui/material/Typography';
@@ -9,19 +8,18 @@ import Grid from '@mui/material/Grid';
 import TextField from '@mui/material/TextField';
 import Avatar from '@mui/material/Avatar';
 import Divider from '@mui/material/Divider';
-import Skeleton from '@mui/material/Skeleton';
 import Alert from '@mui/material/Alert';
 import Chip from '@mui/material/Chip';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { authService } from '@/services/auth.service';
-import { useAppDispatch, useAppSelector } from '@/redux-store/hooks';
-import { selectUser, updateUserProfile } from '@/redux-store/slices/auth';
+import { useAppDispatch } from '@/redux-store/hooks';
+import { updateUserProfile } from '@/redux-store/slices/auth';
 import { profileSchema, type ProfileFormValues } from '@/views/profile/functions/profile.schema';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
-import type { UpdateProfileData } from '@/types/profile.types';
+import type { ProfileResponse, UpdateProfileData } from '@/types/profile.types';
 
 const roleLabels: Record<string, string> = {
     ADMIN: 'Administrador',
@@ -30,49 +28,34 @@ const roleLabels: Record<string, string> = {
     PATIENT: 'Paciente',
 };
 
-export default function AccountTab() {
-    const user = useAppSelector(selectUser);
+interface AccountTabProps {
+    userData: ProfileResponse;
+}
+
+export default function AccountTab({ userData }: AccountTabProps) {
     const dispatch = useAppDispatch();
     const queryClient = useQueryClient();
     const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
 
-    const { data: profile, isLoading } = useQuery({
-        queryKey: ['auth', 'profile'],
-        queryFn: () => authService.getProfile(),
-        staleTime: 2 * 60 * 1000,
-    });
+    const profileValues: ProfileFormValues = {
+        name: userData.profile?.name ?? '',
+        lastName: userData.profile?.lastName ?? '',
+        phone: userData.profile?.phone ?? '',
+        typeDocument: userData.profile?.typeDocument ?? '',
+        numberDocument: userData.profile?.numberDocument ?? '',
+        address: userData.profile?.address ?? '',
+        state: userData.profile?.state ?? '',
+        country: userData.profile?.country ?? '',
+    };
 
     const form = useForm<ProfileFormValues>({
         resolver: zodResolver(profileSchema),
-        defaultValues: {
-            name: '',
-            lastName: '',
-            phone: '',
-            typeDocument: '',
-            numberDocument: '',
-            address: '',
-            state: '',
-            country: '',
-        },
+        values: profileValues,
+        resetOptions: { keepDirtyValues: true },
         mode: 'onBlur',
     });
 
     const { control, formState: { errors, isDirty }, reset } = form;
-
-    useEffect(() => {
-        if (profile?.profile) {
-            reset({
-                name: profile.profile.name ?? '',
-                lastName: profile.profile.lastName ?? '',
-                phone: profile.profile.phone ?? '',
-                typeDocument: profile.profile.typeDocument ?? '',
-                numberDocument: profile.profile.numberDocument ?? '',
-                address: profile.profile.address ?? '',
-                state: profile.profile.state ?? '',
-                country: profile.profile.country ?? '',
-            });
-        }
-    }, [profile, reset]);
 
     const mutation = useMutation({
         mutationFn: (data: UpdateProfileData) => authService.updateProfile(data),
@@ -83,6 +66,19 @@ export default function AccountTab() {
                     name: updatedUser.profile?.name ?? updatedUser.name,
                 }),
             );
+
+            // Reset form with fresh server values so they persist on revisit
+            reset({
+                name: updatedUser.profile?.name ?? '',
+                lastName: updatedUser.profile?.lastName ?? '',
+                phone: updatedUser.profile?.phone ?? '',
+                typeDocument: updatedUser.profile?.typeDocument ?? '',
+                numberDocument: updatedUser.profile?.numberDocument ?? '',
+                address: updatedUser.profile?.address ?? '',
+                state: updatedUser.profile?.state ?? '',
+                country: updatedUser.profile?.country ?? '',
+            });
+
             showSnackbar('Perfil actualizado correctamente', 'success');
         },
         onError: () => {
@@ -105,44 +101,11 @@ export default function AccountTab() {
     };
 
     const handleReset = () => {
-        if (profile?.profile) {
-            reset({
-                name: profile.profile.name ?? '',
-                lastName: profile.profile.lastName ?? '',
-                phone: profile.profile.phone ?? '',
-                typeDocument: profile.profile.typeDocument ?? '',
-                numberDocument: profile.profile.numberDocument ?? '',
-                address: profile.profile.address ?? '',
-                state: profile.profile.state ?? '',
-                country: profile.profile.country ?? '',
-            });
-        }
+        reset(profileValues);
     };
 
-    const avatarSrc = user?.avatarUrl || '/images/avatarSidebar.jpg';
-
-    if (isLoading) {
-        return (
-            <Card sx={{ p: { xs: 3, md: 4 }, bgcolor: 'background.paper', borderRadius: 2, boxShadow: 'none', border: '1px solid', borderColor: 'divider' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, gap: 3 }}>
-                    <Skeleton variant="rounded" width={100} height={100} />
-                    <Box sx={{ flex: 1 }}>
-                        <Skeleton variant="text" width={200} height={28} />
-                        <Skeleton variant="text" width={250} height={20} />
-                        <Skeleton variant="rounded" width={100} height={24} sx={{ mt: 1 }} />
-                    </Box>
-                </Box>
-                <Divider sx={{ mb: 4 }} />
-                <Grid container spacing={4}>
-                    {Array.from({ length: 5 }).map((_, i) => (
-                        <Grid size={{ xs: 12, sm: 6 }} key={i}>
-                            <Skeleton variant="rounded" height={56} />
-                        </Grid>
-                    ))}
-                </Grid>
-            </Card>
-        );
-    }
+    const avatarSrc = '/images/avatarSidebar.jpg';
+    const fullName = `${userData.profile?.name ?? userData.name} ${userData.profile?.lastName ?? ''}`.trim();
 
     return (
         <>
@@ -151,21 +114,20 @@ export default function AccountTab() {
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, gap: 3, flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
                     <Avatar
                         src={avatarSrc}
-                        alt={profile?.profile?.name ?? user?.name ?? 'Usuario'}
+                        alt={fullName}
                         variant="rounded"
                         sx={{ width: 100, height: 100, borderRadius: 2, flexShrink: 0 }}
                     />
                     <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                         <Typography variant="h6" fontWeight={600} noWrap>
-                            {profile?.profile?.name ?? user?.name ?? 'Usuario'}{' '}
-                            {profile?.profile?.lastName ?? ''}
+                            {fullName}
                         </Typography>
                         <Typography variant="body2" color="text.secondary" noWrap>
-                            {profile?.email ?? user?.email ?? ''}
+                            {userData.email}
                         </Typography>
                         <Box sx={{ mt: 1, display: 'flex', gap: 1, alignItems: 'center' }}>
                             <Chip
-                                label={roleLabels[profile?.role ?? user?.role ?? ''] ?? profile?.role}
+                                label={roleLabels[userData.role] ?? userData.role}
                                 size="small"
                                 color="primary"
                                 variant="outlined"
@@ -215,7 +177,7 @@ export default function AccountTab() {
                             <TextField
                                 fullWidth
                                 label="Correo Electrónico"
-                                value={profile?.email ?? user?.email ?? ''}
+                                value={userData.email}
                                 disabled
                                 helperText="El correo no se puede modificar"
                             />

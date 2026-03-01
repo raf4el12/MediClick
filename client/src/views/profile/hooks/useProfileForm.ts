@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -26,35 +25,23 @@ export function useProfileForm({ open, onSuccess }: UseProfileFormProps) {
     staleTime: 2 * 60 * 1000,
   });
 
+  const profileValues: ProfileFormValues = {
+    name: profile?.profile?.name ?? '',
+    lastName: profile?.profile?.lastName ?? '',
+    phone: profile?.profile?.phone ?? '',
+    typeDocument: profile?.profile?.typeDocument ?? '',
+    numberDocument: profile?.profile?.numberDocument ?? '',
+    address: profile?.profile?.address ?? '',
+    state: profile?.profile?.state ?? '',
+    country: profile?.profile?.country ?? '',
+  };
+
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
-    defaultValues: {
-      name: '',
-      lastName: '',
-      phone: '',
-      typeDocument: '',
-      numberDocument: '',
-      address: '',
-      state: '',
-      country: '',
-    },
+    values: profileValues,
+    resetOptions: { keepDirtyValues: true },
     mode: 'onBlur',
   });
-
-  useEffect(() => {
-    if (profile?.profile) {
-      form.reset({
-        name: profile.profile.name ?? '',
-        lastName: profile.profile.lastName ?? '',
-        phone: profile.profile.phone ?? '',
-        typeDocument: profile.profile.typeDocument ?? '',
-        numberDocument: profile.profile.numberDocument ?? '',
-        address: profile.profile.address ?? '',
-        state: profile.profile.state ?? '',
-        country: profile.profile.country ?? '',
-      });
-    }
-  }, [profile, form]);
 
   const mutation = useMutation({
     mutationFn: (data: UpdateProfileData) => authService.updateProfile(data),

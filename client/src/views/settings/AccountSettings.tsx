@@ -5,6 +5,12 @@ import Box from '@mui/material/Box';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Typography from '@mui/material/Typography';
+import Skeleton from '@mui/material/Skeleton';
+import Card from '@mui/material/Card';
+import Divider from '@mui/material/Divider';
+import Grid from '@mui/material/Grid';
+import { useQuery } from '@tanstack/react-query';
+import { authService } from '@/services/auth.service';
 import AccountTab from './account/AccountTab';
 
 interface TabPanelProps {
@@ -36,8 +42,37 @@ function a11yProps(index: number) {
     };
 }
 
+function AccountTabSkeleton() {
+    return (
+        <Card sx={{ p: { xs: 3, md: 4 }, bgcolor: 'background.paper', borderRadius: 2, boxShadow: 'none', border: '1px solid', borderColor: 'divider' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, gap: 3 }}>
+                <Skeleton variant="rounded" width={100} height={100} />
+                <Box sx={{ flex: 1 }}>
+                    <Skeleton variant="text" width={200} height={28} />
+                    <Skeleton variant="text" width={250} height={20} />
+                    <Skeleton variant="rounded" width={100} height={24} sx={{ mt: 1 }} />
+                </Box>
+            </Box>
+            <Divider sx={{ mb: 4 }} />
+            <Grid container spacing={4}>
+                {Array.from({ length: 8 }).map((_, i) => (
+                    <Grid size={{ xs: 12, sm: 6 }} key={i}>
+                        <Skeleton variant="rounded" height={56} />
+                    </Grid>
+                ))}
+            </Grid>
+        </Card>
+    );
+}
+
 export default function AccountSettings() {
     const [value, setValue] = useState(0);
+
+    const { data: userData, isLoading } = useQuery({
+        queryKey: ['auth', 'profile'],
+        queryFn: () => authService.getProfile(),
+        staleTime: 2 * 60 * 1000,
+    });
 
     const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
         setValue(newValue);
@@ -91,7 +126,11 @@ export default function AccountSettings() {
 
             {/* Account Tab */}
             <CustomTabPanel value={value} index={0}>
-                <AccountTab />
+                {isLoading || !userData ? (
+                    <AccountTabSkeleton />
+                ) : (
+                    <AccountTab userData={userData} />
+                )}
             </CustomTabPanel>
 
             {/* Security Tab */}

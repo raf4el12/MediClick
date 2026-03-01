@@ -53,7 +53,7 @@ function mapToUserWithProfile(raw: any): UserWithProfile {
 
 @Injectable()
 export class PrismaUserRepository implements IUserRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findByEmail(email: string): Promise<UserEntity | null> {
     const user = await this.prisma.users.findUnique({ where: { email } });
@@ -214,6 +214,18 @@ export class PrismaUserRepository implements IUserRepository {
             await tx.profiles.update({
               where: { id: profile.id },
               data: profileData,
+            });
+          } else {
+            // Create profile if it doesn't exist (e.g. seeded users without profile)
+            const user = await tx.users.findUniqueOrThrow({ where: { id } });
+            await tx.profiles.create({
+              data: {
+                name: profileData.name ?? user.name,
+                lastName: profileData.lastName ?? '',
+                email: user.email,
+                userId: id,
+                ...profileData,
+              },
             });
           }
         }
