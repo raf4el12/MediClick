@@ -20,7 +20,6 @@ import { logoutThunk } from '@/redux-store/thunks/auth.thunks';
 import { selectUser } from '@/redux-store/slices/auth';
 import themeConfig from '@/configs/themeConfig';
 import { useSettings } from '@/@core/hooks/useSettings';
-import { ProfileDrawer } from '@/views/profile/components/ProfileDrawer';
 
 const BadgeContentSpan = styled('span')(({ theme }) => ({
   width: 12,
@@ -43,6 +42,8 @@ const pageTitles: Record<string, string> = {
   '/categories': 'Categorías',
   '/users': 'Usuarios',
   '/reports': 'Reportes',
+  '/profile': 'Mi Perfil',
+  '/settings/account': 'Configuración',
 };
 
 export default function Navbar() {
@@ -55,7 +56,6 @@ export default function Navbar() {
 
   const [modeAnchorEl, setModeAnchorEl] = useState<null | HTMLElement>(null);
   const [avatarAnchorEl, setAvatarAnchorEl] = useState<null | HTMLElement>(null);
-  const [profileOpen, setProfileOpen] = useState(false);
 
   const handleModeOpen = (event: React.MouseEvent<HTMLElement>) => {
     setModeAnchorEl(event.currentTarget);
@@ -89,7 +89,6 @@ export default function Navbar() {
       : 'ri-sun-line';
 
   return (
-    <>
     <AppBar
       position="sticky"
       elevation={0}
@@ -236,7 +235,7 @@ export default function Navbar() {
             <MenuItem
               onClick={() => {
                 handleAvatarClose();
-                setProfileOpen(true);
+                router.push('/profile');
               }}
               sx={{ py: 1.5 }}
             >
@@ -281,8 +280,5 @@ export default function Navbar() {
         </Box>
       </Toolbar>
     </AppBar>
-
-    <ProfileDrawer open={profileOpen} onClose={() => setProfileOpen(false)} />
-    </>
   );
 }
