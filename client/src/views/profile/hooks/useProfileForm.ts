@@ -34,6 +34,9 @@ export function useProfileForm({ open, onSuccess }: UseProfileFormProps) {
       phone: '',
       typeDocument: '',
       numberDocument: '',
+      address: '',
+      state: '',
+      country: '',
     },
     mode: 'onBlur',
   });
@@ -46,6 +49,9 @@ export function useProfileForm({ open, onSuccess }: UseProfileFormProps) {
         phone: profile.profile.phone ?? '',
         typeDocument: profile.profile.typeDocument ?? '',
         numberDocument: profile.profile.numberDocument ?? '',
+        address: profile.profile.address ?? '',
+        state: profile.profile.state ?? '',
+        country: profile.profile.country ?? '',
       });
     }
   }, [profile, form]);
@@ -72,6 +78,9 @@ export function useProfileForm({ open, onSuccess }: UseProfileFormProps) {
       phone: formData.phone || undefined,
       typeDocument: formData.typeDocument || undefined,
       numberDocument: formData.numberDocument || undefined,
+      address: formData.address || undefined,
+      state: formData.state || undefined,
+      country: formData.country || undefined,
     };
 
     mutation.mutate(payload);

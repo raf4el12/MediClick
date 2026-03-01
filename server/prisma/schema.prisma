@@ -87,6 +87,8 @@ model Profiles {
   photo          String?
   phone          String?
   address        String?
+  state          String?
+  country        String?
   typeProfileId  Int?
   typeDocument   String?
   numberDocument String?

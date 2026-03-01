@@ -24,6 +24,9 @@ export interface UpdateUserData {
     phone?: string;
     typeDocument?: string;
     numberDocument?: string;
+    address?: string;
+    state?: string;
+    country?: string;
   };
 }
 
@@ -44,5 +47,8 @@ export interface UserWithProfile {
     phone: string | null;
     typeDocument: string | null;
     numberDocument: string | null;
+    address: string | null;
+    state: string | null;
+    country: string | null;
   } | null;
 }

@@ -159,6 +159,51 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
               )}
             />
 
+            <Controller
+              name="address"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label="Dirección"
+                  placeholder="Ej: Av. Javier Prado 1234"
+                  error={!!errors.address}
+                  helperText={errors.address?.message}
+                />
+              )}
+            />
+
+            <Controller
+              name="state"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label="Estado / Departamento"
+                  placeholder="Ej: Lima"
+                  error={!!errors.state}
+                  helperText={errors.state?.message}
+                />
+              )}
+            />
+
+            <Controller
+              name="country"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label="País"
+                  placeholder="Ej: Perú"
+                  error={!!errors.country}
+                  helperText={errors.country?.message}
+                />
+              )}
+            />
+
             <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
               <Button
                 type="submit"

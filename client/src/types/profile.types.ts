@@ -15,6 +15,9 @@ export interface ProfileResponse {
     phone: string | null;
     typeDocument: string | null;
     numberDocument: string | null;
+    address: string | null;
+    state: string | null;
+    country: string | null;
   } | null;
 }
 
@@ -24,4 +27,7 @@ export interface UpdateProfileData {
   phone?: string;
   typeDocument?: string;
   numberDocument?: string;
+  address?: string;
+  state?: string;
+  country?: string;
 }

@@ -34,6 +34,21 @@ export class UpdateProfileDto {
   @IsString()
   @IsOptional()
   numberDocument?: string;
+
+  @ApiPropertyOptional({ example: 'Av. Javier Prado 1234' })
+  @IsString()
+  @IsOptional()
+  address?: string;
+
+  @ApiPropertyOptional({ example: 'Lima' })
+  @IsString()
+  @IsOptional()
+  state?: string;
+
+  @ApiPropertyOptional({ example: 'Perú' })
+  @IsString()
+  @IsOptional()
+  country?: string;
 }
 
 export class UpdateUserDto {

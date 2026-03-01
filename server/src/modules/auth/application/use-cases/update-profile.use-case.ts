@@ -28,6 +28,9 @@ export class UpdateProfileUseCase {
         phone: dto.phone,
         typeDocument: dto.typeDocument,
         numberDocument: dto.numberDocument,
+        address: dto.address,
+        state: dto.state,
+        country: dto.country,
       },
     };
 

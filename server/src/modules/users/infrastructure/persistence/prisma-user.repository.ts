@@ -22,6 +22,9 @@ const userWithProfileInclude = {
       phone: true,
       typeDocument: true,
       numberDocument: true,
+      address: true,
+      state: true,
+      country: true,
     },
     take: 1,
   },
@@ -195,6 +198,12 @@ export class PrismaUserRepository implements IUserRepository {
           profileData.typeDocument = data.profile.typeDocument;
         if (data.profile.numberDocument !== undefined)
           profileData.numberDocument = data.profile.numberDocument;
+        if (data.profile.address !== undefined)
+          profileData.address = data.profile.address;
+        if (data.profile.state !== undefined)
+          profileData.state = data.profile.state;
+        if (data.profile.country !== undefined)
+          profileData.country = data.profile.country;
 
         if (Object.keys(profileData).length > 0) {
           profileData.updatedAt = new Date();

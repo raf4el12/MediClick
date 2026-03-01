@@ -28,4 +28,22 @@ export class UpdateMyProfileDto {
   @IsString()
   @IsOptional()
   numberDocument?: string;
+
+  @ApiPropertyOptional({ example: 'Av. Javier Prado 1234' })
+  @IsString()
+  @MaxLength(255)
+  @IsOptional()
+  address?: string;
+
+  @ApiPropertyOptional({ example: 'Lima' })
+  @IsString()
+  @MaxLength(100)
+  @IsOptional()
+  state?: string;
+
+  @ApiPropertyOptional({ example: 'Perú' })
+  @IsString()
+  @MaxLength(100)
+  @IsOptional()
+  country?: string;
 }
