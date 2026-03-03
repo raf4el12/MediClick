@@ -15,6 +15,7 @@ import { ClinicalNotesModule } from './modules/clinical-notes/application/clinic
 import { PrescriptionsModule } from './modules/prescriptions/application/prescriptions.module.js';
 import { ReportsModule } from './modules/reports/application/reports.module.js';
 import { NotificationsModule } from './modules/notifications/application/notifications.module.js';
+import { MedicalHistoryModule } from './modules/medical-history/application/medical-history.module.js';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { NotificationsModule } from './modules/notifications/application/notific
     PrescriptionsModule,
     ReportsModule,
     NotificationsModule,
+    MedicalHistoryModule,
   ],
   controllers: [],
   providers: [],

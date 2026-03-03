@@ -74,6 +74,12 @@ enum NotificationChannel {
   PUSH
 }
 
+enum MedicalHistoryStatus {
+  ACTIVE
+  RESOLVED
+  CHRONIC
+}
+
 model Users {
   id            Int             @id @default(autoincrement())
   name          String
@@ -122,19 +128,20 @@ model Profiles {
 }
 
 model Patients {
-  id                 Int            @id @default(autoincrement())
-  profileId          Int            @unique
+  id                 Int              @id @default(autoincrement())
+  profileId          Int              @unique
   emergencyContact   String
   bloodType          String
   allergies          String?
   chronic_conditions String?
-  isActive           Boolean        @default(true)
-  deleted            Boolean        @default(false)
-  createdAt          DateTime       @default(now())
+  isActive           Boolean          @default(true)
+  deleted            Boolean          @default(false)
+  createdAt          DateTime         @default(now())
   updatedAt          DateTime?
-  profile            Profiles       @relation(fields: [profileId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  profile            Profiles         @relation(fields: [profileId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   appointments       Appointments[]
   reviews            Reviews[]
+  medicalHistory     MedicalHistory[]
 
   @@index([profileId])
 }
@@ -371,4 +378,22 @@ model Notifications {
   @@index([userId, isRead])
   @@index([userId, createdAt])
   @@index([type])
+}
+
+model MedicalHistory {
+  id            Int                  @id @default(autoincrement())
+  patientId     Int
+  condition     String
+  description   String?              @db.Text
+  diagnosedDate DateTime?
+  status        MedicalHistoryStatus @default(ACTIVE)
+  notes         String?              @db.Text
+  deleted       Boolean              @default(false)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime?
+
+  patient Patients @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  @@index([patientId, status])
+  @@index([patientId, createdAt])
 }
