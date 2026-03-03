@@ -14,6 +14,7 @@ import { AppointmentsModule } from './modules/appointments/application/appointme
 import { ClinicalNotesModule } from './modules/clinical-notes/application/clinical-notes.module.js';
 import { PrescriptionsModule } from './modules/prescriptions/application/prescriptions.module.js';
 import { ReportsModule } from './modules/reports/application/reports.module.js';
+import { NotificationsModule } from './modules/notifications/application/notifications.module.js';
 
 @Module({
   imports: [
@@ -32,8 +33,9 @@ import { ReportsModule } from './modules/reports/application/reports.module.js';
     ClinicalNotesModule,
     PrescriptionsModule,
     ReportsModule,
+    NotificationsModule,
   ],
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule { }

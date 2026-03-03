@@ -58,19 +58,36 @@ enum PaymentMethod {
   OTHER
 }
 
+enum NotificationType {
+  APPOINTMENT_REMINDER
+  APPOINTMENT_CONFIRMED
+  APPOINTMENT_CANCELLED
+  APPOINTMENT_RESCHEDULED
+  NEW_APPOINTMENT
+  GENERAL
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SMS
+  PUSH
+}
+
 model Users {
-  id            Int        @id @default(autoincrement())
+  id            Int             @id @default(autoincrement())
   name          String
-  email         String     @unique
+  email         String          @unique
   password      String
   photo         String?
-  role          UserRole   @default(USER)
-  isActive      Boolean    @default(true)
-  validateEmail Boolean    @default(false)
-  deleted       Boolean    @default(false)
-  createdAt     DateTime   @default(now())
+  role          UserRole        @default(USER)
+  isActive      Boolean         @default(true)
+  validateEmail Boolean         @default(false)
+  deleted       Boolean         @default(false)
+  createdAt     DateTime        @default(now())
   updatedAt     DateTime?
   profiles      Profiles[]
+  notifications Notifications[]
 
   @@index([email])
   @@index([role, deleted])
@@ -334,4 +351,24 @@ model Reviews {
   patient Patients @relation(fields: [patientId], references: [id])
 
   @@index([doctorId])
+}
+
+model Notifications {
+  id        Int                 @id @default(autoincrement())
+  userId    Int
+  type      NotificationType
+  channel   NotificationChannel @default(IN_APP)
+  title     String
+  message   String              @db.Text
+  isRead    Boolean             @default(false)
+  metadata  Json?
+  sentAt    DateTime?
+  deleted   Boolean             @default(false)
+  createdAt DateTime            @default(now())
+
+  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+  @@index([type])
 }
