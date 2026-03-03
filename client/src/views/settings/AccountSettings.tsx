@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
@@ -12,6 +13,7 @@ import Grid from '@mui/material/Grid';
 import { useQuery } from '@tanstack/react-query';
 import { authService } from '@/services/auth.service';
 import AccountTab from './account/AccountTab';
+import NotificationsView from '@/views/notifications';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -65,8 +67,22 @@ function AccountTabSkeleton() {
     );
 }
 
+const TAB_MAP: Record<string, number> = {
+    account: 0,
+    security: 1,
+    notifications: 2,
+};
+
 export default function AccountSettings() {
+    const searchParams = useSearchParams();
     const [value, setValue] = useState(0);
+
+    useEffect(() => {
+        const tabParam = searchParams.get('tab');
+        if (tabParam && tabParam in TAB_MAP) {
+            setValue(TAB_MAP[tabParam]);
+        }
+    }, [searchParams]);
 
     const { data: userData, isLoading } = useQuery({
         queryKey: ['auth', 'profile'],
@@ -144,11 +160,7 @@ export default function AccountSettings() {
 
             {/* Notifications Tab */}
             <CustomTabPanel value={value} index={2}>
-                <Box sx={{ p: 4, textAlign: 'center' }}>
-                    <Typography variant="h6" color="text.secondary">
-                        Notificaciones (Próximamente)
-                    </Typography>
-                </Box>
+                <NotificationsView />
             </CustomTabPanel>
         </Box>
     );

@@ -20,6 +20,7 @@ import { logoutThunk } from '@/redux-store/thunks/auth.thunks';
 import { selectUser } from '@/redux-store/slices/auth';
 import themeConfig from '@/configs/themeConfig';
 import { useSettings } from '@/@core/hooks/useSettings';
+import NotificationDropdown from './NotificationDropdown';
 
 const BadgeContentSpan = styled('span')(({ theme }) => ({
   width: 12,
@@ -182,11 +183,7 @@ export default function Navbar() {
           </Menu>
 
           {/* Notifications */}
-          <IconButton size="small" sx={{ color: 'text.secondary' }}>
-            <Badge color="error" variant="dot" invisible={false}>
-              <i className="ri-notification-4-line" style={{ fontSize: 22 }} />
-            </Badge>
-          </IconButton>
+          <NotificationDropdown />
 
           {/* User Avatar */}
           <Badge
