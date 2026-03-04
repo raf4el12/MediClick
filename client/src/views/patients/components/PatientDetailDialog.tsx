@@ -92,87 +92,87 @@ export function PatientDetailDialog({ patient, onClose }: PatientDetailDialogPro
       {/* Header */}
       <Box
         sx={{
-          p: 3,
+          px: 2.5,
+          py: 1.5,
           display: 'flex',
           justifyContent: 'space-between',
-          alignItems: 'flex-start',
+          alignItems: 'center',
         }}
       >
-        <Typography variant="h6" fontWeight={600}>
+        <Typography variant="subtitle1" fontWeight={600}>
           Detalle del Paciente
         </Typography>
         <IconButton size="small" onClick={onClose}>
-          <i className="ri-close-line" style={{ fontSize: 20 }} />
+          <i className="ri-close-line" style={{ fontSize: 18 }} />
         </IconButton>
       </Box>
 
       <Divider />
 
       {/* Patient Card */}
-      <Box sx={{ p: 3 }}>
+      <Box sx={{ px: 2.5, py: 2 }}>
         <Box
           sx={{
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            mb: 3,
+            mb: 2,
           }}
         >
           <Avatar
             sx={{
-              width: 72,
-              height: 72,
-              fontSize: 28,
+              width: 56,
+              height: 56,
+              fontSize: 22,
               fontWeight: 600,
               bgcolor: alpha(theme.palette.primary.main, 0.12),
               color: theme.palette.primary.main,
-              mb: 1.5,
+              mb: 1,
             }}
           >
             {getInitials(patient.profile.name, patient.profile.lastName)}
           </Avatar>
-          <Typography variant="h6" fontWeight={600}>
+          <Typography variant="subtitle1" fontWeight={600}>
             {patient.profile.name} {patient.profile.lastName}
           </Typography>
-          <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+          <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
             <Chip
               label={patient.isActive ? 'Activo' : 'Inactivo'}
               size="small"
               color={patient.isActive ? 'success' : 'warning'}
             />
           </Box>
-          <Typography variant="caption" color="text.secondary" sx={{ mt: 1 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
             Registrado el {formatDate(patient.createdAt)}
           </Typography>
         </Box>
 
-        <Divider sx={{ mb: 2 }} />
+        <Divider sx={{ mb: 1.5 }} />
 
         {/* Info Items */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
           {infoItems.map((item) => (
             <Box
               key={item.label}
-              sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}
+              sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}
             >
               <Box
                 sx={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 1.5,
+                  width: 30,
+                  height: 30,
+                  borderRadius: 1,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   bgcolor: alpha(theme.palette.primary.main, 0.08),
                   color: theme.palette.primary.main,
                   flexShrink: 0,
-                  mt: 0.25,
                 }}
               >
-                <i className={item.icon} style={{ fontSize: 18 }} />
+                <i className={item.icon} style={{ fontSize: 16 }} />
               </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ lineHeight: 1.2 }}>
                   {item.label}
                 </Typography>
                 {item.isChip ? (
@@ -185,7 +185,7 @@ export function PatientDetailDialog({ patient, onClose }: PatientDetailDialogPro
                     />
                   </Box>
                 ) : (
-                  <Typography variant="body2">{item.value}</Typography>
+                  <Typography variant="body2" noWrap>{item.value}</Typography>
                 )}
               </Box>
             </Box>
@@ -195,14 +195,14 @@ export function PatientDetailDialog({ patient, onClose }: PatientDetailDialogPro
         {/* Additional info */}
         {(patient.allergies || patient.chronicConditions) && (
           <>
-            <Divider sx={{ my: 2 }} />
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Divider sx={{ my: 1.5 }} />
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.25 }}>
               {patient.allergies && (
                 <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.25 }}>
                     <i
                       className="ri-heart-pulse-line"
-                      style={{ fontSize: 16, color: theme.palette.error.main }}
+                      style={{ fontSize: 14, color: theme.palette.error.main }}
                     />
                     <Typography variant="caption" color="text.secondary" fontWeight={600}>
                       Alergias
@@ -213,10 +213,10 @@ export function PatientDetailDialog({ patient, onClose }: PatientDetailDialogPro
               )}
               {patient.chronicConditions && (
                 <Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.25 }}>
                     <i
                       className="ri-stethoscope-line"
-                      style={{ fontSize: 16, color: theme.palette.warning.main }}
+                      style={{ fontSize: 14, color: theme.palette.warning.main }}
                     />
                     <Typography variant="caption" color="text.secondary" fontWeight={600}>
                       Condiciones crónicas
@@ -232,13 +232,13 @@ export function PatientDetailDialog({ patient, onClose }: PatientDetailDialogPro
         {/* Document info */}
         {patient.profile.typeDocument && (
           <>
-            <Divider sx={{ my: 2 }} />
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+            <Divider sx={{ my: 1.5 }} />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
               <Box
                 sx={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 1.5,
+                  width: 30,
+                  height: 30,
+                  borderRadius: 1,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -247,13 +247,13 @@ export function PatientDetailDialog({ patient, onClose }: PatientDetailDialogPro
                   flexShrink: 0,
                 }}
               >
-                <i className="ri-id-card-line" style={{ fontSize: 18 }} />
+                <i className="ri-id-card-line" style={{ fontSize: 16 }} />
               </Box>
-              <Box>
-                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ lineHeight: 1.2 }}>
                   Documento
                 </Typography>
-                <Typography variant="body2">
+                <Typography variant="body2" noWrap>
                   {patient.profile.typeDocument}: {patient.profile.numberDocument}
                 </Typography>
               </Box>

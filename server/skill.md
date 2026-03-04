@@ -816,64 +816,10 @@ CLIENT_URL=http://localhost:3000
 
 ---
 
-## 🏨 Ejemplo: Adaptación para Hotel
-
 ### Roles
 ```typescript
 export enum UserRole { ADMIN, MANAGER, RECEPTIONIST, HOUSEKEEPING, GUEST }
 ```
-
-### Módulos sugeridos
-| Módulo MediClick     | Equivalente Hotel        |
-|---------------------|--------------------------|
-| `patients`          | `guests`                 |
-| `doctors`           | `staff` / `employees`    |
-| `appointments`      | `reservations`           |
-| `specialties`       | `room-types`             |
-| `categories`        | `room-categories`        |
-| `availability`      | `room-availability`      |
-| `schedules`         | `room-inventory`         |
-| `clinical-notes`    | `guest-requests`         |
-| `prescriptions`     | `services` / `amenities` |
-| `medical-history`   | `guest-history`          |
-| `notifications`     | `notifications`          |
-| `reports`           | `reports`                |
-
-### Modelos Prisma de ejemplo
-
-```prisma
-enum RoomStatus { AVAILABLE, OCCUPIED, MAINTENANCE, CLEANING, OUT_OF_ORDER }
-enum ReservationStatus { PENDING, CONFIRMED, CHECKED_IN, CHECKED_OUT, CANCELLED, NO_SHOW }
-
-model Rooms {
-  id          Int        @id @default(autoincrement())
-  roomNumber  String     @unique
-  floor       Int
-  roomTypeId  Int
-  status      RoomStatus @default(AVAILABLE)
-  isActive    Boolean    @default(true)
-  deleted     Boolean    @default(false)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime?
-  roomType    RoomTypes  @relation(fields: [roomTypeId], references: [id])
-}
-
-model Reservations {
-  id          Int               @id @default(autoincrement())
-  guestId     Int
-  roomId      Int
-  checkIn     DateTime
-  checkOut    DateTime
-  status      ReservationStatus @default(PENDING)
-  totalAmount Decimal           @db.Decimal(10, 2)
-  notes       String?
-  deleted     Boolean           @default(false)
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime?
-}
-```
-
----
 
 ## ⚠️ Reglas Importantes
 

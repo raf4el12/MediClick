@@ -1,7 +1,7 @@
 'use client';
 
 import Grid from '@mui/material/Grid';
-import Collapse from '@mui/material/Collapse';
+import Fade from '@mui/material/Fade';
 import { usePatients } from './hooks/usePatients';
 import { PatientsTable } from './components/PatientsTable';
 import dynamic from 'next/dynamic';
@@ -30,12 +30,14 @@ export default function PatientsView() {
 
       {hasDetail ? (
         <Grid size={{ xs: 12, md: 4 }}>
-          <Collapse in={hasDetail} orientation="horizontal" unmountOnExit>
-            <PatientDetailDialog
-              patient={controller.detailPatient}
-              onClose={controller.closeDetail}
-            />
-          </Collapse>
+          <Fade in={hasDetail} timeout={300}>
+            <div>
+              <PatientDetailDialog
+                patient={controller.detailPatient}
+                onClose={controller.closeDetail}
+              />
+            </div>
+          </Fade>
         </Grid>
       ) : null}
 
