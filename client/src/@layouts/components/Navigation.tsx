@@ -77,6 +77,12 @@ const navigationItems: NavSection[] = [
         icon: 'ri-medicine-bottle-line',
         roles: [UserRole.ADMIN, UserRole.DOCTOR],
       },
+      {
+        title: 'Historial Médico',
+        path: '/medical-history',
+        icon: 'ri-file-list-3-line',
+        roles: [UserRole.ADMIN, UserRole.DOCTOR],
+      },
     ],
   },
   {

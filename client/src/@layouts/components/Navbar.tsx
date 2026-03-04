@@ -37,6 +37,7 @@ const pageTitles: Record<string, string> = {
   '/doctors': 'Doctores',
   '/clinical-notes': 'Notas Clínicas',
   '/prescriptions': 'Recetas',
+  '/medical-history': 'Historial Médico',
   '/schedules': 'Horarios',
   '/availability': 'Disponibilidad',
   '/specialties': 'Especialidades',
