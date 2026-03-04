@@ -1,6 +1,6 @@
 import { api } from '@/libs/axios';
 import type { PaginationParams, PaginatedResponse } from '@/types/pagination.types';
-import type { Doctor, OnboardDoctorPayload } from '@/views/doctors/types';
+import type { Doctor, OnboardDoctorPayload, UpdateDoctorPayload } from '@/views/doctors/types';
 
 export const doctorsService = {
   findAllPaginated: async (
@@ -34,5 +34,15 @@ export const doctorsService = {
     const response = await api.post<Doctor>('/doctors/onboard', payload);
 
     return response.data;
+  },
+
+  update: async (id: number, payload: UpdateDoctorPayload): Promise<Doctor> => {
+    const response = await api.patch<Doctor>(`/doctors/${id}`, payload);
+
+    return response.data;
+  },
+
+  remove: async (id: number): Promise<void> => {
+    await api.delete(`/doctors/${id}`);
   },
 };

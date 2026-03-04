@@ -15,6 +15,7 @@ import {
   fetchDoctorsThunk,
   fetchDoctorSpecialtiesThunk,
 } from '@/redux-store/thunks/doctors.thunks';
+import { doctorsService } from '@/services/doctors.service';
 import type { Doctor } from '../types';
 
 export function useDoctors() {
@@ -28,6 +29,9 @@ export function useDoctors() {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [detailDoctor, setDetailDoctor] = useState<Doctor | null>(null);
+  const [editDoctor, setEditDoctor] = useState<Doctor | null>(null);
+  const [deleteDoctor, setDeleteDoctor] = useState<Doctor | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchData = useCallback(() => {
     void dispatch(
@@ -76,20 +80,31 @@ export function useDoctors() {
     updatePagination({ specialtyId, currentPage: 1 });
   };
 
-  const openCreateDrawer = () => {
-    setDrawerOpen(true);
-  };
+  const openCreateDrawer = () => setDrawerOpen(true);
+  const closeDrawer = () => setDrawerOpen(false);
 
-  const closeDrawer = () => {
-    setDrawerOpen(false);
-  };
+  const openDetail = (doctor: Doctor) => setDetailDoctor(doctor);
+  const closeDetail = () => setDetailDoctor(null);
 
-  const openDetail = (doctor: Doctor) => {
-    setDetailDoctor(doctor);
-  };
+  const openEditDrawer = (doctor: Doctor) => setEditDoctor(doctor);
+  const closeEditDrawer = () => setEditDoctor(null);
 
-  const closeDetail = () => {
-    setDetailDoctor(null);
+  const openDeleteDialog = (doctor: Doctor) => setDeleteDoctor(doctor);
+  const closeDeleteDialog = () => setDeleteDoctor(null);
+
+  const confirmDelete = async (): Promise<boolean> => {
+    if (!deleteDoctor) return false;
+    setDeleting(true);
+    try {
+      await doctorsService.remove(deleteDoctor.id);
+      setDeleteDoctor(null);
+      fetchData();
+      return true;
+    } catch {
+      return false;
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return {
@@ -111,6 +126,14 @@ export function useDoctors() {
     detailDoctor,
     openDetail,
     closeDetail,
+    editDoctor,
+    openEditDrawer,
+    closeEditDrawer,
+    deleteDoctor,
+    openDeleteDialog,
+    closeDeleteDialog,
+    confirmDelete,
+    deleting,
     refreshData: fetchData,
   };
 }

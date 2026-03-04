@@ -45,3 +45,13 @@ export interface OnboardDoctorPayload {
   resume?: string;
   specialtyIds: number[];
 }
+
+export interface UpdateDoctorPayload {
+  name?: string;
+  lastName?: string;
+  phone?: string;
+  gender?: string;
+  licenseNumber?: string;
+  resume?: string;
+  specialtyIds?: number[];
+}

@@ -15,6 +15,8 @@ import TableSortLabel from '@mui/material/TableSortLabel';
 import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import {
   createColumnHelper,
   flexRender,
@@ -49,6 +51,8 @@ interface PatientsTableProps {
   openCreateDrawer: () => void;
   closeDrawer: () => void;
   openDetail: (patient: Patient) => void;
+  onEdit: (patient: Patient) => void;
+  onDelete: (patient: Patient) => void;
   refreshData: () => void;
 }
 
@@ -98,6 +102,8 @@ export function PatientsTable({
   openCreateDrawer,
   closeDrawer,
   openDetail,
+  onEdit,
+  onDelete,
   refreshData,
 }: PatientsTableProps) {
   const columns = useMemo(
@@ -193,8 +199,40 @@ export function PatientsTable({
           />
         ),
       }),
+      columnHelper.display({
+        id: 'actions',
+        header: 'Acciones',
+        cell: ({ row }) => (
+          <Box sx={{ display: 'flex', gap: 0.5 }}>
+            <Tooltip title="Editar">
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(row.original);
+                }}
+              >
+                <i className="ri-pencil-line" style={{ fontSize: 18 }} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Eliminar">
+              <IconButton
+                size="small"
+                color="error"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(row.original);
+                }}
+              >
+                <i className="ri-delete-bin-line" style={{ fontSize: 18 }} />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        ),
+      }),
     ],
-    [openDetail],
+    [openDetail, onEdit, onDelete],
   );
 
   const table = useReactTable({

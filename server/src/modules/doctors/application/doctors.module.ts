@@ -5,6 +5,8 @@ import { PrismaDoctorRepository } from '../infrastructure/persistence/prisma-doc
 import { OnboardDoctorUseCase } from './use-cases/onboard-doctor.use-case.js';
 import { FindAllDoctorsUseCase } from './use-cases/find-all-doctors.use-case.js';
 import { FindDoctorByIdUseCase } from './use-cases/find-doctor-by-id.use-case.js';
+import { UpdateDoctorUseCase } from './use-cases/update-doctor.use-case.js';
+import { DeleteDoctorUseCase } from './use-cases/delete-doctor.use-case.js';
 import { DoctorController } from '../interfaces/controllers/doctor.controller.js';
 
 @Module({
@@ -18,7 +20,10 @@ import { DoctorController } from '../interfaces/controllers/doctor.controller.js
     OnboardDoctorUseCase,
     FindAllDoctorsUseCase,
     FindDoctorByIdUseCase,
+    UpdateDoctorUseCase,
+    DeleteDoctorUseCase,
   ],
   exports: ['IDoctorRepository'],
 })
-export class DoctorsModule {}
+export class DoctorsModule { }
+

@@ -11,7 +11,8 @@ import {
   setPatientsPagination,
 } from '@/redux-store/slices/patients';
 import { fetchPatientsThunk } from '@/redux-store/thunks/patients.thunks';
-import type { Patient } from '../types';
+import { patientsService } from '@/services/patients.service';
+import type { Patient, UpdatePatientPayload } from '../types';
 
 export function usePatients() {
   const dispatch = useAppDispatch();
@@ -23,6 +24,9 @@ export function usePatients() {
 
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [detailPatient, setDetailPatient] = useState<Patient | null>(null);
+  const [editPatient, setEditPatient] = useState<Patient | null>(null);
+  const [deletePatient, setDeletePatient] = useState<Patient | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchData = useCallback(() => {
     const isActive =
@@ -75,20 +79,41 @@ export function usePatients() {
     [updatePagination],
   );
 
-  const openCreateDrawer = () => {
-    setDrawerOpen(true);
+  const openCreateDrawer = () => setDrawerOpen(true);
+  const closeDrawer = () => setDrawerOpen(false);
+
+  const openDetail = (patient: Patient) => setDetailPatient(patient);
+  const closeDetail = () => setDetailPatient(null);
+
+  const openEditDrawer = (patient: Patient) => setEditPatient(patient);
+  const closeEditDrawer = () => setEditPatient(null);
+
+  const openDeleteDialog = (patient: Patient) => setDeletePatient(patient);
+  const closeDeleteDialog = () => setDeletePatient(null);
+
+  const confirmDelete = async (): Promise<boolean> => {
+    if (!deletePatient) return false;
+    setDeleting(true);
+    try {
+      await patientsService.remove(deletePatient.id);
+      setDeletePatient(null);
+      fetchData();
+      return true;
+    } catch {
+      return false;
+    } finally {
+      setDeleting(false);
+    }
   };
 
-  const closeDrawer = () => {
-    setDrawerOpen(false);
-  };
-
-  const openDetail = (patient: Patient) => {
-    setDetailPatient(patient);
-  };
-
-  const closeDetail = () => {
-    setDetailPatient(null);
+  const updatePatient = async (id: number, payload: UpdatePatientPayload): Promise<boolean> => {
+    try {
+      await patientsService.update(id, payload);
+      fetchData();
+      return true;
+    } catch {
+      return false;
+    }
   };
 
   return {
@@ -109,6 +134,15 @@ export function usePatients() {
     detailPatient,
     openDetail,
     closeDetail,
+    editPatient,
+    openEditDrawer,
+    closeEditDrawer,
+    deletePatient,
+    openDeleteDialog,
+    closeDeleteDialog,
+    confirmDelete,
+    deleting,
+    updatePatient,
     refreshData: fetchData,
   };
 }

@@ -5,6 +5,7 @@ import Card from '@mui/material/Card';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import TablePagination from '@mui/material/TablePagination';
 import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
@@ -52,6 +53,8 @@ interface DoctorsTableProps {
   openCreateDrawer: () => void;
   closeDrawer: () => void;
   openDetail: (doctor: Doctor) => void;
+  onEdit: (doctor: Doctor) => void;
+  onDelete: (doctor: Doctor) => void;
   refreshData: () => void;
 }
 
@@ -68,6 +71,8 @@ export function DoctorsTable({
   openCreateDrawer,
   closeDrawer,
   openDetail,
+  onEdit,
+  onDelete,
   refreshData,
 }: DoctorsTableProps) {
   const columns = useMemo(
@@ -135,20 +140,38 @@ export function DoctorsTable({
         header: 'Acciones',
         cell: ({ row }) => (
           <Box sx={{ display: 'flex', gap: 0.5 }}>
-            <IconButton
-              size="small"
-              color="primary"
-              aria-label="Ver detalle del doctor"
-              onClick={() => openDetail(row.original)}
-              sx={{ minWidth: 44, minHeight: 44 }}
-            >
-              <i className="ri-eye-line" style={{ fontSize: 18 }} />
-            </IconButton>
+            <Tooltip title="Ver detalle">
+              <IconButton
+                size="small"
+                color="info"
+                onClick={() => openDetail(row.original)}
+              >
+                <i className="ri-eye-line" style={{ fontSize: 18 }} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Editar">
+              <IconButton
+                size="small"
+                color="primary"
+                onClick={() => onEdit(row.original)}
+              >
+                <i className="ri-pencil-line" style={{ fontSize: 18 }} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Eliminar">
+              <IconButton
+                size="small"
+                color="error"
+                onClick={() => onDelete(row.original)}
+              >
+                <i className="ri-delete-bin-line" style={{ fontSize: 18 }} />
+              </IconButton>
+            </Tooltip>
           </Box>
         ),
       }),
     ],
-    [openDetail],
+    [openDetail, onEdit, onDelete],
   );
 
   const table = useReactTable({

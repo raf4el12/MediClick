@@ -15,4 +15,13 @@ export interface IDoctorRepository {
   existsByLicenseNumber(licenseNumber: string): Promise<boolean>;
   existsByEmail(email: string): Promise<boolean>;
   findDoctorIdByUserId(userId: number): Promise<number | null>;
+  update(
+    id: number,
+    data: {
+      profile?: Record<string, unknown>;
+      doctor?: Record<string, unknown>;
+      specialtyIds?: number[];
+    },
+  ): Promise<DoctorWithRelations>;
+  softDelete(id: number): Promise<void>;
 }

@@ -30,7 +30,7 @@ const doctorInclude = {
 
 @Injectable()
 export class PrismaDoctorRepository implements IDoctorRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async onboard(data: OnboardDoctorData): Promise<DoctorWithRelations> {
     return this.prisma.$transaction(async (tx) => {
@@ -164,5 +164,66 @@ export class PrismaDoctorRepository implements IDoctorRepository {
       select: { doctor: { select: { id: true } } },
     });
     return profile?.doctor?.id ?? null;
+  }
+
+  async update(
+    id: number,
+    data: {
+      profile?: Record<string, unknown>;
+      doctor?: Record<string, unknown>;
+      specialtyIds?: number[];
+    },
+  ): Promise<DoctorWithRelations> {
+    return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.doctors.findUniqueOrThrow({
+        where: { id },
+        select: { profileId: true },
+      });
+
+      if (data.profile && Object.keys(data.profile).length > 0) {
+        await tx.profiles.update({
+          where: { id: existing.profileId },
+          data: data.profile,
+        });
+      }
+
+      if (data.doctor && Object.keys(data.doctor).length > 0) {
+        await tx.doctors.update({
+          where: { id },
+          data: data.doctor,
+        });
+      }
+
+      if (data.specialtyIds) {
+        await tx.doctorsSpecialties.updateMany({
+          where: { doctorId: id },
+          data: { deleted: true },
+        });
+
+        if (data.specialtyIds.length > 0) {
+          for (const specialtyId of data.specialtyIds) {
+            await tx.doctorsSpecialties.upsert({
+              where: {
+                doctorId_specialtyId: { doctorId: id, specialtyId },
+              },
+              update: { deleted: false },
+              create: { doctorId: id, specialtyId },
+            });
+          }
+        }
+      }
+
+      return tx.doctors.findUniqueOrThrow({
+        where: { id },
+        include: doctorInclude,
+      });
+    });
+  }
+
+  async softDelete(id: number): Promise<void> {
+    await this.prisma.doctors.update({
+      where: { id },
+      data: { deleted: true, isActive: false },
+    });
   }
 }
