@@ -184,10 +184,20 @@ const DashboardView = () => {
       <Card
         sx={{
           mb: 3,
-          background: `linear-gradient(135deg, ${darken(theme.palette.primary.main, 0.55)} 0%, ${darken(theme.palette.primary.main, 0.35)} 100%)`,
+          backgroundImage: 'url(/images/dashboard-hero.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
           color: '#fff',
           position: 'relative',
           overflow: 'hidden',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            inset: 0,
+            background: `linear-gradient(90deg, ${alpha(theme.palette.primary.dark, 0.9)} 0%, ${alpha(theme.palette.primary.main, 0.4)} 100%)`,
+            zIndex: 0,
+          }
         }}
       >
         <Box
