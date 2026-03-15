@@ -13,6 +13,7 @@ import { CheckInAppointmentUseCase } from './use-cases/check-in-appointment.use-
 import { CancelAppointmentUseCase } from './use-cases/cancel-appointment.use-case.js';
 import { RescheduleAppointmentUseCase } from './use-cases/reschedule-appointment.use-case.js';
 import { ConfirmAppointmentUseCase } from './use-cases/confirm-appointment.use-case.js';
+import { CreateOverbookAppointmentUseCase } from './use-cases/create-overbook-appointment.use-case.js';
 import { CompleteAppointmentUseCase } from './use-cases/complete-appointment.use-case.js';
 import { AppointmentController } from '../interfaces/controllers/appointment.controller.js';
 
@@ -37,6 +38,7 @@ import { AppointmentController } from '../interfaces/controllers/appointment.con
     CheckInAppointmentUseCase,
     CancelAppointmentUseCase,
     ConfirmAppointmentUseCase,
+    CreateOverbookAppointmentUseCase,
     RescheduleAppointmentUseCase,
     CompleteAppointmentUseCase,
   ],

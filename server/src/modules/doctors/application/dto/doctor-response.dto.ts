@@ -10,6 +10,9 @@ export class DoctorResponseDto {
   @ApiProperty()
   resume: string | null;
 
+  @ApiProperty({ example: 2, description: 'Máximo de sobrecupos por día' })
+  maxOverbookPerDay: number;
+
   @ApiProperty()
   isActive: boolean;
 

@@ -32,6 +32,7 @@ export class FindAllDoctorsUseCase {
       id: d.id,
       licenseNumber: d.licenseNumber,
       resume: d.resume,
+      maxOverbookPerDay: d.maxOverbookPerDay,
       isActive: d.isActive,
       createdAt: d.createdAt,
       profile: {

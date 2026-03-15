@@ -47,6 +47,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         startTime: data.startTime,
         endTime: data.endTime,
         reason: data.reason,
+        ...(data.isOverbook && { isOverbook: true }),
       },
       include: appointmentInclude,
     });
@@ -226,6 +227,34 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     return rows.map((r) => this.mapToRelations(r));
   }
 
+  async countOverbooksByDoctorAndDate(
+    doctorId: number,
+    date: Date,
+  ): Promise<number> {
+    const startOfDay = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate(),
+    );
+    const endOfDay = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate() + 1,
+    );
+
+    return this.prisma.appointments.count({
+      where: {
+        deleted: false,
+        isOverbook: true,
+        status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+        schedule: {
+          doctorId,
+          scheduleDate: { gte: startOfDay, lt: endOfDay },
+        },
+      },
+    });
+  }
+
   private mapToRelations(raw: any): AppointmentWithRelations {
     return {
       id: raw.id,
@@ -240,6 +269,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       amount: raw.amount ? Number(raw.amount) : null,
       cancelReason: raw.cancelReason,
       cancellationFee: raw.cancellationFee ? Number(raw.cancellationFee) : null,
+      isOverbook: raw.isOverbook,
       deleted: raw.deleted,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,

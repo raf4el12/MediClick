@@ -75,6 +75,7 @@ export class OnboardDoctorUseCase {
       id: doctor.id,
       licenseNumber: doctor.licenseNumber,
       resume: doctor.resume,
+      maxOverbookPerDay: doctor.maxOverbookPerDay,
       isActive: doctor.isActive,
       createdAt: doctor.createdAt,
       profile: {

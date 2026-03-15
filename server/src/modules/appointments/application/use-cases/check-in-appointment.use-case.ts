@@ -59,6 +59,7 @@ export class CheckInAppointmentUseCase {
       amount: a.amount,
       cancelReason: a.cancelReason,
       cancellationFee: a.cancellationFee,
+      isOverbook: a.isOverbook,
       patient: {
         id: a.patient.id,
         name: a.patient.profile.name,

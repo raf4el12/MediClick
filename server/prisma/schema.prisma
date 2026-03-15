@@ -157,6 +157,7 @@ model Doctors {
   licenseNumber String               @unique
   resume        String?
   isActive      Boolean              @default(true)
+  maxOverbookPerDay Int              @default(2) // Máximo de sobrecupos por día
   deleted       Boolean              @default(false)
   createdAt     DateTime             @default(now())
   updatedAt     DateTime?
@@ -276,6 +277,7 @@ model Appointments {
   amount        Decimal?          @db.Decimal(10, 2)
   cancelReason    String?
   cancellationFee Decimal?          @db.Decimal(10, 2)
+  isOverbook      Boolean           @default(false) // Cita de sobrecupo
   deleted         Boolean           @default(false)
   createdAt     DateTime          @default(now())
   updatedAt     DateTime?

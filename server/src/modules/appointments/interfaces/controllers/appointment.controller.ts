@@ -25,7 +25,9 @@ import { CheckInAppointmentUseCase } from '../../application/use-cases/check-in-
 import { CancelAppointmentUseCase } from '../../application/use-cases/cancel-appointment.use-case.js';
 import { RescheduleAppointmentUseCase } from '../../application/use-cases/reschedule-appointment.use-case.js';
 import { ConfirmAppointmentUseCase } from '../../application/use-cases/confirm-appointment.use-case.js';
+import { CreateOverbookAppointmentUseCase } from '../../application/use-cases/create-overbook-appointment.use-case.js';
 import { CompleteAppointmentUseCase } from '../../application/use-cases/complete-appointment.use-case.js';
+import { CreateOverbookAppointmentDto } from '../../application/dto/create-overbook-appointment.dto.js';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator.js';
 
 @ApiTags('Appointments')
@@ -38,6 +40,7 @@ export class AppointmentController {
     private readonly checkInAppointmentUseCase: CheckInAppointmentUseCase,
     private readonly cancelAppointmentUseCase: CancelAppointmentUseCase,
     private readonly confirmAppointmentUseCase: ConfirmAppointmentUseCase,
+    private readonly createOverbookAppointmentUseCase: CreateOverbookAppointmentUseCase,
     private readonly rescheduleAppointmentUseCase: RescheduleAppointmentUseCase,
     private readonly completeAppointmentUseCase: CompleteAppointmentUseCase,
   ) {}
@@ -56,6 +59,27 @@ export class AppointmentController {
     @Body() dto: CreateAppointmentDto,
   ): Promise<AppointmentResponseDto> {
     return this.createAppointmentUseCase.execute(dto);
+  }
+
+  @Post('overbook')
+  @Auth(UserRole.ADMIN, UserRole.DOCTOR)
+  @ApiOperation({
+    summary: 'Crear cita de sobrecupo (al final del último slot del día)',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Sobrecupo creado',
+    type: AppointmentResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Datos inválidos o fecha pasada' })
+  @ApiResponse({
+    status: 409,
+    description: 'Límite de sobrecupos alcanzado',
+  })
+  async createOverbook(
+    @Body() dto: CreateOverbookAppointmentDto,
+  ): Promise<AppointmentResponseDto> {
+    return this.createOverbookAppointmentUseCase.execute(dto);
   }
 
   @Get('doctor/today')

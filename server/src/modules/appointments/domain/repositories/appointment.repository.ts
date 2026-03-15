@@ -37,4 +37,12 @@ export interface IAppointmentRepository {
     doctorId: number,
     date: Date,
   ): Promise<AppointmentWithRelations[]>;
+
+  /**
+   * Cuenta las citas de sobrecupo activas de un doctor en una fecha específica.
+   */
+  countOverbooksByDoctorAndDate(
+    doctorId: number,
+    date: Date,
+  ): Promise<number>;
 }

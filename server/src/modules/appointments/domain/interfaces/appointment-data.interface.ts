@@ -6,6 +6,7 @@ export interface CreateAppointmentData {
   startTime: Date;
   endTime: Date;
   reason?: string;
+  isOverbook?: boolean;
 }
 
 export interface UpdateAppointmentData {
@@ -32,6 +33,7 @@ export interface AppointmentWithRelations {
   amount: number | null;
   cancelReason: string | null;
   cancellationFee: number | null;
+  isOverbook: boolean;
   deleted: boolean;
   createdAt: Date;
   updatedAt: Date | null;

@@ -13,6 +13,7 @@ export class AppointmentEntity {
   amount: number | null;
   cancelReason: string | null;
   cancellationFee: number | null;
+  isOverbook: boolean;
   deleted: boolean;
   createdAt: Date;
   updatedAt: Date | null;

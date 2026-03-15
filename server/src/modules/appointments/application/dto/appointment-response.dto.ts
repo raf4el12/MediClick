@@ -90,6 +90,9 @@ export class AppointmentResponseDto {
   @ApiPropertyOptional({ example: 75.0, description: 'Penalización por cancelación tardía' })
   cancellationFee: number | null;
 
+  @ApiProperty({ example: false, description: 'Indica si es una cita de sobrecupo' })
+  isOverbook: boolean;
+
   @ApiProperty({ type: AppointmentPatientDto })
   patient: AppointmentPatientDto;
 

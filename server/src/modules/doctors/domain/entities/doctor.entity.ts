@@ -3,6 +3,7 @@ export class DoctorEntity {
   profileId: number;
   licenseNumber: string;
   resume: string | null;
+  maxOverbookPerDay: number;
   isActive: boolean;
   deleted: boolean;
   createdAt: Date;
