@@ -5,6 +5,8 @@ import type { IScheduleRepository } from '../../domain/repositories/schedule.rep
 import type { IAvailabilityRepository } from '../../../availability/domain/repositories/availability.repository.js';
 import type { IDoctorRepository } from '../../../doctors/domain/repositories/doctor.repository.js';
 import type { ISpecialtyRepository } from '../../../specialties/domain/repositories/specialty.repository.js';
+import type { IHolidayRepository } from '../../../holidays/domain/repositories/holiday.repository.js';
+import type { IScheduleBlockRepository } from '../../../schedule-blocks/domain/repositories/schedule-block.repository.js';
 import type { CreateScheduleData } from '../../domain/interfaces/schedule-data.interface.js';
 import { DayOfWeek } from '../../../../shared/domain/enums/day-of-week.enum.js';
 import { TimeSlotCalculatorService } from '../../domain/services/time-slot-calculator.service.js';
@@ -30,6 +32,10 @@ export class GenerateSchedulesUseCase {
     private readonly doctorRepository: IDoctorRepository,
     @Inject('ISpecialtyRepository')
     private readonly specialtyRepository: ISpecialtyRepository,
+    @Inject('IHolidayRepository')
+    private readonly holidayRepository: IHolidayRepository,
+    @Inject('IScheduleBlockRepository')
+    private readonly scheduleBlockRepository: IScheduleBlockRepository,
   ) {}
 
   async execute(
@@ -72,6 +78,17 @@ export class GenerateSchedulesUseCase {
       dates.push(new Date(dto.year, dto.month - 1, day));
     }
 
+    // Pre-cargar feriados del mes para evitar consultas repetidas
+    const monthStart = new Date(dto.year, dto.month - 1, 1);
+    const monthEnd = new Date(dto.year, dto.month - 1, daysInMonth);
+    const holidays = await this.holidayRepository.findByDateRange(
+      monthStart,
+      monthEnd,
+    );
+    const holidayDatesSet = new Set(
+      holidays.map((h) => h.date.toISOString().split('T')[0]),
+    );
+
     // Cachear duraciones de especialidades para evitar consultas repetidas
     const specialtyDurationCache = new Map<number, number | null>();
 
@@ -84,11 +101,17 @@ export class GenerateSchedulesUseCase {
         await this.availabilityRepository.findActiveByDoctorIds([doctorId]);
       if (availabilities.length === 0) continue;
 
+      // Pre-cargar bloqueos activos del doctor para el mes
+      const scheduleBlocks =
+        await this.scheduleBlockRepository.findActiveByDoctorAndDateRange(
+          doctorId,
+          monthStart,
+          monthEnd,
+        );
+
       // Obtener schedules existentes para evitar duplicados
-      const existingSchedules = await this.scheduleRepository.findExistingDates(
-        doctorId,
-        dates,
-      );
+      const existingSchedules =
+        await this.scheduleRepository.findExistingDates(doctorId, dates);
 
       const existingSet = new Set(
         existingSchedules.map(
@@ -100,6 +123,38 @@ export class GenerateSchedulesUseCase {
       const schedulesToCreate: CreateScheduleData[] = [];
 
       for (const date of dates) {
+        const dateStr = date.toISOString().split('T')[0];
+
+        // Saltar feriados
+        if (holidayDatesSet.has(dateStr)) {
+          continue;
+        }
+
+        // Verificar si el día completo está bloqueado para este doctor
+        const isFullDayBlocked = scheduleBlocks.some((block) => {
+          if (block.type !== 'FULL_DAY') return false;
+          const blockStart = new Date(
+            block.startDate.getFullYear(),
+            block.startDate.getMonth(),
+            block.startDate.getDate(),
+          );
+          const blockEnd = new Date(
+            block.endDate.getFullYear(),
+            block.endDate.getMonth(),
+            block.endDate.getDate(),
+          );
+          const dateOnly = new Date(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate(),
+          );
+          return dateOnly >= blockStart && dateOnly <= blockEnd;
+        });
+
+        if (isFullDayBlocked) {
+          continue;
+        }
+
         const jsDayOfWeek = date.getDay();
         const dayOfWeek = JS_DAY_TO_ENUM[jsDayOfWeek];
 
@@ -124,6 +179,27 @@ export class GenerateSchedulesUseCase {
             a.endDate.getDate(),
           );
           return dateOnly >= startOnly && dateOnly <= endOnly;
+        });
+
+        // Recopilar bloqueos TIME_RANGE para este día
+        const timeRangeBlocks = scheduleBlocks.filter((block) => {
+          if (block.type !== 'TIME_RANGE') return false;
+          const blockStart = new Date(
+            block.startDate.getFullYear(),
+            block.startDate.getMonth(),
+            block.startDate.getDate(),
+          );
+          const blockEnd = new Date(
+            block.endDate.getFullYear(),
+            block.endDate.getMonth(),
+            block.endDate.getDate(),
+          );
+          const dateOnly = new Date(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate(),
+          );
+          return dateOnly >= blockStart && dateOnly <= blockEnd;
         });
 
         for (const rule of matchingRules) {
@@ -154,7 +230,21 @@ export class GenerateSchedulesUseCase {
           }
 
           for (const slot of slots) {
-            const key = `${date.toISOString().split('T')[0]}_${slot.startTime.getTime()}_${slot.endTime.getTime()}`;
+            // Verificar si el slot se solapa con algún bloqueo TIME_RANGE
+            const isSlotBlocked = timeRangeBlocks.some((block) => {
+              if (!block.timeFrom || !block.timeTo) return false;
+              // Solapamiento: slot.start < block.end AND slot.end > block.start
+              return (
+                slot.startTime < block.timeTo && slot.endTime > block.timeFrom
+              );
+            });
+
+            if (isSlotBlocked) {
+              totalSkipped++;
+              continue;
+            }
+
+            const key = `${dateStr}_${slot.startTime.getTime()}_${slot.endTime.getTime()}`;
 
             if (existingSet.has(key)) {
               totalSkipped++;

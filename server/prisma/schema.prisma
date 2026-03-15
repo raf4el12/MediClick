@@ -80,6 +80,11 @@ enum MedicalHistoryStatus {
   CHRONIC
 }
 
+enum ScheduleBlockType {
+  FULL_DAY
+  TIME_RANGE
+}
+
 model Users {
   id            Int             @id @default(autoincrement())
   name          String
@@ -159,7 +164,8 @@ model Doctors {
   specialties   DoctorsSpecialties[]
   availability  Availability[]
   schedules     Schedules[]
-  reviews       Reviews[]
+  reviews        Reviews[]
+  scheduleBlocks ScheduleBlocks[]
 
   @@index([profileId])
   @@index([isActive, deleted])
@@ -396,4 +402,38 @@ model MedicalHistory {
 
   @@index([patientId, status])
   @@index([patientId, createdAt])
+}
+
+model ScheduleBlocks {
+  id        Int               @id @default(autoincrement())
+  doctorId  Int
+  type      ScheduleBlockType
+  startDate DateTime
+  endDate   DateTime
+  timeFrom  DateTime? // Solo para TIME_RANGE
+  timeTo    DateTime? // Solo para TIME_RANGE
+  reason    String
+  isActive  Boolean           @default(true)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime?
+
+  doctor Doctors @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([doctorId, startDate, endDate])
+  @@index([isActive])
+}
+
+model Holidays {
+  id          Int      @id @default(autoincrement())
+  name        String
+  date        DateTime
+  year        Int
+  isRecurring Boolean  @default(false) // Feriados fijos que se repiten cada año
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime?
+
+  @@unique([date, name])
+  @@index([year])
+  @@index([date])
 }

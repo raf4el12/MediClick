@@ -16,6 +16,8 @@ import { PrescriptionsModule } from './modules/prescriptions/application/prescri
 import { ReportsModule } from './modules/reports/application/reports.module.js';
 import { NotificationsModule } from './modules/notifications/application/notifications.module.js';
 import { MedicalHistoryModule } from './modules/medical-history/application/medical-history.module.js';
+import { HolidaysModule } from './modules/holidays/application/holidays.module.js';
+import { ScheduleBlocksModule } from './modules/schedule-blocks/application/schedule-blocks.module.js';
 
 @Module({
   imports: [
@@ -36,6 +38,8 @@ import { MedicalHistoryModule } from './modules/medical-history/application/medi
     ReportsModule,
     NotificationsModule,
     MedicalHistoryModule,
+    HolidaysModule,
+    ScheduleBlocksModule,
   ],
   controllers: [],
   providers: [],
