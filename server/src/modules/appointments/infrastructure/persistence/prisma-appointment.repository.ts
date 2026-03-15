@@ -144,6 +144,8 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
           cancellationFee: data.cancellationFee,
         }),
         ...(data.scheduleId && { scheduleId: data.scheduleId }),
+        ...(data.startTime && { startTime: data.startTime }),
+        ...(data.endTime && { endTime: data.endTime }),
         ...(data.notes !== undefined && { notes: data.notes }),
         updatedAt: data.updatedAt ?? new Date(),
       },

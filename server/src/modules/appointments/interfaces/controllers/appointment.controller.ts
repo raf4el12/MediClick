@@ -24,6 +24,7 @@ import { GetDoctorDailyAppointmentsUseCase } from '../../application/use-cases/g
 import { CheckInAppointmentUseCase } from '../../application/use-cases/check-in-appointment.use-case.js';
 import { CancelAppointmentUseCase } from '../../application/use-cases/cancel-appointment.use-case.js';
 import { RescheduleAppointmentUseCase } from '../../application/use-cases/reschedule-appointment.use-case.js';
+import { ConfirmAppointmentUseCase } from '../../application/use-cases/confirm-appointment.use-case.js';
 import { CompleteAppointmentUseCase } from '../../application/use-cases/complete-appointment.use-case.js';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator.js';
 
@@ -36,6 +37,7 @@ export class AppointmentController {
     private readonly getDoctorDailyAppointmentsUseCase: GetDoctorDailyAppointmentsUseCase,
     private readonly checkInAppointmentUseCase: CheckInAppointmentUseCase,
     private readonly cancelAppointmentUseCase: CancelAppointmentUseCase,
+    private readonly confirmAppointmentUseCase: ConfirmAppointmentUseCase,
     private readonly rescheduleAppointmentUseCase: RescheduleAppointmentUseCase,
     private readonly completeAppointmentUseCase: CompleteAppointmentUseCase,
   ) {}
@@ -109,6 +111,18 @@ export class AppointmentController {
     @CurrentUser('role') userRole: string,
   ): Promise<AppointmentResponseDto> {
     return this.cancelAppointmentUseCase.execute(id, dto, userRole as any);
+  }
+
+  @Patch(':id/confirm')
+  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.PATIENT)
+  @ApiOperation({ summary: 'Confirmar cita (PENDING → CONFIRMED)' })
+  @ApiResponse({ status: 200, type: AppointmentResponseDto })
+  @ApiResponse({ status: 400, description: 'Estado no permite confirmación' })
+  @ApiResponse({ status: 404, description: 'Cita no encontrada' })
+  async confirm(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<AppointmentResponseDto> {
+    return this.confirmAppointmentUseCase.execute(id);
   }
 
   @Patch(':id/reschedule')

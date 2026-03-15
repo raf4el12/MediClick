@@ -11,6 +11,11 @@ import type { IAppointmentRepository } from '../../domain/repositories/appointme
 import type { IScheduleRepository } from '../../../schedules/domain/repositories/schedule.repository.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
 
+function parseHHmm(hhmm: string): Date {
+  const [hours, minutes] = hhmm.split(':').map(Number);
+  return new Date(1970, 0, 1, hours, minutes, 0, 0);
+}
+
 function dateToTimeString(date: Date): string {
   const h = date.getHours().toString().padStart(2, '0');
   const m = date.getMinutes().toString().padStart(2, '0');
@@ -45,6 +50,7 @@ export class RescheduleAppointmentUseCase {
       );
     }
 
+    // Validar nuevo schedule
     const newSchedule = await this.scheduleRepository.findById(
       dto.newScheduleId,
     );
@@ -52,19 +58,54 @@ export class RescheduleAppointmentUseCase {
       throw new BadRequestException('El nuevo horario especificado no existe');
     }
 
-    const hasAppointment =
-      await this.appointmentRepository.existsAppointmentForSchedule(
-        dto.newScheduleId,
-        id,
+    // Parsear y validar tiempos del nuevo slot
+    const newStartTime = parseHHmm(dto.startTime);
+    const newEndTime = parseHHmm(dto.endTime);
+
+    if (newStartTime.getTime() >= newEndTime.getTime()) {
+      throw new BadRequestException(
+        'startTime debe ser anterior a endTime',
       );
-    if (hasAppointment) {
+    }
+
+    // Validar que el slot cabe dentro del rango del nuevo schedule
+    const schedTimeFrom = new Date(newSchedule.timeFrom);
+    const schedTimeTo = new Date(newSchedule.timeTo);
+
+    const schedFromMinutes =
+      schedTimeFrom.getHours() * 60 + schedTimeFrom.getMinutes();
+    const schedToMinutes =
+      schedTimeTo.getHours() * 60 + schedTimeTo.getMinutes();
+    const slotStartMinutes =
+      newStartTime.getHours() * 60 + newStartTime.getMinutes();
+    const slotEndMinutes =
+      newEndTime.getHours() * 60 + newEndTime.getMinutes();
+
+    if (slotStartMinutes < schedFromMinutes || slotEndMinutes > schedToMinutes) {
+      throw new BadRequestException(
+        `El slot ${dto.startTime}-${dto.endTime} está fuera del rango del turno ` +
+          `${dateToTimeString(schedTimeFrom)}-${dateToTimeString(schedTimeTo)}`,
+      );
+    }
+
+    // Verificar superposición con citas existentes en el nuevo schedule
+    const hasOverlap =
+      await this.appointmentRepository.hasOverlappingAppointment(
+        dto.newScheduleId,
+        newStartTime,
+        newEndTime,
+        id, // excluir la cita actual
+      );
+    if (hasOverlap) {
       throw new ConflictException(
-        'El nuevo horario ya tiene una cita asignada',
+        'Ya existe una cita que se superpone con el horario seleccionado',
       );
     }
 
     const updated = await this.appointmentRepository.update(id, {
       scheduleId: dto.newScheduleId,
+      startTime: newStartTime,
+      endTime: newEndTime,
       status: AppointmentStatus.PENDING,
       updatedAt: new Date(),
     });

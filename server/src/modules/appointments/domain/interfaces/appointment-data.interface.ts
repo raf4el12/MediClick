@@ -13,6 +13,8 @@ export interface UpdateAppointmentData {
   cancelReason?: string;
   cancellationFee?: number;
   scheduleId?: number;
+  startTime?: Date;
+  endTime?: Date;
   notes?: string;
   updatedAt?: Date;
 }
