@@ -64,7 +64,7 @@ export function useUserForm({ onSuccess, onClose, editUser }: UseUserFormProps) 
         profileName: editUser.profile?.name ?? '',
         lastName: editUser.profile?.lastName ?? '',
         phone: editUser.profile?.phone ?? '',
-        typeDocument: editUser.profile?.typeDocument ?? '',
+        typeDocument: (editUser.profile?.typeDocument ?? '') as '' | 'DNI' | 'CE' | 'PASAPORTE',
         numberDocument: editUser.profile?.numberDocument ?? '',
       });
     }

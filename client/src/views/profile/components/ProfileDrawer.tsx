@@ -9,6 +9,11 @@ import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import Skeleton from '@mui/material/Skeleton';
 import Alert from '@mui/material/Alert';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import FormHelperText from '@mui/material/FormHelperText';
 import { Controller } from 'react-hook-form';
 import { useProfileForm } from '../hooks/useProfileForm';
 import { useSnackbar } from '@/hooks/useSnackbar';
@@ -129,20 +134,29 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
               )}
             />
 
-            <Controller
-              name="typeDocument"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  fullWidth
-                  label="Tipo de Documento"
-                  placeholder="Ej: DNI"
-                  error={!!errors.typeDocument}
-                  helperText={errors.typeDocument?.message}
-                />
+            <FormControl fullWidth error={!!errors.typeDocument}>
+              <InputLabel id="profile-doc-type-label">Tipo de Documento</InputLabel>
+              <Controller
+                name="typeDocument"
+                control={control}
+                render={({ field }) => (
+                  <Select
+                    {...field}
+                    labelId="profile-doc-type-label"
+                    label="Tipo de Documento"
+                    value={field.value || ''}
+                  >
+                    <MenuItem value="">Sin especificar</MenuItem>
+                    <MenuItem value="DNI">DNI</MenuItem>
+                    <MenuItem value="CE">Carné de extranjería</MenuItem>
+                    <MenuItem value="PASAPORTE">Pasaporte</MenuItem>
+                  </Select>
+                )}
+              />
+              {errors.typeDocument && (
+                <FormHelperText>{errors.typeDocument.message}</FormHelperText>
               )}
-            />
+            </FormControl>
 
             <Controller
               name="numberDocument"

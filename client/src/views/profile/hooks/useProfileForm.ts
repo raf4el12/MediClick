@@ -29,7 +29,7 @@ export function useProfileForm({ open, onSuccess }: UseProfileFormProps) {
     name: profile?.profile?.name ?? '',
     lastName: profile?.profile?.lastName ?? '',
     phone: profile?.profile?.phone ?? '',
-    typeDocument: profile?.profile?.typeDocument ?? '',
+    typeDocument: (profile?.profile?.typeDocument ?? '') as ProfileFormValues['typeDocument'],
     numberDocument: profile?.profile?.numberDocument ?? '',
     address: profile?.profile?.address ?? '',
     state: profile?.profile?.state ?? '',

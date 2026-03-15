@@ -24,12 +24,22 @@ import { doctorsService } from '@/services/doctors.service';
 import type { Doctor } from '../types';
 import type { Specialty } from '@/views/specialties/types';
 
+const PHONE_REGEX = /^9\d{8}$/;
+const CMP_REGEX = /^\d{5,6}$/;
+
 const editDoctorSchema = z.object({
     name: z.string().min(1, 'El nombre es obligatorio').max(100),
     lastName: z.string().min(1, 'El apellido es obligatorio').max(100),
-    phone: z.string().optional().or(z.literal('')),
+    phone: z
+        .string()
+        .regex(PHONE_REGEX, 'Debe ser un celular válido (9 dígitos, inicia con 9)')
+        .optional()
+        .or(z.literal('')),
     gender: z.string().optional().or(z.literal('')),
-    licenseNumber: z.string().min(1, 'El CMP es obligatorio'),
+    licenseNumber: z
+        .string()
+        .min(1, 'El CMP es obligatorio')
+        .regex(CMP_REGEX, 'El CMP debe tener 5 o 6 dígitos'),
     resume: z.string().max(1000).optional().or(z.literal('')),
     specialtyIds: z.array(z.number().int()).min(1, 'Debe seleccionar al menos una especialidad'),
 });

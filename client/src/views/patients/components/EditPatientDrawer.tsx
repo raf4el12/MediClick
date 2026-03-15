@@ -21,13 +21,22 @@ import { z } from 'zod';
 import { patientsService } from '@/services/patients.service';
 import type { Patient } from '../types';
 
+const PHONE_REGEX = /^9\d{8}$/;
+
 const editPatientSchema = z.object({
     name: z.string().min(1, 'El nombre es obligatorio').max(100),
     lastName: z.string().min(1, 'El apellido es obligatorio').max(100),
-    phone: z.string().optional().or(z.literal('')),
+    phone: z
+        .string()
+        .regex(PHONE_REGEX, 'Debe ser un celular válido (9 dígitos, inicia con 9)')
+        .optional()
+        .or(z.literal('')),
     birthday: z.string().optional().or(z.literal('')),
     gender: z.string().optional().or(z.literal('')),
-    emergencyContact: z.string().min(1, 'El contacto de emergencia es obligatorio'),
+    emergencyContact: z
+        .string()
+        .min(1, 'El contacto de emergencia es obligatorio')
+        .regex(PHONE_REGEX, 'Debe ser un celular válido (9 dígitos, inicia con 9)'),
     bloodType: z.string().min(1, 'El tipo de sangre es obligatorio'),
     allergies: z.string().max(500).optional().or(z.literal('')),
     chronicConditions: z.string().max(500).optional().or(z.literal('')),

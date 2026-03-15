@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+const PHONE_REGEX = /^9\d{8}$/;
+const CMP_REGEX = /^\d{5,6}$/;
+
 export const doctorSchema = z.object({
   userName: z
     .string()
@@ -20,11 +23,16 @@ export const doctorSchema = z.object({
     .string()
     .min(1, 'El apellido es obligatorio')
     .max(100, 'El apellido no debe exceder 100 caracteres'),
-  phone: z.string().optional().or(z.literal('')),
+  phone: z
+    .string()
+    .regex(PHONE_REGEX, 'Debe ser un celular válido (9 dígitos, inicia con 9)')
+    .optional()
+    .or(z.literal('')),
   gender: z.string().optional().or(z.literal('')),
   cmp: z
     .string()
-    .min(1, 'El CMP es obligatorio'),
+    .min(1, 'El CMP es obligatorio')
+    .regex(CMP_REGEX, 'El CMP debe tener 5 o 6 dígitos'),
   resume: z
     .string()
     .max(1000, 'El resumen no debe exceder 1000 caracteres')

@@ -178,7 +178,7 @@ export function AddPatientDrawer({
 
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
           <FormControl fullWidth error={!!errors.typeDocument}>
-            <InputLabel id="patient-doc-type-label">Tipo documento</InputLabel>
+            <InputLabel id="patient-doc-type-label">Tipo documento *</InputLabel>
             <Controller
               name="typeDocument"
               control={control}
@@ -186,16 +186,18 @@ export function AddPatientDrawer({
                 <Select
                   {...field}
                   labelId="patient-doc-type-label"
-                  label="Tipo documento"
+                  label="Tipo documento *"
                   value={field.value || ''}
                 >
-                  <MenuItem value="">Sin especificar</MenuItem>
                   <MenuItem value="DNI">DNI</MenuItem>
                   <MenuItem value="CE">Carné de extranjería</MenuItem>
                   <MenuItem value="PASAPORTE">Pasaporte</MenuItem>
                 </Select>
               )}
             />
+            {errors.typeDocument && (
+              <FormHelperText>{errors.typeDocument.message}</FormHelperText>
+            )}
           </FormControl>
 
           <Controller
@@ -205,7 +207,7 @@ export function AddPatientDrawer({
               <TextField
                 {...field}
                 fullWidth
-                label="Nro. documento"
+                label="Nro. documento *"
                 placeholder="12345678"
                 error={!!errors.numberDocument}
                 helperText={errors.numberDocument?.message}

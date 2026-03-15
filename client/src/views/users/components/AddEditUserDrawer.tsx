@@ -230,20 +230,29 @@ export function AddEditUserDrawer({
         />
 
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <Controller
-            name="typeDocument"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                fullWidth
-                label="Tipo de Documento"
-                placeholder="DNI"
-                error={!!(errors as any).typeDocument}
-                helperText={(errors as any).typeDocument?.message}
-              />
+          <FormControl fullWidth error={!!(errors as any).typeDocument}>
+            <InputLabel id="user-doc-type-label">Tipo de Documento</InputLabel>
+            <Controller
+              name="typeDocument"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  {...field}
+                  labelId="user-doc-type-label"
+                  label="Tipo de Documento"
+                  value={field.value || ''}
+                >
+                  <MenuItem value="">Sin especificar</MenuItem>
+                  <MenuItem value="DNI">DNI</MenuItem>
+                  <MenuItem value="CE">Carné de extranjería</MenuItem>
+                  <MenuItem value="PASAPORTE">Pasaporte</MenuItem>
+                </Select>
+              )}
+            />
+            {(errors as any).typeDocument && (
+              <FormHelperText>{(errors as any).typeDocument.message}</FormHelperText>
             )}
-          />
+          </FormControl>
 
           <Controller
             name="numberDocument"

@@ -30,7 +30,7 @@ export function usePatientForm({ onSuccess, onClose }: UsePatientFormProps) {
         phone: '',
         birthday: '',
         gender: '',
-        typeDocument: '',
+        typeDocument: '' as 'DNI' | 'CE' | 'PASAPORTE',
         numberDocument: '',
         emergencyContact: '',
         bloodType: '',
