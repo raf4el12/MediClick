@@ -7,6 +7,9 @@ import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
 import Alert from '@mui/material/Alert';
+import Card from '@mui/material/Card';
+import Chip from '@mui/material/Chip';
+import { alpha, useTheme } from '@mui/material/styles';
 
 import { useMedicalHistory } from './hooks/useMedicalHistory';
 import { MedicalHistoryKPIs } from './components/MedicalHistoryKPIs';
@@ -18,13 +21,14 @@ import { MedicalHistoryStatus } from './types';
 import type { MedicalHistoryFormValues } from './functions/medical-history.schema';
 
 const STATUS_OPTIONS = [
-  { value: '', label: 'Todos' },
+  { value: '', label: 'Todos los estados' },
   { value: MedicalHistoryStatus.ACTIVE, label: 'Activa' },
   { value: MedicalHistoryStatus.CHRONIC, label: 'Crónica' },
   { value: MedicalHistoryStatus.RESOLVED, label: 'Resuelta' },
 ];
 
 export default function MedicalHistoryView() {
+  const theme = useTheme();
   const ctrl = useMedicalHistory();
 
   const handleFormSubmit = async (values: MedicalHistoryFormValues) => {
@@ -51,62 +55,88 @@ export default function MedicalHistoryView() {
 
   return (
     <>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-          Historial Médico
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Gestión del historial médico de los pacientes
-        </Typography>
-      </Box>
-
-      {/* KPIs */}
-      {ctrl.selectedPatient && ctrl.data.data.length > 0 && (
-        <MedicalHistoryKPIs entries={ctrl.data.data} total={ctrl.data.total} />
-      )}
-
-      {/* Filtros */}
-      <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap', alignItems: 'center' }}>
-        <Autocomplete
-          options={ctrl.patients}
-          getOptionLabel={(p) => `${p.profile.name} ${p.profile.lastName}`}
-          value={ctrl.selectedPatient}
-          onChange={(_, value) => ctrl.handleSelectPatient(value)}
-          loading={ctrl.loadingPatients}
-          sx={{ minWidth: 300, flex: 1, maxWidth: 450 }}
-          renderInput={(params) => (
-            <TextField {...params} label="Seleccionar Paciente" size="small" />
-          )}
-          isOptionEqualToValue={(opt, val) => opt.id === val.id}
-        />
-
-        <TextField
-          select
-          label="Estado"
-          value={ctrl.statusFilter}
-          onChange={(e) => ctrl.handleStatusFilter(e.target.value as MedicalHistoryStatus | '')}
-          size="small"
-          sx={{ minWidth: 150 }}
-          disabled={!ctrl.selectedPatient}
-        >
-          {STATUS_OPTIONS.map((opt) => (
-            <MenuItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </MenuItem>
-          ))}
-        </TextField>
-
-        <Box sx={{ flex: 1 }} />
-
+      {/* Header */}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: 2,
+          mb: 3,
+        }}
+      >
+        <Box>
+          <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5 }}>
+            Historial Médico
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Gestión del historial médico de los pacientes
+          </Typography>
+        </Box>
         <Button
           variant="contained"
           startIcon={<i className="ri-add-line" />}
           onClick={() => ctrl.setCreateOpen(true)}
           disabled={!ctrl.selectedPatient}
+          sx={{ flexShrink: 0 }}
         >
           Nueva Entrada
         </Button>
       </Box>
+
+      {/* Filtros */}
+      <Card sx={{ p: 2.5, mb: 3 }}>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          <Box sx={{ flex: 1, minWidth: 260 }}>
+            <Autocomplete
+              options={ctrl.patients}
+              getOptionLabel={(p) => `${p.profile.name} ${p.profile.lastName}`}
+              value={ctrl.selectedPatient}
+              onChange={(_, value) => ctrl.handleSelectPatient(value)}
+              loading={ctrl.loadingPatients}
+              renderInput={(params) => (
+                <TextField {...params} label="Buscar Paciente" size="small" placeholder="Nombre del paciente..." />
+              )}
+              isOptionEqualToValue={(opt, val) => opt.id === val.id}
+            />
+          </Box>
+
+          <TextField
+            select
+            label="Estado"
+            value={ctrl.statusFilter}
+            onChange={(e) => ctrl.handleStatusFilter(e.target.value as MedicalHistoryStatus | '')}
+            size="small"
+            sx={{ minWidth: 170 }}
+            disabled={!ctrl.selectedPatient}
+          >
+            {STATUS_OPTIONS.map((opt) => (
+              <MenuItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          {ctrl.selectedPatient && (
+            <Chip
+              icon={<i className="ri-user-heart-line" style={{ fontSize: 16 }} />}
+              label={`${ctrl.selectedPatient.profile.name} ${ctrl.selectedPatient.profile.lastName}`}
+              onDelete={() => ctrl.handleSelectPatient(null)}
+              sx={{
+                bgcolor: alpha(theme.palette.primary.main, 0.08),
+                fontWeight: 500,
+                '& .MuiChip-deleteIcon': { color: 'text.secondary' },
+              }}
+            />
+          )}
+        </Box>
+      </Card>
+
+      {/* KPIs */}
+      {ctrl.selectedPatient && ctrl.data.data.length > 0 && (
+        <MedicalHistoryKPIs entries={ctrl.data.data} total={ctrl.data.total} />
+      )}
 
       {/* Error */}
       {ctrl.error && (

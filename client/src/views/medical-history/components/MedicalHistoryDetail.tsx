@@ -1,7 +1,6 @@
 'use client';
 
 import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
@@ -10,6 +9,7 @@ import Chip from '@mui/material/Chip';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
+import { alpha, useTheme } from '@mui/material/styles';
 
 import type { MedicalHistory } from '../types';
 import { MedicalHistoryStatus } from '../types';
@@ -26,94 +26,135 @@ interface MedicalHistoryDetailProps {
   onClose: () => void;
 }
 
-function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
+function InfoRow({ icon, label, children }: { icon: string; label: string; children: React.ReactNode }) {
+  const theme = useTheme();
+
   return (
-    <Box sx={{ mb: 2 }}>
-      <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
-        {label}
-      </Typography>
-      <Box sx={{ mt: 0.5 }}>{children}</Box>
+    <Box sx={{ display: 'flex', gap: 1.5, mb: 2.5 }}>
+      <Box
+        sx={{
+          width: 30,
+          height: 30,
+          borderRadius: 1,
+          bgcolor: alpha(theme.palette.primary.main, 0.08),
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexShrink: 0,
+          mt: 0.25,
+        }}
+      >
+        <i className={icon} style={{ fontSize: 16, color: theme.palette.primary.main }} />
+      </Box>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Typography variant="caption" color="text.secondary" fontWeight={600}>
+          {label}
+        </Typography>
+        <Box sx={{ mt: 0.25 }}>{children}</Box>
+      </Box>
     </Box>
   );
 }
 
 export function MedicalHistoryDetail({ entry, open, onClose }: MedicalHistoryDetailProps) {
+  const theme = useTheme();
+
   if (!entry) return null;
 
   const statusCfg = STATUS_CONFIG[entry.status];
+  const statusColor = theme.palette[statusCfg.color].main;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
-        <Typography variant="h6" component="span" fontWeight={700}>
-          Detalle del Historial
-        </Typography>
-        <IconButton size="small" onClick={onClose}>
-          <i className="ri-close-line" style={{ fontSize: 20 }} />
-        </IconButton>
-      </DialogTitle>
-
-      <Divider />
-
-      <DialogContent sx={{ pt: 3 }}>
-        <DetailRow label="Condición">
-          <Typography variant="body1" fontWeight={600}>
+      {/* Header con acento de color */}
+      <Box
+        sx={{
+          px: 3,
+          pt: 2.5,
+          pb: 2,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          borderBottom: `3px solid ${statusColor}`,
+        }}
+      >
+        <Box sx={{ flex: 1, mr: 2 }}>
+          <Typography variant="h6" component="span" fontWeight={700} sx={{ mb: 0.5, display: 'block' }}>
             {entry.condition}
           </Typography>
-        </DetailRow>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.75 }}>
+            <Chip label={statusCfg.label} color={statusCfg.color} size="small" />
+            <Typography variant="caption" color="text.disabled">
+              ID #{entry.id}
+            </Typography>
+          </Box>
+        </Box>
+        <IconButton size="small" onClick={onClose} sx={{ mt: -0.5 }}>
+          <i className="ri-close-line" style={{ fontSize: 20 }} />
+        </IconButton>
+      </Box>
 
-        <DetailRow label="Estado">
-          <Chip label={statusCfg.label} color={statusCfg.color} size="small" />
-        </DetailRow>
-
-        <DetailRow label="Descripción">
-          <Typography variant="body2">
+      <DialogContent sx={{ pt: 3, pb: 1 }}>
+        <InfoRow icon="ri-file-text-line" label="Descripción">
+          <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
             {entry.description || 'Sin descripción'}
           </Typography>
-        </DetailRow>
+        </InfoRow>
 
-        <DetailRow label="Fecha de Diagnóstico">
+        <InfoRow icon="ri-calendar-check-line" label="Fecha de Diagnóstico">
           <Typography variant="body2">
             {entry.diagnosedDate
               ? new Date(entry.diagnosedDate).toLocaleDateString('es-ES', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              })
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })
               : 'No especificada'}
           </Typography>
-        </DetailRow>
+        </InfoRow>
 
-        <DetailRow label="Notas">
-          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>
+        <InfoRow icon="ri-sticky-note-line" label="Notas">
+          <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
             {entry.notes || 'Sin notas'}
           </Typography>
-        </DetailRow>
+        </InfoRow>
 
-        <DetailRow label="Paciente">
-          <Typography variant="body2">
+        <InfoRow icon="ri-user-heart-line" label="Paciente">
+          <Typography variant="body2" fontWeight={500}>
             {entry.patient.name} {entry.patient.lastName}
           </Typography>
-        </DetailRow>
+        </InfoRow>
 
-        <Divider sx={{ my: 2 }} />
+        <Divider sx={{ my: 1.5 }} />
 
-        <Box sx={{ display: 'flex', gap: 4 }}>
+        <Box sx={{ display: 'flex', gap: 4, py: 1 }}>
           <Box>
-            <Typography variant="caption" color="text.disabled">
+            <Typography variant="caption" color="text.disabled" fontWeight={600}>
               Creado
             </Typography>
-            <Typography variant="body2">
-              {new Date(entry.createdAt).toLocaleString('es-ES')}
+            <Typography variant="body2" sx={{ mt: 0.25 }}>
+              {new Date(entry.createdAt).toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
             </Typography>
           </Box>
           {entry.updatedAt && (
             <Box>
-              <Typography variant="caption" color="text.disabled">
+              <Typography variant="caption" color="text.disabled" fontWeight={600}>
                 Actualizado
               </Typography>
-              <Typography variant="body2">
-                {new Date(entry.updatedAt).toLocaleString('es-ES')}
+              <Typography variant="body2" sx={{ mt: 0.25 }}>
+                {new Date(entry.updatedAt).toLocaleDateString('es-ES', {
+                  day: '2-digit',
+                  month: 'short',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
               </Typography>
             </Box>
           )}
@@ -121,7 +162,9 @@ export function MedicalHistoryDetail({ entry, open, onClose }: MedicalHistoryDet
       </DialogContent>
 
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose}>Cerrar</Button>
+        <Button onClick={onClose} variant="outlined" size="small">
+          Cerrar
+        </Button>
       </DialogActions>
     </Dialog>
   );

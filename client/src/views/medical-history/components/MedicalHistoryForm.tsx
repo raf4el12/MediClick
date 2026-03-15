@@ -2,7 +2,6 @@
 
 import { useEffect } from 'react';
 import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
@@ -11,7 +10,8 @@ import MenuItem from '@mui/material/MenuItem';
 import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import Divider from '@mui/material/Divider';
+import Box from '@mui/material/Box';
+import { alpha, useTheme } from '@mui/material/styles';
 
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -46,6 +46,7 @@ export function MedicalHistoryForm({
   selectedPatientId,
   submitting,
 }: MedicalHistoryFormProps) {
+  const theme = useTheme();
   const isEdit = !!entry;
 
   const {
@@ -91,16 +92,43 @@ export function MedicalHistoryForm({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 1 }}>
-        <Typography variant="h6" component="span" fontWeight={700}>
-          {isEdit ? 'Editar Entrada' : 'Nueva Entrada'}
-        </Typography>
+      {/* Header */}
+      <Box
+        sx={{
+          px: 3,
+          pt: 2.5,
+          pb: 2,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          borderBottom: `3px solid ${theme.palette.primary.main}`,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box
+            sx={{
+              width: 36,
+              height: 36,
+              borderRadius: 2,
+              bgcolor: alpha(theme.palette.primary.main, 0.1),
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <i
+              className={isEdit ? 'ri-pencil-line' : 'ri-add-circle-line'}
+              style={{ fontSize: 20, color: theme.palette.primary.main }}
+            />
+          </Box>
+          <Typography variant="h6" component="span" fontWeight={700}>
+            {isEdit ? 'Editar Entrada' : 'Nueva Entrada'}
+          </Typography>
+        </Box>
         <IconButton size="small" onClick={onClose}>
           <i className="ri-close-line" style={{ fontSize: 20 }} />
         </IconButton>
-      </DialogTitle>
-
-      <Divider />
+      </Box>
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <DialogContent sx={{ pt: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
@@ -138,6 +166,7 @@ export function MedicalHistoryForm({
                 error={!!errors.condition}
                 helperText={errors.condition?.message}
                 fullWidth
+                placeholder="Ej: Diabetes tipo 2, Hipertensión..."
               />
             )}
           />
@@ -154,46 +183,49 @@ export function MedicalHistoryForm({
                 error={!!errors.description}
                 helperText={errors.description?.message}
                 fullWidth
+                placeholder="Descripción detallada de la condición..."
               />
             )}
           />
 
-          <Controller
-            name="diagnosedDate"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Fecha de Diagnóstico"
-                type="date"
-                slotProps={{ inputLabel: { shrink: true } }}
-                error={!!errors.diagnosedDate}
-                helperText={errors.diagnosedDate?.message}
-                fullWidth
-              />
-            )}
-          />
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Controller
+              name="diagnosedDate"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Fecha de Diagnóstico"
+                  type="date"
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  error={!!errors.diagnosedDate}
+                  helperText={errors.diagnosedDate?.message}
+                  fullWidth
+                />
+              )}
+            />
 
-          <Controller
-            name="status"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                select
-                label="Estado"
-                error={!!errors.status}
-                helperText={errors.status?.message}
-                fullWidth
-              >
-                {STATUS_OPTIONS.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
-          />
+            <Controller
+              name="status"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Estado"
+                  error={!!errors.status}
+                  helperText={errors.status?.message}
+                  fullWidth
+                >
+                  {STATUS_OPTIONS.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+          </Box>
 
           <Controller
             name="notes"
@@ -207,20 +239,22 @@ export function MedicalHistoryForm({
                 error={!!errors.notes}
                 helperText={errors.notes?.message}
                 fullWidth
+                placeholder="Notas adicionales, medicación, observaciones..."
               />
             )}
           />
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button onClick={onClose} disabled={submitting}>
+        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
+          <Button onClick={onClose} disabled={submitting} variant="outlined" size="small">
             Cancelar
           </Button>
           <Button
             type="submit"
             variant="contained"
             disabled={submitting}
-            startIcon={submitting ? <CircularProgress size={18} /> : null}
+            startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : null}
+            size="small"
           >
             {isEdit ? 'Actualizar' : 'Guardar'}
           </Button>
