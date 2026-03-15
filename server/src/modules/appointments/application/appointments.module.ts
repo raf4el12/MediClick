@@ -2,6 +2,9 @@ import { Module } from '@nestjs/common';
 import { PatientsModule } from '../../patients/application/patients.module.js';
 import { SchedulesModule } from '../../schedules/application/schedules.module.js';
 import { DoctorsModule } from '../../doctors/application/doctors.module.js';
+import { HolidaysModule } from '../../holidays/application/holidays.module.js';
+import { ScheduleBlocksModule } from '../../schedule-blocks/application/schedule-blocks.module.js';
+import { SpecialtiesModule } from '../../specialties/application/specialties.module.js';
 import { PrismaAppointmentRepository } from '../infrastructure/persistence/prisma-appointment.repository.js';
 import { CreateAppointmentUseCase } from './use-cases/create-appointment.use-case.js';
 import { GetDashboardAppointmentsUseCase } from './use-cases/get-dashboard-appointments.use-case.js';
@@ -13,7 +16,14 @@ import { CompleteAppointmentUseCase } from './use-cases/complete-appointment.use
 import { AppointmentController } from '../interfaces/controllers/appointment.controller.js';
 
 @Module({
-  imports: [PatientsModule, SchedulesModule, DoctorsModule],
+  imports: [
+    PatientsModule,
+    SchedulesModule,
+    DoctorsModule,
+    HolidaysModule,
+    ScheduleBlocksModule,
+    SpecialtiesModule,
+  ],
   controllers: [AppointmentController],
   providers: [
     {

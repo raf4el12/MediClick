@@ -32,6 +32,17 @@ export interface IScheduleRepository {
   ): Promise<{ scheduleDate: Date; timeFrom: Date; timeTo: Date }[]>;
 
   /**
+   * Elimina los schedules de un doctor en un rango de fechas que NO tienen
+   * citas activas asociadas (preserva los que ya fueron reservados).
+   * Retorna la cantidad de registros eliminados.
+   */
+  deleteUnbookedByDoctorAndDateRange(
+    doctorId: number,
+    dateFrom: Date,
+    dateTo: Date,
+  ): Promise<number>;
+
+  /**
    * Devuelve todos los horarios de un doctor para una fecha específica,
    * indicando si cada uno ya tiene una cita activa asignada.
    * Ordenados por timeFrom ASC.

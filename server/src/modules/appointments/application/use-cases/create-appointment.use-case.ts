@@ -9,6 +9,8 @@ import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type { IPatientRepository } from '../../../patients/domain/repositories/patient.repository.js';
 import type { IScheduleRepository } from '../../../schedules/domain/repositories/schedule.repository.js';
+import type { IHolidayRepository } from '../../../holidays/domain/repositories/holiday.repository.js';
+import type { IScheduleBlockRepository } from '../../../schedule-blocks/domain/repositories/schedule-block.repository.js';
 
 /**
  * Convierte una cadena HH:mm al objeto Date de referencia (base 1970-01-01).
@@ -33,6 +35,10 @@ export class CreateAppointmentUseCase {
     private readonly patientRepository: IPatientRepository,
     @Inject('IScheduleRepository')
     private readonly scheduleRepository: IScheduleRepository,
+    @Inject('IHolidayRepository')
+    private readonly holidayRepository: IHolidayRepository,
+    @Inject('IScheduleBlockRepository')
+    private readonly scheduleBlockRepository: IScheduleBlockRepository,
   ) {}
 
   /** Buffer mínimo en milisegundos (2 horas) */
@@ -118,6 +124,27 @@ export class CreateAppointmentUseCase {
       }
     }
 
+    // ── Verificar si la fecha es feriado ──
+    const isHoliday = await this.holidayRepository.isHoliday(scheduleDate);
+    if (isHoliday) {
+      throw new BadRequestException(
+        'No se puede agendar una cita en un día feriado',
+      );
+    }
+
+    // ── Verificar bloqueos de horario del doctor ──
+    const isBlocked = await this.scheduleBlockRepository.isBlocked(
+      schedule.doctorId,
+      scheduleDate,
+      slotStart,
+      slotEnd,
+    );
+    if (isBlocked) {
+      throw new ConflictException(
+        'El doctor tiene un bloqueo de horario que cubre la fecha/hora seleccionada',
+      );
+    }
+
     // ── Verificar colisión con citas existentes en el mismo schedule ──
     const hasOverlap =
       await this.appointmentRepository.hasOverlappingAppointment(
@@ -155,6 +182,7 @@ export class CreateAppointmentUseCase {
       paymentStatus: a.paymentStatus,
       amount: a.amount,
       cancelReason: a.cancelReason,
+      cancellationFee: a.cancellationFee,
       patient: {
         id: a.patient.id,
         name: a.patient.profile.name,

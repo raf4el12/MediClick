@@ -100,6 +100,18 @@ const navigationItems: NavSection[] = [
         icon: 'ri-calendar-event-line',
         roles: [UserRole.ADMIN, UserRole.DOCTOR],
       },
+      {
+        title: 'Bloqueos',
+        path: '/schedule-blocks',
+        icon: 'ri-calendar-close-line',
+        roles: [UserRole.ADMIN, UserRole.RECEPTIONIST],
+      },
+      {
+        title: 'Feriados',
+        path: '/holidays',
+        icon: 'ri-calendar-2-line',
+        roles: [UserRole.ADMIN],
+      },
     ],
   },
   {

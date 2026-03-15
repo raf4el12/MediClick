@@ -89,8 +89,11 @@ export class GenerateSchedulesUseCase {
       holidays.map((h) => h.date.toISOString().split('T')[0]),
     );
 
-    // Cachear duraciones de especialidades para evitar consultas repetidas
-    const specialtyDurationCache = new Map<number, number | null>();
+    // Cachear duraciones y buffer de especialidades para evitar consultas repetidas
+    const specialtyCache = new Map<
+      number,
+      { duration: number | null; bufferMinutes: number }
+    >();
 
     let totalGenerated = 0;
     let totalSkipped = 0;
@@ -203,18 +206,19 @@ export class GenerateSchedulesUseCase {
         });
 
         for (const rule of matchingRules) {
-          // Obtener la duración de la especialidad (con caché)
-          let duration: number | null = null;
-          if (!specialtyDurationCache.has(rule.specialtyId)) {
+          // Obtener la duración y buffer de la especialidad (con caché)
+          if (!specialtyCache.has(rule.specialtyId)) {
             const specialty = await this.specialtyRepository.findById(
               rule.specialtyId,
             );
-            const cached = specialty?.duration ?? null;
-            specialtyDurationCache.set(rule.specialtyId, cached);
-            duration = cached;
-          } else {
-            duration = specialtyDurationCache.get(rule.specialtyId)!;
+            specialtyCache.set(rule.specialtyId, {
+              duration: specialty?.duration ?? null,
+              bufferMinutes: specialty?.bufferMinutes ?? 0,
+            });
           }
+          const { duration, bufferMinutes } = specialtyCache.get(
+            rule.specialtyId,
+          )!;
 
           // Fragmentar el rango en slots individuales si hay duración configurada;
           // de lo contrario, crear un único slot con el rango completo (comportamiento anterior).
@@ -224,6 +228,7 @@ export class GenerateSchedulesUseCase {
               rule.timeFrom,
               rule.timeTo,
               duration,
+              bufferMinutes,
             );
           } else {
             slots = [{ startTime: rule.timeFrom, endTime: rule.timeTo }];

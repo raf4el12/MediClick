@@ -11,6 +11,7 @@ export interface CreateAppointmentData {
 export interface UpdateAppointmentData {
   status?: AppointmentStatus;
   cancelReason?: string;
+  cancellationFee?: number;
   scheduleId?: number;
   notes?: string;
   updatedAt?: Date;
@@ -28,6 +29,7 @@ export interface AppointmentWithRelations {
   paymentStatus: string;
   amount: number | null;
   cancelReason: string | null;
+  cancellationFee: number | null;
   deleted: boolean;
   createdAt: Date;
   updatedAt: Date | null;

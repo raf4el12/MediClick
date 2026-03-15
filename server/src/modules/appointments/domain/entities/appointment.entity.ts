@@ -12,6 +12,7 @@ export class AppointmentEntity {
   paymentStatus: string;
   amount: number | null;
   cancelReason: string | null;
+  cancellationFee: number | null;
   deleted: boolean;
   createdAt: Date;
   updatedAt: Date | null;

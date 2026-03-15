@@ -5,6 +5,7 @@ export interface CreateSpecialtyData {
   name: string;
   description?: string;
   duration: number;
+  bufferMinutes?: number;
   price: number;
   requirements?: string;
   icon?: string;
@@ -15,6 +16,7 @@ export interface UpdateSpecialtyData {
   name?: string;
   description?: string;
   duration?: number;
+  bufferMinutes?: number;
   price?: number;
   requirements?: string;
   icon?: string;

@@ -8,6 +8,7 @@ import { CreateScheduleBlockDto } from '../dto/create-schedule-block.dto.js';
 import { ScheduleBlockResponseDto } from '../dto/schedule-block-response.dto.js';
 import type { IScheduleBlockRepository } from '../../domain/repositories/schedule-block.repository.js';
 import type { IDoctorRepository } from '../../../doctors/domain/repositories/doctor.repository.js';
+import { ScheduleRegenerationService } from '../../../schedules/domain/services/schedule-regeneration.service.js';
 
 function timeStringToDate(time: string): Date {
   const [hours, minutes] = time.split(':').map(Number);
@@ -28,6 +29,7 @@ export class CreateScheduleBlockUseCase {
     private readonly scheduleBlockRepository: IScheduleBlockRepository,
     @Inject('IDoctorRepository')
     private readonly doctorRepository: IDoctorRepository,
+    private readonly scheduleRegenerationService: ScheduleRegenerationService,
   ) {}
 
   async execute(dto: CreateScheduleBlockDto): Promise<ScheduleBlockResponseDto> {
@@ -74,6 +76,13 @@ export class CreateScheduleBlockUseCase {
       timeTo: dto.timeTo ? timeStringToDate(dto.timeTo) : undefined,
       reason: dto.reason,
     });
+
+    // Regenerar schedules afectados por el nuevo bloqueo
+    await this.scheduleRegenerationService.regenerateForDoctor(
+      dto.doctorId,
+      startDate,
+      endDate,
+    );
 
     return {
       id: block.id,

@@ -80,7 +80,7 @@ export default function AccountSettings() {
     useEffect(() => {
         const tabParam = searchParams.get('tab');
         if (tabParam && tabParam in TAB_MAP) {
-            setValue(TAB_MAP[tabParam]);
+            setValue(TAB_MAP[tabParam] ?? 0);
         }
     }, [searchParams]);
 

@@ -140,6 +140,9 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         ...(data.cancelReason !== undefined && {
           cancelReason: data.cancelReason,
         }),
+        ...(data.cancellationFee !== undefined && {
+          cancellationFee: data.cancellationFee,
+        }),
         ...(data.scheduleId && { scheduleId: data.scheduleId }),
         ...(data.notes !== undefined && { notes: data.notes }),
         updatedAt: data.updatedAt ?? new Date(),
@@ -234,6 +237,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       paymentStatus: raw.paymentStatus,
       amount: raw.amount ? Number(raw.amount) : null,
       cancelReason: raw.cancelReason,
+      cancellationFee: raw.cancellationFee ? Number(raw.cancellationFee) : null,
       deleted: raw.deleted,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,

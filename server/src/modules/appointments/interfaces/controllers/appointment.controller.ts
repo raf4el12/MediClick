@@ -98,16 +98,17 @@ export class AppointmentController {
   }
 
   @Patch(':id/cancel')
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST)
-  @ApiOperation({ summary: 'Cancelar cita' })
+  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.PATIENT)
+  @ApiOperation({ summary: 'Cancelar cita (pacientes pueden cancelar con política de penalización)' })
   @ApiResponse({ status: 200, type: AppointmentResponseDto })
   @ApiResponse({ status: 400, description: 'No se puede cancelar' })
   @ApiResponse({ status: 404, description: 'Cita no encontrada' })
   async cancel(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CancelAppointmentDto,
+    @CurrentUser('role') userRole: string,
   ): Promise<AppointmentResponseDto> {
-    return this.cancelAppointmentUseCase.execute(id, dto);
+    return this.cancelAppointmentUseCase.execute(id, dto, userRole as any);
   }
 
   @Patch(':id/reschedule')

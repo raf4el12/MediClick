@@ -9,6 +9,7 @@ import { UpdateAvailabilityDto } from '../dto/update-availability.dto.js';
 import { AvailabilityResponseDto } from '../dto/availability-response.dto.js';
 import type { IAvailabilityRepository } from '../../domain/repositories/availability.repository.js';
 import type { UpdateAvailabilityData } from '../../domain/interfaces/availability-data.interface.js';
+import { ScheduleRegenerationService } from '../../../schedules/domain/services/schedule-regeneration.service.js';
 
 function timeStringToDate(time: string): Date {
   const [hours, minutes] = time.split(':').map(Number);
@@ -26,6 +27,7 @@ export class UpdateAvailabilityUseCase {
   constructor(
     @Inject('IAvailabilityRepository')
     private readonly availabilityRepository: IAvailabilityRepository,
+    private readonly scheduleRegenerationService: ScheduleRegenerationService,
   ) {}
 
   async execute(
@@ -73,6 +75,21 @@ export class UpdateAvailabilityUseCase {
     }
 
     const updated = await this.availabilityRepository.update(id, updateData);
+
+    // Regenerar schedules afectados por el cambio de disponibilidad
+    const oldStart = existing.startDate;
+    const oldEnd = existing.endDate;
+    const newStart = updated.startDate;
+    const newEnd = updated.endDate;
+
+    const regenStart = oldStart < newStart ? oldStart : newStart;
+    const regenEnd = oldEnd > newEnd ? oldEnd : newEnd;
+
+    await this.scheduleRegenerationService.regenerateForDoctor(
+      updated.doctorId,
+      regenStart,
+      regenEnd,
+    );
 
     return {
       id: updated.id,

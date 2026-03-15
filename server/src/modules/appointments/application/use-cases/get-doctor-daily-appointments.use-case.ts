@@ -44,6 +44,7 @@ export class GetDoctorDailyAppointmentsUseCase {
       paymentStatus: a.paymentStatus,
       amount: a.amount,
       cancelReason: a.cancelReason,
+      cancellationFee: a.cancellationFee,
       patient: {
         id: a.patient.id,
         name: a.patient.profile.name,

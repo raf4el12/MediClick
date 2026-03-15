@@ -79,11 +79,13 @@ export class GetAvailableTimeSlotsUseCase {
 
     // 3. Generar slots y cruzar con citas existentes para cada bloque
     const result: TimeSlotResponseDto[] = [];
+    const bufferMinutes = specialty.bufferMinutes ?? 0;
 
     for (const schedule of schedules) {
       const slots = this.generateSlotsForSchedule(
         schedule,
         specialty.duration,
+        bufferMinutes,
       );
       result.push(...slots);
     }
@@ -98,11 +100,13 @@ export class GetAvailableTimeSlotsUseCase {
   private generateSlotsForSchedule(
     schedule: ScheduleWithBookedSlots,
     durationMinutes: number,
+    bufferMinutes: number,
   ): TimeSlotResponseDto[] {
     const theoreticalSlots = TimeSlotCalculatorService.generate(
       schedule.timeFrom,
       schedule.timeTo,
       durationMinutes,
+      bufferMinutes,
     );
 
     return theoreticalSlots.map((slot) => {

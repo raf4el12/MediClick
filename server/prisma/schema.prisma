@@ -176,8 +176,9 @@ model Specialties {
   categoryId   Int
   name         String
   description  String?
-  duration     Int?
-  price        Decimal?             @db.Decimal(10, 2)
+  duration      Int?
+  bufferMinutes Int?                 @default(0) // Minutos de descanso entre citas consecutivas
+  price         Decimal?             @db.Decimal(10, 2)
   requirements String?
   icon         String?
   isActive     Boolean              @default(true)
@@ -273,8 +274,9 @@ model Appointments {
   status        AppointmentStatus @default(PENDING)
   paymentStatus PaymentStatus     @default(PENDING)
   amount        Decimal?          @db.Decimal(10, 2)
-  cancelReason  String?
-  deleted       Boolean           @default(false)
+  cancelReason    String?
+  cancellationFee Decimal?          @db.Decimal(10, 2)
+  deleted         Boolean           @default(false)
   createdAt     DateTime          @default(now())
   updatedAt     DateTime?
 

@@ -30,6 +30,15 @@ export class CreateSpecialtyDto {
   @IsNotEmpty({ message: 'La duración es obligatoria' })
   duration: number;
 
+  @ApiPropertyOptional({
+    example: 5,
+    description: 'Minutos de descanso entre citas consecutivas',
+  })
+  @IsInt()
+  @Min(0, { message: 'El buffer no puede ser negativo' })
+  @IsOptional()
+  bufferMinutes?: number;
+
   @ApiProperty({ example: 150.0, description: 'Precio de la consulta' })
   @IsNumber({}, { message: 'El precio debe ser un número' })
   @Min(0, { message: 'El precio no puede ser negativo' })

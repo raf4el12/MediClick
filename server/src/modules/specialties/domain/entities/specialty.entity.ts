@@ -4,6 +4,7 @@ export class SpecialtyEntity {
   name: string;
   description: string | null;
   duration: number | null;
+  bufferMinutes: number | null;
   price: number | null;
   requirements: string | null;
   icon: string | null;

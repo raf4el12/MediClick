@@ -1,0 +1,148 @@
+'use client';
+
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
+import MenuItem from '@mui/material/MenuItem';
+import Alert from '@mui/material/Alert';
+import Card from '@mui/material/Card';
+
+import { useHolidays } from './hooks/useHolidays';
+import { HolidayKPIs } from './components/HolidayKPIs';
+import { HolidayList } from './components/HolidayList';
+import { HolidayForm } from './components/HolidayForm';
+import { HolidayDeleteDialog } from './components/HolidayDeleteDialog';
+import type { HolidayFormValues } from './functions/holiday.schema';
+
+const YEAR_OPTIONS = [2024, 2025, 2026, 2027, 2028, 2029, 2030];
+
+export default function HolidaysView() {
+  const ctrl = useHolidays();
+
+  const handleFormSubmit = async (values: HolidayFormValues) => {
+    if (ctrl.editEntry) {
+      await ctrl.handleUpdate(ctrl.editEntry.id, {
+        name: values.name,
+        date: values.date,
+        isRecurring: values.isRecurring,
+      });
+    } else {
+      await ctrl.handleCreate({
+        name: values.name,
+        date: values.date,
+        isRecurring: values.isRecurring,
+      });
+    }
+  };
+
+  return (
+    <>
+      {/* Header */}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: 2,
+          mb: 3,
+        }}
+      >
+        <Box>
+          <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5 }}>
+            Feriados
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Gestión de feriados y días no laborables
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1.5, flexShrink: 0 }}>
+          <Button
+            variant="outlined"
+            color="secondary"
+            startIcon={<i className="ri-plant-line" />}
+            onClick={ctrl.handleSeed}
+            disabled={ctrl.seeding}
+          >
+            Sembrar Feriados
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<i className="ri-add-line" />}
+            onClick={() => ctrl.setCreateOpen(true)}
+          >
+            Nuevo Feriado
+          </Button>
+        </Box>
+      </Box>
+
+      {/* Filtros */}
+      <Card sx={{ p: 2.5, mb: 3 }}>
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          <TextField
+            select
+            label="Año"
+            value={ctrl.yearFilter}
+            onChange={(e) => ctrl.handleYearChange(Number(e.target.value))}
+            size="small"
+            sx={{ minWidth: 170 }}
+          >
+            {YEAR_OPTIONS.map((year) => (
+              <MenuItem key={year} value={year}>
+                {year}
+              </MenuItem>
+            ))}
+          </TextField>
+        </Box>
+      </Card>
+
+      {/* KPIs */}
+      {ctrl.data.rows.length > 0 && (
+        <HolidayKPIs entries={ctrl.data.rows} total={ctrl.data.totalRows} />
+      )}
+
+      {/* Error */}
+      {ctrl.error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {ctrl.error}
+        </Alert>
+      )}
+
+      {/* Lista */}
+      <HolidayList
+        entries={ctrl.data.rows}
+        loading={ctrl.loading}
+        totalPages={ctrl.data.totalPages}
+        page={ctrl.page}
+        onPageChange={ctrl.handlePageChange}
+        onEdit={(e) => ctrl.setEditEntry(e)}
+        onDelete={(e) => ctrl.setDeleteEntry(e)}
+      />
+
+      {/* Diálogos */}
+      <HolidayForm
+        open={ctrl.createOpen || !!ctrl.editEntry}
+        onClose={() => {
+          ctrl.setCreateOpen(false);
+          ctrl.setEditEntry(null);
+        }}
+        onSubmit={handleFormSubmit}
+        entry={ctrl.editEntry}
+        submitting={ctrl.submitting}
+      />
+
+      <HolidayDeleteDialog
+        entry={ctrl.deleteEntry}
+        open={!!ctrl.deleteEntry}
+        onClose={() => ctrl.setDeleteEntry(null)}
+        onConfirm={() => {
+          if (ctrl.deleteEntry) {
+            void ctrl.handleDelete(ctrl.deleteEntry.id);
+          }
+        }}
+        submitting={ctrl.submitting}
+      />
+    </>
+  );
+}

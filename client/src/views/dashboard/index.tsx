@@ -10,7 +10,7 @@ import LinearProgress from '@mui/material/LinearProgress';
 import Skeleton from '@mui/material/Skeleton';
 import { useAppSelector } from '@/redux-store/hooks';
 import { selectUser } from '@/redux-store/slices/auth';
-import { alpha, darken, useTheme } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import { useDashboard } from './hooks/useDashboard';
 
 const TODAY_LABEL = new Date().toLocaleDateString('es-ES', {

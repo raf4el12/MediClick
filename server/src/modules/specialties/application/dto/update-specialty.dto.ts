@@ -30,6 +30,12 @@ export class UpdateSpecialtyDto {
   @IsOptional()
   duration?: number;
 
+  @ApiPropertyOptional({ example: 5, description: 'Minutos de descanso entre citas' })
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  bufferMinutes?: number;
+
   @ApiPropertyOptional({ example: 150.0 })
   @IsNumber()
   @Min(0)

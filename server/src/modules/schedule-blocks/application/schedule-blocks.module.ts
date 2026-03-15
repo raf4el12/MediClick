@@ -1,5 +1,6 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { DoctorsModule } from '../../doctors/application/doctors.module.js';
+import { SchedulesModule } from '../../schedules/application/schedules.module.js';
 import { PrismaScheduleBlockRepository } from '../infrastructure/persistence/prisma-schedule-block.repository.js';
 import { CreateScheduleBlockUseCase } from './use-cases/create-schedule-block.use-case.js';
 import { FindAllScheduleBlocksUseCase } from './use-cases/find-all-schedule-blocks.use-case.js';
@@ -8,7 +9,7 @@ import { DeleteScheduleBlockUseCase } from './use-cases/delete-schedule-block.us
 import { ScheduleBlockController } from '../interfaces/controllers/schedule-block.controller.js';
 
 @Module({
-  imports: [DoctorsModule],
+  imports: [DoctorsModule, forwardRef(() => SchedulesModule)],
   controllers: [ScheduleBlockController],
   providers: [
     {

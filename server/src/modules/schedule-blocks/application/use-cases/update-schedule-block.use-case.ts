@@ -8,6 +8,7 @@ import { UpdateScheduleBlockDto } from '../dto/update-schedule-block.dto.js';
 import { ScheduleBlockResponseDto } from '../dto/schedule-block-response.dto.js';
 import type { IScheduleBlockRepository } from '../../domain/repositories/schedule-block.repository.js';
 import { UpdateScheduleBlockData } from '../../domain/interfaces/schedule-block-data.interface.js';
+import { ScheduleRegenerationService } from '../../../schedules/domain/services/schedule-regeneration.service.js';
 
 function timeStringToDate(time: string): Date {
   const [hours, minutes] = time.split(':').map(Number);
@@ -26,6 +27,7 @@ export class UpdateScheduleBlockUseCase {
   constructor(
     @Inject('IScheduleBlockRepository')
     private readonly scheduleBlockRepository: IScheduleBlockRepository,
+    private readonly scheduleRegenerationService: ScheduleRegenerationService,
   ) {}
 
   async execute(
@@ -84,6 +86,21 @@ export class UpdateScheduleBlockUseCase {
     }
 
     const updated = await this.scheduleBlockRepository.update(id, updateData);
+
+    // Regenerar schedules — cubrir tanto el rango anterior como el nuevo
+    const oldStart = existing.startDate;
+    const oldEnd = existing.endDate;
+    const newStart = updated.startDate;
+    const newEnd = updated.endDate;
+
+    const regenStart = oldStart < newStart ? oldStart : newStart;
+    const regenEnd = oldEnd > newEnd ? oldEnd : newEnd;
+
+    await this.scheduleRegenerationService.regenerateForDoctor(
+      updated.doctorId,
+      regenStart,
+      regenEnd,
+    );
 
     return {
       id: updated.id,

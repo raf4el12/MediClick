@@ -141,6 +141,27 @@ export class PrismaScheduleRepository implements IScheduleRepository {
     });
   }
 
+  async deleteUnbookedByDoctorAndDateRange(
+    doctorId: number,
+    dateFrom: Date,
+    dateTo: Date,
+  ): Promise<number> {
+    const result = await this.prisma.schedules.deleteMany({
+      where: {
+        doctorId,
+        scheduleDate: { gte: dateFrom, lte: dateTo },
+        // Solo eliminar los que NO tienen citas activas
+        appointments: {
+          none: {
+            deleted: false,
+            status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+          },
+        },
+      },
+    });
+    return result.count;
+  }
+
   async findByDoctorAndDate(
     doctorId: number,
     date: Date,

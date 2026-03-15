@@ -40,6 +40,8 @@ const pageTitles: Record<string, string> = {
   '/medical-history': 'Historial Médico',
   '/schedules': 'Horarios',
   '/availability': 'Disponibilidad',
+  '/schedule-blocks': 'Bloqueos de Horario',
+  '/holidays': 'Feriados',
   '/specialties': 'Especialidades',
   '/categories': 'Categorías',
   '/users': 'Usuarios',

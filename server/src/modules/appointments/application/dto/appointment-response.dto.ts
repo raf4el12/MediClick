@@ -87,6 +87,9 @@ export class AppointmentResponseDto {
   @ApiPropertyOptional()
   cancelReason: string | null;
 
+  @ApiPropertyOptional({ example: 75.0, description: 'Penalización por cancelación tardía' })
+  cancellationFee: number | null;
+
   @ApiProperty({ type: AppointmentPatientDto })
   patient: AppointmentPatientDto;
 
