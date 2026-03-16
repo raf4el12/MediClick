@@ -35,6 +35,37 @@ interface NavSection {
 }
 
 const navigationItems: NavSection[] = [
+  // ── Sección exclusiva para pacientes ──
+  {
+    section: 'Mi Portal',
+    items: [
+      {
+        title: 'Inicio',
+        path: '/patient',
+        icon: 'ri-home-4-line',
+        roles: [UserRole.PATIENT],
+      },
+      {
+        title: 'Mis Citas',
+        path: '/patient/appointments',
+        icon: 'ri-calendar-check-line',
+        roles: [UserRole.PATIENT],
+      },
+      {
+        title: 'Reservar Cita',
+        path: '/patient/book',
+        icon: 'ri-add-circle-line',
+        roles: [UserRole.PATIENT],
+      },
+      {
+        title: 'Mi Perfil',
+        path: '/patient/profile',
+        icon: 'ri-user-line',
+        roles: [UserRole.PATIENT],
+      },
+    ],
+  },
+  // ── Secciones para staff (ADMIN, DOCTOR, RECEPTIONIST) ──
   {
     section: 'General',
     items: [
@@ -42,6 +73,7 @@ const navigationItems: NavSection[] = [
         title: 'Dashboard',
         path: '/dashboard',
         icon: 'ri-dashboard-line',
+        roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.RECEPTIONIST],
       },
     ],
   },
@@ -52,6 +84,7 @@ const navigationItems: NavSection[] = [
         title: 'Citas',
         path: '/appointments',
         icon: 'ri-calendar-check-line',
+        roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.RECEPTIONIST],
       },
       {
         title: 'Pacientes',
@@ -161,9 +194,10 @@ export default function Navigation({ mobileOpen = false, onMobileClose }: Naviga
   const showText = !isCollapsed || isHovered;
   const currentWidth = isCollapsed && !isHovered ? 80 : DRAWER_WIDTH;
 
-  const isDark = settings.semiDark || settings.mode === 'dark';
+  const isPatient = userRole === UserRole.PATIENT;
+  const isDark = settings.semiDark || settings.mode === 'dark' || isPatient;
 
-  const bgColor = isDark ? '#0F1B2D' : 'background.paper';
+  const bgColor = isPatient ? '#0f172a' : isDark ? '#0F1B2D' : 'background.paper';
   const textColor = isDark ? 'rgba(255, 255, 255, 0.9)' : 'text.primary';
   const secondaryText = isDark ? 'rgba(255, 255, 255, 0.5)' : 'text.secondary';
   const dividerColor = isDark ? 'rgba(255, 255, 255, 0.12)' : 'divider';

@@ -19,10 +19,20 @@ import DialogActions from '@mui/material/DialogActions';
 import IconButton from '@mui/material/IconButton';
 import Divider from '@mui/material/Divider';
 import TextField from '@mui/material/TextField';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import CircularProgress from '@mui/material/CircularProgress';
+import { alpha, useTheme } from '@mui/material/styles';
 import { useRouter } from 'next/navigation';
 import { appointmentsService } from '@/services/appointments.service';
+import { prescriptionsService } from '@/services/prescriptions.service';
 import { AppointmentStatus } from '@/views/appointments/types';
 import type { Appointment, PatientAppointmentFilters } from '@/views/appointments/types';
+import type { Prescription } from '@/views/prescriptions/types';
 import type { PaginatedResponse } from '@/types/pagination.types';
 
 const statusConfig: Record<string, { label: string; color: 'warning' | 'info' | 'primary' | 'success' | 'error' | 'default' }> = {
@@ -38,6 +48,7 @@ type TabValue = 'upcoming' | 'all' | 'past';
 
 export default function PatientAppointmentsView() {
   const router = useRouter();
+  const theme = useTheme();
   const [tab, setTab] = useState<TabValue>('upcoming');
   const [page, setPage] = useState(1);
   const [data, setData] = useState<PaginatedResponse<Appointment> | null>(null);
@@ -54,6 +65,12 @@ export default function PatientAppointmentsView() {
 
   // Confirm action
   const [confirming, setConfirming] = useState(false);
+
+  // Prescription dialog
+  const [prescriptionOpen, setPrescriptionOpen] = useState(false);
+  const [prescription, setPrescription] = useState<Prescription | null>(null);
+  const [prescriptionLoading, setPrescriptionLoading] = useState(false);
+  const [prescriptionError, setPrescriptionError] = useState<string | null>(null);
 
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
@@ -122,11 +139,36 @@ export default function PatientAppointmentsView() {
     setDetailOpen(true);
   };
 
+  const openPrescription = async (apt: Appointment) => {
+    setPrescription(null);
+    setPrescriptionError(null);
+    setPrescriptionLoading(true);
+    setPrescriptionOpen(true);
+    setSelectedApt(apt);
+    try {
+      const res = await prescriptionsService.getMyPrescription(apt.id);
+      setPrescription(res);
+    } catch {
+      setPrescriptionError('No se encontró receta para esta cita.');
+    } finally {
+      setPrescriptionLoading(false);
+    }
+  };
+
+  const closePrescription = () => {
+    setPrescriptionOpen(false);
+    setPrescription(null);
+    setPrescriptionError(null);
+  };
+
   const canCancel = (status: AppointmentStatus) =>
     status === AppointmentStatus.PENDING || status === AppointmentStatus.CONFIRMED;
 
   const canConfirm = (status: AppointmentStatus) =>
     status === AppointmentStatus.PENDING;
+
+  const isCompleted = (status: AppointmentStatus) =>
+    status === AppointmentStatus.COMPLETED;
 
   return (
     <Box>
@@ -228,6 +270,16 @@ export default function PatientAppointmentsView() {
 
                     {/* Actions */}
                     <Box sx={{ display: 'flex', gap: 0.5, flexShrink: 0 }}>
+                      {isCompleted(apt.status) && (
+                        <IconButton
+                          size="small"
+                          title="Ver Receta"
+                          onClick={(e) => { e.stopPropagation(); openPrescription(apt); }}
+                          sx={{ color: theme.palette.primary.main }}
+                        >
+                          <i className="ri-file-list-3-line" style={{ fontSize: 18 }} />
+                        </IconButton>
+                      )}
                       {canConfirm(apt.status) && (
                         <IconButton
                           size="small"
@@ -351,6 +403,18 @@ export default function PatientAppointmentsView() {
                 </Box>
               </DialogContent>
               <DialogActions sx={{ px: 3, py: 2 }}>
+                {isCompleted(apt.status) && (
+                  <Button
+                    variant="contained"
+                    startIcon={<i className="ri-file-list-3-line" />}
+                    onClick={() => {
+                      setDetailOpen(false);
+                      openPrescription(apt);
+                    }}
+                  >
+                    Ver Receta
+                  </Button>
+                )}
                 {canConfirm(apt.status) && (
                   <Button
                     variant="contained"
@@ -407,6 +471,154 @@ export default function PatientAppointmentsView() {
           >
             Cancelar Cita
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Prescription Dialog */}
+      <Dialog
+        open={prescriptionOpen}
+        onClose={closePrescription}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <i className="ri-file-list-3-line" style={{ fontSize: 22, color: theme.palette.primary.main }} />
+            Receta Médica
+          </Box>
+          <IconButton size="small" onClick={closePrescription}>
+            <i className="ri-close-line" />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent dividers>
+          {prescriptionLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+              <CircularProgress />
+            </Box>
+          ) : prescriptionError ? (
+            <Alert severity="info" sx={{ borderRadius: 2 }}>
+              {prescriptionError}
+            </Alert>
+          ) : prescription ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {/* Prescription header info */}
+              <Box
+                sx={{
+                  p: 2.5,
+                  borderRadius: 2,
+                  bgcolor: alpha(theme.palette.primary.main, 0.04),
+                  border: '1px solid',
+                  borderColor: alpha(theme.palette.primary.main, 0.12),
+                }}
+              >
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Especialidad</Typography>
+                    <Typography variant="body1" fontWeight={600}>{prescription.specialtyName}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Doctor</Typography>
+                    <Typography variant="body1" fontWeight={600}>
+                      Dr. {prescription.doctor.name} {prescription.doctor.lastName}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary">Fecha</Typography>
+                    <Typography variant="body1" fontWeight={600}>
+                      {new Date(prescription.scheduleDate).toLocaleDateString('es-PE', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                        timeZone: 'UTC',
+                      })}
+                    </Typography>
+                  </Box>
+                  {prescription.validUntil && (
+                    <Box>
+                      <Typography variant="caption" color="text.secondary">Válida hasta</Typography>
+                      <Typography variant="body1" fontWeight={600}>
+                        {new Date(prescription.validUntil).toLocaleDateString('es-PE', {
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                          timeZone: 'UTC',
+                        })}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              </Box>
+
+              {/* Instructions */}
+              {prescription.instructions && (
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: 2,
+                    bgcolor: alpha('#f59e0b', 0.06),
+                    border: '1px solid',
+                    borderColor: alpha('#f59e0b', 0.15),
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <i className="ri-information-line" style={{ fontSize: 18, color: '#f59e0b' }} />
+                    <Typography variant="subtitle2" fontWeight={700}>
+                      Indicaciones Generales
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary">
+                    {prescription.instructions}
+                  </Typography>
+                </Box>
+              )}
+
+              {/* Medications table */}
+              <Box>
+                <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1.5 }}>
+                  Medicamentos
+                </Typography>
+                <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow sx={{ bgcolor: alpha(theme.palette.primary.main, 0.04) }}>
+                        <TableCell sx={{ fontWeight: 700 }}>Medicamento</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Dosis</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Frecuencia</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Duración</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Notas</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {prescription.items.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell>
+                            <Typography variant="body2" fontWeight={600}>{item.medication}</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2">{item.dosage}</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2">{item.frequency}</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2">{item.duration}</Typography>
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2" color="text.secondary">
+                              {item.notes ?? '—'}
+                            </Typography>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Box>
+            </Box>
+          ) : null}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={closePrescription}>Cerrar</Button>
         </DialogActions>
       </Dialog>
     </Box>

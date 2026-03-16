@@ -48,6 +48,10 @@ const pageTitles: Record<string, string> = {
   '/reports': 'Reportes',
   '/profile': 'Mi Perfil',
   '/settings/account': 'Configuración',
+  '/patient': 'Inicio',
+  '/patient/appointments': 'Mis Citas',
+  '/patient/book': 'Reservar Cita',
+  '/patient/profile': 'Mi Perfil',
 };
 
 export default function Navbar() {

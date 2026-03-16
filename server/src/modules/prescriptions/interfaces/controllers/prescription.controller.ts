@@ -14,6 +14,7 @@ import { CreatePrescriptionDto } from '../../application/dto/create-prescription
 import { PrescriptionResponseDto } from '../../application/dto/prescription-response.dto.js';
 import { CreatePrescriptionUseCase } from '../../application/use-cases/create-prescription.use-case.js';
 import { FindPrescriptionByAppointmentUseCase } from '../../application/use-cases/find-prescription-by-appointment.use-case.js';
+import { FindMyPrescriptionUseCase } from '../../application/use-cases/find-my-prescription.use-case.js';
 
 @ApiTags('Prescriptions')
 @Controller('prescriptions')
@@ -21,6 +22,7 @@ export class PrescriptionController {
   constructor(
     private readonly createPrescriptionUseCase: CreatePrescriptionUseCase,
     private readonly findByAppointmentUseCase: FindPrescriptionByAppointmentUseCase,
+    private readonly findMyPrescriptionUseCase: FindMyPrescriptionUseCase,
   ) {}
 
   @Post()
@@ -39,6 +41,19 @@ export class PrescriptionController {
     @Body() dto: CreatePrescriptionDto,
   ): Promise<PrescriptionResponseDto> {
     return this.createPrescriptionUseCase.execute(userId, dto);
+  }
+
+  @Get('my/appointment/:appointmentId')
+  @Auth(UserRole.PATIENT)
+  @ApiOperation({ summary: 'Obtener mi receta de una cita (paciente)' })
+  @ApiResponse({ status: 200, type: PrescriptionResponseDto })
+  @ApiResponse({ status: 403, description: 'No es el paciente de esta cita' })
+  @ApiResponse({ status: 404, description: 'Receta no encontrada' })
+  async findMyPrescription(
+    @CurrentUser('id') userId: number,
+    @Param('appointmentId', ParseIntPipe) appointmentId: number,
+  ): Promise<PrescriptionResponseDto> {
+    return this.findMyPrescriptionUseCase.execute(userId, appointmentId);
   }
 
   @Get('appointment/:appointmentId')

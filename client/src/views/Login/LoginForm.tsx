@@ -16,9 +16,11 @@ import {
   selectAuthLoading,
   selectAuthError,
   selectIsAuthenticated,
+  selectUser,
   clearError,
 } from '@/redux-store/slices/auth';
 import { loginThunk } from '@/redux-store/thunks/auth.thunks';
+import { UserRole } from '@/types/auth.types';
 
 const loginSchema = z.object({
   email: z
@@ -38,6 +40,7 @@ export function LoginForm() {
   const isLoading = useAppSelector(selectAuthLoading);
   const error = useAppSelector(selectAuthError);
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const user = useAppSelector(selectUser);
 
   const { control, handleSubmit } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -48,10 +51,11 @@ export function LoginForm() {
   });
 
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push('/dashboard');
+    if (isAuthenticated && user) {
+      const target = user.role === UserRole.PATIENT ? '/patient' : '/dashboard';
+      router.push(target);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, user, router]);
 
   useEffect(() => {
     return () => {

@@ -15,4 +15,12 @@ export const prescriptionsService = {
 
     return response.data;
   },
+
+  getMyPrescription: async (appointmentId: number): Promise<Prescription> => {
+    const response = await api.get<Prescription>(
+      `/prescriptions/my/appointment/${appointmentId}`,
+    );
+
+    return response.data;
+  },
 };
