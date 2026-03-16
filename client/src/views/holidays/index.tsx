@@ -20,15 +20,15 @@ const YEAR_OPTIONS = [2024, 2025, 2026, 2027, 2028, 2029, 2030];
 export default function HolidaysView() {
   const ctrl = useHolidays();
 
-  const handleFormSubmit = async (values: HolidayFormValues) => {
+  const handleFormSubmit = (values: HolidayFormValues) => {
     if (ctrl.editEntry) {
-      await ctrl.handleUpdate(ctrl.editEntry.id, {
+      void ctrl.handleUpdate(ctrl.editEntry.id, {
         name: values.name,
         date: values.date,
         isRecurring: values.isRecurring,
       });
     } else {
-      await ctrl.handleCreate({
+      void ctrl.handleCreate({
         name: values.name,
         date: values.date,
         isRecurring: values.isRecurring,
@@ -123,13 +123,11 @@ export default function HolidaysView() {
       {/* Diálogos */}
       <HolidayForm
         open={ctrl.createOpen || !!ctrl.editEntry}
-        onClose={() => {
-          ctrl.setCreateOpen(false);
-          ctrl.setEditEntry(null);
-        }}
+        onClose={ctrl.closeFormDialog}
         onSubmit={handleFormSubmit}
         entry={ctrl.editEntry}
         submitting={ctrl.submitting}
+        apiError={ctrl.formError}
       />
 
       <HolidayDeleteDialog

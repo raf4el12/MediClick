@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { isAxiosError } from 'axios';
 
 import { holidaysService } from '@/services/holidays.service';
 import type {
@@ -17,10 +18,22 @@ const DEFAULT_DATA: PaginatedHolidays = {
   currentPage: 1,
 };
 
+function extractApiError(err: unknown): string {
+  if (isAxiosError(err)) {
+    const data = err.response?.data;
+    if (data?.message) {
+      if (Array.isArray(data.message)) return data.message.join('. ');
+      return data.message;
+    }
+  }
+  return '';
+}
+
 export function useHolidays() {
   const [data, setData] = useState<PaginatedHolidays>(DEFAULT_DATA);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   const [page, setPage] = useState(1);
   const [limit] = useState(12);
@@ -32,6 +45,12 @@ export function useHolidays() {
 
   const [submitting, setSubmitting] = useState(false);
   const [seeding, setSeeding] = useState(false);
+
+  const closeFormDialog = useCallback(() => {
+    setFormError(null);
+    setCreateOpen(false);
+    setEditEntry(null);
+  }, []);
 
   // Cargar feriados
   const fetchEntries = useCallback(async () => {
@@ -71,13 +90,15 @@ export function useHolidays() {
   const handleCreate = useCallback(
     async (payload: CreateHolidayPayload) => {
       setSubmitting(true);
+      setFormError(null);
 
       try {
         await holidaysService.create(payload);
         setCreateOpen(false);
         await fetchEntries();
-      } catch {
-        throw new Error('Error al crear el feriado');
+      } catch (err) {
+        const msg = extractApiError(err) || 'Error al crear el feriado';
+        setFormError(msg);
       } finally {
         setSubmitting(false);
       }
@@ -88,13 +109,15 @@ export function useHolidays() {
   const handleUpdate = useCallback(
     async (id: number, payload: UpdateHolidayPayload) => {
       setSubmitting(true);
+      setFormError(null);
 
       try {
         await holidaysService.update(id, payload);
         setEditEntry(null);
         await fetchEntries();
-      } catch {
-        throw new Error('Error al actualizar el feriado');
+      } catch (err) {
+        const msg = extractApiError(err) || 'Error al actualizar el feriado';
+        setFormError(msg);
       } finally {
         setSubmitting(false);
       }
@@ -110,8 +133,9 @@ export function useHolidays() {
         await holidaysService.remove(id);
         setDeleteEntry(null);
         await fetchEntries();
-      } catch {
-        throw new Error('Error al eliminar el feriado');
+      } catch (err) {
+        const msg = extractApiError(err) || 'Error al eliminar el feriado';
+        setError(msg);
       } finally {
         setSubmitting(false);
       }
@@ -125,8 +149,9 @@ export function useHolidays() {
     try {
       await holidaysService.seed(yearFilter);
       await fetchEntries();
-    } catch {
-      setError('Error al sembrar los feriados');
+    } catch (err) {
+      const msg = extractApiError(err) || 'Error al sembrar los feriados';
+      setError(msg);
     } finally {
       setSeeding(false);
     }
@@ -137,6 +162,7 @@ export function useHolidays() {
     data,
     loading,
     error,
+    formError,
 
     // Paginación y filtros
     page,
@@ -152,6 +178,7 @@ export function useHolidays() {
     setEditEntry,
     deleteEntry,
     setDeleteEntry,
+    closeFormDialog,
 
     // CRUD
     submitting,

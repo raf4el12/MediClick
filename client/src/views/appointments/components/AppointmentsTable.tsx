@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import Card from '@mui/material/Card';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
@@ -79,7 +79,7 @@ interface AppointmentsTableProps {
   handleComplete: (id: number) => void;
 }
 
-export function AppointmentsTable({
+export const AppointmentsTable = memo(function AppointmentsTable({
   data,
   loading,
   error,
@@ -396,4 +396,4 @@ export function AppointmentsTable({
       </Card>
     </>
   );
-}
+});

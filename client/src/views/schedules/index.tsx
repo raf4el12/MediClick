@@ -9,7 +9,10 @@ import Alert from '@mui/material/Alert';
 import { useSchedules } from './hooks/useSchedules';
 
 const SNACKBAR_ANCHOR = { vertical: 'bottom' as const, horizontal: 'right' as const };
-import { ScheduleCalendar } from './components/ScheduleCalendar';
+
+const ScheduleCalendar = dynamic(
+  () => import('./components/ScheduleCalendar').then((m) => m.ScheduleCalendar),
+);
 
 const GenerateDialog = dynamic(
   () => import('./components/GenerateDialog').then((m) => m.GenerateDialog),

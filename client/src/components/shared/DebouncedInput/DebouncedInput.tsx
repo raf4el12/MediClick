@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import TextField, { type TextFieldProps } from '@mui/material/TextField';
 
 interface DebouncedInputProps extends Omit<TextFieldProps, 'onChange'> {
@@ -9,7 +9,7 @@ interface DebouncedInputProps extends Omit<TextFieldProps, 'onChange'> {
   debounce?: number;
 }
 
-export function DebouncedInput({
+export const DebouncedInput = memo(function DebouncedInput({
   value: initialValue = '',
   onChange,
   debounce = 500,
@@ -37,4 +37,4 @@ export function DebouncedInput({
       size="small"
     />
   );
-}
+});

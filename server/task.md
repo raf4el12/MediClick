@@ -485,6 +485,8 @@
   3. Fix de reprogramación — Bug actual (startTime/endTime no se actualiza)
   4. Transición PENDING → CONFIRMED — Completar la máquina de estados
   5. Sobrecupo — Necesidad real de clínicas peruanas
+
+
   6. Tipos de consulta — Permite duraciones variables
   7. Modalidad presencial/virtual — Diferenciación post-pandemia
   8. Lista de espera — Nice-to-have para optimizar ocupación

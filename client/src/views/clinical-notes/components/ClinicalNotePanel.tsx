@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardHeader from '@mui/material/CardHeader';
@@ -35,7 +36,7 @@ interface ClinicalNotePanelProps {
   onCreateNote: (payload: CreateClinicalNotePayload) => Promise<void>;
 }
 
-export function ClinicalNotePanel({
+export const ClinicalNotePanel = memo(function ClinicalNotePanel({
   appointment,
   notes,
   loadingNotes,
@@ -165,4 +166,4 @@ export function ClinicalNotePanel({
       </CardContent>
     </Card>
   );
-}
+});

@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -24,7 +25,7 @@ interface HolidayListProps {
   onDelete: (entry: Holiday) => void;
 }
 
-export function HolidayList({
+export const HolidayList = memo(function HolidayList({
   entries,
   loading,
   totalPages,
@@ -155,6 +156,7 @@ export function HolidayList({
                       day: '2-digit',
                       month: 'long',
                       year: 'numeric',
+                      timeZone: 'UTC',
                     })}
                   </Typography>
 
@@ -219,4 +221,4 @@ export function HolidayList({
       )}
     </>
   );
-}
+});

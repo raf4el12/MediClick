@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import Card from '@mui/material/Card';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
@@ -57,7 +57,7 @@ interface CategoriesTableProps {
   refreshData: () => void;
 }
 
-export function CategoriesTable({
+export const CategoriesTable = memo(function CategoriesTable({
   data,
   loading,
   error,
@@ -330,4 +330,4 @@ export function CategoriesTable({
       />
     </>
   );
-}
+});

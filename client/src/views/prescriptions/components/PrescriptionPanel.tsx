@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CardHeader from '@mui/material/CardHeader';
@@ -38,7 +39,7 @@ interface PrescriptionPanelProps {
   onCreatePrescription: (payload: CreatePrescriptionPayload) => Promise<void>;
 }
 
-export function PrescriptionPanel({
+export const PrescriptionPanel = memo(function PrescriptionPanel({
   appointment,
   prescription,
   loadingPrescription,
@@ -160,4 +161,4 @@ export function PrescriptionPanel({
       </CardContent>
     </Card>
   );
-}
+});

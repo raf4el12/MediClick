@@ -95,5 +95,8 @@
     "onlyBuiltDependencies": [
       "bcrypt"
     ]
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   }
 }

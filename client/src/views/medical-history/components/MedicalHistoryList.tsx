@@ -15,7 +15,7 @@ import MenuItem from '@mui/material/MenuItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import { alpha, useTheme } from '@mui/material/styles';
 
-import { useState } from 'react';
+import { memo, useState } from 'react';
 
 import type { MedicalHistory } from '../types';
 import { MedicalHistoryStatus } from '../types';
@@ -41,7 +41,7 @@ interface MedicalHistoryListProps {
   onDelete: (entry: MedicalHistory) => void;
 }
 
-export function MedicalHistoryList({
+export const MedicalHistoryList = memo(function MedicalHistoryList({
   entries,
   loading,
   totalPages,
@@ -315,4 +315,4 @@ export function MedicalHistoryList({
       </Menu>
     </>
   );
-}
+});

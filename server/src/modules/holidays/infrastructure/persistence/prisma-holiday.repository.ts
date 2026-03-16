@@ -113,6 +113,29 @@ export class PrismaHolidayRepository implements IHolidayRepository {
     return count > 0;
   }
 
+  async findRecurring(): Promise<HolidayEntity[]> {
+    return this.prisma.holidays.findMany({
+      where: { isRecurring: true, isActive: true },
+      orderBy: { date: 'asc' },
+    });
+  }
+
+  async findDistinctYears(): Promise<number[]> {
+    const result = await this.prisma.holidays.groupBy({
+      by: ['year'],
+      where: { isActive: true },
+      orderBy: { year: 'asc' },
+    });
+    return result.map((r) => r.year);
+  }
+
+  async deleteByNameAndYear(name: string, years: number[]): Promise<number> {
+    const result = await this.prisma.holidays.deleteMany({
+      where: { name, year: { in: years } },
+    });
+    return result.count;
+  }
+
   async update(id: number, data: UpdateHolidayData): Promise<HolidayEntity> {
     return this.prisma.holidays.update({
       where: { id },

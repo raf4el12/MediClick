@@ -144,7 +144,7 @@ const LandingView = () => {
       >
         {/* Background image */}
         <Box sx={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-          <Image src="/images/hero-landing.jpg" alt="" fill style={{ objectFit: 'cover' }} priority unoptimized={true} />
+          <Image src="/images/hero-landing.jpg" alt="" fill style={{ objectFit: 'cover' }} priority />
           <Box
             sx={{
               position: 'absolute',
@@ -367,7 +367,6 @@ const LandingView = () => {
                     alt="Equipo médico profesional"
                     fill
                     style={{ objectFit: 'cover' }}
-                    unoptimized={true}
                   />
                 </Box>
               </motion.div>
@@ -470,7 +469,6 @@ const LandingView = () => {
                     alt="Tecnología médica moderna"
                     fill
                     style={{ objectFit: 'cover' }}
-                    unoptimized={true}
                   />
                 </Box>
               </motion.div>

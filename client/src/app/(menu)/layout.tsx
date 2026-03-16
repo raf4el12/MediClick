@@ -1,9 +1,11 @@
+import dynamic from 'next/dynamic';
 import LayoutWrapper from '@/@layouts/LayoutWrapper';
 import VerticalLayout from '@/@layouts/VerticalLayout';
 import Navigation from '@/@layouts/components/Navigation';
 import Navbar from '@/@layouts/components/Navbar';
 import Footer from '@/@layouts/components/Footer';
-import Customizer from '@/@core/components/customizer';
+
+const Customizer = dynamic(() => import('@/@core/components/customizer'));
 
 export default function MenuLayout({
   children,

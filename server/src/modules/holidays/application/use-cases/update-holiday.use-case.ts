@@ -27,9 +27,9 @@ export class UpdateHolidayUseCase {
     }
 
     if (dto.date !== undefined) {
-      const parsedDate = new Date(dto.date);
+      const parsedDate = new Date(`${dto.date.split('T')[0]}T12:00:00Z`);
       updateData.date = parsedDate;
-      updateData.year = parsedDate.getFullYear();
+      updateData.year = parsedDate.getUTCFullYear();
     }
 
     if (dto.isRecurring !== undefined) {
@@ -41,6 +41,28 @@ export class UpdateHolidayUseCase {
     }
 
     const updated = await this.holidayRepository.update(id, updateData);
+
+    // Manejar cambios de recurrencia
+    if (dto.isRecurring !== undefined && dto.isRecurring !== existing.isRecurring) {
+      const existingYears = await this.holidayRepository.findDistinctYears();
+      const otherYears = existingYears.filter((y) => y !== updated.year);
+
+      if (dto.isRecurring && otherYears.length > 0) {
+        // Activó recurrencia → propagar a otros años
+        const month = updated.date.getUTCMonth();
+        const day = updated.date.getUTCDate();
+        const copies = otherYears.map((y) => ({
+          name: updated.name,
+          date: new Date(Date.UTC(y, month, day, 12, 0, 0)),
+          year: y,
+          isRecurring: true,
+        }));
+        await this.holidayRepository.createMany(copies);
+      } else if (!dto.isRecurring && otherYears.length > 0) {
+        // Desactivó recurrencia → eliminar copias de otros años
+        await this.holidayRepository.deleteByNameAndYear(updated.name, otherYears);
+      }
+    }
 
     return {
       id: updated.id,

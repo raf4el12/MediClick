@@ -99,11 +99,11 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
   const scheduleMap = useMemo(() => new Map(schedules.map((s) => [s.id, s])), [schedules]);
   const patientMap = useMemo(() => new Map(patients.map((p) => [p.id, p])), [patients]);
 
-  // Derived data for summary
-  const selectedSpecialty = specialtyMap.get(selectedSpecialtyId!) ?? null;
-  const selectedDoctor = doctorMap.get(selectedDoctorId!) ?? null;
-  const selectedSchedule = scheduleMap.get(selectedScheduleId!) ?? null;
-  const selectedPatient = patientMap.get(selectedPatientId!) ?? null;
+  // Derived data for summary (memoized to avoid new refs each render)
+  const selectedSpecialty = useMemo(() => specialtyMap.get(selectedSpecialtyId!) ?? null, [specialtyMap, selectedSpecialtyId]);
+  const selectedDoctor = useMemo(() => doctorMap.get(selectedDoctorId!) ?? null, [doctorMap, selectedDoctorId]);
+  const selectedSchedule = useMemo(() => scheduleMap.get(selectedScheduleId!) ?? null, [scheduleMap, selectedScheduleId]);
+  const selectedPatient = useMemo(() => patientMap.get(selectedPatientId!) ?? null, [patientMap, selectedPatientId]);
 
   // Computed: unique available dates from schedules
   const availableDates = useMemo(

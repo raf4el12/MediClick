@@ -11,6 +11,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
+import Alert from '@mui/material/Alert';
 import { alpha, useTheme } from '@mui/material/styles';
 
 import { useForm, Controller } from 'react-hook-form';
@@ -25,6 +26,7 @@ interface HolidayFormProps {
   onSubmit: (values: HolidayFormValues) => void;
   entry: Holiday | null;
   submitting: boolean;
+  apiError?: string | null;
 }
 
 const RECURRING_OPTIONS = [
@@ -38,6 +40,7 @@ export function HolidayForm({
   onSubmit,
   entry,
   submitting,
+  apiError,
 }: HolidayFormProps) {
   const theme = useTheme();
   const isEdit = !!entry;
@@ -116,6 +119,12 @@ export function HolidayForm({
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <DialogContent sx={{ pt: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          {apiError && (
+            <Alert severity="error" variant="outlined" sx={{ mb: 0.5 }}>
+              {apiError}
+            </Alert>
+          )}
+
           <Controller
             name="name"
             control={control}

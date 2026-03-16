@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import Card from '@mui/material/Card';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
@@ -60,7 +60,7 @@ interface SpecialtiesTableProps {
   refreshData: () => void;
 }
 
-export function SpecialtiesTable({
+export const SpecialtiesTable = memo(function SpecialtiesTable({
   data,
   categories,
   loading,
@@ -344,4 +344,4 @@ export function SpecialtiesTable({
       />
     </>
   );
-}
+});

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import Card from '@mui/material/Card';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
@@ -90,7 +90,7 @@ const bloodTypeColors: Record<string, 'error' | 'primary' | 'secondary' | 'warni
   'AB-': 'info',
 };
 
-export function PatientsTable({
+export const PatientsTable = memo(function PatientsTable({
   data,
   loading,
   error,
@@ -420,4 +420,4 @@ export function PatientsTable({
       />
     </>
   );
-}
+});

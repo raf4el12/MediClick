@@ -13,7 +13,28 @@ export class SeedPeruHolidaysUseCase {
   async execute(dto: SeedHolidaysDto): Promise<SeedHolidaysResponseDto> {
     const { year } = dto;
 
-    // Calcular la fecha de Pascua para obtener Jueves y Viernes Santo
+    // 1. Obtener feriados recurrentes creados por el usuario en OTROS años
+    const allRecurring = await this.holidayRepository.findRecurring();
+    const userRecurring: CreateHolidayData[] = [];
+    const seenKeys = new Set<string>();
+
+    for (const h of allRecurring) {
+      if (h.year === year) continue;
+      const month = h.date.getUTCMonth();
+      const day = h.date.getUTCDate();
+      const key = `${h.name}|${month}|${day}`;
+      if (seenKeys.has(key)) continue;
+      seenKeys.add(key);
+
+      userRecurring.push({
+        name: h.name,
+        date: new Date(Date.UTC(year, month, day, 12, 0, 0)),
+        year,
+        isRecurring: true,
+      });
+    }
+
+    // 2. Calcular la fecha de Pascua para obtener Jueves y Viernes Santo
     const easter = this.calculateEasterDate(year);
 
     // Jueves Santo: 3 días antes del Domingo de Pascua
@@ -24,11 +45,11 @@ export class SeedPeruHolidaysUseCase {
     const goodFriday = new Date(easter);
     goodFriday.setDate(easter.getDate() - 2);
 
-    // Lista de feriados nacionales del Perú
-    const holidays: CreateHolidayData[] = [
+    // 3. Lista de feriados nacionales del Perú
+    const peruHolidays: CreateHolidayData[] = [
       {
         name: 'Año Nuevo',
-        date: new Date(year, 0, 1),
+        date: new Date(Date.UTC(year, 0, 1, 12, 0, 0)),
         year,
         isRecurring: true,
       },
@@ -46,65 +67,89 @@ export class SeedPeruHolidaysUseCase {
       },
       {
         name: 'Día del Trabajo',
-        date: new Date(year, 4, 1),
+        date: new Date(Date.UTC(year, 4, 1, 12, 0, 0)),
         year,
         isRecurring: true,
       },
       {
         name: 'Día de la Bandera',
-        date: new Date(year, 5, 7),
+        date: new Date(Date.UTC(year, 5, 7, 12, 0, 0)),
         year,
         isRecurring: true,
       },
       {
         name: 'Fiestas Patrias',
-        date: new Date(year, 6, 28),
+        date: new Date(Date.UTC(year, 6, 28, 12, 0, 0)),
         year,
         isRecurring: true,
       },
       {
         name: 'Fiestas Patrias',
-        date: new Date(year, 6, 29),
+        date: new Date(Date.UTC(year, 6, 29, 12, 0, 0)),
         year,
         isRecurring: true,
       },
       {
         name: 'Santa Rosa de Lima',
-        date: new Date(year, 7, 30),
+        date: new Date(Date.UTC(year, 7, 30, 12, 0, 0)),
         year,
         isRecurring: true,
       },
       {
         name: 'Combate de Angamos',
-        date: new Date(year, 9, 8),
+        date: new Date(Date.UTC(year, 9, 8, 12, 0, 0)),
         year,
         isRecurring: true,
       },
       {
         name: 'Día de Todos los Santos',
-        date: new Date(year, 10, 1),
+        date: new Date(Date.UTC(year, 10, 1, 12, 0, 0)),
         year,
         isRecurring: true,
       },
       {
         name: 'Inmaculada Concepción',
-        date: new Date(year, 11, 8),
+        date: new Date(Date.UTC(year, 11, 8, 12, 0, 0)),
         year,
         isRecurring: true,
       },
       {
         name: 'Navidad',
-        date: new Date(year, 11, 25),
+        date: new Date(Date.UTC(year, 11, 25, 12, 0, 0)),
         year,
         isRecurring: true,
       },
     ];
 
-    // Eliminar feriados existentes para el año antes de insertar
+    // 4. Marcar las claves de los feriados de Perú para evitar duplicados con recurrentes
+    for (const h of peruHolidays) {
+      const month = h.date.getUTCMonth();
+      const day = h.date.getUTCDate();
+      seenKeys.add(`${h.name}|${month}|${day}`);
+    }
+
+    // Filtrar recurrentes que ya están en la lista de Perú
+    const uniqueUserRecurring = userRecurring.filter((h) => {
+      const month = h.date.getUTCMonth();
+      const day = h.date.getUTCDate();
+      const key = `${h.name}|${month}|${day}`;
+      // Ya se agregó al seenKeys al construir userRecurring,
+      // verificar si colisiona con peruHolidays
+      return !peruHolidays.some(
+        (p) =>
+          p.name === h.name &&
+          p.date.getUTCMonth() === month &&
+          p.date.getUTCDate() === day,
+      );
+    });
+
+    const allHolidays = [...peruHolidays, ...uniqueUserRecurring];
+
+    // 5. Eliminar feriados existentes para el año antes de insertar
     await this.holidayRepository.deleteByYear(year);
 
-    // Insertar todos los feriados en bloque
-    const seeded = await this.holidayRepository.createMany(holidays);
+    // 6. Insertar todos los feriados en bloque
+    const seeded = await this.holidayRepository.createMany(allHolidays);
 
     return {
       seeded,
@@ -131,6 +176,6 @@ export class SeedPeruHolidaysUseCase {
     const m = Math.floor((a + 11 * h + 22 * l) / 451);
     const month = Math.floor((h + l - 7 * m + 114) / 31);
     const day = ((h + l - 7 * m + 114) % 31) + 1;
-    return new Date(year, month - 1, day);
+    return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
   }
 }

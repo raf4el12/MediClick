@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -41,7 +42,7 @@ function formatDate(date: string): string {
   });
 }
 
-export function ScheduleBlockList({
+export const ScheduleBlockList = memo(function ScheduleBlockList({
   entries,
   loading,
   totalPages,
@@ -240,4 +241,4 @@ export function ScheduleBlockList({
       )}
     </>
   );
-}
+});

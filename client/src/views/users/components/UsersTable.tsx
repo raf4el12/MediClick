@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import Card from '@mui/material/Card';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
@@ -66,7 +66,7 @@ interface UsersTableProps {
   refreshData: () => void;
 }
 
-export function UsersTable({
+export const UsersTable = memo(function UsersTable({
   data,
   loading,
   error,
@@ -367,4 +367,4 @@ export function UsersTable({
       />
     </>
   );
-}
+});
