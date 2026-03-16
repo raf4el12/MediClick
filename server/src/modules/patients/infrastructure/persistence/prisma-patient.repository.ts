@@ -182,6 +182,14 @@ export class PrismaPatientRepository implements IPatientRepository {
     return result ? this.mapToRelations(result) : null;
   }
 
+  async findByUserId(userId: number): Promise<PatientWithRelations | null> {
+    const result = await this.prisma.patients.findFirst({
+      where: { deleted: false, profile: { userId } },
+      include: patientInclude,
+    });
+    return result ? this.mapToRelations(result) : null;
+  }
+
   async findByIdWithHistory(id: number): Promise<PatientWithHistory | null> {
     const result = await this.prisma.patients.findFirst({
       where: { id, deleted: false },

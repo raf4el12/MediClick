@@ -6,6 +6,7 @@ import {
   UpdateAppointmentData,
   AppointmentWithRelations,
   DashboardFilters,
+  PatientAppointmentFilters,
 } from '../../domain/interfaces/appointment-data.interface.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
@@ -100,6 +101,42 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
             },
           },
         ],
+      }),
+    };
+
+    const [rows, count] = await Promise.all([
+      this.prisma.appointments.findMany({
+        where,
+        include: appointmentInclude,
+        skip: offset,
+        take: limit,
+        orderBy: { [orderBy || 'createdAt']: orderByMode || 'desc' },
+      }),
+      this.prisma.appointments.count({ where }),
+    ]);
+
+    return {
+      totalRows: count,
+      rows: rows.map((r) => this.mapToRelations(r)),
+      totalPages: Math.ceil(count / limit),
+      currentPage: Math.floor(offset / limit) + 1,
+    };
+  }
+
+  async findByPatientPaginated(
+    patientId: number,
+    params: PaginationParams,
+    filters: PatientAppointmentFilters,
+  ): Promise<PaginatedResult<AppointmentWithRelations>> {
+    const { limit, offset, orderBy, orderByMode } = params;
+
+    const where: any = {
+      patientId,
+      deleted: false,
+      ...(filters.status && { status: filters.status }),
+      ...(filters.upcoming && {
+        schedule: { scheduleDate: { gte: new Date() } },
+        status: filters.status || { notIn: ['CANCELLED', 'NO_SHOW'] },
       }),
     };
 

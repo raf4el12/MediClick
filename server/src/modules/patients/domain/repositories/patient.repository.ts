@@ -18,6 +18,7 @@ export interface IPatientRepository {
     }
   >;
   findById(id: number): Promise<PatientWithRelations | null>;
+  findByUserId(userId: number): Promise<PatientWithRelations | null>;
   findByIdWithHistory(id: number): Promise<PatientWithHistory | null>;
   update(id: number, data: UpdatePatientData): Promise<PatientWithRelations>;
   softDelete(id: number): Promise<void>;

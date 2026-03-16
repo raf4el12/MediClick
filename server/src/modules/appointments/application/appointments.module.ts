@@ -15,6 +15,8 @@ import { RescheduleAppointmentUseCase } from './use-cases/reschedule-appointment
 import { ConfirmAppointmentUseCase } from './use-cases/confirm-appointment.use-case.js';
 import { CreateOverbookAppointmentUseCase } from './use-cases/create-overbook-appointment.use-case.js';
 import { CompleteAppointmentUseCase } from './use-cases/complete-appointment.use-case.js';
+import { GetMyAppointmentsUseCase } from './use-cases/get-my-appointments.use-case.js';
+import { CreatePatientAppointmentUseCase } from './use-cases/create-patient-appointment.use-case.js';
 import { AppointmentController } from '../interfaces/controllers/appointment.controller.js';
 
 @Module({
@@ -41,6 +43,8 @@ import { AppointmentController } from '../interfaces/controllers/appointment.con
     CreateOverbookAppointmentUseCase,
     RescheduleAppointmentUseCase,
     CompleteAppointmentUseCase,
+    GetMyAppointmentsUseCase,
+    CreatePatientAppointmentUseCase,
   ],
   exports: ['IAppointmentRepository'],
 })

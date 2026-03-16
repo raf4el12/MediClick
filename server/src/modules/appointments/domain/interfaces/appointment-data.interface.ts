@@ -61,3 +61,8 @@ export interface DashboardFilters {
   specialtyId?: number;
   status?: AppointmentStatus;
 }
+
+export interface PatientAppointmentFilters {
+  status?: AppointmentStatus;
+  upcoming?: boolean;
+}

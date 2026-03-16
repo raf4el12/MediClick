@@ -3,6 +3,7 @@ import {
   UpdateAppointmentData,
   AppointmentWithRelations,
   DashboardFilters,
+  PatientAppointmentFilters,
 } from '../interfaces/appointment-data.interface.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
@@ -12,6 +13,11 @@ export interface IAppointmentRepository {
   findAllPaginated(
     params: PaginationParams,
     filters: DashboardFilters,
+  ): Promise<PaginatedResult<AppointmentWithRelations>>;
+  findByPatientPaginated(
+    patientId: number,
+    params: PaginationParams,
+    filters: PatientAppointmentFilters,
   ): Promise<PaginatedResult<AppointmentWithRelations>>;
   findById(id: number): Promise<AppointmentWithRelations | null>;
   update(

@@ -22,6 +22,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // Allow patient routes
+  if (pathname.startsWith('/patient') && accessToken) {
+    return NextResponse.next();
+  }
+
   return NextResponse.next();
 }
 

@@ -27,7 +27,11 @@ import { RescheduleAppointmentUseCase } from '../../application/use-cases/resche
 import { ConfirmAppointmentUseCase } from '../../application/use-cases/confirm-appointment.use-case.js';
 import { CreateOverbookAppointmentUseCase } from '../../application/use-cases/create-overbook-appointment.use-case.js';
 import { CompleteAppointmentUseCase } from '../../application/use-cases/complete-appointment.use-case.js';
+import { GetMyAppointmentsUseCase } from '../../application/use-cases/get-my-appointments.use-case.js';
+import { CreatePatientAppointmentUseCase } from '../../application/use-cases/create-patient-appointment.use-case.js';
 import { CreateOverbookAppointmentDto } from '../../application/dto/create-overbook-appointment.dto.js';
+import { MyAppointmentsFilterDto } from '../../application/dto/my-appointments-filter.dto.js';
+import { CreatePatientAppointmentDto } from '../../application/dto/create-patient-appointment.dto.js';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator.js';
 
 @ApiTags('Appointments')
@@ -43,7 +47,46 @@ export class AppointmentController {
     private readonly createOverbookAppointmentUseCase: CreateOverbookAppointmentUseCase,
     private readonly rescheduleAppointmentUseCase: RescheduleAppointmentUseCase,
     private readonly completeAppointmentUseCase: CompleteAppointmentUseCase,
+    private readonly getMyAppointmentsUseCase: GetMyAppointmentsUseCase,
+    private readonly createPatientAppointmentUseCase: CreatePatientAppointmentUseCase,
   ) {}
+
+  @Get('my')
+  @Auth(UserRole.PATIENT)
+  @ApiOperation({ summary: 'Mis citas (paciente autenticado)' })
+  @ApiResponse({ status: 200, type: PaginatedAppointmentResponseDto })
+  @ApiResponse({ status: 404, description: 'Perfil de paciente no encontrado' })
+  async getMyAppointments(
+    @CurrentUser('id') userId: number,
+    @Query() filterDto: MyAppointmentsFilterDto,
+  ): Promise<PaginatedAppointmentResponseDto> {
+    const pagination = new PaginationImproved(
+      filterDto.searchValue,
+      filterDto.currentPage,
+      filterDto.pageSize,
+      filterDto.orderBy,
+      filterDto.orderByMode,
+    );
+    return this.getMyAppointmentsUseCase.execute(userId, pagination, filterDto);
+  }
+
+  @Post('patient')
+  @Auth(UserRole.PATIENT)
+  @ApiOperation({ summary: 'Reservar cita como paciente (auto-asigna patientId)' })
+  @ApiResponse({
+    status: 201,
+    description: 'Cita creada',
+    type: AppointmentResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Horario inválido' })
+  @ApiResponse({ status: 404, description: 'Perfil de paciente no encontrado' })
+  @ApiResponse({ status: 409, description: 'Horario ya tiene cita asignada' })
+  async createAsPatient(
+    @CurrentUser('id') userId: number,
+    @Body() dto: CreatePatientAppointmentDto,
+  ): Promise<AppointmentResponseDto> {
+    return this.createPatientAppointmentUseCase.execute(userId, dto);
+  }
 
   @Post()
   @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST)

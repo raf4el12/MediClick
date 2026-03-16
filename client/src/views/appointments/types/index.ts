@@ -38,12 +38,16 @@ export interface Appointment {
   id: number;
   patientId: number;
   scheduleId: number;
+  startTime: string;    // HH:mm
+  endTime: string;      // HH:mm
   reason: string | null;
   notes: string | null;
   status: AppointmentStatus;
   paymentStatus: string;
   amount: number | null;
   cancelReason: string | null;
+  cancellationFee: number | null;
+  isOverbook: boolean;
   patient: AppointmentPatient;
   schedule: AppointmentSchedule;
   createdAt: string;
@@ -72,4 +76,16 @@ export interface AppointmentFilters {
   doctorId?: number;
   specialtyId?: number;
   status?: AppointmentStatus;
+}
+
+export interface PatientAppointmentFilters {
+  status?: AppointmentStatus;
+  upcoming?: boolean;
+}
+
+export interface CreatePatientAppointmentPayload {
+  scheduleId: number;
+  startTime: string;  // HH:mm
+  endTime: string;    // HH:mm
+  reason?: string;
 }

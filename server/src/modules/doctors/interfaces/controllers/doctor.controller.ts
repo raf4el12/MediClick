@@ -55,7 +55,7 @@ export class DoctorController {
   }
 
   @Get()
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST)
+  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.PATIENT)
   @ApiOperation({ summary: 'Listar doctores con paginación' })
   @ApiResponse({
     status: 200,
@@ -76,7 +76,7 @@ export class DoctorController {
   }
 
   @Get(':id')
-  @Auth(UserRole.ADMIN, UserRole.DOCTOR)
+  @Auth(UserRole.ADMIN, UserRole.DOCTOR, UserRole.PATIENT)
   @ApiOperation({ summary: 'Obtener doctor por ID' })
   @ApiResponse({
     status: 200,

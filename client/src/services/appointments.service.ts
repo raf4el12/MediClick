@@ -3,9 +3,11 @@ import type { PaginationParams, PaginatedResponse } from '@/types/pagination.typ
 import type {
   Appointment,
   CreateAppointmentPayload,
+  CreatePatientAppointmentPayload,
   CancelAppointmentPayload,
   RescheduleAppointmentPayload,
   AppointmentFilters,
+  PatientAppointmentFilters,
 } from '@/views/appointments/types';
 
 export const appointmentsService = {
@@ -75,6 +77,48 @@ export const appointmentsService = {
   complete: async (id: number): Promise<Appointment> => {
     const response = await api.patch<Appointment>(
       `/appointments/${id}/complete`,
+    );
+
+    return response.data;
+  },
+
+  confirm: async (id: number): Promise<Appointment> => {
+    const response = await api.patch<Appointment>(
+      `/appointments/${id}/confirm`,
+    );
+
+    return response.data;
+  },
+
+  // ── Patient-specific endpoints ──
+
+  getMyAppointments: async (
+    params: PaginationParams,
+    filters?: PatientAppointmentFilters,
+  ): Promise<PaginatedResponse<Appointment>> => {
+    const queryParams: Record<string, string | number | boolean> = {};
+
+    if (params.currentPage) queryParams.currentPage = params.currentPage;
+    if (params.pageSize) queryParams.pageSize = params.pageSize;
+    if (params.orderBy) queryParams.orderBy = params.orderBy;
+    if (params.orderByMode) queryParams.orderByMode = params.orderByMode;
+    if (filters?.status) queryParams.status = filters.status;
+    if (filters?.upcoming !== undefined) queryParams.upcoming = filters.upcoming;
+
+    const response = await api.get<PaginatedResponse<Appointment>>(
+      '/appointments/my',
+      { params: queryParams },
+    );
+
+    return response.data;
+  },
+
+  createAsPatient: async (
+    payload: CreatePatientAppointmentPayload,
+  ): Promise<Appointment> => {
+    const response = await api.post<Appointment>(
+      '/appointments/patient',
+      payload,
     );
 
     return response.data;

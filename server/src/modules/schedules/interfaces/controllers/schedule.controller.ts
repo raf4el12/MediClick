@@ -47,7 +47,7 @@ export class ScheduleController {
   }
 
   @Get()
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.DOCTOR)
+  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.DOCTOR, UserRole.PATIENT)
   @ApiOperation({ summary: 'Listar horarios con paginación y filtros' })
   @ApiQuery({ name: 'doctorId', required: false, type: Number })
   @ApiQuery({ name: 'specialtyId', required: false, type: Number })
@@ -89,7 +89,7 @@ export class ScheduleController {
   }
 
   @Get('time-slots')
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.DOCTOR)
+  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.DOCTOR, UserRole.PATIENT)
   @ApiOperation({
     summary: 'Obtener time slots disponibles para un doctor en una fecha',
     description:
