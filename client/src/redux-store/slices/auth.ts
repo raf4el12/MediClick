@@ -1,6 +1,6 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { AuthUser } from '@/types/auth.types';
-import { loginThunk, logoutThunk } from '../thunks/auth.thunks';
+import { loginThunk, registerThunk, logoutThunk } from '../thunks/auth.thunks';
 
 interface AuthState {
   user: AuthUser | null;
@@ -51,6 +51,21 @@ export const authSlice = createSlice({
         state.accessToken = action.payload.accessToken;
       })
       .addCase(loginThunk.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload ?? 'Error desconocido';
+      })
+      // Register
+      .addCase(registerThunk.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(registerThunk.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isAuthenticated = true;
+        state.user = action.payload.user;
+        state.accessToken = action.payload.accessToken;
+      })
+      .addCase(registerThunk.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload ?? 'Error desconocido';
       })

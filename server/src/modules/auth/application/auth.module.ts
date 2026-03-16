@@ -8,13 +8,16 @@ import { PasswordService } from '../infrastructure/services/password.service.js'
 import { TokenService } from '../infrastructure/services/token.service.js';
 import { RedisRefreshTokenRepository } from '../infrastructure/repositories/redis-refresh-token.repository.js';
 import { LoginUseCase } from './use-cases/login.use-case.js';
+import { RegisterPatientUseCase } from './use-cases/register-patient.use-case.js';
 import { RefreshTokenUseCase } from './use-cases/refresh-token.use-case.js';
 import { LogoutUseCase } from './use-cases/logout.use-case.js';
 import { LogoutAllDevicesUseCase } from './use-cases/logout-all-devices.use-case.js';
 import { GetProfileUseCase } from './use-cases/get-profile.use-case.js';
 import { UpdateProfileUseCase } from './use-cases/update-profile.use-case.js';
+import { CheckAvailabilityUseCase } from './use-cases/check-availability.use-case.js';
 import { AuthController } from '../interfaces/controllers/auth.controller.js';
 import { UsersModule } from '../../users/application/users.module.js';
+import { PatientsModule } from '../../patients/application/patients.module.js';
 
 @Module({
   imports: [
@@ -31,6 +34,7 @@ import { UsersModule } from '../../users/application/users.module.js';
       }),
     }),
     forwardRef(() => UsersModule),
+    forwardRef(() => PatientsModule),
   ],
   controllers: [AuthController],
   providers: [
@@ -48,11 +52,13 @@ import { UsersModule } from '../../users/application/users.module.js';
       useClass: RedisRefreshTokenRepository,
     },
     LoginUseCase,
+    RegisterPatientUseCase,
     RefreshTokenUseCase,
     LogoutUseCase,
     LogoutAllDevicesUseCase,
     GetProfileUseCase,
     UpdateProfileUseCase,
+    CheckAvailabilityUseCase,
   ],
   exports: ['IPasswordService', 'ITokenService'],
 })

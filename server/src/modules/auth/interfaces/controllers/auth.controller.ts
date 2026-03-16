@@ -20,16 +20,21 @@ import {
 import express from 'express';
 import { ConfigService } from '@nestjs/config';
 import { LoginDto } from '../../application/dto/login.dto.js';
+import { RegisterPatientDto } from '../../application/dto/register-patient.dto.js';
 import { RefreshTokenDto } from '../../application/dto/refresh-token.dto.js';
 import { LogoutDto } from '../../application/dto/logout.dto.js';
 import { AuthResponseDto } from '../../application/dto/auth-response.dto.js';
 import { LoginUseCase } from '../../application/use-cases/login.use-case.js';
+import { RegisterPatientUseCase } from '../../application/use-cases/register-patient.use-case.js';
 import { RefreshTokenUseCase } from '../../application/use-cases/refresh-token.use-case.js';
 import { LogoutUseCase } from '../../application/use-cases/logout.use-case.js';
 import { LogoutAllDevicesUseCase } from '../../application/use-cases/logout-all-devices.use-case.js';
 import { GetProfileUseCase } from '../../application/use-cases/get-profile.use-case.js';
 import { UpdateProfileUseCase } from '../../application/use-cases/update-profile.use-case.js';
 import { UpdateMyProfileDto } from '../../application/dto/update-profile.dto.js';
+import { CheckEmailDto } from '../../application/dto/check-email.dto.js';
+import { CheckDocumentDto } from '../../application/dto/check-document.dto.js';
+import { CheckAvailabilityUseCase } from '../../application/use-cases/check-availability.use-case.js';
 import { Auth, CurrentUser } from '../../../../shared/decorators/index.js';
 
 @ApiTags('Auth')
@@ -37,11 +42,13 @@ import { Auth, CurrentUser } from '../../../../shared/decorators/index.js';
 export class AuthController {
   constructor(
     private readonly loginUseCase: LoginUseCase,
+    private readonly registerPatientUseCase: RegisterPatientUseCase,
     private readonly refreshTokenUseCase: RefreshTokenUseCase,
     private readonly logoutUseCase: LogoutUseCase,
     private readonly logoutAllDevicesUseCase: LogoutAllDevicesUseCase,
     private readonly getProfileUseCase: GetProfileUseCase,
     private readonly updateProfileUseCase: UpdateProfileUseCase,
+    private readonly checkAvailabilityUseCase: CheckAvailabilityUseCase,
     private readonly configService: ConfigService,
   ) {}
 
@@ -90,6 +97,53 @@ export class AuthController {
     @Res({ passthrough: true }) res: express.Response,
   ): Promise<Omit<AuthResponseDto, 'refreshToken'>> {
     const result = await this.loginUseCase.execute(dto, dto.deviceId);
+
+    this.setTokenCookies(res, result.accessToken, result.refreshToken!);
+
+    return {
+      accessToken: result.accessToken,
+      user: result.user,
+    };
+  }
+
+  @Post('check-email')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verificar disponibilidad de email (público)' })
+  @ApiResponse({ status: 200, description: '{ available: boolean }' })
+  async checkEmail(
+    @Body() dto: CheckEmailDto,
+  ): Promise<{ available: boolean }> {
+    return this.checkAvailabilityUseCase.checkEmail(dto.email);
+  }
+
+  @Post('check-document')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verificar disponibilidad de documento (público)' })
+  @ApiResponse({ status: 200, description: '{ available: boolean }' })
+  async checkDocument(
+    @Body() dto: CheckDocumentDto,
+  ): Promise<{ available: boolean }> {
+    return this.checkAvailabilityUseCase.checkDocument(
+      dto.typeDocument,
+      dto.numberDocument,
+    );
+  }
+
+  @Post('register')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Registro de paciente (público)' })
+  @ApiResponse({
+    status: 201,
+    description: 'Paciente registrado y autenticado',
+    type: AuthResponseDto,
+  })
+  @ApiResponse({ status: 409, description: 'Email o documento ya registrado' })
+  async register(
+    @Body() dto: RegisterPatientDto,
+    @Res({ passthrough: true }) res: express.Response,
+  ): Promise<Omit<AuthResponseDto, 'refreshToken'>> {
+    const deviceId = 'web-register';
+    const result = await this.registerPatientUseCase.execute(dto, deviceId);
 
     this.setTokenCookies(res, result.accessToken, result.refreshToken!);
 

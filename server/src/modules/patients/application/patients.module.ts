@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { AuthModule } from '../../auth/application/auth.module.js';
 import { PrismaPatientRepository } from '../infrastructure/persistence/prisma-patient.repository.js';
 import { CreatePatientUseCase } from './use-cases/create-patient.use-case.js';
@@ -9,7 +9,7 @@ import { DeletePatientUseCase } from './use-cases/delete-patient.use-case.js';
 import { PatientController } from '../interfaces/controllers/patient.controller.js';
 
 @Module({
-  imports: [AuthModule],
+  imports: [forwardRef(() => AuthModule)],
   controllers: [PatientController],
   providers: [
     {

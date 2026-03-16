@@ -1,7 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
 import { AxiosError } from 'axios';
 import { authService } from '@/services/auth.service';
-import type { AuthResponse, ApiErrorResponse } from '@/types/auth.types';
+import type { AuthResponse, ApiErrorResponse, RegisterPatientRequest } from '@/types/auth.types';
 import { getDeviceId } from '@/utils/device-id';
 
 interface LoginPayload {
@@ -24,6 +24,21 @@ export const loginThunk = createAsyncThunk<
     const message = error.response?.data?.message;
     const errorText = Array.isArray(message) ? message[0] : message;
     return rejectWithValue(errorText ?? 'Error al iniciar sesión');
+  }
+});
+
+export const registerThunk = createAsyncThunk<
+  AuthResponse,
+  RegisterPatientRequest,
+  { rejectValue: string }
+>('auth/register', async (data, { rejectWithValue }) => {
+  try {
+    return await authService.register(data);
+  } catch (err) {
+    const error = err as AxiosError<ApiErrorResponse>;
+    const message = error.response?.data?.message;
+    const errorText = Array.isArray(message) ? message[0] : message;
+    return rejectWithValue(errorText ?? 'Error al registrar');
   }
 });
 

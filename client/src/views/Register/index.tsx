@@ -7,9 +7,9 @@ import IconButton from '@mui/material/IconButton';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import { useTheme, alpha } from '@mui/material/styles';
-import { LoginForm } from './LoginForm';
+import { RegisterForm } from './RegisterForm';
 
-const LoginView = () => {
+const RegisterView = () => {
   const theme = useTheme();
 
   return (
@@ -36,7 +36,6 @@ const LoginView = () => {
           priority
           unoptimized={true}
         />
-        {/* Dark overlay */}
         <Box
           sx={{
             position: 'absolute',
@@ -45,7 +44,6 @@ const LoginView = () => {
           }}
         />
 
-        {/* Content over image */}
         <Box
           sx={{
             position: 'relative',
@@ -84,23 +82,23 @@ const LoginView = () => {
             </Box>
 
             <Typography variant="h3" sx={{ fontWeight: 700, mb: 2, lineHeight: 1.2 }}>
-              Tu plataforma médica integral
+              Crea tu cuenta de paciente
             </Typography>
             <Typography
               variant="body1"
               sx={{ opacity: 0.85, lineHeight: 1.7 }}
             >
-              Optimiza la gestión de tu consultorio con herramientas diseñadas para
-              profesionales de la salud.
+              Regístrate para agendar citas médicas, acceder a tu historial
+              y gestionar tus recetas desde cualquier lugar.
             </Typography>
           </Box>
         </Box>
       </Box>
 
-      {/* Right panel - Login Form */}
+      {/* Right panel - Register Form */}
       <Box
         sx={{
-          flex: { xs: 1, md: '0 0 520px' },
+          flex: { xs: 1, md: '0 0 560px' },
           display: 'flex',
           flexDirection: 'column',
           bgcolor: 'background.paper',
@@ -111,7 +109,7 @@ const LoginView = () => {
         <Box sx={{ p: 2 }}>
           <IconButton
             component={Link}
-            href="/"
+            href="/login"
             sx={{
               color: 'text.secondary',
               '&:hover': {
@@ -132,17 +130,18 @@ const LoginView = () => {
             alignItems: 'center',
             justifyContent: 'center',
             px: { xs: 3, sm: 6 },
+            py: 2,
           }}
         >
           <Paper
             elevation={0}
             sx={{
               width: '100%',
-              maxWidth: 420,
+              maxWidth: 480,
               p: { xs: 3, sm: 5 },
             }}
           >
-            <Box sx={{ textAlign: 'center', mb: 4 }}>
+            <Box sx={{ textAlign: 'center', mb: 3 }}>
               <Box
                 sx={{
                   width: 56,
@@ -162,27 +161,27 @@ const LoginView = () => {
                 />
               </Box>
               <Typography variant="h5" fontWeight={700} gutterBottom>
-                Iniciar Sesión
+                Registro de Paciente
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Ingresa tus credenciales para acceder al sistema
+                Completa tus datos para crear tu cuenta
               </Typography>
             </Box>
 
-            <LoginForm />
+            <RegisterForm />
 
             <Box sx={{ textAlign: 'center', mt: 3 }}>
               <Typography variant="body2" color="text.secondary">
-                ¿No tienes una cuenta?{' '}
+                ¿Ya tienes una cuenta?{' '}
                 <Typography
                   component={Link}
-                  href="/register"
+                  href="/login"
                   variant="body2"
                   color="primary"
                   fontWeight={600}
                   sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
                 >
-                  Regístrate aquí
+                  Iniciar Sesión
                 </Typography>
               </Typography>
             </Box>
@@ -193,4 +192,4 @@ const LoginView = () => {
   );
 };
 
-export default LoginView;
+export default RegisterView;

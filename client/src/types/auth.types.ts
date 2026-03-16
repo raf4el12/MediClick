@@ -32,6 +32,18 @@ export interface AuthResponse {
   user: AuthUser;
 }
 
+export interface RegisterPatientRequest {
+  typeDocument: string;
+  numberDocument: string;
+  name: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  birthday?: string;
+  gender?: string;
+  password: string;
+}
+
 export interface ApiErrorResponse {
   statusCode: number;
   message: string | string[];

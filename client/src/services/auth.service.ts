@@ -4,12 +4,28 @@ import type {
   LoginRequest,
   LogoutRequest,
   RefreshTokenRequest,
+  RegisterPatientRequest,
 } from '@/types/auth.types';
 import type { ProfileResponse, UpdateProfileData } from '@/types/profile.types';
 
 export const authService = {
   async login(data: LoginRequest): Promise<AuthResponse> {
     const response = await api.post<AuthResponse>('/auth/login', data);
+    return response.data;
+  },
+
+  async register(data: RegisterPatientRequest): Promise<AuthResponse> {
+    const response = await api.post<AuthResponse>('/auth/register', data);
+    return response.data;
+  },
+
+  async checkEmail(email: string): Promise<{ available: boolean }> {
+    const response = await api.post<{ available: boolean }>('/auth/check-email', { email });
+    return response.data;
+  },
+
+  async checkDocument(typeDocument: string, numberDocument: string): Promise<{ available: boolean }> {
+    const response = await api.post<{ available: boolean }>('/auth/check-document', { typeDocument, numberDocument });
     return response.data;
   },
 

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const PUBLIC_PATHS = ['/login', '/'];
+const PUBLIC_PATHS = ['/login', '/register', '/'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -10,8 +10,8 @@ export function middleware(request: NextRequest) {
   const isPublicPath =
     pathname === '/' || PUBLIC_PATHS.some((path) => path !== '/' && pathname.startsWith(path));
 
-  // Authenticated user visiting login → redirect to dashboard
-  if (pathname.startsWith('/login') && accessToken) {
+  // Authenticated user visiting login or register → redirect to dashboard
+  if ((pathname.startsWith('/login') || pathname.startsWith('/register')) && accessToken) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
