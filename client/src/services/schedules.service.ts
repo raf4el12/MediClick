@@ -56,11 +56,8 @@ export const schedulesService = {
     const response = await api.get<TimeSlot[]>('/schedules/time-slots', {
       params: {
         doctorId: params.doctorId,
-        ...(params.specialtyId && { specialtyId: params.specialtyId }),
+        specialtyId: params.specialtyId,
         date: params.date,
-        timeFrom: params.timeFrom,
-        timeTo: params.timeTo,
-        durationMinutes: params.durationMinutes,
       },
     });
 

@@ -12,17 +12,14 @@ import type { IPatientRepository } from '../../../patients/domain/repositories/p
 import type { IScheduleRepository } from '../../../schedules/domain/repositories/schedule.repository.js';
 import type { IHolidayRepository } from '../../../holidays/domain/repositories/holiday.repository.js';
 import type { IScheduleBlockRepository } from '../../../schedule-blocks/domain/repositories/schedule-block.repository.js';
-
-function parseHHmm(hhmm: string): Date {
-  const [hours, minutes] = hhmm.split(':').map(Number);
-  return new Date(1970, 0, 1, hours, minutes, 0, 0);
-}
-
-function dateToTimeString(date: Date): string {
-  const h = date.getHours().toString().padStart(2, '0');
-  const m = date.getMinutes().toString().padStart(2, '0');
-  return `${h}:${m}`;
-}
+import {
+  parseHHmm,
+  dateToTimeString,
+  toMinutesUTC,
+  nowPeru,
+  todayStartPeru,
+  scheduleDateToLocalDay,
+} from '../../../../shared/utils/date-time.utils.js';
 
 @Injectable()
 export class CreatePatientAppointmentUseCase {
@@ -71,13 +68,10 @@ export class CreatePatientAppointmentUseCase {
     const schedTimeFrom = new Date(schedule.timeFrom);
     const schedTimeTo = new Date(schedule.timeTo);
 
-    const schedFromMinutes =
-      schedTimeFrom.getHours() * 60 + schedTimeFrom.getMinutes();
-    const schedToMinutes =
-      schedTimeTo.getHours() * 60 + schedTimeTo.getMinutes();
-    const slotStartMinutes =
-      slotStart.getHours() * 60 + slotStart.getMinutes();
-    const slotEndMinutes = slotEnd.getHours() * 60 + slotEnd.getMinutes();
+    const schedFromMinutes = toMinutesUTC(schedTimeFrom);
+    const schedToMinutes = toMinutesUTC(schedTimeTo);
+    const slotStartMinutes = toMinutesUTC(slotStart);
+    const slotEndMinutes = toMinutesUTC(slotEnd);
 
     if (
       slotStartMinutes < schedFromMinutes ||
@@ -90,20 +84,10 @@ export class CreatePatientAppointmentUseCase {
     }
 
     // ── Validación de fecha/hora (zona horaria Perú UTC-5) ──
-    const nowPeru = new Date(
-      new Date().toLocaleString('en-US', { timeZone: 'America/Lima' }),
-    );
+    const now = nowPeru();
     const scheduleDate = new Date(schedule.scheduleDate);
-    const todayStart = new Date(
-      nowPeru.getFullYear(),
-      nowPeru.getMonth(),
-      nowPeru.getDate(),
-    );
-    const scheduleDayStart = new Date(
-      scheduleDate.getFullYear(),
-      scheduleDate.getMonth(),
-      scheduleDate.getDate(),
-    );
+    const todayStart = todayStartPeru();
+    const scheduleDayStart = scheduleDateToLocalDay(scheduleDate);
 
     if (scheduleDayStart < todayStart) {
       throw new BadRequestException(
@@ -113,13 +97,13 @@ export class CreatePatientAppointmentUseCase {
 
     if (scheduleDayStart.getTime() === todayStart.getTime()) {
       const scheduleDateTime = new Date(
-        scheduleDate.getFullYear(),
-        scheduleDate.getMonth(),
-        scheduleDate.getDate(),
-        slotStart.getHours(),
-        slotStart.getMinutes(),
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        slotStart.getUTCHours(),
+        slotStart.getUTCMinutes(),
       );
-      const diff = scheduleDateTime.getTime() - nowPeru.getTime();
+      const diff = scheduleDateTime.getTime() - now.getTime();
       if (diff < CreatePatientAppointmentUseCase.MIN_BUFFER_MS) {
         throw new BadRequestException(
           'Debe haber al menos 2 horas de anticipación para agendar una cita',

@@ -8,6 +8,7 @@ import {
 import { HolidayEntity } from '../../domain/entities/holiday.entity.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
+import { utcDayRange } from '../../../../shared/utils/date-time.utils.js';
 
 @Injectable()
 export class PrismaHolidayRepository implements IHolidayRepository {
@@ -93,18 +94,13 @@ export class PrismaHolidayRepository implements IHolidayRepository {
   }
 
   async isHoliday(date: Date): Promise<boolean> {
-    // Normalizar la fecha al inicio del día
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
+    const { start: startOfDay, end: endOfDay } = utcDayRange(date);
 
     const count = await this.prisma.holidays.count({
       where: {
         date: {
           gte: startOfDay,
-          lte: endOfDay,
+          lt: endOfDay,
         },
         isActive: true,
       },

@@ -9,18 +9,7 @@ import { ScheduleBlockResponseDto } from '../dto/schedule-block-response.dto.js'
 import type { IScheduleBlockRepository } from '../../domain/repositories/schedule-block.repository.js';
 import type { IDoctorRepository } from '../../../doctors/domain/repositories/doctor.repository.js';
 import { ScheduleRegenerationService } from '../../../schedules/domain/services/schedule-regeneration.service.js';
-
-function timeStringToDate(time: string): Date {
-  const [hours, minutes] = time.split(':').map(Number);
-  return new Date(1970, 0, 1, hours, minutes, 0, 0);
-}
-
-function dateToTimeString(date: Date | null): string | null {
-  if (!date) return null;
-  const h = date.getHours().toString().padStart(2, '0');
-  const m = date.getMinutes().toString().padStart(2, '0');
-  return `${h}:${m}`;
-}
+import { timeStringToDate, dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
 
 @Injectable()
 export class CreateScheduleBlockUseCase {
@@ -90,8 +79,8 @@ export class CreateScheduleBlockUseCase {
       type: block.type,
       startDate: block.startDate,
       endDate: block.endDate,
-      timeFrom: dateToTimeString(block.timeFrom),
-      timeTo: dateToTimeString(block.timeTo),
+      timeFrom: block.timeFrom ? dateToTimeString(block.timeFrom) : null,
+      timeTo: block.timeTo ? dateToTimeString(block.timeTo) : null,
       reason: block.reason,
       isActive: block.isActive,
       createdAt: block.createdAt,

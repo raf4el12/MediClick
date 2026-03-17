@@ -10,17 +10,7 @@ import { AvailabilityResponseDto } from '../dto/availability-response.dto.js';
 import type { IAvailabilityRepository } from '../../domain/repositories/availability.repository.js';
 import type { UpdateAvailabilityData } from '../../domain/interfaces/availability-data.interface.js';
 import { ScheduleRegenerationService } from '../../../schedules/domain/services/schedule-regeneration.service.js';
-
-function timeStringToDate(time: string): Date {
-  const [hours, minutes] = time.split(':').map(Number);
-  return new Date(1970, 0, 1, hours, minutes, 0, 0);
-}
-
-function dateToTimeString(date: Date): string {
-  const h = date.getHours().toString().padStart(2, '0');
-  const m = date.getMinutes().toString().padStart(2, '0');
-  return `${h}:${m}`;
-}
+import { timeStringToDate, dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
 
 @Injectable()
 export class UpdateAvailabilityUseCase {

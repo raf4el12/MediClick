@@ -5,12 +5,7 @@ import { MyAppointmentsFilterDto } from '../dto/my-appointments-filter.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type { IPatientRepository } from '../../../patients/domain/repositories/patient.repository.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
-
-function dateToTimeString(date: Date): string {
-  const h = date.getHours().toString().padStart(2, '0');
-  const m = date.getMinutes().toString().padStart(2, '0');
-  return `${h}:${m}`;
-}
+import { dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
 
 @Injectable()
 export class GetMyAppointmentsUseCase {

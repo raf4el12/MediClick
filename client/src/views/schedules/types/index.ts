@@ -43,6 +43,7 @@ export interface ScheduleFilters {
 
 /** Respuesta del endpoint GET /schedules/time-slots */
 export interface TimeSlot {
+  scheduleId: number;
   startTime: string;  // HH:mm
   endTime: string;    // HH:mm
   available: boolean;
@@ -51,11 +52,8 @@ export interface TimeSlot {
 /** Parámetros para GET /schedules/time-slots */
 export interface GetTimeSlotsParams {
   doctorId: number;
-  specialtyId?: number;
+  specialtyId: number;
   date: string;           // YYYY-MM-DD
-  timeFrom: string;       // HH:mm — inicio del turno
-  timeTo: string;         // HH:mm — fin del turno
-  durationMinutes: number;
 }
 
 // ── Calendar helpers ──

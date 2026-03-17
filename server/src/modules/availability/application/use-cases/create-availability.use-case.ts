@@ -8,18 +8,7 @@ import { CreateAvailabilityDto } from '../dto/create-availability.dto.js';
 import { AvailabilityResponseDto } from '../dto/availability-response.dto.js';
 import type { IAvailabilityRepository } from '../../domain/repositories/availability.repository.js';
 import type { IDoctorRepository } from '../../../doctors/domain/repositories/doctor.repository.js';
-
-function timeStringToDate(time: string): Date {
-  const [hours, minutes] = time.split(':').map(Number);
-  const date = new Date(1970, 0, 1, hours, minutes, 0, 0);
-  return date;
-}
-
-function dateToTimeString(date: Date): string {
-  const h = date.getHours().toString().padStart(2, '0');
-  const m = date.getMinutes().toString().padStart(2, '0');
-  return `${h}:${m}`;
-}
+import { timeStringToDate, dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
 
 @Injectable()
 export class CreateAvailabilityUseCase {

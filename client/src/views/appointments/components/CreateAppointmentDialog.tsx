@@ -365,11 +365,6 @@ export function CreateAppointmentDialog({
           }
 
           if (useTimeSlotsView) {
-            // Map de timeFrom → scheduleId para O(1) lookups
-            const slotsByTimeFrom = new Map(
-              form.slotsForSelectedDate.map((s) => [s.timeFrom, s]),
-            );
-
             return (
               <Box>
                 {/* Leyenda */}
@@ -386,9 +381,7 @@ export function CreateAppointmentDialog({
 
                 <Grid container spacing={1}>
                   {form.timeSlots.map((slot) => {
-                    const matchedSchedule = slotsByTimeFrom.get(slot.startTime);
-                    const scheduleId = matchedSchedule?.id ?? null;
-                    const isSelected = scheduleId !== null && form.selectedScheduleId === scheduleId;
+                    const isSelected = form.selectedScheduleId === slot.scheduleId;
                     const isOccupied = !slot.available;
 
                     return (
@@ -396,12 +389,10 @@ export function CreateAppointmentDialog({
                         <Button
                           fullWidth
                           variant={isSelected ? 'contained' : 'outlined'}
-                          disabled={isOccupied || scheduleId === null}
+                          disabled={isOccupied}
                           onClick={() => {
-                            if (scheduleId !== null) {
-                              form.setSelectedScheduleId(scheduleId);
-                              form.setSelectedSlotTime({ startTime: slot.startTime, endTime: slot.endTime });
-                            }
+                            form.setSelectedScheduleId(slot.scheduleId);
+                            form.setSelectedSlotTime({ startTime: slot.startTime, endTime: slot.endTime });
                           }}
                           sx={{
                             borderRadius: 2,

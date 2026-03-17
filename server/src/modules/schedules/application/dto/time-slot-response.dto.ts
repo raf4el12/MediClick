@@ -4,6 +4,9 @@ import { ApiProperty } from '@nestjs/swagger';
  * Representa un intervalo de tiempo disponible o no para agendar citas.
  */
 export class TimeSlotResponseDto {
+  @ApiProperty({ example: 1, description: 'ID del schedule al que pertenece este slot' })
+  scheduleId: number;
+
   @ApiProperty({ example: '08:00', description: 'Hora de inicio del slot (HH:mm)' })
   startTime: string;
 

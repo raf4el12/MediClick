@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAppDispatch } from '@/redux-store/hooks';
 import { specialtiesService } from '@/services/specialties.service';
 import { doctorsService } from '@/services/doctors.service';
@@ -30,6 +30,7 @@ function getTodayPeru(): string {
 
 export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentFormProps) {
   const dispatch = useAppDispatch();
+  const queryClient = useQueryClient();
 
   const [activeStep, setActiveStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -120,46 +121,23 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
     : [];
 
   // ── React Query: Time slots por fecha seleccionada ──
-  const duration = selectedSpecialty?.duration;
-  const daySchedules = useMemo(
-    () =>
-      selectedDate
-        ? schedules.filter(
-            (s) => (s.scheduleDate.split('T')[0] ?? s.scheduleDate) === selectedDate,
-          )
-        : [],
-    [schedules, selectedDate],
-  );
-
-  const shiftRange = useMemo(() => {
-    if (daySchedules.length === 0) return null;
-    const sorted = [...daySchedules].sort((a, b) => a.timeFrom.localeCompare(b.timeFrom));
-
-    return { start: sorted[0]!.timeFrom, end: sorted[sorted.length - 1]!.timeTo };
-  }, [daySchedules]);
-
   const {
     data: timeSlots = [],
     isLoading: loadingTimeSlots,
   } = useQuery({
-    queryKey: ['time-slots', selectedDoctorId, selectedSpecialtyId, selectedDate, duration, shiftRange?.start, shiftRange?.end],
+    queryKey: ['time-slots', selectedDoctorId, selectedSpecialtyId, selectedDate],
     queryFn: () =>
       schedulesService.getTimeSlots({
         doctorId: selectedDoctorId!,
         specialtyId: selectedSpecialtyId!,
         date: selectedDate!,
-        timeFrom: shiftRange!.start,
-        timeTo: shiftRange!.end,
-        durationMinutes: duration!,
       }),
     enabled:
       open &&
       selectedDate !== null &&
       selectedDoctorId !== null &&
-      selectedSpecialtyId !== null &&
-      duration !== undefined &&
-      shiftRange !== null,
-    staleTime: 2 * 60 * 1000,
+      selectedSpecialtyId !== null,
+    staleTime: 30 * 1000,
   });
 
   // Auto-select first available date when schedules load
@@ -253,8 +231,20 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
         onSuccess();
         onClose();
       }
-    } catch (err) {
-      setError(typeof err === 'string' ? err : 'Error al crear la cita');
+    } catch (err: any) {
+      const isConflict =
+        (typeof err === 'string' && err.toLowerCase().includes('superpone')) ||
+        err?.response?.status === 409;
+
+      if (isConflict) {
+        setSelectedScheduleId(null);
+        setSelectedSlotTime(null);
+        void queryClient.invalidateQueries({ queryKey: ['time-slots', selectedDoctorId, selectedSpecialtyId, selectedDate] });
+        setActiveStep(2);
+        setError('El horario seleccionado ya fue reservado. Selecciona otro horario disponible.');
+      } else {
+        setError(typeof err === 'string' ? err : 'Error al crear la cita');
+      }
     } finally {
       setSubmitting(false);
     }

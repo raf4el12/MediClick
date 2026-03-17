@@ -11,12 +11,7 @@ import type { IPatientRepository } from '../../../patients/domain/repositories/p
 import type { IDoctorRepository } from '../../../doctors/domain/repositories/doctor.repository.js';
 import type { IScheduleRepository } from '../../../schedules/domain/repositories/schedule.repository.js';
 import type { ISpecialtyRepository } from '../../../specialties/domain/repositories/specialty.repository.js';
-
-function dateToTimeString(date: Date): string {
-  const h = date.getHours().toString().padStart(2, '0');
-  const m = date.getMinutes().toString().padStart(2, '0');
-  return `${h}:${m}`;
-}
+import { dateToTimeString, todayStartPeru, scheduleDateToLocalDay } from '../../../../shared/utils/date-time.utils.js';
 
 /**
  * Crea una cita de sobrecupo al final del último slot del doctor en una fecha.
@@ -75,19 +70,8 @@ export class CreateOverbookAppointmentUseCase {
     }
 
     // No permitir fechas pasadas
-    const nowPeru = new Date(
-      new Date().toLocaleString('en-US', { timeZone: 'America/Lima' }),
-    );
-    const todayStart = new Date(
-      nowPeru.getFullYear(),
-      nowPeru.getMonth(),
-      nowPeru.getDate(),
-    );
-    const dateOnly = new Date(
-      appointmentDate.getFullYear(),
-      appointmentDate.getMonth(),
-      appointmentDate.getDate(),
-    );
+    const todayStart = todayStartPeru();
+    const dateOnly = scheduleDateToLocalDay(appointmentDate);
     if (dateOnly < todayStart) {
       throw new BadRequestException(
         'No se puede crear un sobrecupo en una fecha pasada',

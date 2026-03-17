@@ -14,12 +14,7 @@ import {
   MIN_CANCELLATION_HOURS_PATIENT,
   CANCELLATION_FEE_PERCENTAGE,
 } from '../../domain/constants/cancellation-policy.constants.js';
-
-function dateToTimeString(date: Date): string {
-  const h = date.getHours().toString().padStart(2, '0');
-  const m = date.getMinutes().toString().padStart(2, '0');
-  return `${h}:${m}`;
-}
+import { dateToTimeString, nowPeru } from '../../../../shared/utils/date-time.utils.js';
 
 @Injectable()
 export class CancelAppointmentUseCase {
@@ -51,19 +46,17 @@ export class CancelAppointmentUseCase {
     }
 
     // Calcular horas restantes hasta la cita
-    const nowPeru = new Date(
-      new Date().toLocaleString('en-US', { timeZone: 'America/Lima' }),
-    );
+    const now = nowPeru();
     const scheduleDate = new Date(appointment.schedule.scheduleDate);
     const appointmentDateTime = new Date(
-      scheduleDate.getFullYear(),
-      scheduleDate.getMonth(),
-      scheduleDate.getDate(),
-      appointment.startTime.getHours(),
-      appointment.startTime.getMinutes(),
+      scheduleDate.getUTCFullYear(),
+      scheduleDate.getUTCMonth(),
+      scheduleDate.getUTCDate(),
+      appointment.startTime.getUTCHours(),
+      appointment.startTime.getUTCMinutes(),
     );
     const hoursUntilAppointment =
-      (appointmentDateTime.getTime() - nowPeru.getTime()) / (1000 * 60 * 60);
+      (appointmentDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
 
     let cancellationFee: number | undefined;
 

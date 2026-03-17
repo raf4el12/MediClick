@@ -9,18 +9,7 @@ import { ScheduleBlockResponseDto } from '../dto/schedule-block-response.dto.js'
 import type { IScheduleBlockRepository } from '../../domain/repositories/schedule-block.repository.js';
 import { UpdateScheduleBlockData } from '../../domain/interfaces/schedule-block-data.interface.js';
 import { ScheduleRegenerationService } from '../../../schedules/domain/services/schedule-regeneration.service.js';
-
-function timeStringToDate(time: string): Date {
-  const [hours, minutes] = time.split(':').map(Number);
-  return new Date(1970, 0, 1, hours, minutes, 0, 0);
-}
-
-function dateToTimeString(date: Date | null): string | null {
-  if (!date) return null;
-  const h = date.getHours().toString().padStart(2, '0');
-  const m = date.getMinutes().toString().padStart(2, '0');
-  return `${h}:${m}`;
-}
+import { timeStringToDate, dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
 
 @Injectable()
 export class UpdateScheduleBlockUseCase {
@@ -44,8 +33,8 @@ export class UpdateScheduleBlockUseCase {
 
     // Si el tipo final es TIME_RANGE, validar que se tengan las horas
     if (finalType === 'TIME_RANGE') {
-      const finalTimeFrom = dto.timeFrom !== undefined ? dto.timeFrom : dateToTimeString(existing.timeFrom);
-      const finalTimeTo = dto.timeTo !== undefined ? dto.timeTo : dateToTimeString(existing.timeTo);
+      const finalTimeFrom = dto.timeFrom !== undefined ? dto.timeFrom : (existing.timeFrom ? dateToTimeString(existing.timeFrom) : null);
+      const finalTimeTo = dto.timeTo !== undefined ? dto.timeTo : (existing.timeTo ? dateToTimeString(existing.timeTo) : null);
 
       if (!finalTimeFrom || !finalTimeTo) {
         throw new BadRequestException(
@@ -108,8 +97,8 @@ export class UpdateScheduleBlockUseCase {
       type: updated.type,
       startDate: updated.startDate,
       endDate: updated.endDate,
-      timeFrom: dateToTimeString(updated.timeFrom),
-      timeTo: dateToTimeString(updated.timeTo),
+      timeFrom: updated.timeFrom ? dateToTimeString(updated.timeFrom) : null,
+      timeTo: updated.timeTo ? dateToTimeString(updated.timeTo) : null,
       reason: updated.reason,
       isActive: updated.isActive,
       createdAt: updated.createdAt,

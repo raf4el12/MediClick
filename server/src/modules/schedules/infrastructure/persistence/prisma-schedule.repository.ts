@@ -9,6 +9,7 @@ import {
 } from '../../domain/interfaces/schedule-data.interface.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
+import { todayStartPeru, utcDayRange } from '../../../../shared/utils/date-time.utils.js';
 
 const scheduleInclude = {
   doctor: {
@@ -51,14 +52,7 @@ export class PrismaScheduleRepository implements IScheduleRepository {
     const { limit, offset, orderBy, orderByMode } = params;
 
     // Zona horaria Perú (UTC-5)
-    const nowPeru = new Date(
-      new Date().toLocaleString('en-US', { timeZone: 'America/Lima' }),
-    );
-    const todayStart = new Date(
-      nowPeru.getFullYear(),
-      nowPeru.getMonth(),
-      nowPeru.getDate(),
-    );
+    const todayStart = todayStartPeru();
 
     // Nunca devolver fechas pasadas: forzar dateFrom >= hoy
     const effectiveDateFrom =
@@ -167,16 +161,7 @@ export class PrismaScheduleRepository implements IScheduleRepository {
     date: Date,
     specialtyId?: number,
   ): Promise<ScheduleWithAvailability[]> {
-    const startOfDay = new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate(),
-    );
-    const endOfDay = new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate() + 1,
-    );
+    const { start: startOfDay, end: endOfDay } = utcDayRange(date);
 
     const rows = await this.prisma.schedules.findMany({
       where: {
@@ -212,15 +197,12 @@ export class PrismaScheduleRepository implements IScheduleRepository {
     date: Date,
     specialtyId: number,
   ): Promise<ScheduleWithBookedSlots[]> {
+    // Usar UTC para evitar desfase por timezone del servidor
     const startOfDay = new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate(),
+      Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
     );
     const endOfDay = new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate() + 1,
+      Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1),
     );
 
     const rows = await this.prisma.schedules.findMany({

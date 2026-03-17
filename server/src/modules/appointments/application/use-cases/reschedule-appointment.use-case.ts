@@ -10,17 +10,7 @@ import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type { IScheduleRepository } from '../../../schedules/domain/repositories/schedule.repository.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
-
-function parseHHmm(hhmm: string): Date {
-  const [hours, minutes] = hhmm.split(':').map(Number);
-  return new Date(1970, 0, 1, hours, minutes, 0, 0);
-}
-
-function dateToTimeString(date: Date): string {
-  const h = date.getHours().toString().padStart(2, '0');
-  const m = date.getMinutes().toString().padStart(2, '0');
-  return `${h}:${m}`;
-}
+import { parseHHmm, dateToTimeString, toMinutesUTC } from '../../../../shared/utils/date-time.utils.js';
 
 @Injectable()
 export class RescheduleAppointmentUseCase {
@@ -72,14 +62,10 @@ export class RescheduleAppointmentUseCase {
     const schedTimeFrom = new Date(newSchedule.timeFrom);
     const schedTimeTo = new Date(newSchedule.timeTo);
 
-    const schedFromMinutes =
-      schedTimeFrom.getHours() * 60 + schedTimeFrom.getMinutes();
-    const schedToMinutes =
-      schedTimeTo.getHours() * 60 + schedTimeTo.getMinutes();
-    const slotStartMinutes =
-      newStartTime.getHours() * 60 + newStartTime.getMinutes();
-    const slotEndMinutes =
-      newEndTime.getHours() * 60 + newEndTime.getMinutes();
+    const schedFromMinutes = toMinutesUTC(schedTimeFrom);
+    const schedToMinutes = toMinutesUTC(schedTimeTo);
+    const slotStartMinutes = toMinutesUTC(newStartTime);
+    const slotEndMinutes = toMinutesUTC(newEndTime);
 
     if (slotStartMinutes < schedFromMinutes || slotEndMinutes > schedToMinutes) {
       throw new BadRequestException(

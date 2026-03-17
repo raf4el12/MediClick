@@ -3,12 +3,7 @@ import { ScheduleResponseDto } from '../dto/schedule-response.dto.js';
 import { PaginatedScheduleResponseDto } from '../dto/paginated-schedule-response.dto.js';
 import type { IScheduleRepository } from '../../domain/repositories/schedule.repository.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
-
-function dateToTimeString(date: Date): string {
-  const h = date.getHours().toString().padStart(2, '0');
-  const m = date.getMinutes().toString().padStart(2, '0');
-  return `${h}:${m}`;
-}
+import { dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
 
 @Injectable()
 export class FindAllSchedulesUseCase {

@@ -11,6 +11,7 @@ import {
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
+import { utcDayRange } from '../../../../shared/utils/date-time.utils.js';
 
 const appointmentInclude = {
   patient: {
@@ -238,16 +239,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     doctorId: number,
     date: Date,
   ): Promise<AppointmentWithRelations[]> {
-    const startOfDay = new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate(),
-    );
-    const endOfDay = new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate() + 1,
-    );
+    const { start: startOfDay, end: endOfDay } = utcDayRange(date);
 
     const rows = await this.prisma.appointments.findMany({
       where: {
@@ -268,16 +260,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     doctorId: number,
     date: Date,
   ): Promise<number> {
-    const startOfDay = new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate(),
-    );
-    const endOfDay = new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate() + 1,
-    );
+    const { start: startOfDay, end: endOfDay } = utcDayRange(date);
 
     return this.prisma.appointments.count({
       where: {

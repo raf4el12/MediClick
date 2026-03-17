@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
@@ -39,6 +39,7 @@ function getTodayPeru(): string {
 
 export default function PatientBookView() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [activeStep, setActiveStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +49,7 @@ export default function PatientBookView() {
   const [selectedSpecialtyId, setSelectedSpecialtyId] = useState<number | null>(null);
   const [selectedDoctorId, setSelectedDoctorId] = useState<number | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [selectedSlotTime, setSelectedSlotTime] = useState<{ startTime: string; endTime: string } | null>(null);
+  const [selectedSlotTime, setSelectedSlotTime] = useState<{ scheduleId: number; startTime: string; endTime: string } | null>(null);
   const [reason, setReason] = useState('');
 
   // ── Specialties ──
@@ -105,39 +106,19 @@ export default function PatientBookView() {
   );
 
   // ── Time Slots ──
-  const duration = selectedSpecialty?.duration;
-  const daySchedules = useMemo(
-    () =>
-      selectedDate
-        ? schedules.filter((s) => (s.scheduleDate.split('T')[0] ?? s.scheduleDate) === selectedDate)
-        : [],
-    [schedules, selectedDate],
-  );
-
-  const shiftRange = useMemo(() => {
-    if (daySchedules.length === 0) return null;
-    const sorted = [...daySchedules].sort((a, b) => a.timeFrom.localeCompare(b.timeFrom));
-    return { start: sorted[0]!.timeFrom, end: sorted[sorted.length - 1]!.timeTo };
-  }, [daySchedules]);
-
   const { data: timeSlots = [], isLoading: loadingTimeSlots } = useQuery({
-    queryKey: ['time-slots', selectedDoctorId, selectedSpecialtyId, selectedDate, duration, shiftRange?.start, shiftRange?.end],
+    queryKey: ['time-slots', selectedDoctorId, selectedSpecialtyId, selectedDate],
     queryFn: () =>
       schedulesService.getTimeSlots({
         doctorId: selectedDoctorId!,
         specialtyId: selectedSpecialtyId!,
         date: selectedDate!,
-        timeFrom: shiftRange!.start,
-        timeTo: shiftRange!.end,
-        durationMinutes: duration!,
       }),
     enabled:
       selectedDate !== null &&
       selectedDoctorId !== null &&
-      selectedSpecialtyId !== null &&
-      duration !== undefined &&
-      shiftRange !== null,
-    staleTime: 2 * 60 * 1000,
+      selectedSpecialtyId !== null,
+    staleTime: 30 * 1000,
   });
 
   // Auto-select first available date
@@ -170,7 +151,7 @@ export default function PatientBookView() {
 
   const handleSelectSlot = (slot: TimeSlot) => {
     if (!slot.available) return;
-    setSelectedSlotTime({ startTime: slot.startTime, endTime: slot.endTime });
+    setSelectedSlotTime({ scheduleId: slot.scheduleId, startTime: slot.startTime, endTime: slot.endTime });
   };
 
   const handleBack = () => {
@@ -197,23 +178,30 @@ export default function PatientBookView() {
   const handleSubmit = async () => {
     if (!selectedSlotTime || !selectedSpecialtyId || !selectedDoctorId) return;
 
-    // Find the scheduleId for the selected date
-    const targetSchedule = daySchedules[0];
-    if (!targetSchedule) return;
-
     setSubmitting(true);
     setError(null);
     try {
       await appointmentsService.createAsPatient({
-        scheduleId: targetSchedule.id,
+        scheduleId: selectedSlotTime.scheduleId,
         startTime: selectedSlotTime.startTime,
         endTime: selectedSlotTime.endTime,
         reason: reason || undefined,
       });
       setSuccess(true);
     } catch (err: any) {
+      const status = err?.response?.status;
       const msg = err?.response?.data?.message;
-      setError(Array.isArray(msg) ? msg.join('. ') : msg || 'Error al reservar la cita');
+      const errorMsg = Array.isArray(msg) ? msg.join('. ') : msg || 'Error al reservar la cita';
+
+      // Si el slot ya fue tomado (409 Conflict), refrescar slots y volver al paso de horarios
+      if (status === 409) {
+        setSelectedSlotTime(null);
+        await queryClient.invalidateQueries({ queryKey: ['time-slots', selectedDoctorId, selectedSpecialtyId, selectedDate] });
+        setActiveStep(2);
+        setError('El horario seleccionado ya fue reservado. Por favor selecciona otro horario disponible.');
+      } else {
+        setError(errorMsg);
+      }
     } finally {
       setSubmitting(false);
     }

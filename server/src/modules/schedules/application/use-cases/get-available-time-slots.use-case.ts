@@ -10,28 +10,11 @@ import type { IScheduleRepository } from '../../domain/repositories/schedule.rep
 import type { ISpecialtyRepository } from '../../../specialties/domain/repositories/specialty.repository.js';
 import { TimeSlotCalculatorService } from '../../domain/services/time-slot-calculator.service.js';
 import type { ScheduleWithBookedSlots } from '../../domain/interfaces/schedule-data.interface.js';
-
-/**
- * Formatea un objeto Date como cadena HH:mm (extrae horas y minutos locales).
- */
-function formatHHmm(date: Date): string {
-  const h = date.getHours().toString().padStart(2, '0');
-  const m = date.getMinutes().toString().padStart(2, '0');
-  return `${h}:${m}`;
-}
-
-/**
- * Verifica si dos rangos de tiempo se superponen.
- * Usa la fórmula: A.start < B.end AND A.end > B.start
- */
-function rangesOverlap(
-  aStart: Date,
-  aEnd: Date,
-  bStart: Date,
-  bEnd: Date,
-): boolean {
-  return aStart.getTime() < bEnd.getTime() && aEnd.getTime() > bStart.getTime();
-}
+import {
+  dateToTimeString,
+  normalizeToTimeOnly,
+  timeRangesOverlap,
+} from '../../../../shared/utils/date-time.utils.js';
 
 /**
  * Use Case: Obtener time slots disponibles para un doctor en una fecha.
@@ -103,20 +86,21 @@ export class GetAvailableTimeSlotsUseCase {
     bufferMinutes: number,
   ): TimeSlotResponseDto[] {
     const theoreticalSlots = TimeSlotCalculatorService.generate(
-      schedule.timeFrom,
-      schedule.timeTo,
+      normalizeToTimeOnly(schedule.timeFrom),
+      normalizeToTimeOnly(schedule.timeTo),
       durationMinutes,
       bufferMinutes,
     );
 
     return theoreticalSlots.map((slot) => {
       const isOccupied = schedule.bookedSlots.some((booked) =>
-        rangesOverlap(slot.startTime, slot.endTime, booked.startTime, booked.endTime),
+        timeRangesOverlap(slot.startTime, slot.endTime, booked.startTime, booked.endTime),
       );
 
       return {
-        startTime: formatHHmm(slot.startTime),
-        endTime: formatHHmm(slot.endTime),
+        scheduleId: schedule.id,
+        startTime: dateToTimeString(slot.startTime),
+        endTime: dateToTimeString(slot.endTime),
         available: !isOccupied,
       };
     });

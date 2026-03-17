@@ -1,12 +1,7 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { PatientHistoryResponseDto } from '../dto/patient-history-response.dto.js';
 import type { IPatientRepository } from '../../domain/repositories/patient.repository.js';
-
-function dateToTimeString(date: Date): string {
-  const h = date.getHours().toString().padStart(2, '0');
-  const m = date.getMinutes().toString().padStart(2, '0');
-  return `${h}:${m}`;
-}
+import { dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
 
 @Injectable()
 export class GetPatientHistoryUseCase {

@@ -59,18 +59,18 @@ export class ScheduleRegenerationService {
   ): { year: number; month: number }[] {
     const months: { year: number; month: number }[] = [];
     const current = new Date(
-      dateFrom.getFullYear(),
-      dateFrom.getMonth(),
-      1,
+      Date.UTC(dateFrom.getUTCFullYear(), dateFrom.getUTCMonth(), 1),
     );
-    const end = new Date(dateTo.getFullYear(), dateTo.getMonth(), 1);
+    const end = new Date(
+      Date.UTC(dateTo.getUTCFullYear(), dateTo.getUTCMonth(), 1),
+    );
 
     while (current <= end) {
       months.push({
-        year: current.getFullYear(),
-        month: current.getMonth() + 1,
+        year: current.getUTCFullYear(),
+        month: current.getUTCMonth() + 1,
       });
-      current.setMonth(current.getMonth() + 1);
+      current.setUTCMonth(current.getUTCMonth() + 1);
     }
 
     return months;

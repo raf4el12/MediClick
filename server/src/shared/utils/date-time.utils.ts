@@ -1,0 +1,116 @@
+/**
+ * Utilidades centralizadas de fecha/hora para MediClick.
+ *
+ * CONVENCIÓN: Todos los DateTime tipo "hora" (timeFrom, timeTo, startTime, endTime)
+ * se almacenan en la BD como UTC con fecha base 1970-01-01.
+ * Ejemplo: "13:00" → 1970-01-01T13:00:00.000Z
+ *
+ * Para fechas reales (scheduleDate, holidays) se usan timestamps UTC del día.
+ * Ejemplo: "2026-03-19" → 2026-03-19T00:00:00.000Z
+ *
+ * La zona horaria de Perú (UTC-5) SOLO se usa para obtener "ahora" en hora local
+ * al validar anticipación mínima o fechas pasadas.
+ */
+
+// ── Conversión HH:mm ↔ Date UTC ──
+
+/**
+ * Convierte "HH:mm" → Date UTC con base 1970-01-01.
+ * Ejemplo: "13:00" → 1970-01-01T13:00:00.000Z
+ */
+export function parseHHmm(hhmm: string): Date {
+  const [hours, minutes] = hhmm.split(':').map(Number);
+  return new Date(Date.UTC(1970, 0, 1, hours ?? 0, minutes ?? 0, 0, 0));
+}
+
+/**
+ * Convierte un Date → "HH:mm" leyendo horas/minutos en UTC.
+ * Ejemplo: 1970-01-01T13:00:00.000Z → "13:00"
+ */
+export function dateToTimeString(date: Date): string {
+  const h = date.getUTCHours().toString().padStart(2, '0');
+  const m = date.getUTCMinutes().toString().padStart(2, '0');
+  return `${h}:${m}`;
+}
+
+/**
+ * Alias de parseHHmm para módulos que usaban `timeStringToDate`.
+ */
+export const timeStringToDate = parseHHmm;
+
+// ── Extracción de minutos ──
+
+/**
+ * Extrae minutos desde medianoche UTC. Ignora la fecha base.
+ * Ejemplo: 1970-01-01T13:30:00Z → 810
+ */
+export function toMinutesUTC(date: Date): number {
+  return date.getUTCHours() * 60 + date.getUTCMinutes();
+}
+
+// ── Normalización ──
+
+/**
+ * Normaliza cualquier Date a base 1970-01-01 UTC conservando solo HH:mm.
+ * Útil cuando la BD tiene fechas base inconsistentes (2026-* vs 1970-01-01).
+ */
+export function normalizeToTimeOnly(date: Date): Date {
+  return new Date(Date.UTC(1970, 0, 1, date.getUTCHours(), date.getUTCMinutes(), 0, 0));
+}
+
+// ── Comparación de rangos ──
+
+/**
+ * Verifica si dos rangos de tiempo se superponen comparando solo HH:mm UTC.
+ * Ignora la fecha base para evitar falsos negativos.
+ */
+export function timeRangesOverlap(
+  aStart: Date,
+  aEnd: Date,
+  bStart: Date,
+  bEnd: Date,
+): boolean {
+  const aS = toMinutesUTC(aStart);
+  const aE = toMinutesUTC(aEnd);
+  const bS = toMinutesUTC(bStart);
+  const bE = toMinutesUTC(bEnd);
+  return aS < bE && aE > bS;
+}
+
+// ── Rango de día UTC ──
+
+/**
+ * Calcula inicio y fin del día en UTC a partir de un Date.
+ * Ejemplo: 2026-03-19T05:00:00Z → { start: 2026-03-19T00:00:00Z, end: 2026-03-20T00:00:00Z }
+ */
+export function utcDayRange(date: Date): { start: Date; end: Date } {
+  const start = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  const end = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1));
+  return { start, end };
+}
+
+// ── Hora actual Perú ──
+
+/**
+ * Retorna la fecha/hora actual en zona horaria Perú (UTC-5).
+ * SOLO usar para validaciones de "ahora" (anticipación, fecha pasada).
+ */
+export function nowPeru(): Date {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Lima' }));
+}
+
+/**
+ * Retorna el inicio del día actual en hora Perú (como Date local).
+ */
+export function todayStartPeru(): Date {
+  const now = nowPeru();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+}
+
+/**
+ * Extrae la fecha (sin hora) de un Date UTC como Date local para comparación con todayStartPeru.
+ * Ejemplo: 2026-03-19T05:00:00Z → new Date(2026, 2, 19) en hora local
+ */
+export function scheduleDateToLocalDay(date: Date): Date {
+  return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}

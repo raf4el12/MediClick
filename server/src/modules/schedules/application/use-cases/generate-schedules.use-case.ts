@@ -71,16 +71,16 @@ export class GenerateSchedulesUseCase {
       };
     }
 
-    // Obtener días del mes
-    const daysInMonth = new Date(dto.year, dto.month, 0).getDate();
+    // Obtener días del mes (usar UTC para consistencia con la BD)
+    const daysInMonth = new Date(Date.UTC(dto.year, dto.month, 0)).getUTCDate();
     const dates: Date[] = [];
     for (let day = 1; day <= daysInMonth; day++) {
-      dates.push(new Date(dto.year, dto.month - 1, day));
+      dates.push(new Date(Date.UTC(dto.year, dto.month - 1, day)));
     }
 
     // Pre-cargar feriados del mes para evitar consultas repetidas
-    const monthStart = new Date(dto.year, dto.month - 1, 1);
-    const monthEnd = new Date(dto.year, dto.month - 1, daysInMonth);
+    const monthStart = new Date(Date.UTC(dto.year, dto.month - 1, 1));
+    const monthEnd = new Date(Date.UTC(dto.year, dto.month - 1, daysInMonth));
     const holidays = await this.holidayRepository.findByDateRange(
       monthStart,
       monthEnd,
@@ -134,75 +134,61 @@ export class GenerateSchedulesUseCase {
         }
 
         // Verificar si el día completo está bloqueado para este doctor
+        const dateMs = date.getTime();
         const isFullDayBlocked = scheduleBlocks.some((block) => {
           if (block.type !== 'FULL_DAY') return false;
-          const blockStart = new Date(
-            block.startDate.getFullYear(),
-            block.startDate.getMonth(),
-            block.startDate.getDate(),
+          const blockStart = Date.UTC(
+            block.startDate.getUTCFullYear(),
+            block.startDate.getUTCMonth(),
+            block.startDate.getUTCDate(),
           );
-          const blockEnd = new Date(
-            block.endDate.getFullYear(),
-            block.endDate.getMonth(),
-            block.endDate.getDate(),
+          const blockEnd = Date.UTC(
+            block.endDate.getUTCFullYear(),
+            block.endDate.getUTCMonth(),
+            block.endDate.getUTCDate(),
           );
-          const dateOnly = new Date(
-            date.getFullYear(),
-            date.getMonth(),
-            date.getDate(),
-          );
-          return dateOnly >= blockStart && dateOnly <= blockEnd;
+          return dateMs >= blockStart && dateMs <= blockEnd;
         });
 
         if (isFullDayBlocked) {
           continue;
         }
 
-        const jsDayOfWeek = date.getDay();
+        const jsDayOfWeek = date.getUTCDay();
         const dayOfWeek = JS_DAY_TO_ENUM[jsDayOfWeek];
 
         // Verificar vigencia y día de semana
         const matchingRules = availabilities.filter((a) => {
           if (a.dayOfWeek !== dayOfWeek) return false;
           if (!a.isAvailable) return false;
-          // Verificar que la fecha está dentro del rango de vigencia
-          const dateOnly = new Date(
-            date.getFullYear(),
-            date.getMonth(),
-            date.getDate(),
+          // Verificar que la fecha está dentro del rango de vigencia (todo en UTC)
+          const startMs = Date.UTC(
+            a.startDate.getUTCFullYear(),
+            a.startDate.getUTCMonth(),
+            a.startDate.getUTCDate(),
           );
-          const startOnly = new Date(
-            a.startDate.getFullYear(),
-            a.startDate.getMonth(),
-            a.startDate.getDate(),
+          const endMs = Date.UTC(
+            a.endDate.getUTCFullYear(),
+            a.endDate.getUTCMonth(),
+            a.endDate.getUTCDate(),
           );
-          const endOnly = new Date(
-            a.endDate.getFullYear(),
-            a.endDate.getMonth(),
-            a.endDate.getDate(),
-          );
-          return dateOnly >= startOnly && dateOnly <= endOnly;
+          return dateMs >= startMs && dateMs <= endMs;
         });
 
         // Recopilar bloqueos TIME_RANGE para este día
         const timeRangeBlocks = scheduleBlocks.filter((block) => {
           if (block.type !== 'TIME_RANGE') return false;
-          const blockStart = new Date(
-            block.startDate.getFullYear(),
-            block.startDate.getMonth(),
-            block.startDate.getDate(),
+          const blockStart = Date.UTC(
+            block.startDate.getUTCFullYear(),
+            block.startDate.getUTCMonth(),
+            block.startDate.getUTCDate(),
           );
-          const blockEnd = new Date(
-            block.endDate.getFullYear(),
-            block.endDate.getMonth(),
-            block.endDate.getDate(),
+          const blockEnd = Date.UTC(
+            block.endDate.getUTCFullYear(),
+            block.endDate.getUTCMonth(),
+            block.endDate.getUTCDate(),
           );
-          const dateOnly = new Date(
-            date.getFullYear(),
-            date.getMonth(),
-            date.getDate(),
-          );
-          return dateOnly >= blockStart && dateOnly <= blockEnd;
+          return dateMs >= blockStart && dateMs <= blockEnd;
         });
 
         for (const rule of matchingRules) {
