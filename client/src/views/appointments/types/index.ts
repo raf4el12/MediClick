@@ -89,3 +89,11 @@ export interface CreatePatientAppointmentPayload {
   endTime: string;    // HH:mm
   reason?: string;
 }
+
+export interface CreateOverbookPayload {
+  patientId: number;
+  doctorId: number;
+  specialtyId: number;
+  date: string;       // YYYY-MM-DD
+  reason?: string;
+}

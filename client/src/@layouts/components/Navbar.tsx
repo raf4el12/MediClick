@@ -32,6 +32,7 @@ const BadgeContentSpan = styled('span')(({ theme }) => ({
 
 const pageTitles: Record<string, string> = {
   '/': 'Dashboard',
+  '/doctor/appointments': 'Mis Citas de Hoy',
   '/appointments': 'Citas',
   '/patients': 'Pacientes',
   '/doctors': 'Doctores',

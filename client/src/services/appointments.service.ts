@@ -4,6 +4,7 @@ import type {
   Appointment,
   CreateAppointmentPayload,
   CreatePatientAppointmentPayload,
+  CreateOverbookPayload,
   CancelAppointmentPayload,
   RescheduleAppointmentPayload,
   AppointmentFilters,
@@ -86,6 +87,20 @@ export const appointmentsService = {
     const response = await api.patch<Appointment>(
       `/appointments/${id}/confirm`,
     );
+
+    return response.data;
+  },
+
+  // ── Doctor-specific endpoints ──
+
+  getDoctorDaily: async (): Promise<Appointment[]> => {
+    const response = await api.get<Appointment[]>('/appointments/doctor/today');
+
+    return response.data;
+  },
+
+  createOverbook: async (payload: CreateOverbookPayload): Promise<Appointment> => {
+    const response = await api.post<Appointment>('/appointments/overbook', payload);
 
     return response.data;
   },

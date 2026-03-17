@@ -81,6 +81,12 @@ const navigationItems: NavSection[] = [
     section: 'Gestión Médica',
     items: [
       {
+        title: 'Mis Citas Hoy',
+        path: '/doctor/appointments',
+        icon: 'ri-calendar-todo-line',
+        roles: [UserRole.DOCTOR],
+      },
+      {
         title: 'Citas',
         path: '/appointments',
         icon: 'ri-calendar-check-line',
