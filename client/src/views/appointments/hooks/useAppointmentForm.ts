@@ -10,22 +10,12 @@ import { patientsService } from '@/services/patients.service';
 import { createAppointmentThunk } from '@/redux-store/thunks/appointments.thunks';
 import type { Patient } from '@/views/patients/types';
 import { filterAvailableSlots } from '../functions/filterAvailableSlots';
+import { getTodayInTimezone } from '@/utils/timezone';
 
 interface UseAppointmentFormProps {
   open: boolean;
   onSuccess: () => void;
   onClose: () => void;
-}
-
-function getTodayPeru(): string {
-  const nowPeru = new Date(
-    new Date().toLocaleString('en-US', { timeZone: 'America/Lima' }),
-  );
-  const y = nowPeru.getFullYear();
-  const m = (nowPeru.getMonth() + 1).toString().padStart(2, '0');
-  const d = nowPeru.getDate().toString().padStart(2, '0');
-
-  return `${y}-${m}-${d}`;
 }
 
 export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentFormProps) {
@@ -71,8 +61,17 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
     staleTime: 5 * 60 * 1000,
   });
 
+  // Index maps for O(1) lookups (doctorMap antes de schedules para resolver timezone)
+  const specialtyMap = useMemo(() => new Map(specialties.map((s) => [s.id, s])), [specialties]);
+  const doctorMap = useMemo(() => new Map(doctors.map((d) => [d.id, d])), [doctors]);
+
+  // Derived: doctor seleccionado (necesario para timezone antes del query de schedules)
+  const selectedSpecialty = useMemo(() => specialtyMap.get(selectedSpecialtyId!) ?? null, [specialtyMap, selectedSpecialtyId]);
+  const selectedDoctor = useMemo(() => doctorMap.get(selectedDoctorId!) ?? null, [doctorMap, selectedDoctorId]);
+
   // ── React Query: Schedules por doctor + specialty ──
-  const today = getTodayPeru();
+  const doctorTimezone = selectedDoctor?.clinic?.timezone ?? 'America/Lima';
+  const today = getTodayInTimezone(doctorTimezone);
   const {
     data: schedules = [],
     isLoading: loadingSchedules,
@@ -89,20 +88,16 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
             onlyAvailable: true,
           },
         )
-        .then((res) => filterAvailableSlots(res.rows)),
+        .then((res) => filterAvailableSlots(res.rows, doctorTimezone)),
     enabled: open && selectedDoctorId !== null && selectedSpecialtyId !== null,
     staleTime: 2 * 60 * 1000,
   });
 
-  // Index maps for O(1) lookups
-  const specialtyMap = useMemo(() => new Map(specialties.map((s) => [s.id, s])), [specialties]);
-  const doctorMap = useMemo(() => new Map(doctors.map((d) => [d.id, d])), [doctors]);
+  // Remaining index maps (depend on schedules/patients data)
   const scheduleMap = useMemo(() => new Map(schedules.map((s) => [s.id, s])), [schedules]);
   const patientMap = useMemo(() => new Map(patients.map((p) => [p.id, p])), [patients]);
 
-  // Derived data for summary (memoized to avoid new refs each render)
-  const selectedSpecialty = useMemo(() => specialtyMap.get(selectedSpecialtyId!) ?? null, [specialtyMap, selectedSpecialtyId]);
-  const selectedDoctor = useMemo(() => doctorMap.get(selectedDoctorId!) ?? null, [doctorMap, selectedDoctorId]);
+  // Derived data for summary
   const selectedSchedule = useMemo(() => scheduleMap.get(selectedScheduleId!) ?? null, [scheduleMap, selectedScheduleId]);
   const selectedPatient = useMemo(() => patientMap.get(selectedPatientId!) ?? null, [patientMap, selectedPatientId]);
 

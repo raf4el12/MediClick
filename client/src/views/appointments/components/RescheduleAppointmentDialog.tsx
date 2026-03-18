@@ -12,6 +12,7 @@ import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import { schedulesService } from '@/services/schedules.service';
+import { getTodayInTimezone } from '@/utils/timezone';
 import type { Schedule } from '@/views/schedules/types';
 import type { Appointment } from '../types';
 
@@ -46,7 +47,7 @@ export function RescheduleAppointmentDialog({
   useEffect(() => {
     if (!open || !appointment) return;
     setLoading(true);
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayInTimezone(appointment.timezone);
     schedulesService
       .findAllPaginated(
         { pageSize: 100 },

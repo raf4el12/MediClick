@@ -1,4 +1,5 @@
 import type { Schedule } from '@/views/schedules/types';
+import { nowInTimezone } from '@/utils/timezone';
 
 /** Buffer mínimo en minutos antes de poder agendar */
 const MIN_BUFFER_MINUTES = 120; // 2 horas
@@ -9,13 +10,11 @@ const MIN_BUFFER_MINUTES = 120; // 2 horas
  * - Si la fecha es hoy, descarta horarios cuyo inicio sea menor
  *   a la hora actual + buffer de 2 horas
  *
- * Usa hora local de Perú (UTC-5) para las comparaciones.
+ * Usa la zona horaria IANA del doctor/clínica para las comparaciones.
  */
-export function filterAvailableSlots(schedules: Schedule[]): Schedule[] {
-  const nowPeru = new Date(
-    new Date().toLocaleString('en-US', { timeZone: 'America/Lima' }),
-  );
-  const todayStr = formatDateStr(nowPeru);
+export function filterAvailableSlots(schedules: Schedule[], timezone: string): Schedule[] {
+  const now = nowInTimezone(timezone);
+  const todayStr = formatDateStr(now);
 
   return schedules.filter((slot) => {
     const slotDateStr = slot.scheduleDate.split('T')[0] ?? slot.scheduleDate;
@@ -27,7 +26,7 @@ export function filterAvailableSlots(schedules: Schedule[]): Schedule[] {
     if (slotDateStr === todayStr) {
       const [h, m] = slot.timeFrom.split(':').map(Number);
       const slotMinutes = (h ?? 0) * 60 + (m ?? 0);
-      const nowMinutes = nowPeru.getHours() * 60 + nowPeru.getMinutes();
+      const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
       return slotMinutes - nowMinutes >= MIN_BUFFER_MINUTES;
     }

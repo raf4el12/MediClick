@@ -7,6 +7,7 @@ import { doctorsService } from '@/services/doctors.service';
 import { specialtiesService } from '@/services/specialties.service';
 import { appointmentsService } from '@/services/appointments.service';
 import { reportsService } from '@/services/reports.service';
+import { getTodayInTimezone, nowInTimezone } from '@/utils/timezone';
 import type { AppointmentsSummary, ScheduleOccupancy } from '@/views/reports/types';
 
 interface DashboardStats {
@@ -23,12 +24,13 @@ interface DashboardData {
   loading: boolean;
 }
 
-const now = new Date();
-const today = now.toISOString().split('T')[0]!;
-const month = now.getMonth() + 1;
-const year = now.getFullYear();
+const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 export function useDashboard(): DashboardData {
+  const today = getTodayInTimezone(browserTz);
+  const now = nowInTimezone(browserTz);
+  const month = now.getMonth() + 1;
+  const year = now.getFullYear();
   const results = useQueries({
     queries: [
       {

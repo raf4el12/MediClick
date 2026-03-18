@@ -2,7 +2,7 @@ import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type { IDoctorRepository } from '../../../doctors/domain/repositories/doctor.repository.js';
-import { dateToTimeString, nowInTimezone } from '../../../../shared/utils/date-time.utils.js';
+import { dateToTimeString, todayStartInTimezone } from '../../../../shared/utils/date-time.utils.js';
 import { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
 
 @Injectable()
@@ -24,7 +24,7 @@ export class GetDoctorDailyAppointmentsUseCase {
     }
 
     const tz = await this.timezoneResolver.resolveByDoctorId(doctorId);
-    const today = nowInTimezone(tz);
+    const today = todayStartInTimezone(tz);
     const appointments = await this.appointmentRepository.findByDoctorAndDate(
       doctorId,
       today,

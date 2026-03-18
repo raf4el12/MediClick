@@ -11,7 +11,7 @@ import {
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
-import { utcDayRange } from '../../../../shared/utils/date-time.utils.js';
+import { utcDayRange, todayStartInTimezone } from '../../../../shared/utils/date-time.utils.js';
 
 const appointmentInclude = {
   patient: {
@@ -137,7 +137,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       deleted: false,
       ...(filters.status && { status: filters.status }),
       ...(filters.upcoming && {
-        schedule: { scheduleDate: { gte: new Date() } },
+        schedule: { scheduleDate: { gte: todayStartInTimezone('UTC') } },
         status: filters.status || { notIn: ['CANCELLED', 'NO_SHOW'] },
       }),
     };

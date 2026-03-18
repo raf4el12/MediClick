@@ -92,24 +92,63 @@ export function utcDayRange(date: Date): { start: Date; end: Date } {
 // ── Hora actual paramétrica por timezone ──
 
 /**
- * Retorna la fecha/hora actual en la zona horaria IANA indicada.
+ * Extrae componentes de fecha/hora de un instante en la zona horaria indicada.
+ * Usa Intl.DateTimeFormat.formatToParts — determinista e independiente del
+ * TZ del servidor y de Date.parse.
+ */
+function tzParts(tz: string, date: Date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).formatToParts(date);
+  const get = (type: string) =>
+    Number(parts.find((p) => p.type === type)!.value);
+  const hour = get('hour');
+  return {
+    year: get('year'),
+    month: get('month') - 1, // 0-indexed para Date constructors
+    day: get('day'),
+    hour: hour === 24 ? 0 : hour, // midnight puede ser 24 en algunas implementaciones
+    minute: get('minute'),
+    second: get('second'),
+  };
+}
+
+/**
+ * Retorna la fecha/hora actual como "reloj de pared" en la zona horaria IANA
+ * indicada. Los métodos locales del Date retornado (getFullYear, getHours, etc.)
+ * devuelven los valores del reloj de pared en la zona solicitada.
+ *
+ * IMPORTANTE: El valor UTC interno no representa el instante real; usar solo
+ * con accesores locales (getHours, getMinutes, etc.) para comparaciones
+ * wall-clock, NUNCA para queries a base de datos — para eso usar
+ * todayStartInTimezone().
  */
 export function nowInTimezone(tz: string): Date {
-  return new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
+  const { year, month, day, hour, minute, second } = tzParts(tz);
+  return new Date(year, month, day, hour, minute, second);
 }
 
 /**
- * Retorna el inicio del día actual en la zona horaria indicada.
+ * Retorna el inicio del día actual en la zona horaria indicada como UTC midnight.
+ * El Date resultante tiene getUTCFullYear/Month/Date correctos y es apto para
+ * comparar contra fechas almacenadas en la BD (que usan convención midnight UTC).
  */
 export function todayStartInTimezone(tz: string): Date {
-  const now = nowInTimezone(tz);
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const { year, month, day } = tzParts(tz);
+  return new Date(Date.UTC(year, month, day));
 }
 
 /**
- * Extrae la fecha (sin hora) de un Date UTC como Date local para comparación.
- * Ejemplo: 2026-03-19T05:00:00Z → new Date(2026, 2, 19) en hora local
+ * Normaliza un Date (schedule/appointment date) a midnight UTC del mismo día UTC.
+ * Apto para comparar contra todayStartInTimezone() via getTime().
  */
 export function scheduleDateToLocalDay(date: Date): Date {
-  return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 }

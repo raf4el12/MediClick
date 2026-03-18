@@ -25,22 +25,22 @@ export class PrismaReportRepository implements IReportRepository {
 
   async getWeeklyAppointments(): Promise<WeeklyAppointmentReport[]> {
     const now = new Date();
-    const dayOfWeek = now.getDay();
-    // Lunes de esta semana
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - ((dayOfWeek + 6) % 7));
-    monday.setHours(0, 0, 0, 0);
-    // Domingo de esta semana
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 7);
+    const dayOfWeek = now.getUTCDay();
+    // Lunes de esta semana (UTC)
+    const mondayOffset = (dayOfWeek + 6) % 7;
+    const monday = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - mondayOffset),
+    );
 
     const results: WeeklyAppointmentReport[] = [];
 
     for (let i = 0; i < 7; i++) {
-      const dayStart = new Date(monday);
-      dayStart.setDate(monday.getDate() + i);
-      const dayEnd = new Date(dayStart);
-      dayEnd.setDate(dayStart.getDate() + 1);
+      const dayStart = new Date(
+        Date.UTC(monday.getUTCFullYear(), monday.getUTCMonth(), monday.getUTCDate() + i),
+      );
+      const dayEnd = new Date(
+        Date.UTC(monday.getUTCFullYear(), monday.getUTCMonth(), monday.getUTCDate() + i + 1),
+      );
 
       const count = await this.prisma.appointments.count({
         where: {
@@ -52,7 +52,7 @@ export class PrismaReportRepository implements IReportRepository {
       });
 
       results.push({
-        dayOfWeek: DAY_NAMES[dayStart.getDay()],
+        dayOfWeek: DAY_NAMES[dayStart.getUTCDay()],
         date: dayStart.toISOString().split('T')[0],
         count,
       });
@@ -62,8 +62,8 @@ export class PrismaReportRepository implements IReportRepository {
   }
 
   async getRevenue(month: number, year: number): Promise<RevenueReport> {
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 1);
+    const startDate = new Date(Date.UTC(year, month - 1, 1));
+    const endDate = new Date(Date.UTC(year, month, 1));
 
     // Ingresos proyectados: sum appointment.amount donde no están canceladas
     const projectedResult = await this.prisma.appointments.aggregate({
@@ -106,8 +106,8 @@ export class PrismaReportRepository implements IReportRepository {
     year: number,
     limit: number,
   ): Promise<TopDoctorReport[]> {
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 1);
+    const startDate = new Date(Date.UTC(year, month - 1, 1));
+    const endDate = new Date(Date.UTC(year, month, 1));
 
     // Group appointments by doctorId (via schedule), filter COMPLETED
     const completedAppointments = await this.prisma.appointments.findMany({
@@ -188,8 +188,8 @@ export class PrismaReportRepository implements IReportRepository {
     month: number,
     year: number,
   ): Promise<AppointmentsSummaryReport> {
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 1);
+    const startDate = new Date(Date.UTC(year, month - 1, 1));
+    const endDate = new Date(Date.UTC(year, month, 1));
 
     // Agrupar por status
     const grouped = await this.prisma.appointments.groupBy({
@@ -244,8 +244,8 @@ export class PrismaReportRepository implements IReportRepository {
     month: number,
     year: number,
   ): Promise<ScheduleOccupancyReport> {
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 1);
+    const startDate = new Date(Date.UTC(year, month - 1, 1));
+    const endDate = new Date(Date.UTC(year, month, 1));
 
     const totalSlots = await this.prisma.schedules.count({
       where: {

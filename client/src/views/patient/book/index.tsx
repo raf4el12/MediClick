@@ -23,19 +23,10 @@ import { doctorsService } from '@/services/doctors.service';
 import { schedulesService } from '@/services/schedules.service';
 import { appointmentsService } from '@/services/appointments.service';
 import { filterAvailableSlots } from '@/views/appointments/functions/filterAvailableSlots';
+import { getTodayInTimezone } from '@/utils/timezone';
 import type { TimeSlot } from '@/views/schedules/types';
 
 const steps = ['Especialidad', 'Doctor', 'Fecha y Hora', 'Confirmar'];
-
-function getTodayPeru(): string {
-  const nowPeru = new Date(
-    new Date().toLocaleString('en-US', { timeZone: 'America/Lima' }),
-  );
-  const y = nowPeru.getFullYear();
-  const m = (nowPeru.getMonth() + 1).toString().padStart(2, '0');
-  const d = nowPeru.getDate().toString().padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
 
 export default function PatientBookView() {
   const router = useRouter();
@@ -67,8 +58,19 @@ export default function PatientBookView() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Derived (antes de schedules para resolver timezone del doctor)
+  const selectedSpecialty = useMemo(
+    () => specialties.find((s) => s.id === selectedSpecialtyId) ?? null,
+    [specialties, selectedSpecialtyId],
+  );
+  const selectedDoctor = useMemo(
+    () => doctors.find((d) => d.id === selectedDoctorId) ?? null,
+    [doctors, selectedDoctorId],
+  );
+
   // ── Schedules ──
-  const today = getTodayPeru();
+  const doctorTimezone = selectedDoctor?.clinic?.timezone ?? 'America/Lima';
+  const today = getTodayInTimezone(doctorTimezone);
   const { data: schedules = [], isLoading: loadingSchedules } = useQuery({
     queryKey: ['schedules', 'patient-available', selectedDoctorId, selectedSpecialtyId, today],
     queryFn: () =>
@@ -82,20 +84,10 @@ export default function PatientBookView() {
             onlyAvailable: true,
           },
         )
-        .then((r) => filterAvailableSlots(r.rows)),
+        .then((r) => filterAvailableSlots(r.rows, doctorTimezone)),
     enabled: selectedDoctorId !== null && selectedSpecialtyId !== null,
     staleTime: 2 * 60 * 1000,
   });
-
-  // Derived
-  const selectedSpecialty = useMemo(
-    () => specialties.find((s) => s.id === selectedSpecialtyId) ?? null,
-    [specialties, selectedSpecialtyId],
-  );
-  const selectedDoctor = useMemo(
-    () => doctors.find((d) => d.id === selectedDoctorId) ?? null,
-    [doctors, selectedDoctorId],
-  );
 
   const availableDates = useMemo(
     () =>

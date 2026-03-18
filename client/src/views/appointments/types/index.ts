@@ -50,6 +50,7 @@ export interface Appointment {
   isOverbook: boolean;
   patient: AppointmentPatient;
   schedule: AppointmentSchedule;
+  timezone: string;     // IANA timezone de la clínica del doctor
   createdAt: string;
 }
 

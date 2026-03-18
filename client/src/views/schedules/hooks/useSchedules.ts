@@ -16,8 +16,11 @@ import {
   fetchSchedulesDoctorsThunk,
   generateSchedulesThunk,
 } from '@/redux-store/thunks/schedules.thunks';
+import { nowInTimezone } from '@/utils/timezone';
 import type { Schedule, GenerateSchedulesPayload } from '../types';
 import { formatDateKey, getWeekStart, getWeekDays } from '../types';
+
+const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 export function useSchedules() {
   const dispatch = useAppDispatch();
@@ -29,15 +32,15 @@ export function useSchedules() {
   const generateResult = useAppSelector(selectSchedulesGenerateResult);
   const error = useAppSelector(selectSchedulesError);
 
-  // Week-based state
-  const [weekStart, setWeekStart] = useState(() => getWeekStart(new Date()));
+  // Week-based state (usa timezone del navegador para determinar "hoy")
+  const [weekStart, setWeekStart] = useState(() => getWeekStart(nowInTimezone(browserTz)));
   const [selectedDoctorId, setSelectedDoctorId] = useState<number | ''>('');
   const [selectedSpecialtyId, setSelectedSpecialtyId] = useState<number | ''>('');
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
   const [generateSuccess, setGenerateSuccess] = useState(false);
 
   // Selected day for "all doctors" mode
-  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(() => nowInTimezone(browserTz));
 
   // Derive week days
   const weekDays = useMemo(() => getWeekDays(weekStart), [weekStart]);
@@ -94,7 +97,7 @@ export function useSchedules() {
   }, []);
 
   const goToToday = useCallback(() => {
-    const today = new Date();
+    const today = nowInTimezone(browserTz);
     setWeekStart(getWeekStart(today));
     setSelectedDate(today);
   }, []);
