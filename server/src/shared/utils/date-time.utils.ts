@@ -89,26 +89,25 @@ export function utcDayRange(date: Date): { start: Date; end: Date } {
   return { start, end };
 }
 
-// ── Hora actual Perú ──
+// ── Hora actual paramétrica por timezone ──
 
 /**
- * Retorna la fecha/hora actual en zona horaria Perú (UTC-5).
- * SOLO usar para validaciones de "ahora" (anticipación, fecha pasada).
+ * Retorna la fecha/hora actual en la zona horaria IANA indicada.
  */
-export function nowPeru(): Date {
-  return new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Lima' }));
+export function nowInTimezone(tz: string): Date {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: tz }));
 }
 
 /**
- * Retorna el inicio del día actual en hora Perú (como Date local).
+ * Retorna el inicio del día actual en la zona horaria indicada.
  */
-export function todayStartPeru(): Date {
-  const now = nowPeru();
+export function todayStartInTimezone(tz: string): Date {
+  const now = nowInTimezone(tz);
   return new Date(now.getFullYear(), now.getMonth(), now.getDate());
 }
 
 /**
- * Extrae la fecha (sin hora) de un Date UTC como Date local para comparación con todayStartPeru.
+ * Extrae la fecha (sin hora) de un Date UTC como Date local para comparación.
  * Ejemplo: 2026-03-19T05:00:00Z → new Date(2026, 2, 19) en hora local
  */
 export function scheduleDateToLocalDay(date: Date): Date {

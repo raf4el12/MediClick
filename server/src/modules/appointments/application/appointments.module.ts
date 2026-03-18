@@ -5,6 +5,7 @@ import { DoctorsModule } from '../../doctors/application/doctors.module.js';
 import { HolidaysModule } from '../../holidays/application/holidays.module.js';
 import { ScheduleBlocksModule } from '../../schedule-blocks/application/schedule-blocks.module.js';
 import { SpecialtiesModule } from '../../specialties/application/specialties.module.js';
+import { ClinicsModule } from '../../clinics/application/clinics.module.js';
 import { PrismaAppointmentRepository } from '../infrastructure/persistence/prisma-appointment.repository.js';
 import { CreateAppointmentUseCase } from './use-cases/create-appointment.use-case.js';
 import { GetDashboardAppointmentsUseCase } from './use-cases/get-dashboard-appointments.use-case.js';
@@ -27,6 +28,7 @@ import { AppointmentController } from '../interfaces/controllers/appointment.con
     HolidaysModule,
     ScheduleBlocksModule,
     SpecialtiesModule,
+    ClinicsModule,
   ],
   controllers: [AppointmentController],
   providers: [

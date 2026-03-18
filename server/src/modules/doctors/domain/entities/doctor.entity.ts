@@ -4,6 +4,7 @@ export class DoctorEntity {
   licenseNumber: string;
   resume: string | null;
   maxOverbookPerDay: number;
+  clinicId: number | null;
   isActive: boolean;
   deleted: boolean;
   createdAt: Date;

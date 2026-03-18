@@ -157,6 +157,12 @@ const navigationItems: NavSection[] = [
     section: 'Configuración',
     items: [
       {
+        title: 'Sedes',
+        path: '/clinics',
+        icon: 'ri-building-line',
+        roles: [UserRole.ADMIN],
+      },
+      {
         title: 'Especialidades',
         path: '/specialties',
         icon: 'ri-heart-pulse-line',

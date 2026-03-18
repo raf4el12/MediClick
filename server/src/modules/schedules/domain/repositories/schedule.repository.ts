@@ -17,6 +17,7 @@ export interface IScheduleRepository {
       dateFrom?: Date;
       dateTo?: Date;
       onlyAvailable?: boolean;
+      timezone?: string;
     },
   ): Promise<PaginatedResult<ScheduleWithRelations>>;
   findById(id: number): Promise<ScheduleWithRelations | null>;

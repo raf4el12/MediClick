@@ -14,7 +14,8 @@ import {
   MIN_CANCELLATION_HOURS_PATIENT,
   CANCELLATION_FEE_PERCENTAGE,
 } from '../../domain/constants/cancellation-policy.constants.js';
-import { dateToTimeString, nowPeru } from '../../../../shared/utils/date-time.utils.js';
+import { dateToTimeString, nowInTimezone } from '../../../../shared/utils/date-time.utils.js';
+import { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
 
 @Injectable()
 export class CancelAppointmentUseCase {
@@ -23,6 +24,7 @@ export class CancelAppointmentUseCase {
     private readonly appointmentRepository: IAppointmentRepository,
     @Inject('ISpecialtyRepository')
     private readonly specialtyRepository: ISpecialtyRepository,
+    private readonly timezoneResolver: TimezoneResolverService,
   ) {}
 
   async execute(
@@ -45,8 +47,9 @@ export class CancelAppointmentUseCase {
       );
     }
 
-    // Calcular horas restantes hasta la cita
-    const now = nowPeru();
+    // Calcular horas restantes hasta la cita (zona horaria de la sede del doctor)
+    const tz = await this.timezoneResolver.resolveByDoctorId(appointment.schedule.doctor.id);
+    const now = nowInTimezone(tz);
     const scheduleDate = new Date(appointment.schedule.scheduleDate);
     const appointmentDateTime = new Date(
       scheduleDate.getUTCFullYear(),
@@ -120,6 +123,7 @@ export class CancelAppointmentUseCase {
         },
         specialty: a.schedule.specialty,
       },
+      timezone: a.schedule.doctor.clinic?.timezone ?? 'America/Lima',
       createdAt: a.createdAt,
     };
   }

@@ -34,11 +34,12 @@ export class UpdateDoctorUseCase {
             };
         }
 
-        if (dto.licenseNumber || dto.resume !== undefined || dto.maxOverbookPerDay !== undefined) {
+        if (dto.licenseNumber || dto.resume !== undefined || dto.maxOverbookPerDay !== undefined || dto.clinicId !== undefined) {
             updateData.doctor = {
                 ...(dto.licenseNumber && { licenseNumber: dto.licenseNumber }),
                 ...(dto.resume !== undefined && { resume: dto.resume }),
                 ...(dto.maxOverbookPerDay !== undefined && { maxOverbookPerDay: dto.maxOverbookPerDay }),
+                ...(dto.clinicId !== undefined && { clinicId: dto.clinicId }),
             };
         }
 
@@ -53,6 +54,8 @@ export class UpdateDoctorUseCase {
             licenseNumber: updated.licenseNumber,
             resume: updated.resume,
             maxOverbookPerDay: updated.maxOverbookPerDay,
+            clinicId: updated.clinicId,
+            clinic: updated.clinic,
             isActive: updated.isActive,
             createdAt: updated.createdAt,
             profile: {

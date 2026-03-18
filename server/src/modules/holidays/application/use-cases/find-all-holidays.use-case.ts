@@ -35,6 +35,7 @@ export class FindAllHolidaysUseCase {
       year: h.year,
       isRecurring: h.isRecurring,
       isActive: h.isActive,
+      clinicId: h.clinicId,
       createdAt: h.createdAt,
     }));
 

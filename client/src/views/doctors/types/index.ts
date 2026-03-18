@@ -18,10 +18,19 @@ export interface DoctorSpecialty {
   name: string;
 }
 
+export interface DoctorClinic {
+  id: number;
+  name: string;
+  timezone: string;
+  currency: string;
+}
+
 export interface Doctor {
   id: number;
   licenseNumber: string;
   resume: string | null;
+  clinicId: number | null;
+  clinic: DoctorClinic | null;
   isActive: boolean;
   createdAt: string;
   profile: DoctorProfile;
@@ -43,6 +52,7 @@ export interface OnboardDoctorPayload {
   };
   cmp: string;
   resume?: string;
+  clinicId?: number;
   specialtyIds: number[];
 }
 
@@ -53,5 +63,6 @@ export interface UpdateDoctorPayload {
   gender?: string;
   licenseNumber?: string;
   resume?: string;
+  clinicId?: number;
   specialtyIds?: number[];
 }

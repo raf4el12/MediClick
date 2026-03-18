@@ -4,6 +4,7 @@ import { AvailabilityModule } from '../../availability/application/availability.
 import { SpecialtiesModule } from '../../specialties/application/specialties.module.js';
 import { HolidaysModule } from '../../holidays/application/holidays.module.js';
 import { ScheduleBlocksModule } from '../../schedule-blocks/application/schedule-blocks.module.js';
+import { ClinicsModule } from '../../clinics/application/clinics.module.js';
 import { PrismaScheduleRepository } from '../infrastructure/persistence/prisma-schedule.repository.js';
 import { GenerateSchedulesUseCase } from './use-cases/generate-schedules.use-case.js';
 import { FindAllSchedulesUseCase } from './use-cases/find-all-schedules.use-case.js';
@@ -18,6 +19,7 @@ import { ScheduleController } from '../interfaces/controllers/schedule.controlle
     SpecialtiesModule,
     HolidaysModule,
     forwardRef(() => ScheduleBlocksModule),
+    ClinicsModule,
   ],
   controllers: [ScheduleController],
   providers: [

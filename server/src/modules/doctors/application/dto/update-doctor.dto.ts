@@ -41,6 +41,14 @@ export class UpdateDoctorDto {
     @IsOptional()
     maxOverbookPerDay?: number;
 
+    @ApiPropertyOptional({
+      example: 1,
+      description: 'ID de la sede a la que pertenece el doctor',
+    })
+    @IsInt()
+    @IsOptional()
+    clinicId?: number;
+
     @ApiPropertyOptional({ example: [1, 2], type: [Number] })
     @IsArray()
     @IsNumber({}, { each: true })

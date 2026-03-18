@@ -20,6 +20,9 @@ const doctorInclude = {
       user: { select: { id: true, name: true, email: true } },
     },
   },
+  clinic: {
+    select: { id: true, name: true, timezone: true, currency: true },
+  },
   specialties: {
     where: { deleted: false },
     select: {
@@ -60,6 +63,7 @@ export class PrismaDoctorRepository implements IDoctorRepository {
           profileId: profile.id,
           licenseNumber: data.doctor.licenseNumber,
           resume: data.doctor.resume,
+          clinicId: data.doctor.clinicId,
         },
       });
 

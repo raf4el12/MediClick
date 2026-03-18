@@ -3,6 +3,7 @@ export interface CreateHolidayData {
   date: Date;
   year: number;
   isRecurring?: boolean;
+  clinicId?: number;
 }
 
 export interface UpdateHolidayData {

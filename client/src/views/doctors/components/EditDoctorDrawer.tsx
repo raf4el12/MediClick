@@ -23,6 +23,7 @@ import { z } from 'zod';
 import { doctorsService } from '@/services/doctors.service';
 import type { Doctor } from '../types';
 import type { Specialty } from '@/views/specialties/types';
+import type { Clinic } from '@/views/clinics/types';
 
 const PHONE_REGEX = /^9\d{8}$/;
 const CMP_REGEX = /^\d{5,6}$/;
@@ -41,6 +42,7 @@ const editDoctorSchema = z.object({
         .min(1, 'El CMP es obligatorio')
         .regex(CMP_REGEX, 'El CMP debe tener 5 o 6 dígitos'),
     resume: z.string().max(1000).optional().or(z.literal('')),
+    clinicId: z.number().int().optional(),
     specialtyIds: z.array(z.number().int()).min(1, 'Debe seleccionar al menos una especialidad'),
 });
 
@@ -50,13 +52,14 @@ interface EditDoctorDrawerProps {
     open: boolean;
     doctor: Doctor | null;
     specialties: Specialty[];
+    clinics: Clinic[];
     onClose: () => void;
     onSuccess: () => void;
 }
 
 const KEEP_MOUNTED = { keepMounted: true };
 
-export function EditDoctorDrawer({ open, doctor, specialties, onClose, onSuccess }: EditDoctorDrawerProps) {
+export function EditDoctorDrawer({ open, doctor, specialties, clinics, onClose, onSuccess }: EditDoctorDrawerProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -74,6 +77,7 @@ export function EditDoctorDrawer({ open, doctor, specialties, onClose, onSuccess
             gender: '',
             licenseNumber: '',
             resume: '',
+            clinicId: undefined,
             specialtyIds: [],
         },
     });
@@ -87,6 +91,7 @@ export function EditDoctorDrawer({ open, doctor, specialties, onClose, onSuccess
                 gender: doctor.profile.gender ?? '',
                 licenseNumber: doctor.licenseNumber,
                 resume: doctor.resume ?? '',
+                clinicId: doctor.clinicId ?? undefined,
                 specialtyIds: doctor.specialties.map((s) => s.id),
             });
             setSubmitError(null);
@@ -105,6 +110,7 @@ export function EditDoctorDrawer({ open, doctor, specialties, onClose, onSuccess
                 gender: values.gender || undefined,
                 licenseNumber: values.licenseNumber,
                 resume: values.resume || undefined,
+                clinicId: values.clinicId,
                 specialtyIds: values.specialtyIds,
             });
             onSuccess();
@@ -241,6 +247,33 @@ export function EditDoctorDrawer({ open, doctor, specialties, onClose, onSuccess
                         />
                     )}
                 />
+
+                <FormControl fullWidth>
+                    <InputLabel id="edit-doctor-clinic-label">Sede</InputLabel>
+                    <Controller
+                        name="clinicId"
+                        control={control}
+                        render={({ field }) => (
+                            <Select
+                                {...field}
+                                labelId="edit-doctor-clinic-label"
+                                label="Sede"
+                                value={field.value ?? ''}
+                                onChange={(e) => {
+                                    const v = e.target.value as string | number;
+                                    field.onChange(v === '' ? undefined : Number(v));
+                                }}
+                            >
+                                <MenuItem value="">Sin asignar</MenuItem>
+                                {clinics.map((c) => (
+                                    <MenuItem key={c.id} value={c.id}>
+                                        {c.name} ({c.timezone})
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        )}
+                    />
+                </FormControl>
 
                 <FormControl fullWidth error={!!errors.specialtyIds}>
                     <InputLabel id="edit-doctor-specialties-label">Especialidades *</InputLabel>

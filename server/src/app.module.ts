@@ -6,6 +6,7 @@ import { AuthModule } from './modules/auth/application/auth.module.js';
 import { UsersModule } from './modules/users/application/users.module.js';
 import { CategoriesModule } from './modules/categories/application/categories.module.js';
 import { SpecialtiesModule } from './modules/specialties/application/specialties.module.js';
+import { ClinicsModule } from './modules/clinics/application/clinics.module.js';
 import { DoctorsModule } from './modules/doctors/application/doctors.module.js';
 import { AvailabilityModule } from './modules/availability/application/availability.module.js';
 import { SchedulesModule } from './modules/schedules/application/schedules.module.js';
@@ -28,6 +29,7 @@ import { ScheduleBlocksModule } from './modules/schedule-blocks/application/sche
     UsersModule,
     CategoriesModule,
     SpecialtiesModule,
+    ClinicsModule,
     DoctorsModule,
     AvailabilityModule,
     SchedulesModule,

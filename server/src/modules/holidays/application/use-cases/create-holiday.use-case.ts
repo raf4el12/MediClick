@@ -22,6 +22,7 @@ export class CreateHolidayUseCase {
       date: parsedDate,
       year,
       isRecurring: dto.isRecurring ?? false,
+      clinicId: dto.clinicId,
     });
 
     // Si es recurrente, propagar a todos los años que ya tienen feriados sembrados
@@ -35,6 +36,7 @@ export class CreateHolidayUseCase {
           date: new Date(Date.UTC(y, month, day, 12, 0, 0)),
           year: y,
           isRecurring: true,
+          clinicId: dto.clinicId,
         }));
         await this.holidayRepository.createMany(copies);
       }
@@ -47,6 +49,7 @@ export class CreateHolidayUseCase {
       year: holiday.year,
       isRecurring: holiday.isRecurring,
       isActive: holiday.isActive,
+      clinicId: holiday.clinicId,
       createdAt: holiday.createdAt,
     };
   }

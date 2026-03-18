@@ -4,12 +4,14 @@ import { useEffect, useState, useCallback } from 'react';
 import { isAxiosError } from 'axios';
 
 import { holidaysService } from '@/services/holidays.service';
+import { clinicsService } from '@/services/clinics.service';
 import type {
   Holiday,
   PaginatedHolidays,
   CreateHolidayPayload,
   UpdateHolidayPayload,
 } from '../types';
+import type { Clinic } from '@/views/clinics/types';
 
 const DEFAULT_DATA: PaginatedHolidays = {
   totalRows: 0,
@@ -31,6 +33,7 @@ function extractApiError(err: unknown): string {
 
 export function useHolidays() {
   const [data, setData] = useState<PaginatedHolidays>(DEFAULT_DATA);
+  const [clinics, setClinics] = useState<Clinic[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -76,6 +79,10 @@ export function useHolidays() {
   useEffect(() => {
     void fetchEntries();
   }, [fetchEntries]);
+
+  useEffect(() => {
+    void clinicsService.findAll().then(setClinics).catch(() => {});
+  }, []);
 
   const handleYearChange = useCallback((year: number) => {
     setYearFilter(year);
@@ -160,6 +167,7 @@ export function useHolidays() {
   return {
     // Datos
     data,
+    clinics,
     loading,
     error,
     formError,

@@ -71,6 +71,7 @@ export class UpdateHolidayUseCase {
       year: updated.year,
       isRecurring: updated.isRecurring,
       isActive: updated.isActive,
+      clinicId: updated.clinicId,
       createdAt: updated.createdAt,
     };
   }

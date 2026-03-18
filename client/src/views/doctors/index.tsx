@@ -57,6 +57,7 @@ export default function DoctorsView() {
         open={!!controller.editDoctor}
         doctor={controller.editDoctor}
         specialties={controller.specialties}
+        clinics={controller.clinics}
         onClose={controller.closeEditDrawer}
         onSuccess={handleEditSuccess}
       />

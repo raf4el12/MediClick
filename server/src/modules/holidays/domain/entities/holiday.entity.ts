@@ -5,6 +5,7 @@ export class HolidayEntity {
   year: number;
   isRecurring: boolean;
   isActive: boolean;
+  clinicId: number | null;
   createdAt: Date;
   updatedAt: Date | null;
 }

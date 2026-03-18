@@ -16,10 +16,11 @@ import {
   parseHHmm,
   dateToTimeString,
   toMinutesUTC,
-  nowPeru,
-  todayStartPeru,
+  nowInTimezone,
+  todayStartInTimezone,
   scheduleDateToLocalDay,
 } from '../../../../shared/utils/date-time.utils.js';
+import { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
 
 @Injectable()
 export class CreatePatientAppointmentUseCase {
@@ -34,6 +35,7 @@ export class CreatePatientAppointmentUseCase {
     private readonly holidayRepository: IHolidayRepository,
     @Inject('IScheduleBlockRepository')
     private readonly scheduleBlockRepository: IScheduleBlockRepository,
+    private readonly timezoneResolver: TimezoneResolverService,
   ) {}
 
   /** Buffer mínimo en milisegundos (2 horas) */
@@ -83,10 +85,11 @@ export class CreatePatientAppointmentUseCase {
       );
     }
 
-    // ── Validación de fecha/hora (zona horaria Perú UTC-5) ──
-    const now = nowPeru();
+    // ── Validación de fecha/hora (zona horaria de la sede del doctor) ──
+    const tz = await this.timezoneResolver.resolveByDoctorId(schedule.doctorId);
+    const now = nowInTimezone(tz);
     const scheduleDate = new Date(schedule.scheduleDate);
-    const todayStart = todayStartPeru();
+    const todayStart = todayStartInTimezone(tz);
     const scheduleDayStart = scheduleDateToLocalDay(scheduleDate);
 
     if (scheduleDayStart < todayStart) {
@@ -111,8 +114,9 @@ export class CreatePatientAppointmentUseCase {
       }
     }
 
-    // ── Verificar si la fecha es feriado ──
-    const isHoliday = await this.holidayRepository.isHoliday(scheduleDate);
+    // ── Verificar si la fecha es feriado (considerando sede del doctor) ──
+    const clinicId = await this.timezoneResolver.resolveClinicIdByDoctorId(schedule.doctorId);
+    const isHoliday = await this.holidayRepository.isHoliday(scheduleDate, clinicId ?? undefined);
     if (isHoliday) {
       throw new BadRequestException(
         'No se puede agendar una cita en un día feriado',
@@ -185,6 +189,7 @@ export class CreatePatientAppointmentUseCase {
         },
         specialty: appointment.schedule.specialty,
       },
+      timezone: appointment.schedule.doctor.clinic?.timezone ?? 'America/Lima',
       createdAt: appointment.createdAt,
     };
   }

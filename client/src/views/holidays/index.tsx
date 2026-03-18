@@ -26,12 +26,14 @@ export default function HolidaysView() {
         name: values.name,
         date: values.date,
         isRecurring: values.isRecurring,
+        clinicId: values.clinicId,
       });
     } else {
       void ctrl.handleCreate({
         name: values.name,
         date: values.date,
         isRecurring: values.isRecurring,
+        clinicId: values.clinicId,
       });
     }
   };
@@ -112,6 +114,7 @@ export default function HolidaysView() {
       {/* Lista */}
       <HolidayList
         entries={ctrl.data.rows}
+        clinics={ctrl.clinics}
         loading={ctrl.loading}
         totalPages={ctrl.data.totalPages}
         page={ctrl.page}
@@ -126,6 +129,7 @@ export default function HolidaysView() {
         onClose={ctrl.closeFormDialog}
         onSubmit={handleFormSubmit}
         entry={ctrl.editEntry}
+        clinics={ctrl.clinics}
         submitting={ctrl.submitting}
         apiError={ctrl.formError}
       />

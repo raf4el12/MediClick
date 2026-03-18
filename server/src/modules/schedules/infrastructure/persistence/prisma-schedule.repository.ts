@@ -9,13 +9,14 @@ import {
 } from '../../domain/interfaces/schedule-data.interface.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
-import { todayStartPeru, utcDayRange } from '../../../../shared/utils/date-time.utils.js';
+import { todayStartInTimezone, utcDayRange } from '../../../../shared/utils/date-time.utils.js';
 
 const scheduleInclude = {
   doctor: {
     select: {
       id: true,
       profile: { select: { name: true, lastName: true } },
+      clinic: { select: { timezone: true } },
     },
   },
   specialty: { select: { id: true, name: true } },
@@ -47,12 +48,13 @@ export class PrismaScheduleRepository implements IScheduleRepository {
       dateFrom?: Date;
       dateTo?: Date;
       onlyAvailable?: boolean;
+      timezone?: string;
     },
   ): Promise<PaginatedResult<ScheduleWithRelations>> {
     const { limit, offset, orderBy, orderByMode } = params;
 
-    // Zona horaria Perú (UTC-5)
-    const todayStart = todayStartPeru();
+    // Zona horaria de la sede (o fallback America/Lima)
+    const todayStart = todayStartInTimezone(filters.timezone ?? 'America/Lima');
 
     // Nunca devolver fechas pasadas: forzar dateFrom >= hoy
     const effectiveDateFrom =

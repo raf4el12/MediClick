@@ -16,7 +16,7 @@ export interface IHolidayRepository {
   findById(id: number): Promise<HolidayEntity | null>;
   findByDateRange(startDate: Date, endDate: Date): Promise<HolidayEntity[]>;
   findByYear(year: number): Promise<HolidayEntity[]>;
-  isHoliday(date: Date): Promise<boolean>;
+  isHoliday(date: Date, clinicId?: number): Promise<boolean>;
   findRecurring(): Promise<HolidayEntity[]>;
   findDistinctYears(): Promise<number[]>;
   deleteByNameAndYear(name: string, years: number[]): Promise<number>;

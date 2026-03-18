@@ -78,6 +78,14 @@ export class OnboardDoctorDto {
   @IsOptional()
   resume?: string;
 
+  @ApiPropertyOptional({
+    example: 1,
+    description: 'ID de la sede a la que pertenece el doctor',
+  })
+  @IsInt({ message: 'El ID de sede debe ser un entero' })
+  @IsOptional()
+  clinicId?: number;
+
   @ApiProperty({ example: [1, 2], description: 'IDs de especialidades' })
   @IsArray()
   @ArrayMinSize(1, { message: 'Debe seleccionar al menos una especialidad' })

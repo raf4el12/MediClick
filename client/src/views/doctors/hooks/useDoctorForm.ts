@@ -33,6 +33,7 @@ export function useDoctorForm({ onSuccess, onClose }: UseDoctorFormProps) {
         gender: '',
         cmp: '',
         resume: '',
+        clinicId: undefined,
         specialtyIds: [],
       },
       mode: 'onBlur',
@@ -57,6 +58,7 @@ export function useDoctorForm({ onSuccess, onClose }: UseDoctorFormProps) {
         },
         cmp: formData.cmp,
         resume: formData.resume || undefined,
+        clinicId: formData.clinicId,
         specialtyIds: formData.specialtyIds,
       };
 

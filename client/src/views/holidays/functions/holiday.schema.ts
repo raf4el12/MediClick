@@ -14,6 +14,7 @@ export const holidaySchema = z.object({
       return !isNaN(d.getTime());
     }, 'La fecha ingresada no es válida'),
   isRecurring: z.boolean({ error: 'Debe indicar si es recurrente' }),
+  clinicId: z.number().int().optional(),
 });
 
 export type HolidayFormValues = z.infer<typeof holidaySchema>;

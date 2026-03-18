@@ -18,6 +18,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import type { Holiday } from '../types';
+import type { Clinic } from '@/views/clinics/types';
 import { holidaySchema, type HolidayFormValues } from '../functions/holiday.schema';
 
 interface HolidayFormProps {
@@ -25,6 +26,7 @@ interface HolidayFormProps {
   onClose: () => void;
   onSubmit: (values: HolidayFormValues) => void;
   entry: Holiday | null;
+  clinics: Clinic[];
   submitting: boolean;
   apiError?: string | null;
 }
@@ -39,6 +41,7 @@ export function HolidayForm({
   onClose,
   onSubmit,
   entry,
+  clinics,
   submitting,
   apiError,
 }: HolidayFormProps) {
@@ -56,6 +59,7 @@ export function HolidayForm({
       name: '',
       date: '',
       isRecurring: false,
+      clinicId: undefined,
     },
   });
 
@@ -66,12 +70,14 @@ export function HolidayForm({
           name: entry.name,
           date: entry.date ? entry.date.split('T')[0] : '',
           isRecurring: entry.isRecurring,
+          clinicId: entry.clinicId ?? undefined,
         });
       } else {
         reset({
           name: '',
           date: '',
           isRecurring: false,
+          clinicId: undefined,
         });
       }
     }
@@ -172,6 +178,28 @@ export function HolidayForm({
                 {RECURRING_OPTIONS.map((opt) => (
                   <MenuItem key={opt.value} value={opt.value}>
                     {opt.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
+          />
+
+          <Controller
+            name="clinicId"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                select
+                label="Sede"
+                value={field.value ?? ''}
+                onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+                fullWidth
+                helperText="Dejar en 'Global' para que aplique a todas las sedes"
+              >
+                <MenuItem value="">Global (todas las sedes)</MenuItem>
+                {clinics.map((c) => (
+                  <MenuItem key={c.id} value={c.id}>
+                    {c.name}
                   </MenuItem>
                 ))}
               </TextField>

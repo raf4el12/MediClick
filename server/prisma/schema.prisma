@@ -158,10 +158,12 @@ model Doctors {
   resume        String?
   isActive      Boolean              @default(true)
   maxOverbookPerDay Int              @default(2) // Máximo de sobrecupos por día
+  clinicId      Int?
   deleted       Boolean              @default(false)
   createdAt     DateTime             @default(now())
   updatedAt     DateTime?
   profile       Profiles             @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  clinic        Clinics?             @relation(fields: [clinicId], references: [id])
   specialties   DoctorsSpecialties[]
   availability  Availability[]
   schedules     Schedules[]
@@ -170,6 +172,7 @@ model Doctors {
 
   @@index([profileId])
   @@index([isActive, deleted])
+  @@index([clinicId])
 }
 
 model Specialties {
@@ -434,10 +437,33 @@ model Holidays {
   year        Int
   isRecurring Boolean  @default(false) // Feriados fijos que se repiten cada año
   isActive    Boolean  @default(true)
+  clinicId    Int?
   createdAt   DateTime @default(now())
   updatedAt   DateTime?
 
-  @@unique([date, name])
+  clinic Clinics? @relation(fields: [clinicId], references: [id])
+
+  @@unique([date, name, clinicId])
   @@index([year])
   @@index([date])
+  @@index([clinicId])
+}
+
+model Clinics {
+  id        Int       @id @default(autoincrement())
+  name      String
+  address   String?
+  phone     String?
+  email     String?   @unique
+  timezone  String    @default("America/Lima")
+  currency  String    @default("PEN")
+  isActive  Boolean   @default(true)
+  deleted   Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime?
+
+  doctors  Doctors[]
+  holidays Holidays[]
+
+  @@index([isActive, deleted])
 }

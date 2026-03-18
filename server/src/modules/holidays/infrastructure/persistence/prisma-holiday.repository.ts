@@ -93,7 +93,7 @@ export class PrismaHolidayRepository implements IHolidayRepository {
     });
   }
 
-  async isHoliday(date: Date): Promise<boolean> {
+  async isHoliday(date: Date, clinicId?: number): Promise<boolean> {
     const { start: startOfDay, end: endOfDay } = utcDayRange(date);
 
     const count = await this.prisma.holidays.count({
@@ -103,6 +103,10 @@ export class PrismaHolidayRepository implements IHolidayRepository {
           lt: endOfDay,
         },
         isActive: true,
+        OR: [
+          { clinicId: null },
+          ...(clinicId ? [{ clinicId }] : []),
+        ],
       },
     });
 

@@ -71,6 +71,7 @@ export class GetDashboardAppointmentsUseCase {
         },
         specialty: a.schedule.specialty,
       },
+      timezone: a.schedule.doctor.clinic?.timezone ?? 'America/Lima',
       createdAt: a.createdAt,
     }));
 

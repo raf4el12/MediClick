@@ -67,6 +67,7 @@ export class OnboardDoctorUseCase {
       doctor: {
         licenseNumber: dto.cmp,
         resume: dto.resume,
+        clinicId: dto.clinicId,
       },
       specialtyIds: dto.specialtyIds,
     });
@@ -76,6 +77,8 @@ export class OnboardDoctorUseCase {
       licenseNumber: doctor.licenseNumber,
       resume: doctor.resume,
       maxOverbookPerDay: doctor.maxOverbookPerDay,
+      clinicId: doctor.clinicId,
+      clinic: doctor.clinic,
       isActive: doctor.isActive,
       createdAt: doctor.createdAt,
       profile: {

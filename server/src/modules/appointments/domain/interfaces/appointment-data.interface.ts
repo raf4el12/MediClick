@@ -49,6 +49,7 @@ export interface AppointmentWithRelations {
     doctor: {
       id: number;
       profile: { name: string; lastName: string };
+      clinic: { timezone: string } | null;
     };
     specialty: { id: number; name: string };
   };

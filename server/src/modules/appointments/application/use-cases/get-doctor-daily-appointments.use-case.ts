@@ -2,7 +2,8 @@ import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type { IDoctorRepository } from '../../../doctors/domain/repositories/doctor.repository.js';
-import { dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
+import { dateToTimeString, nowInTimezone } from '../../../../shared/utils/date-time.utils.js';
+import { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
 
 @Injectable()
 export class GetDoctorDailyAppointmentsUseCase {
@@ -11,6 +12,7 @@ export class GetDoctorDailyAppointmentsUseCase {
     private readonly appointmentRepository: IAppointmentRepository,
     @Inject('IDoctorRepository')
     private readonly doctorRepository: IDoctorRepository,
+    private readonly timezoneResolver: TimezoneResolverService,
   ) {}
 
   async execute(userId: number): Promise<AppointmentResponseDto[]> {
@@ -21,7 +23,8 @@ export class GetDoctorDailyAppointmentsUseCase {
       );
     }
 
-    const today = new Date();
+    const tz = await this.timezoneResolver.resolveByDoctorId(doctorId);
+    const today = nowInTimezone(tz);
     const appointments = await this.appointmentRepository.findByDoctorAndDate(
       doctorId,
       today,
@@ -59,6 +62,7 @@ export class GetDoctorDailyAppointmentsUseCase {
         },
         specialty: a.schedule.specialty,
       },
+      timezone: a.schedule.doctor.clinic?.timezone ?? 'America/Lima',
       createdAt: a.createdAt,
     }));
   }

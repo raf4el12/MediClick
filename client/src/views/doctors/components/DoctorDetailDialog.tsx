@@ -99,6 +99,18 @@ export function DoctorDetailDialog({ doctor, onClose }: DoctorDetailDialogProps)
             </Box>
           </Box>
 
+          {/* Sede */}
+          <Box>
+            <Typography variant="caption" color="text.secondary" fontWeight={600}>
+              Sede
+            </Typography>
+            <Typography variant="body2">
+              {doctor.clinic
+                ? `${doctor.clinic.name} (${doctor.clinic.timezone})`
+                : 'Sin asignar'}
+            </Typography>
+          </Box>
+
           {/* Resumen */}
           {doctor.resume && (
             <Box>

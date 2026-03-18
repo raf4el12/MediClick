@@ -11,7 +11,8 @@ import type { IPatientRepository } from '../../../patients/domain/repositories/p
 import type { IDoctorRepository } from '../../../doctors/domain/repositories/doctor.repository.js';
 import type { IScheduleRepository } from '../../../schedules/domain/repositories/schedule.repository.js';
 import type { ISpecialtyRepository } from '../../../specialties/domain/repositories/specialty.repository.js';
-import { dateToTimeString, todayStartPeru, scheduleDateToLocalDay } from '../../../../shared/utils/date-time.utils.js';
+import { dateToTimeString, todayStartInTimezone, scheduleDateToLocalDay } from '../../../../shared/utils/date-time.utils.js';
+import { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
 
 /**
  * Crea una cita de sobrecupo al final del último slot del doctor en una fecha.
@@ -35,6 +36,7 @@ export class CreateOverbookAppointmentUseCase {
     private readonly scheduleRepository: IScheduleRepository,
     @Inject('ISpecialtyRepository')
     private readonly specialtyRepository: ISpecialtyRepository,
+    private readonly timezoneResolver: TimezoneResolverService,
   ) {}
 
   async execute(
@@ -69,8 +71,9 @@ export class CreateOverbookAppointmentUseCase {
       throw new BadRequestException('La fecha proporcionada no es válida');
     }
 
-    // No permitir fechas pasadas
-    const todayStart = todayStartPeru();
+    // No permitir fechas pasadas (zona horaria de la sede del doctor)
+    const tz = await this.timezoneResolver.resolveByDoctorId(dto.doctorId);
+    const todayStart = todayStartInTimezone(tz);
     const dateOnly = scheduleDateToLocalDay(appointmentDate);
     if (dateOnly < todayStart) {
       throw new BadRequestException(
@@ -184,6 +187,7 @@ export class CreateOverbookAppointmentUseCase {
         },
         specialty: a.schedule.specialty,
       },
+      timezone: a.schedule.doctor.clinic?.timezone ?? 'America/Lima',
       createdAt: a.createdAt,
     };
   }

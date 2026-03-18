@@ -44,6 +44,9 @@ export class ScheduleResponseDto {
   @ApiProperty({ type: ScheduleSpecialtyDto })
   specialty: ScheduleSpecialtyDto;
 
+  @ApiProperty({ example: 'America/Lima', description: 'IANA timezone de la sede del doctor' })
+  timezone: string;
+
   @ApiProperty()
   createdAt: Date;
 }

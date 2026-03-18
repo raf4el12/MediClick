@@ -43,6 +43,7 @@ const pageTitles: Record<string, string> = {
   '/availability': 'Disponibilidad',
   '/schedule-blocks': 'Bloqueos de Horario',
   '/holidays': 'Feriados',
+  '/clinics': 'Sedes',
   '/specialties': 'Especialidades',
   '/categories': 'Categorías',
   '/users': 'Usuarios',

@@ -16,7 +16,9 @@ import {
   fetchDoctorSpecialtiesThunk,
 } from '@/redux-store/thunks/doctors.thunks';
 import { doctorsService } from '@/services/doctors.service';
+import { clinicsService } from '@/services/clinics.service';
 import type { Doctor } from '../types';
+import type { Clinic } from '@/views/clinics/types';
 
 export function useDoctors() {
   const dispatch = useAppDispatch();
@@ -27,6 +29,7 @@ export function useDoctors() {
   const error = useAppSelector(selectDoctorsError);
   const pagination = useAppSelector(selectDoctorsPagination);
 
+  const [clinics, setClinics] = useState<Clinic[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [detailDoctor, setDetailDoctor] = useState<Doctor | null>(null);
   const [editDoctor, setEditDoctor] = useState<Doctor | null>(null);
@@ -62,6 +65,7 @@ export function useDoctors() {
 
   useEffect(() => {
     void dispatch(fetchDoctorSpecialtiesThunk());
+    void clinicsService.findAll().then(setClinics).catch(() => {});
   }, [dispatch]);
 
   const updatePagination = useCallback(
@@ -110,6 +114,7 @@ export function useDoctors() {
   return {
     data,
     specialties,
+    clinics,
     loading,
     error,
     pagination,

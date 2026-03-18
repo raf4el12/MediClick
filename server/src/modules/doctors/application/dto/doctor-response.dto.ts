@@ -13,6 +13,12 @@ export class DoctorResponseDto {
   @ApiProperty({ example: 2, description: 'Máximo de sobrecupos por día' })
   maxOverbookPerDay: number;
 
+  @ApiProperty({ example: 1, nullable: true, description: 'ID de la sede' })
+  clinicId: number | null;
+
+  @ApiProperty({ nullable: true })
+  clinic: { id: number; name: string; timezone: string; currency: string } | null;
+
   @ApiProperty()
   isActive: boolean;
 

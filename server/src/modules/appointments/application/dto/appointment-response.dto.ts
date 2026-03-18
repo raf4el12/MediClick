@@ -99,6 +99,9 @@ export class AppointmentResponseDto {
   @ApiProperty({ type: AppointmentScheduleDto })
   schedule: AppointmentScheduleDto;
 
+  @ApiProperty({ example: 'America/Lima', description: 'IANA timezone de la sede del doctor' })
+  timezone: string;
+
   @ApiProperty()
   createdAt: Date;
 }

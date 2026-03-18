@@ -5,6 +5,7 @@ export interface Holiday {
   year: number;
   isRecurring: boolean;
   isActive: boolean;
+  clinicId: number | null;
   createdAt: string;
 }
 
@@ -19,6 +20,7 @@ export interface CreateHolidayPayload {
   name: string;
   date: string;
   isRecurring?: boolean;
+  clinicId?: number;
 }
 
 export interface UpdateHolidayPayload {
@@ -26,6 +28,7 @@ export interface UpdateHolidayPayload {
   date?: string;
   isRecurring?: boolean;
   isActive?: boolean;
+  clinicId?: number;
 }
 
 export interface SeedHolidaysResponse {

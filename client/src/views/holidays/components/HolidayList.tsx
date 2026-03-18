@@ -14,9 +14,11 @@ import Pagination from '@mui/material/Pagination';
 import { alpha, useTheme } from '@mui/material/styles';
 
 import type { Holiday } from '../types';
+import type { Clinic } from '@/views/clinics/types';
 
 interface HolidayListProps {
   entries: Holiday[];
+  clinics: Clinic[];
   loading: boolean;
   totalPages: number;
   page: number;
@@ -27,6 +29,7 @@ interface HolidayListProps {
 
 export const HolidayList = memo(function HolidayList({
   entries,
+  clinics,
   loading,
   totalPages,
   page,
@@ -34,6 +37,7 @@ export const HolidayList = memo(function HolidayList({
   onEdit,
   onDelete,
 }: HolidayListProps) {
+  const clinicMap = new Map(clinics.map((c) => [c.id, c.name]));
   const theme = useTheme();
 
   if (loading) {
@@ -148,7 +152,7 @@ export const HolidayList = memo(function HolidayList({
                     variant="body2"
                     color="text.secondary"
                     sx={{
-                      mb: 2,
+                      mb: 0.5,
                       lineHeight: 1.6,
                     }}
                   >
@@ -159,6 +163,13 @@ export const HolidayList = memo(function HolidayList({
                       timeZone: 'UTC',
                     })}
                   </Typography>
+                  <Chip
+                    label={entry.clinicId ? clinicMap.get(entry.clinicId) ?? 'Sede' : 'Global'}
+                    size="small"
+                    variant="outlined"
+                    color={entry.clinicId ? 'secondary' : 'default'}
+                    sx={{ mb: 1 }}
+                  />
 
                   <Box
                     sx={{

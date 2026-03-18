@@ -10,6 +10,7 @@ export interface ScheduleWithRelations {
   doctor: {
     id: number;
     profile: { name: string; lastName: string };
+    clinic: { timezone: string } | null;
   };
   specialty: { id: number; name: string };
 }

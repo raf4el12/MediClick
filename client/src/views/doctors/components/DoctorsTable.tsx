@@ -26,6 +26,7 @@ import {
 import { SkeletonTable } from '@/components/shared/SkeletonTable';
 import type { Doctor } from '../types';
 import type { Specialty } from '@/views/specialties/types';
+import type { Clinic } from '@/views/clinics/types';
 import type { PaginatedResponse } from '@/types/pagination.types';
 import { DoctorFilters } from './DoctorFilters';
 import { AddDoctorDrawer } from './AddDoctorDrawer';
@@ -35,6 +36,7 @@ const columnHelper = createColumnHelper<Doctor>();
 interface DoctorsTableProps {
   data: PaginatedResponse<Doctor>;
   specialties: Specialty[];
+  clinics: Clinic[];
   loading: boolean;
   error: string | null;
   pagination: {
@@ -61,6 +63,7 @@ interface DoctorsTableProps {
 export const DoctorsTable = memo(function DoctorsTable({
   data,
   specialties,
+  clinics,
   loading,
   error,
   pagination,
@@ -114,6 +117,16 @@ export const DoctorsTable = memo(function DoctorsTable({
             ))}
           </Box>
         ),
+      }),
+      columnHelper.display({
+        id: 'clinic',
+        header: 'Sede',
+        cell: ({ row }) => (
+          <Typography>
+            {row.original.clinic?.name ?? 'Sin asignar'}
+          </Typography>
+        ),
+        meta: { hiddenOnMobile: true },
       }),
       columnHelper.display({
         id: 'phone',
@@ -341,6 +354,7 @@ export const DoctorsTable = memo(function DoctorsTable({
       <AddDoctorDrawer
         open={drawerOpen}
         specialties={specialties}
+        clinics={clinics}
         onClose={closeDrawer}
         onSuccess={refreshData}
       />

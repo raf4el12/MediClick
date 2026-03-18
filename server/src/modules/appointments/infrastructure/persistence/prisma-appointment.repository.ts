@@ -30,6 +30,7 @@ const appointmentInclude = {
         select: {
           id: true,
           profile: { select: { name: true, lastName: true } },
+          clinic: { select: { timezone: true } },
         },
       },
       specialty: { select: { id: true, name: true } },

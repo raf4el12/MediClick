@@ -20,12 +20,14 @@ import { useMemo } from 'react';
 import { Controller } from 'react-hook-form';
 import { useDoctorForm } from '../hooks/useDoctorForm';
 import type { Specialty } from '@/views/specialties/types';
+import type { Clinic } from '@/views/clinics/types';
 
 const KEEP_MOUNTED = { keepMounted: true };
 
 interface AddDoctorDrawerProps {
   open: boolean;
   specialties: Specialty[];
+  clinics: Clinic[];
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -33,6 +35,7 @@ interface AddDoctorDrawerProps {
 export function AddDoctorDrawer({
   open,
   specialties,
+  clinics,
   onClose,
   onSuccess,
 }: AddDoctorDrawerProps) {
@@ -245,6 +248,33 @@ export function AddDoctorDrawer({
             />
           )}
         />
+
+        <FormControl fullWidth>
+          <InputLabel id="clinic-select-label">Sede</InputLabel>
+          <Controller
+            name="clinicId"
+            control={control}
+            render={({ field }) => (
+              <Select
+                {...field}
+                labelId="clinic-select-label"
+                label="Sede"
+                value={field.value ?? ''}
+                onChange={(e) => {
+                  const v = e.target.value as string | number;
+                  field.onChange(v === '' ? undefined : Number(v));
+                }}
+              >
+                <MenuItem value="">Sin asignar</MenuItem>
+                {clinics.map((c) => (
+                  <MenuItem key={c.id} value={c.id}>
+                    {c.name} ({c.timezone})
+                  </MenuItem>
+                ))}
+              </Select>
+            )}
+          />
+        </FormControl>
 
         <FormControl fullWidth error={!!errors.specialtyIds}>
           <InputLabel id="specialties-select-label">Especialidades</InputLabel>

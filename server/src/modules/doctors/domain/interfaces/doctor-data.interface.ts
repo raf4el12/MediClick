@@ -16,6 +16,7 @@ export interface OnboardDoctorData {
   doctor: {
     licenseNumber: string;
     resume?: string;
+    clinicId?: number;
   };
   specialtyIds: number[];
 }
@@ -30,6 +31,7 @@ export interface DoctorWithRelations extends DoctorEntity {
     gender: string | null;
     user: { id: number; name: string; email: string } | null;
   };
+  clinic: { id: number; name: string; timezone: string; currency: string } | null;
   specialties: Array<{
     specialty: { id: number; name: string };
   }>;

@@ -38,6 +38,7 @@ export const doctorSchema = z.object({
     .max(1000, 'El resumen no debe exceder 1000 caracteres')
     .optional()
     .or(z.literal('')),
+  clinicId: z.number().int().optional(),
   specialtyIds: z
     .array(z.number().int())
     .min(1, 'Debe seleccionar al menos una especialidad'),
