@@ -155,6 +155,7 @@ export class CreatePatientAppointmentUseCase {
       startTime: slotStart,
       endTime: slotEnd,
       reason: dto.reason,
+      clinicId: clinicId ?? null,
     });
 
     return {

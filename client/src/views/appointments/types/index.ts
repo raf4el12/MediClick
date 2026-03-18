@@ -68,6 +68,8 @@ export interface CancelAppointmentPayload {
 
 export interface RescheduleAppointmentPayload {
   newScheduleId: number;
+  startTime: string;   // HH:mm
+  endTime: string;     // HH:mm
   reason?: string;
 }
 

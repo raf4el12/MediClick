@@ -74,6 +74,7 @@ export class SpecialtyController {
     return this.findAllSpecialtiesUseCase.execute(
       pagination,
       queryDto.categoryId,
+      queryDto.clinicId,
     );
   }
 

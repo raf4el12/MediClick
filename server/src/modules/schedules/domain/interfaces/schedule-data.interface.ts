@@ -21,6 +21,7 @@ export interface CreateScheduleData {
   scheduleDate: Date;
   timeFrom: Date;
   timeTo: Date;
+  clinicId?: number | null;
 }
 
 /**

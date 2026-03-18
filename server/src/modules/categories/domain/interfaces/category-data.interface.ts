@@ -4,6 +4,7 @@ export interface CreateCategoryData {
   icon?: string;
   color?: string;
   order?: number;
+  clinicId?: number | null;
 }
 
 export interface UpdateCategoryData {
@@ -12,5 +13,6 @@ export interface UpdateCategoryData {
   icon?: string;
   color?: string;
   order?: number;
+  clinicId?: number | null;
   isActive?: boolean;
 }

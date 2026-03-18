@@ -38,6 +38,7 @@ export function useCategoryForm({
         icon: '',
         color: '',
         order: undefined,
+        clinicId: undefined,
       },
       mode: 'onBlur',
     });
@@ -50,6 +51,7 @@ export function useCategoryForm({
         icon: drawerData.data.icon ?? '',
         color: drawerData.data.color ?? '',
         order: drawerData.data.order ?? undefined,
+        clinicId: drawerData.data.clinicId ?? undefined,
       });
     } else {
       reset({
@@ -58,6 +60,7 @@ export function useCategoryForm({
         icon: '',
         color: '',
         order: undefined,
+        clinicId: undefined,
       });
     }
   }, [drawerData, reset]);
@@ -72,6 +75,7 @@ export function useCategoryForm({
         description: formData.description || undefined,
         icon: formData.icon || undefined,
         color: formData.color || undefined,
+        clinicId: formData.clinicId || undefined,
       };
 
       let result;

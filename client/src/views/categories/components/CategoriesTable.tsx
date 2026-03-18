@@ -25,6 +25,7 @@ import {
 import { SkeletonTable } from '@/components/shared/SkeletonTable';
 import type { Category } from '../types';
 import type { PaginatedResponse } from '@/types/pagination.types';
+import type { Clinic } from '@/views/clinics/types';
 import { CategoryFilters } from './CategoryFilters';
 import { AddCategoryDrawer } from './AddCategoryDrawer';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -35,6 +36,7 @@ interface CategoriesTableProps {
   data: PaginatedResponse<Category>;
   loading: boolean;
   error: string | null;
+  clinics: Clinic[];
   pagination: {
     searchValue: string;
     currentPage: number;
@@ -61,6 +63,7 @@ export const CategoriesTable = memo(function CategoriesTable({
   data,
   loading,
   error,
+  clinics,
   pagination,
   setPagination,
   debouncedSearch,
@@ -107,6 +110,21 @@ export const CategoriesTable = memo(function CategoriesTable({
         ),
         meta: { hiddenOnMobile: true },
       }),
+      columnHelper.accessor('clinicId', {
+        header: 'Sede',
+        cell: ({ row }) => {
+          const clinic = clinics.find((c) => c.id === row.original.clinicId);
+          return (
+            <Chip
+              label={clinic ? clinic.name : 'Global'}
+              variant={clinic ? 'filled' : 'outlined'}
+              size="small"
+              color={clinic ? 'info' : 'default'}
+            />
+          );
+        },
+        meta: { hiddenOnMobile: true },
+      }),
       columnHelper.accessor('order', {
         header: 'Orden',
         cell: ({ row }) => (
@@ -150,7 +168,7 @@ export const CategoriesTable = memo(function CategoriesTable({
         ),
       }),
     ],
-    [openEditDrawer, openDeleteDialog],
+    [openEditDrawer, openDeleteDialog, clinics],
   );
 
   const table = useReactTable({
@@ -317,6 +335,7 @@ export const CategoriesTable = memo(function CategoriesTable({
       <AddCategoryDrawer
         open={drawerOpen}
         drawerData={drawerData}
+        clinics={clinics}
         onClose={closeDrawer}
         onSuccess={refreshData}
       />

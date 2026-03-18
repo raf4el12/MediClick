@@ -153,7 +153,7 @@ export class AppointmentController {
   }
 
   @Patch(':id/check-in')
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST)
+  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.DOCTOR)
   @ApiOperation({
     summary: 'Check-in de paciente (PENDING/CONFIRMED → IN_PROGRESS)',
   })
@@ -193,7 +193,7 @@ export class AppointmentController {
   }
 
   @Patch(':id/reschedule')
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST)
+  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.DOCTOR)
   @ApiOperation({ summary: 'Reagendar cita a otro horario' })
   @ApiResponse({ status: 200, type: AppointmentResponseDto })
   @ApiResponse({ status: 400, description: 'Estado no permite reagendar' })

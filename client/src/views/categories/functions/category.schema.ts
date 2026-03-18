@@ -17,6 +17,7 @@ export const categorySchema = z.object({
     .int('El orden debe ser un número entero')
     .min(0, 'El orden no puede ser negativo')
     .optional(),
+  clinicId: z.number().int().optional(),
 });
 
 export type CategoryFormValues = z.infer<typeof categorySchema>;

@@ -27,25 +27,33 @@ export class PrismaSpecialtyRepository implements ISpecialtyRepository {
   async findAllPaginated(
     params: PaginationParams,
     categoryId?: number,
+    clinicId?: number,
   ): Promise<PaginatedResult<SpecialtyWithCategory>> {
     const { limit, offset, searchValue, orderBy, orderByMode } = params;
 
     const where = {
       deleted: false,
       ...(categoryId && { categoryId }),
+      ...(clinicId
+        ? { OR: [{ clinicId: null }, { clinicId }] }
+        : {}),
       ...(searchValue && {
-        OR: [
+        AND: [
           {
-            name: {
-              contains: searchValue,
-              mode: 'insensitive' as const,
-            },
-          },
-          {
-            description: {
-              contains: searchValue,
-              mode: 'insensitive' as const,
-            },
+            OR: [
+              {
+                name: {
+                  contains: searchValue,
+                  mode: 'insensitive' as const,
+                },
+              },
+              {
+                description: {
+                  contains: searchValue,
+                  mode: 'insensitive' as const,
+                },
+              },
+            ],
           },
         ],
       }),

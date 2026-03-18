@@ -9,15 +9,18 @@ import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
+import MenuItem from '@mui/material/MenuItem';
 import { Controller } from 'react-hook-form';
 import { useCategoryForm } from '../hooks/useCategoryForm';
 import type { Category } from '../types';
+import type { Clinic } from '@/views/clinics/types';
 
 const KEEP_MOUNTED = { keepMounted: true };
 
 interface AddCategoryDrawerProps {
   open: boolean;
   drawerData: { data: Category | null; action: 'Create' | 'Update' };
+  clinics: Clinic[];
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -25,6 +28,7 @@ interface AddCategoryDrawerProps {
 export function AddCategoryDrawer({
   open,
   drawerData,
+  clinics,
   onClose,
   onSuccess,
 }: AddCategoryDrawerProps) {
@@ -129,6 +133,33 @@ export function AddCategoryDrawer({
               error={!!errors.color}
               helperText={errors.color?.message}
             />
+          )}
+        />
+
+        <Controller
+          name="clinicId"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              select
+              fullWidth
+              label="Sede"
+              value={field.value ?? ''}
+              onChange={(e) =>
+                field.onChange(
+                  e.target.value === '' ? undefined : Number(e.target.value),
+                )
+              }
+              helperText="Dejar en 'Global' para que aplique a todas las sedes"
+            >
+              <MenuItem value="">Global (Todas las sedes)</MenuItem>
+              {clinics.map((c) => (
+                <MenuItem key={c.id} value={c.id}>
+                  {c.name}
+                </MenuItem>
+              ))}
+            </TextField>
           )}
         />
 

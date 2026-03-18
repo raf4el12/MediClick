@@ -19,24 +19,32 @@ export class PrismaCategoryRepository implements ICategoryRepository {
 
   async findAllPaginated(
     params: PaginationParams,
+    clinicId?: number,
   ): Promise<PaginatedResult<CategoryEntity>> {
     const { limit, offset, searchValue, orderBy, orderByMode } = params;
 
     const where = {
       deleted: false,
+      ...(clinicId
+        ? { OR: [{ clinicId: null }, { clinicId }] }
+        : {}),
       ...(searchValue && {
-        OR: [
+        AND: [
           {
-            name: {
-              contains: searchValue,
-              mode: 'insensitive' as const,
-            },
-          },
-          {
-            description: {
-              contains: searchValue,
-              mode: 'insensitive' as const,
-            },
+            OR: [
+              {
+                name: {
+                  contains: searchValue,
+                  mode: 'insensitive' as const,
+                },
+              },
+              {
+                description: {
+                  contains: searchValue,
+                  mode: 'insensitive' as const,
+                },
+              },
+            ],
           },
         ],
       }),
@@ -66,9 +74,16 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     });
   }
 
-  async existsByName(name: string): Promise<boolean> {
+  async existsByName(
+    name: string,
+    clinicId?: number | null,
+  ): Promise<boolean> {
     const count = await this.prisma.categories.count({
-      where: { name, deleted: false },
+      where: {
+        name,
+        deleted: false,
+        clinicId: clinicId ?? null,
+      },
     });
     return count > 0;
   }
@@ -76,9 +91,15 @@ export class PrismaCategoryRepository implements ICategoryRepository {
   async existsByNameExcluding(
     name: string,
     excludeId: number,
+    clinicId?: number | null,
   ): Promise<boolean> {
     const count = await this.prisma.categories.count({
-      where: { name, deleted: false, id: { not: excludeId } },
+      where: {
+        name,
+        deleted: false,
+        id: { not: excludeId },
+        clinicId: clinicId ?? null,
+      },
     });
     return count > 0;
   }

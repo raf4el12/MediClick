@@ -10,10 +10,15 @@ export interface ICategoryRepository {
   create(data: CreateCategoryData): Promise<CategoryEntity>;
   findAllPaginated(
     params: PaginationParams,
+    clinicId?: number,
   ): Promise<PaginatedResult<CategoryEntity>>;
   findById(id: number): Promise<CategoryEntity | null>;
-  existsByName(name: string): Promise<boolean>;
-  existsByNameExcluding(name: string, excludeId: number): Promise<boolean>;
+  existsByName(name: string, clinicId?: number | null): Promise<boolean>;
+  existsByNameExcluding(
+    name: string,
+    excludeId: number,
+    clinicId?: number | null,
+  ): Promise<boolean>;
   update(id: number, data: UpdateCategoryData): Promise<CategoryEntity>;
   softDelete(id: number): Promise<void>;
 }

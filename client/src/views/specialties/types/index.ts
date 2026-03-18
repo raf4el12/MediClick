@@ -11,6 +11,7 @@ export interface Specialty {
   price: number | null;
   requirements: string | null;
   icon: string | null;
+  clinicId: number | null;
   isActive: boolean;
   createdAt: string;
   category: SpecialtyCategory;
@@ -24,6 +25,7 @@ export interface CreateSpecialtyPayload {
   price: number;
   requirements?: string;
   icon?: string;
+  clinicId?: number;
 }
 
 export interface UpdateSpecialtyPayload {
@@ -34,6 +36,7 @@ export interface UpdateSpecialtyPayload {
   price?: number;
   requirements?: string;
   icon?: string;
+  clinicId?: number;
   isActive?: boolean;
 }
 

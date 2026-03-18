@@ -11,12 +11,19 @@ export class CreateCategoryUseCase {
   ) {}
 
   async execute(dto: CreateCategoryDto): Promise<CategoryResponseDto> {
-    const exists = await this.categoryRepository.existsByName(dto.name);
+    const clinicId = dto.clinicId ?? null;
+    const exists = await this.categoryRepository.existsByName(
+      dto.name,
+      clinicId,
+    );
     if (exists) {
       throw new ConflictException('Ya existe una categoría con ese nombre');
     }
 
-    const category = await this.categoryRepository.create(dto);
+    const category = await this.categoryRepository.create({
+      ...dto,
+      clinicId,
+    });
 
     return {
       id: category.id,
@@ -25,6 +32,7 @@ export class CreateCategoryUseCase {
       icon: category.icon,
       color: category.color,
       order: category.order,
+      clinicId: category.clinicId,
       isActive: category.isActive,
       createdAt: category.createdAt,
     };

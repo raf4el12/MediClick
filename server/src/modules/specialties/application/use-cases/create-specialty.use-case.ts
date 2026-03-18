@@ -19,7 +19,10 @@ export class CreateSpecialtyUseCase {
       throw new BadRequestException('La categoría especificada no existe');
     }
 
-    const specialty = await this.specialtyRepository.create(dto);
+    const specialty = await this.specialtyRepository.create({
+      ...dto,
+      clinicId: dto.clinicId ?? null,
+    });
 
     return {
       id: specialty.id,
@@ -29,6 +32,7 @@ export class CreateSpecialtyUseCase {
       price: specialty.price ? Number(specialty.price) : null,
       requirements: specialty.requirements,
       icon: specialty.icon,
+      clinicId: specialty.clinicId,
       isActive: specialty.isActive,
       createdAt: specialty.createdAt,
       category: specialty.category,

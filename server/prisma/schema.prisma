@@ -187,14 +187,17 @@ model Specialties {
   icon         String?
   isActive     Boolean              @default(true)
   deleted      Boolean              @default(false)
+  clinicId     Int?
   createdAt    DateTime             @default(now())
   updatedAt    DateTime?
   category     Categories           @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  clinic       Clinics?             @relation(fields: [clinicId], references: [id])
   doctorLinks  DoctorsSpecialties[]
   availability Availability[]
   schedules    Schedules[]
 
   @@index([categoryId, isActive])
+  @@index([clinicId])
 }
 
 model Categories {
@@ -206,13 +209,16 @@ model Categories {
   order       Int?
   isActive    Boolean       @default(true)
   deleted     Boolean       @default(false)
+  clinicId    Int?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime?
   deletedAt   DateTime?
+  clinic      Clinics?      @relation(fields: [clinicId], references: [id])
   specialties Specialties[]
 
   @@index([isActive, deleted])
   @@index([order])
+  @@index([clinicId])
 }
 
 model DoctorsSpecialties {
@@ -241,13 +247,16 @@ model Availability {
   isAvailable Boolean          @default(true)
   type        AvailabilityType
   reason      String?
+  clinicId    Int?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime?
   doctor      Doctors          @relation(fields: [doctorId], references: [id], onDelete: Cascade)
   specialty   Specialties      @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+  clinic      Clinics?         @relation(fields: [clinicId], references: [id])
 
   @@index([doctorId, startDate, endDate])
   @@index([specialtyId])
+  @@index([clinicId])
 }
 
 model Schedules {
@@ -257,14 +266,17 @@ model Schedules {
   scheduleDate DateTime
   timeFrom     DateTime
   timeTo       DateTime
+  clinicId     Int?
   createdAt    DateTime       @default(now())
   updatedAt    DateTime?
   doctor       Doctors        @relation(fields: [doctorId], references: [id], onDelete: Cascade)
   specialty    Specialties    @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+  clinic       Clinics?       @relation(fields: [clinicId], references: [id])
   appointments Appointments[]
 
   @@index([doctorId, scheduleDate])
   @@index([specialtyId])
+  @@index([clinicId])
 }
 
 model Appointments {
@@ -281,12 +293,14 @@ model Appointments {
   cancelReason    String?
   cancellationFee Decimal?          @db.Decimal(10, 2)
   isOverbook      Boolean           @default(false) // Cita de sobrecupo
+  clinicId        Int?
   deleted         Boolean           @default(false)
   createdAt     DateTime          @default(now())
   updatedAt     DateTime?
 
   patient  Patients  @relation(fields: [patientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   schedule Schedules @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  clinic   Clinics?  @relation(fields: [clinicId], references: [id])
 
   // Relaciones Core
   clinicalNotes ClinicalNotes[]
@@ -297,6 +311,7 @@ model Appointments {
   @@index([scheduleId, startTime, endTime])
   @@index([createdAt])
   @@index([status, paymentStatus])
+  @@index([clinicId])
 }
 
 model ClinicalNotes {
@@ -462,8 +477,13 @@ model Clinics {
   createdAt DateTime  @default(now())
   updatedAt DateTime?
 
-  doctors  Doctors[]
-  holidays Holidays[]
+  doctors      Doctors[]
+  holidays     Holidays[]
+  categories   Categories[]
+  specialties  Specialties[]
+  schedules    Schedules[]
+  availability Availability[]
+  appointments Appointments[]
 
   @@index([isActive, deleted])
 }

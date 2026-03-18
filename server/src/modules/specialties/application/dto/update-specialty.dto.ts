@@ -52,6 +52,11 @@ export class UpdateSpecialtyDto {
   @IsOptional()
   icon?: string;
 
+  @ApiPropertyOptional({ example: 1, description: 'ID de la sede (null = global)' })
+  @IsInt()
+  @IsOptional()
+  clinicId?: number;
+
   @ApiPropertyOptional({ example: true })
   @IsBoolean()
   @IsOptional()

@@ -18,6 +18,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import { Controller } from 'react-hook-form';
 import { useSpecialtyForm } from '../hooks/useSpecialtyForm';
 import type { Specialty, Category } from '../types';
+import type { Clinic } from '@/views/clinics/types';
 
 const KEEP_MOUNTED = { keepMounted: true };
 
@@ -25,6 +26,7 @@ interface AddSpecialtyDrawerProps {
   open: boolean;
   drawerData: { data: Specialty | null; action: 'Create' | 'Update' };
   categories: Category[];
+  clinics: Clinic[];
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -33,6 +35,7 @@ export function AddSpecialtyDrawer({
   open,
   drawerData,
   categories,
+  clinics,
   onClose,
   onSuccess,
 }: AddSpecialtyDrawerProps) {
@@ -199,6 +202,33 @@ export function AddSpecialtyDrawer({
               error={!!errors.requirements}
               helperText={errors.requirements?.message}
             />
+          )}
+        />
+
+        <Controller
+          name="clinicId"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              select
+              fullWidth
+              label="Sede"
+              value={field.value ?? ''}
+              onChange={(e) =>
+                field.onChange(
+                  e.target.value === '' ? undefined : Number(e.target.value),
+                )
+              }
+              helperText="Dejar en 'Global' para que aplique a todas las sedes"
+            >
+              <MenuItem value="">Global (Todas las sedes)</MenuItem>
+              {clinics.map((c) => (
+                <MenuItem key={c.id} value={c.id}>
+                  {c.name}
+                </MenuItem>
+              ))}
+            </TextField>
           )}
         />
 

@@ -49,6 +49,9 @@ export class GenerateSchedulesUseCase {
     }
 
     // Determinar doctores a procesar
+    // Caché de clinicId por doctor
+    const doctorClinicCache = new Map<number, number | null>();
+
     let doctorIds: number[];
     if (dto.doctorId) {
       const doctor = await this.doctorRepository.findById(dto.doctorId);
@@ -56,6 +59,7 @@ export class GenerateSchedulesUseCase {
         throw new BadRequestException('El doctor especificado no existe');
       }
       doctorIds = [dto.doctorId];
+      doctorClinicCache.set(dto.doctorId, (doctor as any).clinicId ?? null);
     } else {
       // Obtener todos los doctores con disponibilidad activa
       const allAvailabilities =
@@ -103,6 +107,13 @@ export class GenerateSchedulesUseCase {
       const availabilities =
         await this.availabilityRepository.findActiveByDoctorIds([doctorId]);
       if (availabilities.length === 0) continue;
+
+      // Resolver clinicId del doctor si no está en caché
+      if (!doctorClinicCache.has(doctorId)) {
+        const doc = await this.doctorRepository.findById(doctorId);
+        doctorClinicCache.set(doctorId, (doc as any)?.clinicId ?? null);
+      }
+      const doctorClinicId = doctorClinicCache.get(doctorId) ?? null;
 
       // Pre-cargar bloqueos activos del doctor para el mes
       const scheduleBlocks =
@@ -249,6 +260,7 @@ export class GenerateSchedulesUseCase {
               scheduleDate: date,
               timeFrom: slot.startTime,
               timeTo: slot.endTime,
+              clinicId: doctorClinicId,
             });
           }
         }

@@ -40,6 +40,7 @@ export function useSpecialtyForm({
         price: 0,
         requirements: '',
         icon: '',
+        clinicId: undefined,
       },
       mode: 'onBlur',
     });
@@ -54,6 +55,7 @@ export function useSpecialtyForm({
         price: drawerData.data.price ?? 0,
         requirements: drawerData.data.requirements ?? '',
         icon: drawerData.data.icon ?? '',
+        clinicId: drawerData.data.clinicId ?? undefined,
       });
     } else {
       reset({
@@ -64,6 +66,7 @@ export function useSpecialtyForm({
         price: 0,
         requirements: '',
         icon: '',
+        clinicId: undefined,
       });
     }
   }, [drawerData, reset]);
@@ -78,6 +81,7 @@ export function useSpecialtyForm({
         description: formData.description || undefined,
         requirements: formData.requirements || undefined,
         icon: formData.icon || undefined,
+        clinicId: formData.clinicId || undefined,
       };
 
       let result;

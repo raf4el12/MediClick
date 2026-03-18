@@ -57,6 +57,7 @@ export class CategoryController {
   })
   async findAll(
     @Query() paginationDto: PaginationDto,
+    @Query('clinicId') clinicId?: string,
   ): Promise<PaginatedCategoryResponseDto> {
     const pagination = new PaginationImproved(
       paginationDto.searchValue,
@@ -65,7 +66,10 @@ export class CategoryController {
       paginationDto.orderBy,
       paginationDto.orderByMode,
     );
-    return this.findAllCategoriesUseCase.execute(pagination);
+    return this.findAllCategoriesUseCase.execute(
+      pagination,
+      clinicId ? +clinicId : undefined,
+    );
   }
 
   @Patch(':id')

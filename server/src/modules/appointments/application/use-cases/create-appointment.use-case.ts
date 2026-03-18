@@ -149,6 +149,7 @@ export class CreateAppointmentUseCase {
       startTime: slotStart,
       endTime: slotEnd,
       reason: dto.reason,
+      clinicId: clinicId ?? null,
     });
 
     return this.toResponse(appointment);

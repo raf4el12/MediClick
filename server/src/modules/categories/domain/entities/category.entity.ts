@@ -5,6 +5,7 @@ export class CategoryEntity {
   icon: string | null;
   color: string | null;
   order: number | null;
+  clinicId: number | null;
   isActive: boolean;
   deleted: boolean;
   createdAt: Date;

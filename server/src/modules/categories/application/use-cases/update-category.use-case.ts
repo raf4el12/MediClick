@@ -24,17 +24,23 @@ export class UpdateCategoryUseCase {
       throw new NotFoundException('Categoría no encontrada');
     }
 
+    const clinicId = dto.clinicId !== undefined ? (dto.clinicId ?? null) : existing.clinicId;
+
     if (dto.name) {
       const nameConflict = await this.categoryRepository.existsByNameExcluding(
         dto.name,
         id,
+        clinicId,
       );
       if (nameConflict) {
         throw new ConflictException('Ya existe una categoría con ese nombre');
       }
     }
 
-    const updated = await this.categoryRepository.update(id, dto);
+    const updated = await this.categoryRepository.update(id, {
+      ...dto,
+      clinicId,
+    });
 
     return {
       id: updated.id,
@@ -43,6 +49,7 @@ export class UpdateCategoryUseCase {
       icon: updated.icon,
       color: updated.color,
       order: updated.order,
+      clinicId: updated.clinicId,
       isActive: updated.isActive,
       createdAt: updated.createdAt,
     };

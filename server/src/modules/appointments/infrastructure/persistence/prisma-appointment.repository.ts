@@ -51,6 +51,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         endTime: data.endTime,
         reason: data.reason,
         ...(data.isOverbook && { isOverbook: true }),
+        clinicId: data.clinicId ?? null,
       },
       include: appointmentInclude,
     });
@@ -66,6 +67,9 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     const where: any = {
       deleted: false,
       ...(filters.status && { status: filters.status }),
+      ...(filters.clinicId
+        ? { OR: [{ clinicId: null }, { clinicId: filters.clinicId }] }
+        : {}),
       ...(filters.doctorId && {
         schedule: { doctorId: filters.doctorId },
       }),

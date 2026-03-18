@@ -7,6 +7,7 @@ export interface CreateAppointmentData {
   endTime: Date;
   reason?: string;
   isOverbook?: boolean;
+  clinicId?: number | null;
 }
 
 export interface UpdateAppointmentData {
@@ -61,6 +62,7 @@ export interface DashboardFilters {
   doctorId?: number;
   specialtyId?: number;
   status?: AppointmentStatus;
+  clinicId?: number;
 }
 
 export interface PatientAppointmentFilters {

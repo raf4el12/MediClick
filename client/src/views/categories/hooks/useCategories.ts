@@ -15,6 +15,8 @@ import {
   deleteCategoryThunk,
 } from '@/redux-store/thunks/categories.thunks';
 import type { Category } from '../types';
+import type { Clinic } from '@/views/clinics/types';
+import { clinicsService } from '@/services/clinics.service';
 
 export function useCategories() {
   const dispatch = useAppDispatch();
@@ -32,6 +34,7 @@ export function useCategories() {
 
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [selectedDeleteId, setSelectedDeleteId] = useState<number | null>(null);
+  const [clinics, setClinics] = useState<Clinic[]>([]);
 
   const fetchData = useCallback(() => {
     void dispatch(
@@ -55,6 +58,10 @@ export function useCategories() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    void clinicsService.findAll().then(setClinics);
+  }, []);
 
   const updatePagination = useCallback(
     (updates: Parameters<typeof setCategoriesPagination>[0]) => {
@@ -112,6 +119,7 @@ export function useCategories() {
     loading,
     error,
     pagination,
+    clinics,
     setPagination: (updater: React.SetStateAction<typeof pagination>) => {
       const newVal =
         typeof updater === 'function' ? updater(pagination) : updater;

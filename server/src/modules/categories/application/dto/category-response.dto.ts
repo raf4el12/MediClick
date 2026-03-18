@@ -19,6 +19,9 @@ export class CategoryResponseDto {
   @ApiPropertyOptional()
   order: number | null;
 
+  @ApiPropertyOptional({ description: 'ID de la sede (null = global)' })
+  clinicId: number | null;
+
   @ApiProperty()
   isActive: boolean;
 

@@ -14,6 +14,7 @@ export class FindAllSpecialtiesUseCase {
   async execute(
     pagination: PaginationImproved,
     categoryId?: number,
+    clinicId?: number,
   ): Promise<PaginatedSpecialtyResponseDto> {
     const { limit, offset } = pagination.getOffsetLimit();
 
@@ -26,6 +27,7 @@ export class FindAllSpecialtiesUseCase {
         orderByMode: pagination.orderByMode,
       },
       categoryId,
+      clinicId,
     );
 
     const rows: SpecialtyResponseDto[] = result.rows.map((s) => ({
@@ -36,6 +38,7 @@ export class FindAllSpecialtiesUseCase {
       price: s.price ? Number(s.price) : null,
       requirements: s.requirements,
       icon: s.icon,
+      clinicId: s.clinicId,
       isActive: s.isActive,
       createdAt: s.createdAt,
       category: s.category,

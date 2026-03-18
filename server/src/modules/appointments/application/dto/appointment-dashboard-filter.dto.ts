@@ -45,4 +45,13 @@ export class AppointmentDashboardFilterDto extends PaginationDto {
   @IsEnum(AppointmentStatus)
   @IsOptional()
   status?: AppointmentStatus;
+
+  @ApiPropertyOptional({
+    example: 1,
+    description: 'Filtrar por sede (muestra globales + sede)',
+  })
+  @Type(() => Number)
+  @IsInt()
+  @IsOptional()
+  clinicId?: number;
 }

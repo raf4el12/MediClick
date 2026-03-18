@@ -27,6 +27,7 @@ export const specialtySchema = z.object({
     .optional()
     .or(z.literal('')),
   icon: z.string().optional().or(z.literal('')),
+  clinicId: z.number().int().optional(),
 });
 
 export type SpecialtyFormValues = z.infer<typeof specialtySchema>;

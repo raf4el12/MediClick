@@ -127,9 +127,9 @@ export function useAppointments() {
     }
   };
 
-  const handleReschedule = async (id: number, newScheduleId: number, reason?: string) => {
+  const handleReschedule = async (id: number, newScheduleId: number, startTime: string, endTime: string, reason?: string) => {
     try {
-      await appointmentsService.reschedule(id, { newScheduleId, reason });
+      await appointmentsService.reschedule(id, { newScheduleId, startTime, endTime, reason });
       fetchData();
       closeRescheduleDialog();
     } catch {

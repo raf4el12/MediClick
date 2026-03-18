@@ -54,4 +54,9 @@ export class CreateSpecialtyDto {
   @IsString()
   @IsOptional()
   icon?: string;
+
+  @ApiPropertyOptional({ example: 1, description: 'ID de la sede (null = global)' })
+  @IsInt()
+  @IsOptional()
+  clinicId?: number;
 }

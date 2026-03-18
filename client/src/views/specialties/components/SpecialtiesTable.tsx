@@ -25,6 +25,7 @@ import {
 import { SkeletonTable } from '@/components/shared/SkeletonTable';
 import type { Specialty, Category } from '../types';
 import type { PaginatedResponse } from '@/types/pagination.types';
+import type { Clinic } from '@/views/clinics/types';
 import { SpecialtyFilters } from './SpecialtyFilters';
 import { AddSpecialtyDrawer } from './AddSpecialtyDrawer';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -34,6 +35,7 @@ const columnHelper = createColumnHelper<Specialty>();
 interface SpecialtiesTableProps {
   data: PaginatedResponse<Specialty>;
   categories: Category[];
+  clinics: Clinic[];
   loading: boolean;
   error: string | null;
   pagination: {
@@ -63,6 +65,7 @@ interface SpecialtiesTableProps {
 export const SpecialtiesTable = memo(function SpecialtiesTable({
   data,
   categories,
+  clinics,
   loading,
   error,
   pagination,
@@ -100,6 +103,21 @@ export const SpecialtiesTable = memo(function SpecialtiesTable({
             color="primary"
           />
         ),
+      }),
+      columnHelper.accessor('clinicId', {
+        header: 'Sede',
+        cell: ({ row }) => {
+          const clinic = clinics.find((c) => c.id === row.original.clinicId);
+          return (
+            <Chip
+              label={clinic ? clinic.name : 'Global'}
+              variant={clinic ? 'filled' : 'outlined'}
+              size="small"
+              color={clinic ? 'info' : 'default'}
+            />
+          );
+        },
+        meta: { hiddenOnMobile: true },
       }),
       columnHelper.accessor('duration', {
         id: 'duration',
@@ -160,7 +178,7 @@ export const SpecialtiesTable = memo(function SpecialtiesTable({
         ),
       }),
     ],
-    [openEditDrawer, openDeleteDialog],
+    [openEditDrawer, openDeleteDialog, clinics],
   );
 
   const table = useReactTable({
@@ -331,6 +349,7 @@ export const SpecialtiesTable = memo(function SpecialtiesTable({
         open={drawerOpen}
         drawerData={drawerData}
         categories={categories}
+        clinics={clinics}
         onClose={closeDrawer}
         onSuccess={refreshData}
       />

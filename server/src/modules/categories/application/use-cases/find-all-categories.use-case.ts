@@ -13,16 +13,20 @@ export class FindAllCategoriesUseCase {
 
   async execute(
     pagination: PaginationImproved,
+    clinicId?: number,
   ): Promise<PaginatedCategoryResponseDto> {
     const { limit, offset } = pagination.getOffsetLimit();
 
-    const result = await this.categoryRepository.findAllPaginated({
-      offset,
-      limit,
-      searchValue: pagination.searchValue,
-      orderBy: pagination.orderBy,
-      orderByMode: pagination.orderByMode,
-    });
+    const result = await this.categoryRepository.findAllPaginated(
+      {
+        offset,
+        limit,
+        searchValue: pagination.searchValue,
+        orderBy: pagination.orderBy,
+        orderByMode: pagination.orderByMode,
+      },
+      clinicId,
+    );
 
     const rows: CategoryResponseDto[] = result.rows.map((c) => ({
       id: c.id,
@@ -31,6 +35,7 @@ export class FindAllCategoriesUseCase {
       icon: c.icon,
       color: c.color,
       order: c.order,
+      clinicId: c.clinicId,
       isActive: c.isActive,
       createdAt: c.createdAt,
     }));

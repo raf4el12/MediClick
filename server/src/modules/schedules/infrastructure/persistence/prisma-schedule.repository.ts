@@ -34,6 +34,7 @@ export class PrismaScheduleRepository implements IScheduleRepository {
         scheduleDate: d.scheduleDate,
         timeFrom: d.timeFrom,
         timeTo: d.timeTo,
+        clinicId: d.clinicId ?? null,
       })),
       skipDuplicates: true,
     });
@@ -49,6 +50,7 @@ export class PrismaScheduleRepository implements IScheduleRepository {
       dateTo?: Date;
       onlyAvailable?: boolean;
       timezone?: string;
+      clinicId?: number;
     },
   ): Promise<PaginatedResult<ScheduleWithRelations>> {
     const { limit, offset, orderBy, orderByMode } = params;
@@ -65,6 +67,9 @@ export class PrismaScheduleRepository implements IScheduleRepository {
     const where: Record<string, any> = {
       ...(filters.doctorId && { doctorId: filters.doctorId }),
       ...(filters.specialtyId && { specialtyId: filters.specialtyId }),
+      ...(filters.clinicId
+        ? { OR: [{ clinicId: null }, { clinicId: filters.clinicId }] }
+        : {}),
       scheduleDate: {
         gte: effectiveDateFrom,
         ...(filters.dateTo && { lte: filters.dateTo }),

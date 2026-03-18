@@ -11,6 +11,7 @@ export interface CreateAvailabilityData {
   timeTo: Date;
   type: AvailabilityType;
   reason?: string;
+  clinicId?: number | null;
 }
 
 export interface UpdateAvailabilityData {

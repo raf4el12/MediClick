@@ -39,6 +39,7 @@ export class PrismaAvailabilityRepository implements IAvailabilityRepository {
         timeTo: data.timeTo,
         type: data.type,
         reason: data.reason,
+        clinicId: data.clinicId ?? null,
       },
       include: availabilityInclude,
     }) as any;

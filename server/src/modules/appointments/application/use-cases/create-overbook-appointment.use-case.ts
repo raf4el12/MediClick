@@ -141,7 +141,7 @@ export class CreateOverbookAppointmentUseCase {
     const durationMs = specialty.duration * 60 * 1000;
     const overbookEndTime = new Date(overbookStartTime.getTime() + durationMs);
 
-    // 10. Crear la cita de sobrecupo
+    // 10. Crear la cita de sobrecupo (auto-asignar clinicId del doctor)
     const appointment = await this.appointmentRepository.create({
       patientId: dto.patientId,
       scheduleId: lastSchedule.id,
@@ -149,6 +149,7 @@ export class CreateOverbookAppointmentUseCase {
       endTime: overbookEndTime,
       reason: dto.reason,
       isOverbook: true,
+      clinicId: (doctor as any).clinicId ?? null,
     });
 
     return this.toResponse(appointment);

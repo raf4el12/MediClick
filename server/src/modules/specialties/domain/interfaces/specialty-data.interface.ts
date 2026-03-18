@@ -9,6 +9,7 @@ export interface CreateSpecialtyData {
   price: number;
   requirements?: string;
   icon?: string;
+  clinicId?: number | null;
 }
 
 export interface UpdateSpecialtyData {
@@ -20,6 +21,7 @@ export interface UpdateSpecialtyData {
   price?: number;
   requirements?: string;
   icon?: string;
+  clinicId?: number | null;
   isActive?: boolean;
 }
 

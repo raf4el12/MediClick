@@ -33,7 +33,12 @@ export class UpdateSpecialtyUseCase {
       throw new BadRequestException('La categoría especificada no existe');
     }
 
-    const savedEntity = await this.specialtyRepository.update(id, dto);
+    const clinicId = dto.clinicId !== undefined ? (dto.clinicId ?? null) : existing.clinicId;
+
+    const savedEntity = await this.specialtyRepository.update(id, {
+      ...dto,
+      clinicId,
+    });
 
     return {
       id: savedEntity.id,
@@ -43,6 +48,7 @@ export class UpdateSpecialtyUseCase {
       price: savedEntity.price ? Number(savedEntity.price) : null,
       requirements: savedEntity.requirements,
       icon: savedEntity.icon,
+      clinicId: savedEntity.clinicId,
       isActive: savedEntity.isActive,
       createdAt: savedEntity.createdAt,
       category: { id: category.id, name: category.name },

@@ -22,6 +22,9 @@ export class SpecialtyResponseDto {
   @ApiPropertyOptional()
   icon: string | null;
 
+  @ApiPropertyOptional({ description: 'ID de la sede (null = global)' })
+  clinicId: number | null;
+
   @ApiProperty()
   isActive: boolean;
 

@@ -46,4 +46,13 @@ export class FindAllSchedulesQueryDto extends PaginationDto {
   @Transform(({ value }) => value === 'true' || value === true)
   @IsBoolean()
   onlyAvailable?: boolean;
+
+  @ApiPropertyOptional({
+    example: 1,
+    description: 'Filtrar por ID de sede (muestra globales + sede)',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  clinicId?: number;
 }

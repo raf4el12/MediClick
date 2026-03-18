@@ -85,6 +85,7 @@ export class ScheduleController {
       dateFrom: queryDto.dateFrom,
       dateTo: queryDto.dateTo,
       onlyAvailable: queryDto.onlyAvailable,
+      clinicId: queryDto.clinicId,
     });
   }
 

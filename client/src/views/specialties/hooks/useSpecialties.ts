@@ -17,6 +17,8 @@ import {
   deleteSpecialtyThunk,
 } from '@/redux-store/thunks/specialties.thunks';
 import type { Specialty } from '../types';
+import type { Clinic } from '@/views/clinics/types';
+import { clinicsService } from '@/services/clinics.service';
 
 export function useSpecialties() {
   const dispatch = useAppDispatch();
@@ -35,6 +37,7 @@ export function useSpecialties() {
 
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [selectedDeleteId, setSelectedDeleteId] = useState<number | null>(null);
+  const [clinics, setClinics] = useState<Clinic[]>([]);
 
   const fetchData = useCallback(() => {
     void dispatch(
@@ -65,6 +68,7 @@ export function useSpecialties() {
 
   useEffect(() => {
     void dispatch(fetchCategoriesThunk());
+    void clinicsService.findAll().then(setClinics);
   }, [dispatch]);
 
   const updatePagination = useCallback(
@@ -125,6 +129,7 @@ export function useSpecialties() {
   return {
     data,
     categories,
+    clinics,
     loading,
     error,
     pagination,

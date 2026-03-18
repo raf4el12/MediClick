@@ -26,6 +26,7 @@ export class GetDashboardAppointmentsUseCase {
       ...(filterDto.doctorId && { doctorId: filterDto.doctorId }),
       ...(filterDto.specialtyId && { specialtyId: filterDto.specialtyId }),
       ...(filterDto.status && { status: filterDto.status }),
+      ...(filterDto.clinicId && { clinicId: filterDto.clinicId }),
     };
 
     const result = await this.appointmentRepository.findAllPaginated(

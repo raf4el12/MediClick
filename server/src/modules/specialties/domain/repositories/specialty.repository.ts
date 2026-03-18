@@ -12,6 +12,7 @@ export interface ISpecialtyRepository {
   findAllPaginated(
     params: PaginationParams,
     categoryId?: number,
+    clinicId?: number,
   ): Promise<PaginatedResult<SpecialtyWithCategory>>;
   findById(id: number): Promise<SpecialtyWithCategory | null>;
   findByIds(ids: number[]): Promise<SpecialtyEntity[]>;

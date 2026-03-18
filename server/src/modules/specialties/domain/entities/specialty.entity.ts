@@ -8,6 +8,7 @@ export class SpecialtyEntity {
   price: number | null;
   requirements: string | null;
   icon: string | null;
+  clinicId: number | null;
   isActive: boolean;
   deleted: boolean;
   createdAt: Date;
