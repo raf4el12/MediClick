@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { RedisModule } from './shared/redis/redis.module.js';
+import { PdfModule } from './shared/pdf/pdf.module.js';
 import { AuthModule } from './modules/auth/application/auth.module.js';
 import { UsersModule } from './modules/users/application/users.module.js';
 import { CategoriesModule } from './modules/categories/application/categories.module.js';
@@ -25,6 +26,7 @@ import { ScheduleBlocksModule } from './modules/schedule-blocks/application/sche
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
     RedisModule,
+    PdfModule,
     AuthModule,
     UsersModule,
     CategoriesModule,

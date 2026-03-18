@@ -1,25 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import pdfmake from 'pdfmake';
+import { PdfService } from '../../../../shared/pdf/pdf.service.js';
 import type { TDocumentDefinitions, Content } from 'pdfmake/interfaces.js';
 import type { PrescriptionForPdf } from '../interfaces/prescription-data.interface.js';
 
 @Injectable()
 export class PrescriptionPdfService {
-  constructor() {
-    pdfmake.setFonts({
-      Roboto: {
-        normal:
-          'node_modules/pdfmake/build/vfs_fonts/Roboto/Roboto-Regular.ttf',
-        bold: 'node_modules/pdfmake/build/vfs_fonts/Roboto/Roboto-Medium.ttf',
-        italics:
-          'node_modules/pdfmake/build/vfs_fonts/Roboto/Roboto-Italic.ttf',
-        bolditalics:
-          'node_modules/pdfmake/build/vfs_fonts/Roboto/Roboto-MediumItalic.ttf',
-      },
-    });
-  }
+  constructor(private readonly pdfService: PdfService) {}
 
   async generate(data: PrescriptionForPdf): Promise<Buffer> {
+    const docDefinition = this.buildDocDefinition(data);
+
+    return this.pdfService.generate(docDefinition);
+  }
+
+  private buildDocDefinition(data: PrescriptionForPdf): TDocumentDefinitions {
     const doctor = data.appointment.schedule.doctor;
     const patient = data.appointment.patient;
     const clinic = doctor.clinic;
@@ -292,7 +286,7 @@ export class PrescriptionPdfService {
       ],
     };
 
-    const docDefinition: TDocumentDefinitions = {
+    return {
       pageSize: 'A4',
       pageMargins: [40, 40, 40, 40],
       content: [
@@ -310,7 +304,11 @@ export class PrescriptionPdfService {
       ],
       styles: {
         clinicName: { fontSize: 16, bold: true, color: '#2196F3' },
-        clinicDetails: { fontSize: 9, color: '#666666', margin: [0, 2, 0, 0] },
+        clinicDetails: {
+          fontSize: 9,
+          color: '#666666',
+          margin: [0, 2, 0, 0],
+        },
         title: { fontSize: 14, bold: true, color: '#333333' },
         recetaNumber: { fontSize: 10, color: '#666666' },
         sectionHeader: {
@@ -328,9 +326,5 @@ export class PrescriptionPdfService {
         },
       },
     };
-
-    const pdf = pdfmake.createPdf(docDefinition);
-
-    return pdf.getBuffer();
   }
 }
