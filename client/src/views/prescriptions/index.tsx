@@ -61,6 +61,8 @@ export default function PrescriptionsView() {
                 panelError={controller.panelError}
                 onClose={controller.clearSelection}
                 onCreatePrescription={controller.createPrescription}
+                onDownloadPdf={() => controller.downloadPdf(controller.selectedAppointment!.id)}
+                loadingDownload={controller.loadingDownload}
               />
             </Collapse>
           </Grid>

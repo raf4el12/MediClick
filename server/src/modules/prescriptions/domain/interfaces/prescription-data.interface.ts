@@ -13,6 +13,44 @@ export interface CreatePrescriptionItemData {
   notes?: string;
 }
 
+export interface PrescriptionForPdf {
+  id: number;
+  instructions: string | null;
+  validUntil: Date | null;
+  createdAt: Date;
+  items: {
+    medication: string;
+    dosage: string;
+    frequency: string;
+    duration: string;
+    notes: string | null;
+  }[];
+  appointment: {
+    patient: {
+      id: number;
+      profile: {
+        name: string;
+        lastName: string;
+        numberDocument: string | null;
+        typeDocument: string | null;
+      };
+    };
+    schedule: {
+      scheduleDate: Date;
+      doctor: {
+        licenseNumber: string;
+        profile: { name: string; lastName: string };
+        clinic: {
+          name: string;
+          address: string | null;
+          phone: string | null;
+        } | null;
+      };
+      specialty: { name: string };
+    };
+  };
+}
+
 export interface PrescriptionWithItems {
   id: number;
   appointmentId: number;

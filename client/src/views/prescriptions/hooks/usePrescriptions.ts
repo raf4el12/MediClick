@@ -36,6 +36,7 @@ export function usePrescriptions() {
   const [prescription, setPrescription] = useState<Prescription | null>(null);
   const [loadingPrescription, setLoadingPrescription] = useState(false);
   const [loadingCreate, setLoadingCreate] = useState(false);
+  const [loadingDownload, setLoadingDownload] = useState(false);
   const [panelError, setPanelError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
@@ -118,6 +119,17 @@ export function usePrescriptions() {
     setPanelError(null);
   }, []);
 
+  const downloadPdf = useCallback(async (appointmentId: number) => {
+    setLoadingDownload(true);
+    try {
+      await prescriptionsService.downloadPdf(appointmentId);
+    } catch {
+      setPanelError('Error al descargar la receta');
+    } finally {
+      setLoadingDownload(false);
+    }
+  }, []);
+
   const createPrescription = useCallback(
     async (payload: CreatePrescriptionPayload) => {
       setLoadingCreate(true);
@@ -146,7 +158,9 @@ export function usePrescriptions() {
     prescription,
     loadingPrescription,
     loadingCreate,
+    loadingDownload,
     panelError,
     createPrescription,
+    downloadPdf,
   };
 }

@@ -10,6 +10,7 @@ import Skeleton from '@mui/material/Skeleton';
 import Alert from '@mui/material/Alert';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
+import Button from '@mui/material/Button';
 import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
@@ -37,6 +38,8 @@ interface PrescriptionPanelProps {
   panelError: string | null;
   onClose: () => void;
   onCreatePrescription: (payload: CreatePrescriptionPayload) => Promise<void>;
+  onDownloadPdf?: () => void;
+  loadingDownload?: boolean;
 }
 
 export const PrescriptionPanel = memo(function PrescriptionPanel({
@@ -47,6 +50,8 @@ export const PrescriptionPanel = memo(function PrescriptionPanel({
   panelError,
   onClose,
   onCreatePrescription,
+  onDownloadPdf,
+  loadingDownload,
 }: PrescriptionPanelProps) {
   if (!appointment) {
     return (
@@ -150,6 +155,19 @@ export const PrescriptionPanel = memo(function PrescriptionPanel({
                 </TableBody>
               </Table>
             </Box>
+
+            {onDownloadPdf && (
+              <Button
+                variant="outlined"
+                startIcon={<i className="ri-download-2-line" />}
+                onClick={onDownloadPdf}
+                disabled={loadingDownload}
+                size="small"
+                sx={{ mt: 2 }}
+              >
+                {loadingDownload ? 'Descargando...' : 'Descargar PDF'}
+              </Button>
+            )}
           </Box>
         ) : (
           <PrescriptionForm

@@ -23,4 +23,32 @@ export const prescriptionsService = {
 
     return response.data;
   },
+
+  downloadPdf: async (appointmentId: number): Promise<void> => {
+    const response = await api.get(
+      `/prescriptions/appointment/${appointmentId}/pdf`,
+      { responseType: 'blob' },
+    );
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `receta-${appointmentId}.pdf`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  },
+
+  downloadMyPdf: async (appointmentId: number): Promise<void> => {
+    const response = await api.get(
+      `/prescriptions/my/appointment/${appointmentId}/pdf`,
+      { responseType: 'blob' },
+    );
+    const blob = new Blob([response.data], { type: 'application/pdf' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `receta-${appointmentId}.pdf`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  },
 };

@@ -3,6 +3,7 @@ import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { IPrescriptionRepository } from '../../domain/repositories/prescription.repository.js';
 import {
   CreatePrescriptionData,
+  PrescriptionForPdf,
   PrescriptionWithItems,
 } from '../../domain/interfaces/prescription-data.interface.js';
 
@@ -28,6 +29,48 @@ const prescriptionInclude = {
             },
           },
           specialty: { select: { id: true, name: true } },
+        },
+      },
+    },
+  },
+} as const;
+
+const pdfInclude = {
+  items: {
+    select: {
+      medication: true,
+      dosage: true,
+      frequency: true,
+      duration: true,
+      notes: true,
+    },
+  },
+  appointment: {
+    select: {
+      patient: {
+        select: {
+          id: true,
+          profile: {
+            select: {
+              name: true,
+              lastName: true,
+              numberDocument: true,
+              typeDocument: true,
+            },
+          },
+        },
+      },
+      schedule: {
+        select: {
+          scheduleDate: true,
+          doctor: {
+            select: {
+              licenseNumber: true,
+              profile: { select: { name: true, lastName: true } },
+              clinic: { select: { name: true, address: true, phone: true } },
+            },
+          },
+          specialty: { select: { name: true } },
         },
       },
     },
@@ -86,6 +129,22 @@ export class PrismaPrescriptionRepository implements IPrescriptionRepository {
     const result = await this.prisma.prescriptions.findUnique({
       where: { appointmentId },
       include: prescriptionInclude,
+    });
+    return result as any;
+  }
+
+  async findByAppointmentIdForPdf(
+    appointmentId: number,
+  ): Promise<PrescriptionForPdf | null> {
+    const result = await this.prisma.prescriptions.findUnique({
+      where: { appointmentId },
+      select: {
+        id: true,
+        instructions: true,
+        validUntil: true,
+        createdAt: true,
+        ...pdfInclude,
+      },
     });
     return result as any;
   }
