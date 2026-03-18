@@ -68,24 +68,24 @@ export function useClinics() {
     500,
   );
 
-  const openCreateDrawer = () => {
+  const openCreateDrawer = useCallback(() => {
     setDrawerData({ data: null, action: 'Create' });
     setDrawerOpen(true);
-  };
+  }, []);
 
-  const openEditDrawer = (clinic: Clinic) => {
+  const openEditDrawer = useCallback((clinic: Clinic) => {
     setDrawerData({ data: clinic, action: 'Update' });
     setDrawerOpen(true);
-  };
+  }, []);
 
-  const closeDrawer = () => {
+  const closeDrawer = useCallback(() => {
     setDrawerOpen(false);
-  };
+  }, []);
 
-  const openDeleteDialog = (id: number) => {
+  const openDeleteDialog = useCallback((id: number) => {
     setSelectedDeleteId(id);
     setConfirmDialogOpen(true);
-  };
+  }, []);
 
   const handleDelete = async (confirmed: boolean) => {
     if (confirmed && selectedDeleteId) {
@@ -107,16 +107,21 @@ export function useClinics() {
     setSelectedDeleteId(null);
   };
 
+  const setPagination = useCallback(
+    (updater: React.SetStateAction<typeof pagination>) => {
+      const newVal =
+        typeof updater === 'function' ? updater(pagination) : updater;
+      dispatch(setClinicsPagination(newVal));
+    },
+    [pagination, dispatch],
+  );
+
   return {
     data,
     loading,
     error,
     pagination,
-    setPagination: (updater: React.SetStateAction<typeof pagination>) => {
-      const newVal =
-        typeof updater === 'function' ? updater(pagination) : updater;
-      dispatch(setClinicsPagination(newVal));
-    },
+    setPagination,
     debouncedSearch,
     drawerOpen,
     drawerData,

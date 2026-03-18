@@ -119,8 +119,8 @@ export default function HolidaysView() {
         totalPages={ctrl.data.totalPages}
         page={ctrl.page}
         onPageChange={ctrl.handlePageChange}
-        onEdit={(e) => ctrl.setEditEntry(e)}
-        onDelete={(e) => ctrl.setDeleteEntry(e)}
+        onEdit={ctrl.setEditEntry}
+        onDelete={ctrl.setDeleteEntry}
       />
 
       {/* Diálogos */}

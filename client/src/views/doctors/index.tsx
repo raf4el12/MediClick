@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback } from 'react';
 import Grid from '@mui/material/Grid';
 import { useDoctors } from './hooks/useDoctors';
 import { DoctorsTable } from './components/DoctorsTable';
@@ -17,16 +18,16 @@ export default function DoctorsView() {
   const controller = useDoctors();
   const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
 
-  const handleCreateSuccess = () => {
+  const handleCreateSuccess = useCallback(() => {
     controller.refreshData();
     showSnackbar('Doctor registrado exitosamente', 'success');
-  };
+  }, [controller.refreshData, showSnackbar]);
 
-  const handleEditSuccess = () => {
+  const handleEditSuccess = useCallback(() => {
     controller.closeEditDrawer();
     controller.refreshData();
     showSnackbar('Doctor actualizado exitosamente', 'success');
-  };
+  }, [controller.closeEditDrawer, controller.refreshData, showSnackbar]);
 
   const handleDelete = async () => {
     const success = await controller.confirmDelete();

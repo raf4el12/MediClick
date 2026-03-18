@@ -64,8 +64,10 @@ export function useDoctors() {
   }, [fetchData]);
 
   useEffect(() => {
-    void dispatch(fetchDoctorSpecialtiesThunk());
-    void clinicsService.findAll().then(setClinics).catch(() => {});
+    void Promise.all([
+      dispatch(fetchDoctorSpecialtiesThunk()),
+      clinicsService.findAll().then(setClinics),
+    ]).catch(() => {});
   }, [dispatch]);
 
   const updatePagination = useCallback(
@@ -84,17 +86,17 @@ export function useDoctors() {
     updatePagination({ specialtyId, currentPage: 1 });
   };
 
-  const openCreateDrawer = () => setDrawerOpen(true);
-  const closeDrawer = () => setDrawerOpen(false);
+  const openCreateDrawer = useCallback(() => setDrawerOpen(true), []);
+  const closeDrawer = useCallback(() => setDrawerOpen(false), []);
 
-  const openDetail = (doctor: Doctor) => setDetailDoctor(doctor);
-  const closeDetail = () => setDetailDoctor(null);
+  const openDetail = useCallback((doctor: Doctor) => setDetailDoctor(doctor), []);
+  const closeDetail = useCallback(() => setDetailDoctor(null), []);
 
-  const openEditDrawer = (doctor: Doctor) => setEditDoctor(doctor);
-  const closeEditDrawer = () => setEditDoctor(null);
+  const openEditDrawer = useCallback((doctor: Doctor) => setEditDoctor(doctor), []);
+  const closeEditDrawer = useCallback(() => setEditDoctor(null), []);
 
-  const openDeleteDialog = (doctor: Doctor) => setDeleteDoctor(doctor);
-  const closeDeleteDialog = () => setDeleteDoctor(null);
+  const openDeleteDialog = useCallback((doctor: Doctor) => setDeleteDoctor(doctor), []);
+  const closeDeleteDialog = useCallback(() => setDeleteDoctor(null), []);
 
   const confirmDelete = async (): Promise<boolean> => {
     if (!deleteDoctor) return false;
@@ -111,6 +113,15 @@ export function useDoctors() {
     }
   };
 
+  const setPagination = useCallback(
+    (updater: React.SetStateAction<typeof pagination>) => {
+      const newVal =
+        typeof updater === 'function' ? updater(pagination) : updater;
+      dispatch(setDoctorsPagination(newVal));
+    },
+    [pagination, dispatch],
+  );
+
   return {
     data,
     specialties,
@@ -118,11 +129,7 @@ export function useDoctors() {
     loading,
     error,
     pagination,
-    setPagination: (updater: React.SetStateAction<typeof pagination>) => {
-      const newVal =
-        typeof updater === 'function' ? updater(pagination) : updater;
-      dispatch(setDoctorsPagination(newVal));
-    },
+    setPagination,
     debouncedSearch,
     handleSpecialtyFilter,
     drawerOpen,

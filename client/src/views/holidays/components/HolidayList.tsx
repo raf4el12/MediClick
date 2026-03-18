@@ -1,6 +1,6 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -37,7 +37,7 @@ export const HolidayList = memo(function HolidayList({
   onEdit,
   onDelete,
 }: HolidayListProps) {
-  const clinicMap = new Map(clinics.map((c) => [c.id, c.name]));
+  const clinicMap = useMemo(() => new Map(clinics.map((c) => [c.id, c.name])), [clinics]);
   const theme = useTheme();
 
   if (loading) {

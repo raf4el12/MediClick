@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Drawer from '@mui/material/Drawer';
 import Divider from '@mui/material/Divider';
 import IconButton from '@mui/material/IconButton';
@@ -62,6 +62,7 @@ const KEEP_MOUNTED = { keepMounted: true };
 export function EditDoctorDrawer({ open, doctor, specialties, clinics, onClose, onSuccess }: EditDoctorDrawerProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
+    const specialtyMap = useMemo(() => new Map(specialties.map((s) => [s.id, s])), [specialties]);
 
     const {
         control,
@@ -289,10 +290,9 @@ export function EditDoctorDrawer({ open, doctor, specialties, clinics, onClose, 
                                 input={<OutlinedInput label="Especialidades *" />}
                                 renderValue={(selected) => (
                                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                        {(selected as number[]).map((id) => {
-                                            const spec = specialties.find((s) => s.id === id);
-                                            return <Chip key={id} label={spec?.name ?? id} size="small" />;
-                                        })}
+                                        {(selected as number[]).map((id) => (
+                                            <Chip key={id} label={specialtyMap.get(id)?.name ?? id} size="small" />
+                                        ))}
                                     </Box>
                                 )}
                             >
