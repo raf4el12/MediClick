@@ -40,27 +40,29 @@ export class LoginUseCase {
       throw new UnauthorizedException('Credenciales inválidas');
     }
 
-    const accessToken = await this.tokenService.generateAccessToken({
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-    });
-
     const rawRefreshToken = this.tokenService.generateOpaqueRefreshToken();
     const tokenHash = this.tokenService.hashToken(rawRefreshToken);
     const tokenFamily = randomUUID();
     const ttl = this.tokenService.getRefreshTokenTtlSeconds();
 
-    await this.refreshTokenRepository.save(
-      {
-        tokenHash,
-        tokenFamily,
-        userId: user.id,
-        deviceId,
-        createdAt: Date.now(),
-      },
-      ttl,
-    );
+    const [accessToken] = await Promise.all([
+      this.tokenService.generateAccessToken({
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+        clinicId: user.clinicId,
+      }),
+      this.refreshTokenRepository.save(
+        {
+          tokenHash,
+          tokenFamily,
+          userId: user.id,
+          deviceId,
+          createdAt: Date.now(),
+        },
+        ttl,
+      ),
+    ]);
 
     return {
       accessToken,

@@ -9,6 +9,7 @@ export class UserEntity {
   role: UserRole;
   isActive: boolean;
   validateEmail: boolean;
+  clinicId: number | null;
   deleted: boolean;
   createdAt: Date;
   updatedAt: Date | null;

@@ -7,10 +7,16 @@ import { ITokenService } from '../../domain/contracts/token-service.interface.js
 
 @Injectable()
 export class TokenService implements ITokenService {
+  private readonly refreshTokenTtlSeconds: number;
+
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-  ) {}
+  ) {
+    this.refreshTokenTtlSeconds = this.parseDurationToSeconds(
+      this.configService.get<string>('JWT_REFRESH_EXPIRES_IN', '7d'),
+    );
+  }
 
   async generateAccessToken(payload: JwtPayload): Promise<string> {
     const opts: JwtSignOptions = {
@@ -35,11 +41,7 @@ export class TokenService implements ITokenService {
   }
 
   getRefreshTokenTtlSeconds(): number {
-    const expiresIn = this.configService.get<string>(
-      'JWT_REFRESH_EXPIRES_IN',
-      '7d',
-    );
-    return this.parseDurationToSeconds(expiresIn);
+    return this.refreshTokenTtlSeconds;
   }
 
   private parseDurationToSeconds(duration: string): number {

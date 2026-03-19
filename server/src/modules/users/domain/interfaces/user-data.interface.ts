@@ -5,6 +5,7 @@ export interface CreateInternalUserData {
   email: string;
   password: string;
   role: UserRole;
+  clinicId?: number;
   profile: {
     name: string;
     lastName: string;

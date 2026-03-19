@@ -71,6 +71,7 @@ export class RefreshTokenUseCase {
       sub: user.id,
       email: user.email,
       role: user.role,
+      clinicId: user.clinicId,
     });
 
     const newRawRefreshToken = this.tokenService.generateOpaqueRefreshToken();

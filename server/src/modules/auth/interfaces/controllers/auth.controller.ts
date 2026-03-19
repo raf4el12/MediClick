@@ -17,6 +17,7 @@ import {
   ApiBearerAuth,
   ApiCookieAuth,
 } from '@nestjs/swagger';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
 import express from 'express';
 import { ConfigService } from '@nestjs/config';
 import { LoginDto } from '../../application/dto/login.dto.js';
@@ -50,11 +51,11 @@ export class AuthController {
     private readonly updateProfileUseCase: UpdateProfileUseCase,
     private readonly checkAvailabilityUseCase: CheckAvailabilityUseCase,
     private readonly configService: ConfigService,
-  ) {}
-
-  private get isProduction(): boolean {
-    return this.configService.get('NODE_ENV') === 'production';
+  ) {
+    this.isProduction = this.configService.get('NODE_ENV') === 'production';
   }
+
+  private readonly isProduction: boolean;
 
   private setTokenCookies(
     res: express.Response,
@@ -84,6 +85,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @Throttle({ long: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Iniciar sesión' })
   @ApiResponse({
@@ -130,6 +132,7 @@ export class AuthController {
   }
 
   @Post('register')
+  @Throttle({ long: { ttl: 60000, limit: 3 } })
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Registro de paciente (público)' })
   @ApiResponse({
@@ -154,6 +157,7 @@ export class AuthController {
   }
 
   @Post('refresh-token')
+  @SkipThrottle()
   @HttpCode(HttpStatus.OK)
   @ApiCookieAuth('refreshToken')
   @ApiOperation({ summary: 'Renovar tokens con refresh token (cookie)' })

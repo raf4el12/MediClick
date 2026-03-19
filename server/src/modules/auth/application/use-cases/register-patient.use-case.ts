@@ -73,6 +73,7 @@ export class RegisterPatientUseCase {
       sub: userId,
       email: dto.email,
       role: UserRole.PATIENT,
+      clinicId: null,
     });
 
     const rawRefreshToken = this.tokenService.generateOpaqueRefreshToken();

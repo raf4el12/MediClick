@@ -1,8 +1,12 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { RequestLoggerMiddleware } from './shared/middleware/request-logger.middleware.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { RedisModule } from './shared/redis/redis.module.js';
 import { PdfModule } from './shared/pdf/pdf.module.js';
+import { HealthModule } from './shared/health/health.module.js';
 import { AuthModule } from './modules/auth/application/auth.module.js';
 import { UsersModule } from './modules/users/application/users.module.js';
 import { CategoriesModule } from './modules/categories/application/categories.module.js';
@@ -24,9 +28,17 @@ import { ScheduleBlocksModule } from './modules/schedule-blocks/application/sche
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        { name: 'short', ttl: 1000, limit: 3 },
+        { name: 'medium', ttl: 10000, limit: 20 },
+        { name: 'long', ttl: 60000, limit: 100 },
+      ],
+    }),
     PrismaModule,
     RedisModule,
     PdfModule,
+    HealthModule,
     AuthModule,
     UsersModule,
     CategoriesModule,
@@ -46,6 +58,18 @@ import { ScheduleBlocksModule } from './modules/schedule-blocks/application/sche
     ScheduleBlocksModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
-export class AppModule { }
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(RequestLoggerMiddleware)
+      .exclude('health')
+      .forRoutes('*');
+  }
+}

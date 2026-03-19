@@ -44,6 +44,7 @@ export class PrismaDoctorRepository implements IDoctorRepository {
           password: data.user.password,
           role: 'DOCTOR',
           isActive: true,
+          clinicId: data.doctor.clinicId,
         },
       });
 

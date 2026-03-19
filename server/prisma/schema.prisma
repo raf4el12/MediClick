@@ -94,14 +94,17 @@ model Users {
   role          UserRole        @default(USER)
   isActive      Boolean         @default(true)
   validateEmail Boolean         @default(false)
+  clinicId      Int?
   deleted       Boolean         @default(false)
   createdAt     DateTime        @default(now())
   updatedAt     DateTime?
+  clinic        Clinics?        @relation(fields: [clinicId], references: [id])
   profiles      Profiles[]
   notifications Notifications[]
 
   @@index([email])
   @@index([role, deleted])
+  @@index([clinicId])
 }
 
 model Profiles {
@@ -477,6 +480,7 @@ model Clinics {
   createdAt DateTime  @default(now())
   updatedAt DateTime?
 
+  users        Users[]
   doctors      Doctors[]
   holidays     Holidays[]
   categories   Categories[]
