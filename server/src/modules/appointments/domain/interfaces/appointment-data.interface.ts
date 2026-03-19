@@ -38,6 +38,7 @@ export interface AppointmentWithRelations {
   deleted: boolean;
   createdAt: Date;
   updatedAt: Date | null;
+  hasPrescription: boolean;
   patient: {
     id: number;
     profile: { name: string; lastName: string; email: string };

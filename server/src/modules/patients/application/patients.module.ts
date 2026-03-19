@@ -1,5 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { AuthModule } from '../../auth/application/auth.module.js';
+import { DoctorsModule } from '../../doctors/application/doctors.module.js';
 import { PrismaPatientRepository } from '../infrastructure/persistence/prisma-patient.repository.js';
 import { CreatePatientUseCase } from './use-cases/create-patient.use-case.js';
 import { FindAllPatientsUseCase } from './use-cases/find-all-patients.use-case.js';
@@ -9,7 +10,7 @@ import { DeletePatientUseCase } from './use-cases/delete-patient.use-case.js';
 import { PatientController } from '../interfaces/controllers/patient.controller.js';
 
 @Module({
-  imports: [forwardRef(() => AuthModule)],
+  imports: [forwardRef(() => AuthModule), forwardRef(() => DoctorsModule)],
   controllers: [PatientController],
   providers: [
     {

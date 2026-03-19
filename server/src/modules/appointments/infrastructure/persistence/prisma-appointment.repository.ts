@@ -36,6 +36,7 @@ const appointmentInclude = {
       specialty: { select: { id: true, name: true } },
     },
   },
+  prescription: { select: { id: true } },
 } as const;
 
 @Injectable()
@@ -300,6 +301,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       updatedAt: raw.updatedAt,
       patient: raw.patient,
       schedule: raw.schedule,
+      hasPrescription: raw.prescription !== null && raw.prescription !== undefined,
     };
   }
 }

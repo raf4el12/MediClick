@@ -140,6 +140,8 @@ export class AppointmentController {
   @ApiOperation({ summary: 'Dashboard de citas con filtros' })
   @ApiResponse({ status: 200, type: PaginatedAppointmentResponseDto })
   async findAll(
+    @CurrentUser('id') userId: number,
+    @CurrentUser('role') role: string,
     @Query() filterDto: AppointmentDashboardFilterDto,
   ): Promise<PaginatedAppointmentResponseDto> {
     const pagination = new PaginationImproved(
@@ -149,7 +151,7 @@ export class AppointmentController {
       filterDto.orderBy,
       filterDto.orderByMode,
     );
-    return this.getDashboardAppointmentsUseCase.execute(pagination, filterDto);
+    return this.getDashboardAppointmentsUseCase.execute(pagination, filterDto, userId, role);
   }
 
   @Patch(':id/check-in')

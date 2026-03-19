@@ -70,6 +70,7 @@ export class CompleteAppointmentUseCase {
         specialty: a.schedule.specialty,
       },
       timezone: a.schedule.doctor.clinic?.timezone ?? 'America/Lima',
+      hasPrescription: a.hasPrescription,
       createdAt: a.createdAt,
     };
   }

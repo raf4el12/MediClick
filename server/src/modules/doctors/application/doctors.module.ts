@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { SpecialtiesModule } from '../../specialties/application/specialties.module.js';
 import { AuthModule } from '../../auth/application/auth.module.js';
 import { PrismaDoctorRepository } from '../infrastructure/persistence/prisma-doctor.repository.js';
@@ -10,7 +10,7 @@ import { DeleteDoctorUseCase } from './use-cases/delete-doctor.use-case.js';
 import { DoctorController } from '../interfaces/controllers/doctor.controller.js';
 
 @Module({
-  imports: [SpecialtiesModule, AuthModule],
+  imports: [SpecialtiesModule, forwardRef(() => AuthModule)],
   controllers: [DoctorController],
   providers: [
     {

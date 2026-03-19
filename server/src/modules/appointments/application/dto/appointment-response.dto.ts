@@ -102,6 +102,9 @@ export class AppointmentResponseDto {
   @ApiProperty({ example: 'America/Lima', description: 'IANA timezone de la sede del doctor' })
   timezone: string;
 
+  @ApiProperty({ description: 'Indica si la cita tiene receta médica asociada' })
+  hasPrescription: boolean;
+
   @ApiProperty()
   createdAt: Date;
 }

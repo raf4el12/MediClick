@@ -82,7 +82,6 @@ interface PrescriptionsTableProps {
   updateFilters: (updates: Partial<AppointmentFilters>) => void;
   selectedAppointment: Appointment | null;
   onSelectAppointment: (appointment: Appointment) => void;
-  prescriptionIds: Record<number, boolean>;
 }
 
 export function PrescriptionsTable({
@@ -96,7 +95,6 @@ export function PrescriptionsTable({
   updateFilters,
   selectedAppointment,
   onSelectAppointment,
-  prescriptionIds,
 }: PrescriptionsTableProps) {
   const theme = useTheme();
 
@@ -158,7 +156,7 @@ export function PrescriptionsTable({
         id: 'prescription',
         header: 'Receta',
         cell: ({ row }) => {
-          const hasPrescription = prescriptionIds[row.original.id] ?? false;
+          const hasPrescription = row.original.hasPrescription;
 
           return (
             <Typography
@@ -171,7 +169,7 @@ export function PrescriptionsTable({
         },
       }),
     ],
-    [prescriptionIds],
+    [],
   );
 
   const table = useReactTable({

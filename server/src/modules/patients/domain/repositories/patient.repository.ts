@@ -10,7 +10,7 @@ import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-
 export interface IPatientRepository {
   create(data: CreatePatientData): Promise<PatientWithRelations>;
   findAllPaginated(
-    params: PaginationParams & { isActive?: boolean },
+    params: PaginationParams & { isActive?: boolean; doctorId?: number },
   ): Promise<
     PaginatedResult<PatientWithRelations> & {
       activeCount: number;

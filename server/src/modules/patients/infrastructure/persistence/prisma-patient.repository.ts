@@ -74,18 +74,23 @@ export class PrismaPatientRepository implements IPatientRepository {
   }
 
   async findAllPaginated(
-    params: PaginationParams & { isActive?: boolean },
+    params: PaginationParams & { isActive?: boolean; doctorId?: number },
   ): Promise<
     PaginatedResult<PatientWithRelations> & {
       activeCount: number;
       inactiveCount: number;
     }
   > {
-    const { limit, offset, searchValue, orderBy, orderByMode, isActive } =
+    const { limit, offset, searchValue, orderBy, orderByMode, isActive, doctorId } =
       params;
+
+    const doctorFilter = doctorId
+      ? { appointments: { some: { deleted: false, schedule: { doctorId } } } }
+      : {};
 
     const baseWhere = {
       deleted: false,
+      ...doctorFilter,
       ...(isActive !== undefined && { isActive }),
       ...(searchValue && {
         OR: [
@@ -118,6 +123,7 @@ export class PrismaPatientRepository implements IPatientRepository {
 
     const searchWhere = {
       deleted: false,
+      ...doctorFilter,
       ...(searchValue && {
         OR: [
           {

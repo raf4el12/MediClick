@@ -16,12 +16,6 @@ export default function PrescriptionsView() {
   const controller = usePrescriptions();
   const hasDetail = !!controller.selectedAppointment;
 
-  // Mapa de IDs de citas que tienen receta para mostrar indicador en la tabla
-  const prescriptionIds: Record<number, boolean> = {};
-  if (controller.selectedAppointment && controller.prescription) {
-    prescriptionIds[controller.selectedAppointment.id] = true;
-  }
-
   return (
     <>
       <Box sx={{ mb: 3 }}>
@@ -46,7 +40,6 @@ export default function PrescriptionsView() {
             updateFilters={controller.updateFilters}
             selectedAppointment={controller.selectedAppointment}
             onSelectAppointment={controller.selectAppointment}
-            prescriptionIds={prescriptionIds}
           />
         </Grid>
 

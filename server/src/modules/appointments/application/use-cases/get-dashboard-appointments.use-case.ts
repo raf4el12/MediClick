@@ -3,8 +3,10 @@ import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
 import { PaginatedAppointmentResponseDto } from '../dto/paginated-appointment-response.dto.js';
 import { AppointmentDashboardFilterDto } from '../dto/appointment-dashboard-filter.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
+import type { IDoctorRepository } from '../../../doctors/domain/repositories/doctor.repository.js';
 import type { DashboardFilters } from '../../domain/interfaces/appointment-data.interface.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
+import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
 
 @Injectable()
@@ -12,18 +14,31 @@ export class GetDashboardAppointmentsUseCase {
   constructor(
     @Inject('IAppointmentRepository')
     private readonly appointmentRepository: IAppointmentRepository,
+    @Inject('IDoctorRepository')
+    private readonly doctorRepository: IDoctorRepository,
   ) {}
 
   async execute(
     pagination: PaginationImproved,
     filterDto: AppointmentDashboardFilterDto,
+    userId?: number,
+    role?: string,
   ): Promise<PaginatedAppointmentResponseDto> {
     const { limit, offset } = pagination.getOffsetLimit();
+
+    // Auto-filter by doctorId when the logged-in user is a DOCTOR
+    let scopedDoctorId = filterDto.doctorId;
+    if (role === UserRole.DOCTOR && userId) {
+      const doctorId = await this.doctorRepository.findDoctorIdByUserId(userId);
+      if (doctorId) {
+        scopedDoctorId = doctorId;
+      }
+    }
 
     const filters: DashboardFilters = {
       ...(filterDto.dateFrom && { dateFrom: new Date(filterDto.dateFrom) }),
       ...(filterDto.dateTo && { dateTo: new Date(filterDto.dateTo) }),
-      ...(filterDto.doctorId && { doctorId: filterDto.doctorId }),
+      ...(scopedDoctorId && { doctorId: scopedDoctorId }),
       ...(filterDto.specialtyId && { specialtyId: filterDto.specialtyId }),
       ...(filterDto.status && { status: filterDto.status }),
       ...(filterDto.clinicId && { clinicId: filterDto.clinicId }),
@@ -73,6 +88,7 @@ export class GetDashboardAppointmentsUseCase {
         specialty: a.schedule.specialty,
       },
       timezone: a.schedule.doctor.clinic?.timezone ?? 'America/Lima',
+      hasPrescription: a.hasPrescription,
       createdAt: a.createdAt,
     }));
 

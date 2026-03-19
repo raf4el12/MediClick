@@ -8,12 +8,12 @@ export class PdfService {
     pdfmake.setFonts({
       Roboto: {
         normal:
-          'node_modules/pdfmake/build/vfs_fonts/Roboto/Roboto-Regular.ttf',
-        bold: 'node_modules/pdfmake/build/vfs_fonts/Roboto/Roboto-Medium.ttf',
+          'node_modules/pdfmake/build/fonts/Roboto/Roboto-Regular.ttf',
+        bold: 'node_modules/pdfmake/build/fonts/Roboto/Roboto-Medium.ttf',
         italics:
-          'node_modules/pdfmake/build/vfs_fonts/Roboto/Roboto-Italic.ttf',
+          'node_modules/pdfmake/build/fonts/Roboto/Roboto-Italic.ttf',
         bolditalics:
-          'node_modules/pdfmake/build/vfs_fonts/Roboto/Roboto-MediumItalic.ttf',
+          'node_modules/pdfmake/build/fonts/Roboto/Roboto-MediumItalic.ttf',
       },
     });
   }

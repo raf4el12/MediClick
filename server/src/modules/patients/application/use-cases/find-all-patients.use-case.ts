@@ -2,20 +2,33 @@ import { Injectable, Inject } from '@nestjs/common';
 import { PatientResponseDto } from '../dto/patient-response.dto.js';
 import { PaginatedPatientResponseDto } from '../dto/paginated-patient-response.dto.js';
 import type { IPatientRepository } from '../../domain/repositories/patient.repository.js';
+import type { IDoctorRepository } from '../../../doctors/domain/repositories/doctor.repository.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
+import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 
 @Injectable()
 export class FindAllPatientsUseCase {
   constructor(
     @Inject('IPatientRepository')
     private readonly patientRepository: IPatientRepository,
+    @Inject('IDoctorRepository')
+    private readonly doctorRepository: IDoctorRepository,
   ) {}
 
   async execute(
     pagination: PaginationImproved,
     isActive?: boolean,
+    userId?: number,
+    role?: string,
   ): Promise<PaginatedPatientResponseDto> {
     const { limit, offset } = pagination.getOffsetLimit();
+
+    // Auto-filter by doctorId when the logged-in user is a DOCTOR
+    let doctorId: number | undefined;
+    if (role === UserRole.DOCTOR && userId) {
+      const id = await this.doctorRepository.findDoctorIdByUserId(userId);
+      if (id) doctorId = id;
+    }
 
     const result = await this.patientRepository.findAllPaginated({
       offset,
@@ -24,6 +37,7 @@ export class FindAllPatientsUseCase {
       orderBy: pagination.orderBy,
       orderByMode: pagination.orderByMode,
       isActive,
+      doctorId,
     });
 
     const rows: PatientResponseDto[] = result.rows.map((p) => ({
@@ -57,3 +71,4 @@ export class FindAllPatientsUseCase {
     };
   }
 }
+
