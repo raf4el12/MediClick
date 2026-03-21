@@ -7,7 +7,7 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import Chip from '@mui/material/Chip';
+import { StatusBadge } from '@/@core/components/mui/StatusBadge';
 import Skeleton from '@mui/material/Skeleton';
 import Alert from '@mui/material/Alert';
 import Pagination from '@mui/material/Pagination';
@@ -258,7 +258,7 @@ export default function PatientAppointmentsView() {
                         <Typography variant="subtitle2" fontWeight={600} noWrap sx={{ flex: 1 }}>
                           {apt.schedule.specialty.name}
                         </Typography>
-                        <Chip label={cfg.label} color={cfg.color} size="small" />
+                        <StatusBadge label={cfg.label} color={cfg.color} size="small" />
                       </Box>
                       <Typography variant="body2" color="text.secondary" noWrap>
                         Dr. {apt.schedule.doctor.name} {apt.schedule.doctor.lastName}
@@ -352,7 +352,7 @@ export default function PatientAppointmentsView() {
                     <Typography variant="h6" fontWeight={600}>
                       {apt.schedule.specialty.name}
                     </Typography>
-                    <Chip label={cfg.label} color={cfg.color} />
+                    <StatusBadge label={cfg.label} color={cfg.color} />
                   </Box>
 
                   <Divider />

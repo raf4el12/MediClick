@@ -1,4 +1,9 @@
-import { Injectable, Inject, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { CreateSpecialtyDto } from '../dto/create-specialty.dto.js';
 import { SpecialtyResponseDto } from '../dto/specialty-response.dto.js';
 import type { ISpecialtyRepository } from '../../domain/repositories/specialty.repository.js';
@@ -13,7 +18,18 @@ export class CreateSpecialtyUseCase {
     private readonly categoryRepository: ICategoryRepository,
   ) {}
 
-  async execute(dto: CreateSpecialtyDto): Promise<SpecialtyResponseDto> {
+  async execute(
+    dto: CreateSpecialtyDto,
+    jwtClinicId?: number | null,
+  ): Promise<SpecialtyResponseDto> {
+    // JWT clinicId prevails over client-supplied
+    const effectiveClinicId = jwtClinicId ?? dto.clinicId ?? null;
+    if (jwtClinicId && dto.clinicId && dto.clinicId !== jwtClinicId) {
+      throw new ForbiddenException(
+        'No puede crear especialidades para otra sede',
+      );
+    }
+
     const category = await this.categoryRepository.findById(dto.categoryId);
     if (!category) {
       throw new BadRequestException('La categoría especificada no existe');
@@ -21,7 +37,7 @@ export class CreateSpecialtyUseCase {
 
     const specialty = await this.specialtyRepository.create({
       ...dto,
-      clinicId: dto.clinicId ?? null,
+      clinicId: effectiveClinicId,
     });
 
     return {

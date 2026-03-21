@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
-import { Auth } from '../../../../shared/decorators/index.js';
+import { Auth, CurrentClinic } from '../../../../shared/decorators/index.js';
 import { PaginationDto } from '../../../../shared/utils/dtos/pagination-dto.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreateCategoryDto } from '../../application/dto/create-category.dto.js';
@@ -44,8 +44,11 @@ export class CategoryController {
     type: CategoryResponseDto,
   })
   @ApiResponse({ status: 409, description: 'Nombre duplicado' })
-  async create(@Body() dto: CreateCategoryDto): Promise<CategoryResponseDto> {
-    return this.createCategoryUseCase.execute(dto);
+  async create(
+    @Body() dto: CreateCategoryDto,
+    @CurrentClinic() clinicId: number | null,
+  ): Promise<CategoryResponseDto> {
+    return this.createCategoryUseCase.execute(dto, clinicId);
   }
 
   @Get()
@@ -85,8 +88,9 @@ export class CategoryController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateCategoryDto,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<CategoryResponseDto> {
-    return this.updateCategoryUseCase.execute(id, dto);
+    return this.updateCategoryUseCase.execute(id, dto, clinicId);
   }
 
   @Delete(':id')
@@ -95,7 +99,10 @@ export class CategoryController {
   @ApiOperation({ summary: 'Eliminar categoría (soft delete)' })
   @ApiResponse({ status: 204, description: 'Categoría eliminada' })
   @ApiResponse({ status: 404, description: 'No encontrada' })
-  async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.deleteCategoryUseCase.execute(id);
+  async delete(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentClinic() clinicId: number | null,
+  ): Promise<void> {
+    return this.deleteCategoryUseCase.execute(id, clinicId);
   }
 }

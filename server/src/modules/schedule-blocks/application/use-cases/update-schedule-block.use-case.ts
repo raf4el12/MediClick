@@ -3,6 +3,7 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { UpdateScheduleBlockDto } from '../dto/update-schedule-block.dto.js';
 import { ScheduleBlockResponseDto } from '../dto/schedule-block-response.dto.js';
@@ -25,10 +26,16 @@ export class UpdateScheduleBlockUseCase {
   async execute(
     id: number,
     dto: UpdateScheduleBlockDto,
+    clinicId?: number | null,
   ): Promise<ScheduleBlockResponseDto> {
     const existing = await this.scheduleBlockRepository.findById(id);
     if (!existing) {
       throw new NotFoundException('Bloqueo de horario no encontrado');
+    }
+
+    // Staff can only update blocks for doctors of their own clinic
+    if (clinicId && existing.doctor.clinicId !== clinicId) {
+      throw new ForbiddenException('No tiene acceso a este bloqueo de horario');
     }
 
     // Determinar el tipo final (el actual o el nuevo si se cambia)

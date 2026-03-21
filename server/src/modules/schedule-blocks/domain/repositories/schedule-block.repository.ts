@@ -13,6 +13,7 @@ export interface IScheduleBlockRepository {
   findAllPaginated(
     params: PaginationParams,
     doctorId?: number,
+    clinicId?: number | null,
   ): Promise<PaginatedResult<ScheduleBlockWithDoctor>>;
 
   findById(id: number): Promise<ScheduleBlockWithDoctor | null>;

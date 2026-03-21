@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
-import { Auth } from '../../../../shared/decorators/index.js';
+import { Auth, CurrentClinic } from '../../../../shared/decorators/index.js';
 import { FindAllSpecialtiesQueryDto } from '../../application/dto/find-all-specialties-query.dto.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreateSpecialtyDto } from '../../application/dto/create-specialty.dto.js';
@@ -44,8 +44,11 @@ export class SpecialtyController {
     type: SpecialtyResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Categoría no existe' })
-  async create(@Body() dto: CreateSpecialtyDto): Promise<SpecialtyResponseDto> {
-    return this.createSpecialtyUseCase.execute(dto);
+  async create(
+    @Body() dto: CreateSpecialtyDto,
+    @CurrentClinic() clinicId: number | null,
+  ): Promise<SpecialtyResponseDto> {
+    return this.createSpecialtyUseCase.execute(dto, clinicId);
   }
 
   @Get()
@@ -90,8 +93,9 @@ export class SpecialtyController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateSpecialtyDto,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<SpecialtyResponseDto> {
-    return this.updateSpecialtyUseCase.execute(id, dto);
+    return this.updateSpecialtyUseCase.execute(id, dto, clinicId);
   }
 
   @Delete(':id')
@@ -100,7 +104,10 @@ export class SpecialtyController {
   @ApiOperation({ summary: 'Eliminar especialidad (soft delete)' })
   @ApiResponse({ status: 204, description: 'Especialidad eliminada' })
   @ApiResponse({ status: 404, description: 'No encontrada' })
-  async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.deleteSpecialtyUseCase.execute(id);
+  async delete(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentClinic() clinicId: number | null,
+  ): Promise<void> {
+    return this.deleteSpecialtyUseCase.execute(id, clinicId);
   }
 }

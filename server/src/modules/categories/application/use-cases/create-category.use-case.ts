@@ -1,4 +1,9 @@
-import { Injectable, Inject, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { CreateCategoryDto } from '../dto/create-category.dto.js';
 import { CategoryResponseDto } from '../dto/category-response.dto.js';
 import type { ICategoryRepository } from '../../domain/repositories/category.repository.js';
@@ -10,8 +15,16 @@ export class CreateCategoryUseCase {
     private readonly categoryRepository: ICategoryRepository,
   ) {}
 
-  async execute(dto: CreateCategoryDto): Promise<CategoryResponseDto> {
-    const clinicId = dto.clinicId ?? null;
+  async execute(
+    dto: CreateCategoryDto,
+    jwtClinicId?: number | null,
+  ): Promise<CategoryResponseDto> {
+    // JWT clinicId prevails over client-supplied
+    const clinicId = jwtClinicId ?? dto.clinicId ?? null;
+    if (jwtClinicId && dto.clinicId && dto.clinicId !== jwtClinicId) {
+      throw new ForbiddenException('No puede crear categorías para otra sede');
+    }
+
     const exists = await this.categoryRepository.existsByName(
       dto.name,
       clinicId,

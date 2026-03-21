@@ -3,7 +3,7 @@
 import { memo, useMemo, useState } from 'react';
 import Card from '@mui/material/Card';
 import Typography from '@mui/material/Typography';
-import Chip from '@mui/material/Chip';
+import { StatusBadge } from '@/@core/components/mui/StatusBadge';
 import IconButton from '@mui/material/IconButton';
 import TablePagination from '@mui/material/TablePagination';
 import Table from '@mui/material/Table';
@@ -114,46 +114,53 @@ export const UsersTable = memo(function UsersTable({
       }),
       columnHelper.accessor('role', {
         header: 'Rol',
+        meta: { align: 'center' },
         cell: ({ row }) => {
           const roleInfo = ROLE_LABELS[row.original.role] ?? {
             label: row.original.role,
             color: 'warning' as const,
           };
           return (
-            <Chip
-              label={roleInfo.label}
-              color={roleInfo.color}
-              size="small"
-              variant="outlined"
-            />
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <StatusBadge
+                label={roleInfo.label}
+                color={roleInfo.color}
+                size="small"
+                variant="outlined"
+              />
+            </Box>
           );
         },
       }),
       columnHelper.display({
         id: 'phone',
         header: 'Teléfono',
+        meta: { hiddenOnMobile: true, align: 'center' },
         cell: ({ row }) => (
           <Typography>
             {row.original.profile?.phone ?? 'N/A'}
           </Typography>
         ),
-        meta: { hiddenOnMobile: true },
       }),
       columnHelper.accessor('isActive', {
         header: 'Estado',
+        meta: { align: 'center' },
         cell: ({ row }) => (
-          <Chip
-            label={row.original.isActive ? 'Activo' : 'Inactivo'}
-            color={row.original.isActive ? 'success' : 'error'}
-            size="small"
-          />
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <StatusBadge
+              label={row.original.isActive ? 'Activo' : 'Inactivo'}
+              color={row.original.isActive ? 'success' : 'error'}
+              size="small"
+            />
+          </Box>
         ),
       }),
       columnHelper.display({
         id: 'actions',
         header: 'Acciones',
+        meta: { align: 'center' },
         cell: ({ row }) => (
-          <Box sx={{ display: 'flex', gap: 0.5 }}>
+          <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
             <IconButton
               size="small"
               color="primary"
@@ -233,10 +240,14 @@ export const UsersTable = memo(function UsersTable({
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => {
-                      const isHiddenOnMobile = (header.column.columnDef.meta as Record<string, boolean> | undefined)?.hiddenOnMobile;
+                      const meta = header.column.columnDef.meta as Record<string, any> | undefined;
+                      const isHiddenOnMobile = meta?.hiddenOnMobile;
+                      const align = meta?.align || 'left';
+
                       return (
                         <TableCell
                           key={header.id}
+                          align={align as any}
                           sx={{
                             fontWeight: 600,
                             ...(isHiddenOnMobile && { display: { xs: 'none', sm: 'table-cell' } }),
@@ -287,10 +298,14 @@ export const UsersTable = memo(function UsersTable({
                   table.getRowModel().rows.map((row) => (
                     <TableRow key={row.id} hover sx={{ cursor: 'pointer' }}>
                       {row.getVisibleCells().map((cell) => {
-                        const isHiddenOnMobile = (cell.column.columnDef.meta as Record<string, boolean> | undefined)?.hiddenOnMobile;
+                        const meta = cell.column.columnDef.meta as Record<string, any> | undefined;
+                        const isHiddenOnMobile = meta?.hiddenOnMobile;
+                        const align = meta?.align || 'left';
+
                         return (
                           <TableCell
                             key={cell.id}
+                            align={align as any}
                             sx={isHiddenOnMobile ? { display: { xs: 'none', sm: 'table-cell' } } : undefined}
                           >
                             {flexRender(

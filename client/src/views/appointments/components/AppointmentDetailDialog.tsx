@@ -3,7 +3,7 @@
 import Card from '@mui/material/Card';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import Chip from '@mui/material/Chip';
+import { StatusBadge } from '@/@core/components/mui/StatusBadge';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import { useTheme, alpha } from '@mui/material/styles';
@@ -111,7 +111,7 @@ export function AppointmentDetailDialog({
       <Box sx={{ p: 3 }}>
         {/* Status */}
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-          <Chip label={config.label} color={config.color} />
+          <StatusBadge label={config.label} color={config.color} />
         </Box>
 
         <Divider sx={{ mb: 2 }} />

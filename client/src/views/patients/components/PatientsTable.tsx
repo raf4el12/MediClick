@@ -150,6 +150,7 @@ export const PatientsTable = memo(function PatientsTable({
       columnHelper.display({
         id: 'age',
         header: 'Edad',
+        meta: { align: 'center' },
         cell: ({ row }) => (
           <Typography>
             {getAge(row.original.profile.birthday)} años
@@ -164,20 +165,22 @@ export const PatientsTable = memo(function PatientsTable({
             {formatGender(row.original.profile.gender)}
           </Typography>
         ),
-        meta: { hiddenOnMobile: true },
+        meta: { hiddenOnMobile: true, align: 'center' },
       }),
       columnHelper.accessor('bloodType', {
         header: 'Sangre',
+        meta: { hiddenOnMobile: true, align: 'center' },
         cell: ({ row }) => (
-          <Chip
-            icon={<i className="ri-drop-line" aria-hidden="true" style={{ fontSize: 14 }} />}
-            label={row.original.bloodType}
-            size="small"
-            variant="outlined"
-            color={bloodTypeColors[row.original.bloodType] ?? 'default'}
-          />
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Chip
+              icon={<i className="ri-drop-line" aria-hidden="true" style={{ fontSize: 14 }} />}
+              label={row.original.bloodType}
+              size="small"
+              variant="outlined"
+              color={bloodTypeColors[row.original.bloodType] ?? 'default'}
+            />
+          </Box>
         ),
-        meta: { hiddenOnMobile: true },
       }),
       columnHelper.display({
         id: 'lastVisit',
@@ -187,23 +190,27 @@ export const PatientsTable = memo(function PatientsTable({
             {formatDate(row.original.createdAt)}
           </Typography>
         ),
-        meta: { hiddenOnMobile: true },
+        meta: { hiddenOnMobile: true, align: 'center' },
       }),
       columnHelper.accessor('isActive', {
         header: 'Estado',
+        meta: { align: 'center' },
         cell: ({ row }) => (
-          <Chip
-            label={row.original.isActive ? 'Activo' : 'Inactivo'}
-            size="small"
-            color={row.original.isActive ? 'success' : 'warning'}
-          />
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Chip
+              label={row.original.isActive ? 'Activo' : 'Inactivo'}
+              size="small"
+              color={row.original.isActive ? 'success' : 'warning'}
+            />
+          </Box>
         ),
       }),
       columnHelper.display({
         id: 'actions',
         header: 'Acciones',
+        meta: { align: 'center' },
         cell: ({ row }) => (
-          <Box sx={{ display: 'flex', gap: 0.5 }}>
+          <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
             <Tooltip title="Editar">
               <IconButton
                 size="small"
@@ -285,10 +292,13 @@ export const PatientsTable = memo(function PatientsTable({
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => {
-                      const isHiddenOnMobile = (header.column.columnDef.meta as Record<string, boolean> | undefined)?.hiddenOnMobile;
+                      const meta = header.column.columnDef.meta as Record<string, any> | undefined;
+                      const isHiddenOnMobile = meta?.hiddenOnMobile;
+                      const align = meta?.align || 'left';
                       return (
                         <TableCell
                           key={header.id}
+                          align={align as any}
                           sx={{
                             fontWeight: 600,
                             ...(isHiddenOnMobile && { display: { xs: 'none', sm: 'table-cell' } }),
@@ -349,10 +359,13 @@ export const PatientsTable = memo(function PatientsTable({
                       }}
                     >
                       {row.getVisibleCells().map((cell) => {
-                        const isHiddenOnMobile = (cell.column.columnDef.meta as Record<string, boolean> | undefined)?.hiddenOnMobile;
+                        const meta = cell.column.columnDef.meta as Record<string, any> | undefined;
+                        const isHiddenOnMobile = meta?.hiddenOnMobile;
+                        const align = meta?.align || 'left';
                         return (
                           <TableCell
                             key={cell.id}
+                            align={align as any}
                             sx={isHiddenOnMobile ? { display: { xs: 'none', sm: 'table-cell' } } : undefined}
                           >
                             {flexRender(

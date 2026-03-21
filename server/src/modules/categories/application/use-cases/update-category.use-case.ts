@@ -3,6 +3,7 @@ import {
   Inject,
   NotFoundException,
   ConflictException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { UpdateCategoryDto } from '../dto/update-category.dto.js';
 import { CategoryResponseDto } from '../dto/category-response.dto.js';
@@ -18,10 +19,28 @@ export class UpdateCategoryUseCase {
   async execute(
     id: number,
     dto: UpdateCategoryDto,
+    jwtClinicId?: number | null,
   ): Promise<CategoryResponseDto> {
     const existing = await this.categoryRepository.findById(id);
     if (!existing) {
       throw new NotFoundException('Categoría no encontrada');
+    }
+
+    // Staff can only update their clinic's categories (not global ones)
+    if (jwtClinicId && existing.clinicId !== jwtClinicId) {
+      throw new ForbiddenException('No tiene acceso a esta categoría');
+    }
+
+    // Prevent reassigning to another clinic
+    if (
+      jwtClinicId &&
+      dto.clinicId !== undefined &&
+      dto.clinicId !== null &&
+      dto.clinicId !== jwtClinicId
+    ) {
+      throw new ForbiddenException(
+        'No puede reasignar una categoría a otra sede',
+      );
     }
 
     const clinicId =

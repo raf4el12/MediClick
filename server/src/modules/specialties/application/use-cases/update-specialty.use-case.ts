@@ -3,6 +3,7 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { UpdateSpecialtyDto } from '../dto/update-specialty.dto.js';
 import { SpecialtyResponseDto } from '../dto/specialty-response.dto.js';
@@ -21,10 +22,28 @@ export class UpdateSpecialtyUseCase {
   async execute(
     id: number,
     dto: UpdateSpecialtyDto,
+    jwtClinicId?: number | null,
   ): Promise<SpecialtyResponseDto> {
     const existing = await this.specialtyRepository.findById(id);
     if (!existing) {
       throw new NotFoundException('Especialidad no encontrada');
+    }
+
+    // Staff can only update their clinic's specialties (not global ones)
+    if (jwtClinicId && existing.clinicId !== jwtClinicId) {
+      throw new ForbiddenException('No tiene acceso a esta especialidad');
+    }
+
+    // Prevent reassigning to another clinic
+    if (
+      jwtClinicId &&
+      dto.clinicId !== undefined &&
+      dto.clinicId !== null &&
+      dto.clinicId !== jwtClinicId
+    ) {
+      throw new ForbiddenException(
+        'No puede reasignar una especialidad a otra sede',
+      );
     }
 
     const categoryId = dto.categoryId ?? existing.categoryId;

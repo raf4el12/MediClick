@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import Card from '@mui/material/Card';
 import Typography from '@mui/material/Typography';
-import Chip from '@mui/material/Chip';
+import { StatusBadge } from '@/@core/components/mui/StatusBadge';
 import TablePagination from '@mui/material/TablePagination';
 import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
@@ -135,6 +135,7 @@ export function PrescriptionsTable({
       columnHelper.display({
         id: 'date',
         header: 'Fecha',
+        meta: { align: 'center' },
         cell: ({ row }) => (
           <Typography variant="body2">
             {formatDate(row.original.schedule.scheduleDate)}
@@ -143,18 +144,24 @@ export function PrescriptionsTable({
       }),
       columnHelper.accessor('status', {
         header: 'Estado',
+        meta: { align: 'center' },
         cell: ({ row }) => {
           const config = statusConfig[row.original.status] ?? {
             label: row.original.status,
             color: 'default' as const,
           };
 
-          return <Chip label={config.label} size="small" color={config.color} />;
+          return (
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <StatusBadge label={config.label} size="small" color={config.color} />
+            </Box>
+          );
         },
       }),
       columnHelper.display({
         id: 'prescription',
         header: 'Receta',
+        meta: { align: 'center' },
         cell: ({ row }) => {
           const hasPrescription = row.original.hasPrescription;
 
@@ -162,6 +169,7 @@ export function PrescriptionsTable({
             <Typography
               variant="body2"
               color={hasPrescription ? 'success.main' : 'text.secondary'}
+              sx={{ textAlign: 'center' }}
             >
               {hasPrescription ? '💊 Con receta' : 'Sin receta'}
             </Typography>
@@ -271,13 +279,17 @@ export function PrescriptionsTable({
               <TableHead>
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableCell key={header.id} sx={{ fontWeight: 600 }}>
-                        {header.isPlaceholder
-                          ? null
-                          : flexRender(header.column.columnDef.header, header.getContext())}
-                      </TableCell>
-                    ))}
+                    {headerGroup.headers.map((header) => {
+                      const meta = header.column.columnDef.meta as Record<string, any> | undefined;
+                      const align = meta?.align || 'left';
+                      return (
+                        <TableCell key={header.id} align={align as any} sx={{ fontWeight: 600 }}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(header.column.columnDef.header, header.getContext())}
+                        </TableCell>
+                      );
+                    })}
                   </TableRow>
                 ))}
               </TableHead>
@@ -293,11 +305,15 @@ export function PrescriptionsTable({
                       sx={{ cursor: 'pointer' }}
                       onClick={() => onSelectAppointment(row.original)}
                     >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                        </TableCell>
-                      ))}
+                      {row.getVisibleCells().map((cell) => {
+                        const meta = cell.column.columnDef.meta as Record<string, any> | undefined;
+                        const align = meta?.align || 'left';
+                        return (
+                          <TableCell key={cell.id} align={align as any}>
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </TableCell>
+                        );
+                      })}
                     </TableRow>
                   ))
                 ) : (

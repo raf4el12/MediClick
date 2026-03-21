@@ -4,7 +4,7 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
+import { StatusBadge } from '@/@core/components/mui/StatusBadge';
 import Skeleton from '@mui/material/Skeleton';
 import Alert from '@mui/material/Alert';
 import { alpha, useTheme } from '@mui/material/styles';
@@ -133,7 +133,7 @@ export function TodayAppointmentsList({
                 </Box>
 
                 {/* Status */}
-                <Chip
+                <StatusBadge
                   label={config.label}
                   color={config.color}
                   size="small"

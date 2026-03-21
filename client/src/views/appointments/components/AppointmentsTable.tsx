@@ -3,7 +3,7 @@
 import { memo, useMemo } from 'react';
 import Card from '@mui/material/Card';
 import Typography from '@mui/material/Typography';
-import Chip from '@mui/material/Chip';
+import { StatusBadge } from '@/@core/components/mui/StatusBadge';
 import TablePagination from '@mui/material/TablePagination';
 import Table from '@mui/material/Table';
 import TableHead from '@mui/material/TableHead';
@@ -136,6 +136,7 @@ export const AppointmentsTable = memo(function AppointmentsTable({
       columnHelper.display({
         id: 'date',
         header: 'Fecha',
+        meta: { align: 'center' },
         cell: ({ row }) => (
           <Typography variant="body2">
             {formatDate(row.original.schedule.scheduleDate)}
@@ -145,26 +146,32 @@ export const AppointmentsTable = memo(function AppointmentsTable({
       columnHelper.display({
         id: 'time',
         header: 'Hora',
+        meta: { hiddenOnMobile: true, align: 'center' },
         cell: ({ row }) => (
           <Typography variant="body2">
             {row.original.schedule.timeFrom} - {row.original.schedule.timeTo}
           </Typography>
         ),
-        meta: { hiddenOnMobile: true },
       }),
       columnHelper.accessor('status', {
         header: 'Estado',
+        meta: { align: 'center' },
         cell: ({ row }) => {
           const config = statusConfig[row.original.status] ?? {
             label: row.original.status,
             color: 'default' as const,
           };
-          return <Chip label={config.label} size="small" color={config.color} />;
+          return (
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <StatusBadge label={config.label} size="small" color={config.color} />
+            </Box>
+          );
         },
       }),
       columnHelper.display({
         id: 'actions',
         header: 'Acciones',
+        meta: { align: 'center' },
         cell: ({ row }) => {
           const { status, id } = row.original;
           const canCheckIn =
@@ -180,7 +187,7 @@ export const AppointmentsTable = memo(function AppointmentsTable({
           const canComplete = status === AppointmentStatus.IN_PROGRESS;
 
           return (
-            <Box sx={{ display: 'flex', gap: 0.5 }} onClick={(e) => e.stopPropagation()}>
+            <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }} onClick={(e) => e.stopPropagation()}>
               {canCheckIn && (
                 <Tooltip title="Check-in">
                   <IconButton size="small" color="primary" aria-label="Registrar entrada" onClick={() => handleCheckIn(id)} sx={{ minWidth: 44, minHeight: 44 }}>
@@ -267,10 +274,13 @@ export const AppointmentsTable = memo(function AppointmentsTable({
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => {
-                      const isHiddenOnMobile = (header.column.columnDef.meta as Record<string, boolean> | undefined)?.hiddenOnMobile;
+                      const meta = header.column.columnDef.meta as Record<string, any> | undefined;
+                      const isHiddenOnMobile = meta?.hiddenOnMobile;
+                      const align = meta?.align || 'left';
                       return (
                         <TableCell
                           key={header.id}
+                          align={align as any}
                           sx={{
                             fontWeight: 600,
                             ...(isHiddenOnMobile && { display: { xs: 'none', sm: 'table-cell' } }),
@@ -331,10 +341,13 @@ export const AppointmentsTable = memo(function AppointmentsTable({
                       }}
                     >
                       {row.getVisibleCells().map((cell) => {
-                        const isHiddenOnMobile = (cell.column.columnDef.meta as Record<string, boolean> | undefined)?.hiddenOnMobile;
+                        const meta = cell.column.columnDef.meta as Record<string, any> | undefined;
+                        const isHiddenOnMobile = meta?.hiddenOnMobile;
+                        const align = meta?.align || 'left';
                         return (
                           <TableCell
                             key={cell.id}
+                            align={align as any}
                             sx={isHiddenOnMobile ? { display: { xs: 'none', sm: 'table-cell' } } : undefined}
                           >
                             {flexRender(

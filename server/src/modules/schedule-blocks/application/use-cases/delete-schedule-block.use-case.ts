@@ -1,4 +1,9 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import type { IScheduleBlockRepository } from '../../domain/repositories/schedule-block.repository.js';
 import { ScheduleRegenerationService } from '../../../schedules/domain/services/schedule-regeneration.service.js';
 
@@ -10,10 +15,15 @@ export class DeleteScheduleBlockUseCase {
     private readonly scheduleRegenerationService: ScheduleRegenerationService,
   ) {}
 
-  async execute(id: number): Promise<void> {
+  async execute(id: number, clinicId?: number | null): Promise<void> {
     const existing = await this.scheduleBlockRepository.findById(id);
     if (!existing) {
       throw new NotFoundException('Bloqueo de horario no encontrado');
+    }
+
+    // Staff can only delete blocks for doctors of their own clinic
+    if (clinicId && existing.doctor.clinicId !== clinicId) {
+      throw new ForbiddenException('No tiene acceso a este bloqueo de horario');
     }
 
     await this.scheduleBlockRepository.softDelete(id);

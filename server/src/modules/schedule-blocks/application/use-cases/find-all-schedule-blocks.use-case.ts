@@ -15,6 +15,7 @@ export class FindAllScheduleBlocksUseCase {
   async execute(
     pagination: PaginationImproved,
     doctorId?: number,
+    clinicId?: number | null,
   ): Promise<PaginatedScheduleBlockResponseDto> {
     const { limit, offset } = pagination.getOffsetLimit();
 
@@ -27,6 +28,7 @@ export class FindAllScheduleBlocksUseCase {
         orderByMode: pagination.orderByMode,
       },
       doctorId,
+      clinicId,
     );
 
     const rows: ScheduleBlockResponseDto[] = result.rows.map((block) => ({

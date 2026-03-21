@@ -23,6 +23,7 @@ export interface UpdateScheduleBlockData {
 export interface ScheduleBlockWithDoctor extends ScheduleBlockEntity {
   doctor: {
     id: number;
+    clinicId: number | null;
     profile: {
       name: string;
       lastName: string;

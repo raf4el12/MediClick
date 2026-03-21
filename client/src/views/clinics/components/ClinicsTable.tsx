@@ -90,6 +90,7 @@ export const ClinicsTable = memo(function ClinicsTable({
       }),
       columnHelper.accessor('timezone', {
         header: 'Zona Horaria',
+        meta: { align: 'center' },
         cell: ({ row }) => (
           <Typography color="text.secondary">
             {row.original.timezone}
@@ -98,8 +99,11 @@ export const ClinicsTable = memo(function ClinicsTable({
       }),
       columnHelper.accessor('currency', {
         header: 'Moneda',
+        meta: { align: 'center' },
         cell: ({ row }) => (
-          <Chip label={row.original.currency} size="small" variant="outlined" />
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Chip label={row.original.currency} size="small" variant="outlined" />
+          </Box>
         ),
       }),
       columnHelper.accessor('phone', {
@@ -109,23 +113,27 @@ export const ClinicsTable = memo(function ClinicsTable({
             {row.original.phone ?? '-'}
           </Typography>
         ),
-        meta: { hiddenOnMobile: true },
+        meta: { hiddenOnMobile: true, align: 'center' },
       }),
       columnHelper.accessor('isActive', {
         header: 'Estado',
+        meta: { align: 'center' },
         cell: ({ row }) => (
-          <Chip
-            label={row.original.isActive ? 'Activo' : 'Inactivo'}
-            color={row.original.isActive ? 'success' : 'error'}
-            size="small"
-          />
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Chip
+              label={row.original.isActive ? 'Activo' : 'Inactivo'}
+              color={row.original.isActive ? 'success' : 'error'}
+              size="small"
+            />
+          </Box>
         ),
       }),
       columnHelper.display({
         id: 'actions',
         header: 'Acciones',
+        meta: { align: 'center' },
         cell: ({ row }) => (
-          <Box sx={{ display: 'flex', gap: 0.5 }}>
+          <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
             <IconButton
               size="small"
               color="primary"
@@ -194,10 +202,13 @@ export const ClinicsTable = memo(function ClinicsTable({
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => {
-                      const isHiddenOnMobile = (header.column.columnDef.meta as Record<string, boolean> | undefined)?.hiddenOnMobile;
+                      const meta = header.column.columnDef.meta as Record<string, any> | undefined;
+                      const isHiddenOnMobile = meta?.hiddenOnMobile;
+                      const align = meta?.align || 'left';
                       return (
                         <TableCell
                           key={header.id}
+                          align={align as any}
                           sx={{
                             fontWeight: 600,
                             ...(isHiddenOnMobile && { display: { xs: 'none', sm: 'table-cell' } }),
@@ -248,10 +259,13 @@ export const ClinicsTable = memo(function ClinicsTable({
                   table.getRowModel().rows.map((row) => (
                     <TableRow key={row.id} hover sx={{ cursor: 'pointer' }}>
                       {row.getVisibleCells().map((cell) => {
-                        const isHiddenOnMobile = (cell.column.columnDef.meta as Record<string, boolean> | undefined)?.hiddenOnMobile;
+                        const meta = cell.column.columnDef.meta as Record<string, any> | undefined;
+                        const isHiddenOnMobile = meta?.hiddenOnMobile;
+                        const align = meta?.align || 'left';
                         return (
                           <TableCell
                             key={cell.id}
+                            align={align as any}
                             sx={isHiddenOnMobile ? { display: { xs: 'none', sm: 'table-cell' } } : undefined}
                           >
                             {flexRender(

@@ -95,29 +95,34 @@ export const SpecialtiesTable = memo(function SpecialtiesTable({
       }),
       columnHelper.accessor('category', {
         header: 'Categoría',
+        meta: { align: 'center' },
         cell: ({ row }) => (
-          <Chip
-            label={row.original.category.name}
-            size="small"
-            variant="outlined"
-            color="primary"
-          />
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Chip
+              label={row.original.category.name}
+              size="small"
+              variant="outlined"
+              color="primary"
+            />
+          </Box>
         ),
       }),
       columnHelper.accessor('clinicId', {
         header: 'Sede',
+        meta: { hiddenOnMobile: true, align: 'center' },
         cell: ({ row }) => {
           const clinic = clinics.find((c) => c.id === row.original.clinicId);
           return (
-            <Chip
-              label={clinic ? clinic.name : 'Global'}
-              variant={clinic ? 'filled' : 'outlined'}
-              size="small"
-              color={clinic ? 'info' : 'default'}
-            />
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+              <Chip
+                label={clinic ? clinic.name : 'Global'}
+                variant={clinic ? 'filled' : 'outlined'}
+                size="small"
+                color={clinic ? 'info' : 'default'}
+              />
+            </Box>
           );
         },
-        meta: { hiddenOnMobile: true },
       }),
       columnHelper.accessor('duration', {
         id: 'duration',
@@ -143,19 +148,23 @@ export const SpecialtiesTable = memo(function SpecialtiesTable({
       }),
       columnHelper.accessor('isActive', {
         header: 'Estado',
+        meta: { align: 'center' },
         cell: ({ row }) => (
-          <Chip
-            label={row.original.isActive ? 'Activo' : 'Inactivo'}
-            color={row.original.isActive ? 'success' : 'error'}
-            size="small"
-          />
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Chip
+              label={row.original.isActive ? 'Activo' : 'Inactivo'}
+              color={row.original.isActive ? 'success' : 'error'}
+              size="small"
+            />
+          </Box>
         ),
       }),
       columnHelper.display({
         id: 'actions',
         header: 'Acciones',
+        meta: { align: 'center' },
         cell: ({ row }) => (
-          <Box sx={{ display: 'flex', gap: 0.5 }}>
+          <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
             <IconButton
               size="small"
               color="primary"
@@ -227,10 +236,13 @@ export const SpecialtiesTable = memo(function SpecialtiesTable({
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => {
-                      const isHiddenOnMobile = (header.column.columnDef.meta as Record<string, boolean> | undefined)?.hiddenOnMobile;
+                      const meta = header.column.columnDef.meta as Record<string, any> | undefined;
+                      const isHiddenOnMobile = meta?.hiddenOnMobile;
+                      const align = meta?.align || 'left';
                       return (
                         <TableCell
                           key={header.id}
+                          align={align as any}
                           sx={{
                             fontWeight: 600,
                             ...(isHiddenOnMobile && { display: { xs: 'none', sm: 'table-cell' } }),
@@ -281,10 +293,13 @@ export const SpecialtiesTable = memo(function SpecialtiesTable({
                   table.getRowModel().rows.map((row) => (
                     <TableRow key={row.id} hover sx={{ cursor: 'pointer' }}>
                       {row.getVisibleCells().map((cell) => {
-                        const isHiddenOnMobile = (cell.column.columnDef.meta as Record<string, boolean> | undefined)?.hiddenOnMobile;
+                        const meta = cell.column.columnDef.meta as Record<string, any> | undefined;
+                        const isHiddenOnMobile = meta?.hiddenOnMobile;
+                        const align = meta?.align || 'left';
                         return (
                           <TableCell
                             key={cell.id}
+                            align={align as any}
                             sx={isHiddenOnMobile ? { display: { xs: 'none', sm: 'table-cell' } } : undefined}
                           >
                             {flexRender(

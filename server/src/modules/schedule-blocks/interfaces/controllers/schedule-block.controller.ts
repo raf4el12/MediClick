@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
-import { Auth } from '../../../../shared/decorators/index.js';
+import { Auth, CurrentClinic } from '../../../../shared/decorators/index.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreateScheduleBlockDto } from '../../application/dto/create-schedule-block.dto.js';
 import { UpdateScheduleBlockDto } from '../../application/dto/update-schedule-block.dto.js';
@@ -47,8 +47,9 @@ export class ScheduleBlockController {
   @ApiResponse({ status: 404, description: 'Doctor no encontrado' })
   async create(
     @Body() dto: CreateScheduleBlockDto,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<ScheduleBlockResponseDto> {
-    return this.createScheduleBlockUseCase.execute(dto);
+    return this.createScheduleBlockUseCase.execute(dto, clinicId);
   }
 
   @Get()
@@ -61,6 +62,7 @@ export class ScheduleBlockController {
   })
   async findAll(
     @Query() queryDto: FindAllScheduleBlocksQueryDto,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<PaginatedScheduleBlockResponseDto> {
     const pagination = new PaginationImproved(
       queryDto.searchValue,
@@ -72,6 +74,7 @@ export class ScheduleBlockController {
     return this.findAllScheduleBlocksUseCase.execute(
       pagination,
       queryDto.doctorId,
+      clinicId,
     );
   }
 
@@ -87,8 +90,9 @@ export class ScheduleBlockController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateScheduleBlockDto,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<ScheduleBlockResponseDto> {
-    return this.updateScheduleBlockUseCase.execute(id, dto);
+    return this.updateScheduleBlockUseCase.execute(id, dto, clinicId);
   }
 
   @Delete(':id')
@@ -97,7 +101,10 @@ export class ScheduleBlockController {
   @ApiOperation({ summary: 'Eliminar un bloqueo de horario (soft delete)' })
   @ApiResponse({ status: 204, description: 'Bloqueo de horario eliminado' })
   @ApiResponse({ status: 404, description: 'Bloqueo de horario no encontrado' })
-  async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.deleteScheduleBlockUseCase.execute(id);
+  async delete(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentClinic() clinicId: number | null,
+  ): Promise<void> {
+    return this.deleteScheduleBlockUseCase.execute(id, clinicId);
   }
 }

@@ -3,6 +3,7 @@ import {
   Inject,
   BadRequestException,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { CreateScheduleBlockDto } from '../dto/create-schedule-block.dto.js';
 import { ScheduleBlockResponseDto } from '../dto/schedule-block-response.dto.js';
@@ -26,11 +27,19 @@ export class CreateScheduleBlockUseCase {
 
   async execute(
     dto: CreateScheduleBlockDto,
+    jwtClinicId?: number | null,
   ): Promise<ScheduleBlockResponseDto> {
     // Validar que el doctor exista
     const doctor = await this.doctorRepository.findById(dto.doctorId);
     if (!doctor) {
       throw new NotFoundException('Doctor no encontrado');
+    }
+
+    // Staff can only create blocks for doctors of their own clinic
+    if (jwtClinicId && doctor.clinicId !== jwtClinicId) {
+      throw new ForbiddenException(
+        'No puede crear bloqueos para un doctor de otra sede',
+      );
     }
 
     // Validar que si el tipo es TIME_RANGE, se proporcionen las horas

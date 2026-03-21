@@ -14,6 +14,7 @@ const scheduleBlockInclude = {
   doctor: {
     select: {
       id: true,
+      clinicId: true,
       profile: {
         select: {
           name: true,
@@ -48,12 +49,14 @@ export class PrismaScheduleBlockRepository implements IScheduleBlockRepository {
   async findAllPaginated(
     params: PaginationParams,
     doctorId?: number,
+    clinicId?: number | null,
   ): Promise<PaginatedResult<ScheduleBlockWithDoctor>> {
     const { limit, offset, orderBy, orderByMode } = params;
 
     const where = {
       isActive: true,
       ...(doctorId && { doctorId }),
+      ...(clinicId && { doctor: { clinicId } }),
     };
 
     const [rows, count] = await Promise.all([

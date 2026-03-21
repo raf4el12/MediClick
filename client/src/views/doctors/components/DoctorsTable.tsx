@@ -99,13 +99,14 @@ export const DoctorsTable = memo(function DoctorsTable({
         cell: ({ row }) => (
           <Typography>{row.original.licenseNumber}</Typography>
         ),
-        meta: { hiddenOnMobile: true },
+        meta: { hiddenOnMobile: true, align: 'center' },
       }),
       columnHelper.display({
         id: 'specialties',
         header: 'Especialidades',
+        meta: { align: 'center' },
         cell: ({ row }) => (
-          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'center' }}>
             {row.original.specialties.map((spec) => (
               <Chip
                 key={spec.id}
@@ -126,7 +127,7 @@ export const DoctorsTable = memo(function DoctorsTable({
             {row.original.clinic?.name ?? 'Sin asignar'}
           </Typography>
         ),
-        meta: { hiddenOnMobile: true },
+        meta: { hiddenOnMobile: true, align: 'center' },
       }),
       columnHelper.display({
         id: 'phone',
@@ -136,23 +137,27 @@ export const DoctorsTable = memo(function DoctorsTable({
             {row.original.profile.phone ?? 'N/A'}
           </Typography>
         ),
-        meta: { hiddenOnMobile: true },
+        meta: { hiddenOnMobile: true, align: 'center' },
       }),
       columnHelper.accessor('isActive', {
         header: 'Estado',
+        meta: { align: 'center' },
         cell: ({ row }) => (
-          <Chip
-            label={row.original.isActive ? 'Activo' : 'Inactivo'}
-            color={row.original.isActive ? 'success' : 'error'}
-            size="small"
-          />
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <Chip
+              label={row.original.isActive ? 'Activo' : 'Inactivo'}
+              color={row.original.isActive ? 'success' : 'error'}
+              size="small"
+            />
+          </Box>
         ),
       }),
       columnHelper.display({
         id: 'actions',
         header: 'Acciones',
+        meta: { align: 'center' },
         cell: ({ row }) => (
-          <Box sx={{ display: 'flex', gap: 0.5 }}>
+          <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
             <Tooltip title="Ver detalle">
               <IconButton
                 size="small"
@@ -233,10 +238,13 @@ export const DoctorsTable = memo(function DoctorsTable({
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow key={headerGroup.id}>
                     {headerGroup.headers.map((header) => {
-                      const isHiddenOnMobile = (header.column.columnDef.meta as Record<string, boolean> | undefined)?.hiddenOnMobile;
+                      const meta = header.column.columnDef.meta as Record<string, any> | undefined;
+                      const isHiddenOnMobile = meta?.hiddenOnMobile;
+                      const align = meta?.align || 'left';
                       return (
                         <TableCell
                           key={header.id}
+                          align={align as any}
                           sx={{
                             fontWeight: 600,
                             ...(isHiddenOnMobile && { display: { xs: 'none', sm: 'table-cell' } }),
@@ -287,10 +295,13 @@ export const DoctorsTable = memo(function DoctorsTable({
                   table.getRowModel().rows.map((row) => (
                     <TableRow key={row.id} hover sx={{ cursor: 'pointer' }}>
                       {row.getVisibleCells().map((cell) => {
-                        const isHiddenOnMobile = (cell.column.columnDef.meta as Record<string, boolean> | undefined)?.hiddenOnMobile;
+                        const meta = cell.column.columnDef.meta as Record<string, any> | undefined;
+                        const isHiddenOnMobile = meta?.hiddenOnMobile;
+                        const align = meta?.align || 'left';
                         return (
                           <TableCell
                             key={cell.id}
+                            align={align as any}
                             sx={isHiddenOnMobile ? { display: { xs: 'none', sm: 'table-cell' } } : undefined}
                           >
                             {flexRender(
