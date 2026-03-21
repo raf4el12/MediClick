@@ -87,11 +87,13 @@ export class PrismaDoctorRepository implements IDoctorRepository {
   async findAllPaginated(
     params: PaginationParams,
     specialtyId?: number,
+    clinicId?: number | null,
   ): Promise<PaginatedResult<DoctorWithRelations>> {
     const { limit, offset, searchValue, orderBy, orderByMode } = params;
 
     const where = {
       deleted: false,
+      ...(clinicId && { clinicId }),
       ...(specialtyId && {
         specialties: {
           some: { specialtyId, deleted: false },
@@ -197,6 +199,18 @@ export class PrismaDoctorRepository implements IDoctorRepository {
           where: { id },
           data: data.doctor,
         });
+
+        // Sync clinicId to Users table so the JWT reflects the change
+        if ('clinicId' in data.doctor) {
+          const prof = await tx.profiles.findUniqueOrThrow({
+            where: { id: existing.profileId },
+            select: { userId: true },
+          });
+          await tx.users.update({
+            where: { id: prof.userId! },
+            data: { clinicId: data.doctor.clinicId } as any,
+          });
+        }
       }
 
       if (data.specialtyIds) {

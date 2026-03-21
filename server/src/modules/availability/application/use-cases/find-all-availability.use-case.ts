@@ -15,6 +15,7 @@ export class FindAllAvailabilityUseCase {
   async execute(
     pagination: PaginationImproved,
     doctorId?: number,
+    clinicId?: number | null,
   ): Promise<PaginatedAvailabilityResponseDto> {
     const { limit, offset } = pagination.getOffsetLimit();
 
@@ -27,6 +28,7 @@ export class FindAllAvailabilityUseCase {
         orderByMode: pagination.orderByMode,
       },
       doctorId,
+      clinicId,
     );
 
     const rows: AvailabilityResponseDto[] = result.rows.map((a) => ({

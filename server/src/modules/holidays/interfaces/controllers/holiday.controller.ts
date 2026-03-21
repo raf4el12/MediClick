@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
-import { Auth } from '../../../../shared/decorators/index.js';
+import { Auth, CurrentClinic } from '../../../../shared/decorators/index.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreateHolidayDto } from '../../application/dto/create-holiday.dto.js';
 import { UpdateHolidayDto } from '../../application/dto/update-holiday.dto.js';
@@ -74,6 +74,7 @@ export class HolidayController {
   })
   async findAll(
     @Query() queryDto: FindAllHolidaysQueryDto,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<PaginatedHolidayResponseDto> {
     const pagination = new PaginationImproved(
       queryDto.searchValue,
@@ -82,7 +83,7 @@ export class HolidayController {
       queryDto.orderBy,
       queryDto.orderByMode,
     );
-    return this.findAllHolidaysUseCase.execute(pagination, queryDto.year);
+    return this.findAllHolidaysUseCase.execute(pagination, queryDto.year, clinicId);
   }
 
   @Patch(':id')

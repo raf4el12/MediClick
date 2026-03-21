@@ -12,7 +12,8 @@ export class GetScheduleOccupancyUseCase {
   async execute(
     month: number,
     year: number,
+    clinicId?: number | null,
   ): Promise<ScheduleOccupancyReportDto> {
-    return this.reportRepository.getScheduleOccupancy(month, year);
+    return this.reportRepository.getScheduleOccupancy(month, year, clinicId);
   }
 }

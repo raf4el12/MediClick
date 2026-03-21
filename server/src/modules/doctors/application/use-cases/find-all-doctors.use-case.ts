@@ -14,6 +14,7 @@ export class FindAllDoctorsUseCase {
   async execute(
     pagination: PaginationImproved,
     specialtyId?: number,
+    clinicId?: number | null,
   ): Promise<PaginatedDoctorResponseDto> {
     const { limit, offset } = pagination.getOffsetLimit();
 
@@ -26,6 +27,7 @@ export class FindAllDoctorsUseCase {
         orderByMode: pagination.orderByMode,
       },
       specialtyId,
+      clinicId,
     );
 
     const rows: DoctorResponseDto[] = result.rows.map((d) => ({

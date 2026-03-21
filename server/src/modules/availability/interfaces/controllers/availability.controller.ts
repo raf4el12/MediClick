@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
-import { Auth } from '../../../../shared/decorators/index.js';
+import { Auth, CurrentClinic } from '../../../../shared/decorators/index.js';
 import { FindAllAvailabilityQueryDto } from '../../application/dto/find-all-availability-query.dto.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreateAvailabilityDto } from '../../application/dto/create-availability.dto.js';
@@ -67,6 +67,7 @@ export class AvailabilityController {
   })
   async findAll(
     @Query() queryDto: FindAllAvailabilityQueryDto,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<PaginatedAvailabilityResponseDto> {
     const pagination = new PaginationImproved(
       queryDto.searchValue,
@@ -78,6 +79,7 @@ export class AvailabilityController {
     return this.findAllAvailabilityUseCase.execute(
       pagination,
       queryDto.doctorId,
+      clinicId,
     );
   }
 

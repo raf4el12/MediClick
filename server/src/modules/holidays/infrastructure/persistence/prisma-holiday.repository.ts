@@ -29,11 +29,13 @@ export class PrismaHolidayRepository implements IHolidayRepository {
   async findAllPaginated(
     params: PaginationParams,
     year?: number,
+    clinicId?: number | null,
   ): Promise<PaginatedResult<HolidayEntity>> {
     const { limit, offset, searchValue, orderBy, orderByMode } = params;
 
     const where = {
       isActive: true,
+      ...(clinicId && { OR: [{ clinicId: null }, { clinicId }] }),
       ...(year && { year }),
       ...(searchValue && {
         name: {

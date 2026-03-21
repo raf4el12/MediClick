@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
-import { Auth } from '../../../../shared/decorators/index.js';
+import { Auth, CurrentClinic } from '../../../../shared/decorators/index.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { OnboardDoctorDto } from '../../application/dto/onboard-doctor.dto.js';
 import { UpdateDoctorDto } from '../../application/dto/update-doctor.dto.js';
@@ -64,6 +64,7 @@ export class DoctorController {
   })
   async findAll(
     @Query() queryDto: FindAllDoctorsQueryDto,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<PaginatedDoctorResponseDto> {
     const pagination = new PaginationImproved(
       queryDto.searchValue,
@@ -72,7 +73,7 @@ export class DoctorController {
       queryDto.orderBy,
       queryDto.orderByMode,
     );
-    return this.findAllDoctorsUseCase.execute(pagination, queryDto.specialtyId);
+    return this.findAllDoctorsUseCase.execute(pagination, queryDto.specialtyId, clinicId);
   }
 
   @Get(':id')

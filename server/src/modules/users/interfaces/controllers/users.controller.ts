@@ -26,7 +26,7 @@ import { FindAllUsersUseCase } from '../../application/use-cases/find-all-users.
 import { FindUserByIdUseCase } from '../../application/use-cases/find-user-by-id.use-case.js';
 import { UpdateUserUseCase } from '../../application/use-cases/update-user.use-case.js';
 import { DeleteUserUseCase } from '../../application/use-cases/delete-user.use-case.js';
-import { Auth } from '../../../../shared/decorators/index.js';
+import { Auth, CurrentClinic } from '../../../../shared/decorators/index.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 
 @ApiTags('Users')
@@ -58,8 +58,9 @@ export class UsersController {
   @ApiResponse({ status: 409, description: 'Email o DNI duplicado' })
   async createInternalUser(
     @Body() dto: CreateInternalUserDto,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<UserResponseDto> {
-    return this.createInternalUserUseCase.execute(dto);
+    return this.createInternalUserUseCase.execute(dto, clinicId);
   }
 
   @Get()
@@ -72,6 +73,7 @@ export class UsersController {
   })
   async findAll(
     @Query() dto: FindAllUsersDto,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<PaginatedUserResponseDto> {
     const pagination = new PaginationImproved(
       dto.searchValue,
@@ -80,7 +82,7 @@ export class UsersController {
       dto.orderBy,
       dto.orderByMode,
     );
-    return this.findAllUsersUseCase.execute(pagination, dto.role);
+    return this.findAllUsersUseCase.execute(pagination, dto.role, clinicId);
   }
 
   @Get(':id')

@@ -33,6 +33,7 @@ import { CreateOverbookAppointmentDto } from '../../application/dto/create-overb
 import { MyAppointmentsFilterDto } from '../../application/dto/my-appointments-filter.dto.js';
 import { CreatePatientAppointmentDto } from '../../application/dto/create-patient-appointment.dto.js';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator.js';
+import { CurrentClinic } from '../../../../shared/decorators/current-clinic.decorator.js';
 
 @ApiTags('Appointments')
 @Controller('appointments')
@@ -142,6 +143,7 @@ export class AppointmentController {
   async findAll(
     @CurrentUser('id') userId: number,
     @CurrentUser('role') role: string,
+    @CurrentClinic() clinicId: number | null,
     @Query() filterDto: AppointmentDashboardFilterDto,
   ): Promise<PaginatedAppointmentResponseDto> {
     const pagination = new PaginationImproved(
@@ -151,7 +153,7 @@ export class AppointmentController {
       filterDto.orderBy,
       filterDto.orderByMode,
     );
-    return this.getDashboardAppointmentsUseCase.execute(pagination, filterDto, userId, role);
+    return this.getDashboardAppointmentsUseCase.execute(pagination, filterDto, userId, role, clinicId);
   }
 
   @Patch(':id/check-in')

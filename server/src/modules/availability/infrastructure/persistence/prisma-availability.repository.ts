@@ -48,11 +48,13 @@ export class PrismaAvailabilityRepository implements IAvailabilityRepository {
   async findAllPaginated(
     params: PaginationParams,
     doctorId?: number,
+    clinicId?: number | null,
   ): Promise<PaginatedResult<AvailabilityWithRelations>> {
     const { limit, offset, orderBy, orderByMode } = params;
 
     const where = {
       isAvailable: true,
+      ...(clinicId && { clinicId }),
       ...(doctorId && { doctorId }),
     };
 

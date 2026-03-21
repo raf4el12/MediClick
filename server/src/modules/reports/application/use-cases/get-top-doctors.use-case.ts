@@ -13,7 +13,8 @@ export class GetTopDoctorsUseCase {
     month: number,
     year: number,
     limit: number = 10,
+    clinicId?: number | null,
   ): Promise<TopDoctorReportDto[]> {
-    return this.reportRepository.getTopDoctors(month, year, limit);
+    return this.reportRepository.getTopDoctors(month, year, limit, clinicId);
   }
 }

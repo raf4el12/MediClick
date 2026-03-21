@@ -23,6 +23,7 @@ export class GetDashboardAppointmentsUseCase {
     filterDto: AppointmentDashboardFilterDto,
     userId?: number,
     role?: string,
+    jwtClinicId?: number | null,
   ): Promise<PaginatedAppointmentResponseDto> {
     const { limit, offset } = pagination.getOffsetLimit();
 
@@ -35,13 +36,16 @@ export class GetDashboardAppointmentsUseCase {
       }
     }
 
+    // JWT clinicId prevails over client-supplied for staff
+    const effectiveClinicId = jwtClinicId ?? filterDto.clinicId;
+
     const filters: DashboardFilters = {
       ...(filterDto.dateFrom && { dateFrom: new Date(filterDto.dateFrom) }),
       ...(filterDto.dateTo && { dateTo: new Date(filterDto.dateTo) }),
       ...(scopedDoctorId && { doctorId: scopedDoctorId }),
       ...(filterDto.specialtyId && { specialtyId: filterDto.specialtyId }),
       ...(filterDto.status && { status: filterDto.status }),
-      ...(filterDto.clinicId && { clinicId: filterDto.clinicId }),
+      ...(effectiveClinicId && { clinicId: effectiveClinicId }),
     };
 
     const result = await this.appointmentRepository.findAllPaginated(

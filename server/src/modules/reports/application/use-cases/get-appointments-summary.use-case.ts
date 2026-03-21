@@ -12,7 +12,8 @@ export class GetAppointmentsSummaryUseCase {
   async execute(
     month: number,
     year: number,
+    clinicId?: number | null,
   ): Promise<AppointmentsSummaryReportDto> {
-    return this.reportRepository.getAppointmentsSummary(month, year);
+    return this.reportRepository.getAppointmentsSummary(month, year, clinicId);
   }
 }

@@ -112,11 +112,13 @@ export class PrismaUserRepository implements IUserRepository {
   async findAllPaginated(
     params: PaginationParams,
     role?: UserRole,
+    clinicId?: number | null,
   ): Promise<PaginatedResult<UserWithProfile>> {
     const { limit, offset, searchValue, orderBy, orderByMode } = params;
 
     const where: any = {
       deleted: false,
+      ...(clinicId && { clinicId }),
       ...(role && { role }),
       ...(searchValue && {
         OR: [

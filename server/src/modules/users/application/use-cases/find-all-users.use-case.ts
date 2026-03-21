@@ -17,6 +17,7 @@ export class FindAllUsersUseCase {
   async execute(
     pagination: PaginationImproved,
     role?: UserRole,
+    clinicId?: number | null,
   ): Promise<PaginatedUserResponseDto> {
     const { limit, offset } = pagination.getOffsetLimit();
 
@@ -29,6 +30,7 @@ export class FindAllUsersUseCase {
         orderByMode: pagination.orderByMode,
       },
       role,
+      clinicId,
     );
 
     const rows: UserDetailResponseDto[] = result.rows.map((u) => ({

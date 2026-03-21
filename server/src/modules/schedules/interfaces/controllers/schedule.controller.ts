@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
-import { Auth } from '../../../../shared/decorators/index.js';
+import { Auth, CurrentClinic } from '../../../../shared/decorators/index.js';
 import { FindAllSchedulesQueryDto } from '../../application/dto/find-all-schedules-query.dto.js';
 import { GetTimeSlotsQueryDto } from '../../application/dto/get-time-slots-query.dto.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
@@ -70,6 +70,7 @@ export class ScheduleController {
   })
   async findAll(
     @Query() queryDto: FindAllSchedulesQueryDto,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<PaginatedScheduleResponseDto> {
     const pagination = new PaginationImproved(
       queryDto.searchValue,
@@ -86,7 +87,7 @@ export class ScheduleController {
       dateTo: queryDto.dateTo,
       onlyAvailable: queryDto.onlyAvailable,
       clinicId: queryDto.clinicId,
-    });
+    }, clinicId);
   }
 
   @Get('time-slots')

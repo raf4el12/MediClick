@@ -23,7 +23,7 @@ const DAY_NAMES = [
 export class PrismaReportRepository implements IReportRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getWeeklyAppointments(): Promise<WeeklyAppointmentReport[]> {
+  async getWeeklyAppointments(clinicId?: number | null): Promise<WeeklyAppointmentReport[]> {
     const now = new Date();
     const dayOfWeek = now.getUTCDay();
     // Lunes de esta semana (UTC)
@@ -45,6 +45,7 @@ export class PrismaReportRepository implements IReportRepository {
       const count = await this.prisma.appointments.count({
         where: {
           deleted: false,
+          ...(clinicId && { clinicId }),
           schedule: {
             scheduleDate: { gte: dayStart, lt: dayEnd },
           },
@@ -61,7 +62,7 @@ export class PrismaReportRepository implements IReportRepository {
     return results;
   }
 
-  async getRevenue(month: number, year: number): Promise<RevenueReport> {
+  async getRevenue(month: number, year: number, clinicId?: number | null): Promise<RevenueReport> {
     const startDate = new Date(Date.UTC(year, month - 1, 1));
     const endDate = new Date(Date.UTC(year, month, 1));
 
@@ -70,6 +71,7 @@ export class PrismaReportRepository implements IReportRepository {
       _sum: { amount: true },
       where: {
         deleted: false,
+        ...(clinicId && { clinicId }),
         status: { notIn: ['CANCELLED'] },
         schedule: {
           scheduleDate: { gte: startDate, lt: endDate },
@@ -83,6 +85,7 @@ export class PrismaReportRepository implements IReportRepository {
       where: {
         status: 'PAID',
         appointment: {
+          ...(clinicId && { clinicId }),
           schedule: {
             scheduleDate: { gte: startDate, lt: endDate },
           },
@@ -105,6 +108,7 @@ export class PrismaReportRepository implements IReportRepository {
     month: number,
     year: number,
     limit: number,
+    clinicId?: number | null,
   ): Promise<TopDoctorReport[]> {
     const startDate = new Date(Date.UTC(year, month - 1, 1));
     const endDate = new Date(Date.UTC(year, month, 1));
@@ -113,6 +117,7 @@ export class PrismaReportRepository implements IReportRepository {
     const completedAppointments = await this.prisma.appointments.findMany({
       where: {
         deleted: false,
+        ...(clinicId && { clinicId }),
         status: 'COMPLETED',
         schedule: {
           scheduleDate: { gte: startDate, lt: endDate },
@@ -187,6 +192,7 @@ export class PrismaReportRepository implements IReportRepository {
   async getAppointmentsSummary(
     month: number,
     year: number,
+    clinicId?: number | null,
   ): Promise<AppointmentsSummaryReport> {
     const startDate = new Date(Date.UTC(year, month - 1, 1));
     const endDate = new Date(Date.UTC(year, month, 1));
@@ -197,6 +203,7 @@ export class PrismaReportRepository implements IReportRepository {
       _count: { id: true },
       where: {
         deleted: false,
+        ...(clinicId && { clinicId }),
         schedule: {
           scheduleDate: { gte: startDate, lt: endDate },
         },
@@ -214,6 +221,7 @@ export class PrismaReportRepository implements IReportRepository {
     const appointments = await this.prisma.appointments.findMany({
       where: {
         deleted: false,
+        ...(clinicId && { clinicId }),
         schedule: {
           scheduleDate: { gte: startDate, lt: endDate },
         },
@@ -243,6 +251,7 @@ export class PrismaReportRepository implements IReportRepository {
   async getScheduleOccupancy(
     month: number,
     year: number,
+    clinicId?: number | null,
   ): Promise<ScheduleOccupancyReport> {
     const startDate = new Date(Date.UTC(year, month - 1, 1));
     const endDate = new Date(Date.UTC(year, month, 1));
@@ -250,12 +259,14 @@ export class PrismaReportRepository implements IReportRepository {
     const totalSlots = await this.prisma.schedules.count({
       where: {
         scheduleDate: { gte: startDate, lt: endDate },
+        ...(clinicId && { clinicId }),
       },
     });
 
     const bookedSlots = await this.prisma.schedules.count({
       where: {
         scheduleDate: { gte: startDate, lt: endDate },
+        ...(clinicId && { clinicId }),
         appointments: {
           some: {
             deleted: false,

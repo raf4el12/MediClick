@@ -12,6 +12,7 @@ export interface IHolidayRepository {
   findAllPaginated(
     params: PaginationParams,
     year?: number,
+    clinicId?: number | null,
   ): Promise<PaginatedResult<HolidayEntity>>;
   findById(id: number): Promise<HolidayEntity | null>;
   findByDateRange(startDate: Date, endDate: Date): Promise<HolidayEntity[]>;

@@ -10,6 +10,7 @@ export interface IDoctorRepository {
   findAllPaginated(
     params: PaginationParams,
     specialtyId?: number,
+    clinicId?: number | null,
   ): Promise<PaginatedResult<DoctorWithRelations>>;
   findById(id: number): Promise<DoctorWithRelations | null>;
   existsByLicenseNumber(licenseNumber: string): Promise<boolean>;

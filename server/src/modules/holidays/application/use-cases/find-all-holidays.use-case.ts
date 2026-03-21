@@ -14,6 +14,7 @@ export class FindAllHolidaysUseCase {
   async execute(
     pagination: PaginationImproved,
     year?: number,
+    clinicId?: number | null,
   ): Promise<PaginatedHolidayResponseDto> {
     const { limit, offset } = pagination.getOffsetLimit();
 
@@ -26,6 +27,7 @@ export class FindAllHolidaysUseCase {
         orderByMode: pagination.orderByMode,
       },
       year,
+      clinicId,
     );
 
     const rows: HolidayResponseDto[] = result.rows.map((h) => ({

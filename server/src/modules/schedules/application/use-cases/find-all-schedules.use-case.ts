@@ -24,6 +24,7 @@ export class FindAllSchedulesUseCase {
       onlyAvailable?: boolean;
       clinicId?: number;
     },
+    jwtClinicId?: number | null,
   ): Promise<PaginatedScheduleResponseDto> {
     const { limit, offset } = pagination.getOffsetLimit();
 
@@ -32,6 +33,9 @@ export class FindAllSchedulesUseCase {
     if (filters.doctorId) {
       timezone = await this.timezoneResolver.resolveByDoctorId(filters.doctorId);
     }
+
+    // JWT clinicId prevails over client-supplied for staff
+    const effectiveClinicId = jwtClinicId ?? filters.clinicId;
 
     const result = await this.scheduleRepository.findAllPaginated(
       {
@@ -48,7 +52,7 @@ export class FindAllSchedulesUseCase {
         dateTo: filters.dateTo ? new Date(filters.dateTo) : undefined,
         onlyAvailable: filters.onlyAvailable,
         timezone,
-        clinicId: filters.clinicId,
+        clinicId: effectiveClinicId,
       },
     );
 

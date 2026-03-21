@@ -13,6 +13,7 @@ export interface IAvailabilityRepository {
   findAllPaginated(
     params: PaginationParams,
     doctorId?: number,
+    clinicId?: number | null,
   ): Promise<PaginatedResult<AvailabilityWithRelations>>;
   findById(id: number): Promise<AvailabilityWithRelations | null>;
   findOverlapping(

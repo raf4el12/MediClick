@@ -17,6 +17,7 @@ export interface IUserRepository {
   findAllPaginated(
     params: PaginationParams,
     role?: UserRole,
+    clinicId?: number | null,
   ): Promise<PaginatedResult<UserWithProfile>>;
   findByIdWithProfile(id: number): Promise<UserWithProfile | null>;
   updateUser(id: number, data: UpdateUserData): Promise<UserWithProfile>;

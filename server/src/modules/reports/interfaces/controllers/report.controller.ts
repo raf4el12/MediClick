@@ -1,7 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
-import { Auth } from '../../../../shared/decorators/index.js';
+import { Auth, CurrentClinic } from '../../../../shared/decorators/index.js';
 import {
   WeeklyAppointmentReportDto,
   RevenueReportDto,
@@ -30,8 +30,10 @@ export class ReportController {
   @Auth(UserRole.ADMIN)
   @ApiOperation({ summary: 'Citas agrupadas por día de la semana actual' })
   @ApiResponse({ status: 200, type: [WeeklyAppointmentReportDto] })
-  async getWeeklyAppointments(): Promise<WeeklyAppointmentReportDto[]> {
-    return this.getWeeklyAppointmentsUseCase.execute();
+  async getWeeklyAppointments(
+    @CurrentClinic() clinicId: number | null,
+  ): Promise<WeeklyAppointmentReportDto[]> {
+    return this.getWeeklyAppointmentsUseCase.execute(clinicId);
   }
 
   @Get('revenue')
@@ -43,10 +45,12 @@ export class ReportController {
   async getRevenue(
     @Query('month') month: string,
     @Query('year') year: string,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<RevenueReportDto> {
     return this.getRevenueUseCase.execute(
       parseInt(month, 10),
       parseInt(year, 10),
+      clinicId,
     );
   }
 
@@ -62,12 +66,14 @@ export class ReportController {
   async getTopDoctors(
     @Query('month') month: string,
     @Query('year') year: string,
-    @Query('limit') limit?: string,
+    @Query('limit') limit: string | undefined,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<TopDoctorReportDto[]> {
     return this.getTopDoctorsUseCase.execute(
       parseInt(month, 10),
       parseInt(year, 10),
       limit ? parseInt(limit, 10) : 10,
+      clinicId,
     );
   }
 
@@ -80,10 +86,12 @@ export class ReportController {
   async getAppointmentsSummary(
     @Query('month') month: string,
     @Query('year') year: string,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<AppointmentsSummaryReportDto> {
     return this.getAppointmentsSummaryUseCase.execute(
       parseInt(month, 10),
       parseInt(year, 10),
+      clinicId,
     );
   }
 
@@ -96,10 +104,12 @@ export class ReportController {
   async getScheduleOccupancy(
     @Query('month') month: string,
     @Query('year') year: string,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<ScheduleOccupancyReportDto> {
     return this.getScheduleOccupancyUseCase.execute(
       parseInt(month, 10),
       parseInt(year, 10),
+      clinicId,
     );
   }
 }
