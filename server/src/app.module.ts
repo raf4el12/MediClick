@@ -2,10 +2,13 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ScheduleModule } from '@nestjs/schedule';
 import { RequestLoggerMiddleware } from './shared/middleware/request-logger.middleware.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { RedisModule } from './shared/redis/redis.module.js';
 import { PdfModule } from './shared/pdf/pdf.module.js';
+import { MailModule } from './shared/mail/mail.module.js';
 import { HealthModule } from './shared/health/health.module.js';
 import { AuthModule } from './modules/auth/application/auth.module.js';
 import { UsersModule } from './modules/users/application/users.module.js';
@@ -28,6 +31,8 @@ import { ScheduleBlocksModule } from './modules/schedule-blocks/application/sche
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    EventEmitterModule.forRoot(),
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot({
       throttlers: [
         { name: 'short', ttl: 1000, limit: 3 },
@@ -38,6 +43,7 @@ import { ScheduleBlocksModule } from './modules/schedule-blocks/application/sche
     PrismaModule,
     RedisModule,
     PdfModule,
+    MailModule,
     HealthModule,
     AuthModule,
     UsersModule,
