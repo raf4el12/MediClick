@@ -1,4 +1,9 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { DoctorResponseDto } from '../dto/doctor-response.dto.js';
 import type { IDoctorRepository } from '../../domain/repositories/doctor.repository.js';
 
@@ -9,10 +14,17 @@ export class FindDoctorByIdUseCase {
     private readonly doctorRepository: IDoctorRepository,
   ) {}
 
-  async execute(id: number): Promise<DoctorResponseDto> {
+  async execute(
+    id: number,
+    clinicId?: number | null,
+  ): Promise<DoctorResponseDto> {
     const d = await this.doctorRepository.findById(id);
     if (!d) {
       throw new NotFoundException('Doctor no encontrado');
+    }
+
+    if (clinicId && d.clinicId !== clinicId) {
+      throw new ForbiddenException('No tiene acceso a este doctor');
     }
 
     return {

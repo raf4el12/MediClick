@@ -1,55 +1,55 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class NotificationResponseDto {
-    @ApiProperty()
-    id: number;
+  @ApiProperty()
+  id: number;
 
-    @ApiProperty()
-    userId: number;
+  @ApiProperty()
+  userId: number;
 
-    @ApiProperty()
-    type: string;
+  @ApiProperty()
+  type: string;
 
-    @ApiProperty()
-    channel: string;
+  @ApiProperty()
+  channel: string;
 
-    @ApiProperty()
-    title: string;
+  @ApiProperty()
+  title: string;
 
-    @ApiProperty()
-    message: string;
+  @ApiProperty()
+  message: string;
 
-    @ApiProperty()
-    isRead: boolean;
+  @ApiProperty()
+  isRead: boolean;
 
-    @ApiPropertyOptional()
-    metadata: any;
+  @ApiPropertyOptional()
+  metadata: any;
 
-    @ApiPropertyOptional()
-    sentAt: Date | null;
+  @ApiPropertyOptional()
+  sentAt: Date | null;
 
-    @ApiProperty()
-    createdAt: Date;
+  @ApiProperty()
+  createdAt: Date;
 }
 
 export class PaginatedNotificationsResponseDto {
-    @ApiProperty({ type: [NotificationResponseDto] })
-    data: NotificationResponseDto[];
+  @ApiProperty({ type: [NotificationResponseDto] })
+  data: NotificationResponseDto[];
 
-    @ApiProperty()
-    total: number;
+  @ApiProperty()
+  total: number;
 
-    @ApiProperty()
-    page: number;
+  @ApiProperty()
+  page: number;
 
-    @ApiProperty()
-    limit: number;
+  @ApiProperty()
+  limit: number;
 
-    @ApiProperty()
-    totalPages: number;
+  @ApiProperty()
+  totalPages: number;
 }
 
 export class UnreadCountResponseDto {
-    @ApiProperty({ example: 5 })
-    count: number;
+  @ApiProperty({ example: 5 })
+  count: number;
 }

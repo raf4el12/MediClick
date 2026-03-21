@@ -3,6 +3,7 @@ import {
   Inject,
   BadRequestException,
   ConflictException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { CreateOverbookAppointmentDto } from '../dto/create-overbook-appointment.dto.js';
 import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
@@ -11,7 +12,11 @@ import type { IPatientRepository } from '../../../patients/domain/repositories/p
 import type { IDoctorRepository } from '../../../doctors/domain/repositories/doctor.repository.js';
 import type { IScheduleRepository } from '../../../schedules/domain/repositories/schedule.repository.js';
 import type { ISpecialtyRepository } from '../../../specialties/domain/repositories/specialty.repository.js';
-import { dateToTimeString, todayStartInTimezone, scheduleDateToLocalDay } from '../../../../shared/utils/date-time.utils.js';
+import {
+  dateToTimeString,
+  todayStartInTimezone,
+  scheduleDateToLocalDay,
+} from '../../../../shared/utils/date-time.utils.js';
 import { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
 
 /**
@@ -41,6 +46,7 @@ export class CreateOverbookAppointmentUseCase {
 
   async execute(
     dto: CreateOverbookAppointmentDto,
+    jwtClinicId?: number | null,
   ): Promise<AppointmentResponseDto> {
     // 1. Validar paciente
     const patient = await this.patientRepository.findById(dto.patientId);
@@ -52,6 +58,13 @@ export class CreateOverbookAppointmentUseCase {
     const doctor = await this.doctorRepository.findById(dto.doctorId);
     if (!doctor) {
       throw new BadRequestException('El doctor especificado no existe');
+    }
+
+    // Staff can only create overbooks for doctors of their own clinic
+    if (jwtClinicId && doctor.clinicId !== jwtClinicId) {
+      throw new ForbiddenException(
+        'No puede crear sobrecupos para un doctor de otra sede',
+      );
     }
 
     // 3. Validar especialidad y obtener duración
@@ -127,8 +140,8 @@ export class CreateOverbookAppointmentUseCase {
     let overbookStartTime: Date;
     if (activeAppointmentsInSchedule.length > 0) {
       // Encontrar la cita que termina más tarde
-      const latestEnd = activeAppointmentsInSchedule.reduce((max, a) =>
-        a.endTime.getTime() > max.getTime() ? a.endTime : max,
+      const latestEnd = activeAppointmentsInSchedule.reduce(
+        (max, a) => (a.endTime.getTime() > max.getTime() ? a.endTime : max),
         activeAppointmentsInSchedule[0].endTime,
       );
       overbookStartTime = latestEnd;

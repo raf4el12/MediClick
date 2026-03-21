@@ -30,7 +30,10 @@ export class UpdateSpecialtyDto {
   @IsOptional()
   duration?: number;
 
-  @ApiPropertyOptional({ example: 5, description: 'Minutos de descanso entre citas' })
+  @ApiPropertyOptional({
+    example: 5,
+    description: 'Minutos de descanso entre citas',
+  })
   @IsInt()
   @Min(0)
   @IsOptional()
@@ -52,7 +55,10 @@ export class UpdateSpecialtyDto {
   @IsOptional()
   icon?: string;
 
-  @ApiPropertyOptional({ example: 1, description: 'ID de la sede (null = global)' })
+  @ApiPropertyOptional({
+    example: 1,
+    description: 'ID de la sede (null = global)',
+  })
   @IsInt()
   @IsOptional()
   clinicId?: number;

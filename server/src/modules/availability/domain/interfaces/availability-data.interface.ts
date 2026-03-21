@@ -28,6 +28,7 @@ export interface AvailabilityWithRelations {
   id: number;
   doctorId: number;
   specialtyId: number;
+  clinicId: number | null;
   startDate: Date;
   endDate: Date;
   dayOfWeek: DayOfWeek;

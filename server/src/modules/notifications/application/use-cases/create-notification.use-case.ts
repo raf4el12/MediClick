@@ -5,19 +5,19 @@ import type { INotificationRepository } from '../../domain/repositories/notifica
 
 @Injectable()
 export class CreateNotificationUseCase {
-    constructor(
-        @Inject('INotificationRepository')
-        private readonly notificationRepository: INotificationRepository,
-    ) { }
+  constructor(
+    @Inject('INotificationRepository')
+    private readonly notificationRepository: INotificationRepository,
+  ) {}
 
-    async execute(dto: CreateNotificationDto): Promise<NotificationResponseDto> {
-        return this.notificationRepository.create({
-            userId: dto.userId,
-            type: dto.type,
-            channel: dto.channel,
-            title: dto.title,
-            message: dto.message,
-            metadata: dto.metadata,
-        });
-    }
+  async execute(dto: CreateNotificationDto): Promise<NotificationResponseDto> {
+    return this.notificationRepository.create({
+      userId: dto.userId,
+      type: dto.type,
+      channel: dto.channel,
+      title: dto.title,
+      message: dto.message,
+      metadata: dto.metadata,
+    });
+  }
 }

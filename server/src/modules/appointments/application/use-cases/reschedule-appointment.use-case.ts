@@ -10,7 +10,11 @@ import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type { IScheduleRepository } from '../../../schedules/domain/repositories/schedule.repository.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
-import { parseHHmm, dateToTimeString, toMinutesUTC } from '../../../../shared/utils/date-time.utils.js';
+import {
+  parseHHmm,
+  dateToTimeString,
+  toMinutesUTC,
+} from '../../../../shared/utils/date-time.utils.js';
 
 @Injectable()
 export class RescheduleAppointmentUseCase {
@@ -53,9 +57,7 @@ export class RescheduleAppointmentUseCase {
     const newEndTime = parseHHmm(dto.endTime);
 
     if (newStartTime.getTime() >= newEndTime.getTime()) {
-      throw new BadRequestException(
-        'startTime debe ser anterior a endTime',
-      );
+      throw new BadRequestException('startTime debe ser anterior a endTime');
     }
 
     // Validar que el slot cabe dentro del rango del nuevo schedule
@@ -67,7 +69,10 @@ export class RescheduleAppointmentUseCase {
     const slotStartMinutes = toMinutesUTC(newStartTime);
     const slotEndMinutes = toMinutesUTC(newEndTime);
 
-    if (slotStartMinutes < schedFromMinutes || slotEndMinutes > schedToMinutes) {
+    if (
+      slotStartMinutes < schedFromMinutes ||
+      slotEndMinutes > schedToMinutes
+    ) {
       throw new BadRequestException(
         `El slot ${dto.startTime}-${dto.endTime} está fuera del rango del turno ` +
           `${dateToTimeString(schedTimeFrom)}-${dateToTimeString(schedTimeTo)}`,

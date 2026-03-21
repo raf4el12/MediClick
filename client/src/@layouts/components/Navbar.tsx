@@ -19,6 +19,7 @@ import { useAppDispatch, useAppSelector } from '@/redux-store/hooks';
 import { logoutThunk } from '@/redux-store/thunks/auth.thunks';
 import { selectUser } from '@/redux-store/slices/auth';
 import themeConfig from '@/configs/themeConfig';
+import Chip from '@mui/material/Chip';
 import { useSettings } from '@/@core/hooks/useSettings';
 import NotificationDropdown from './NotificationDropdown';
 
@@ -159,6 +160,16 @@ export default function Navbar() {
 
         {/* Right side */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {user?.clinicName && (
+            <Chip
+              icon={<i className="ri-hospital-line" style={{ fontSize: 16 }} />}
+              label={user.clinicName}
+              size="small"
+              variant="outlined"
+              color="primary"
+              sx={{ mr: 1 }}
+            />
+          )}
           {/* System Mode */}
           <IconButton onClick={handleModeOpen} size="small" sx={{ color: 'text.secondary' }}>
             <i className={modeIcon} style={{ fontSize: 22 }} />

@@ -40,7 +40,11 @@ export class ClinicController {
   @Post()
   @Auth(UserRole.ADMIN)
   @ApiOperation({ summary: 'Crear sede' })
-  @ApiResponse({ status: 201, description: 'Sede creada', type: ClinicResponseDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Sede creada',
+    type: ClinicResponseDto,
+  })
   @ApiResponse({ status: 409, description: 'Nombre duplicado' })
   async create(@Body() dto: CreateClinicDto): Promise<ClinicResponseDto> {
     return this.createClinicUseCase.execute(dto);
@@ -49,7 +53,11 @@ export class ClinicController {
   @Get()
   @Auth(UserRole.ADMIN)
   @ApiOperation({ summary: 'Listar sedes con paginación' })
-  @ApiResponse({ status: 200, description: 'Lista paginada de sedes', type: PaginatedClinicResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista paginada de sedes',
+    type: PaginatedClinicResponseDto,
+  })
   async findAll(
     @Query() paginationDto: PaginationDto,
   ): Promise<PaginatedClinicResponseDto> {
@@ -66,7 +74,11 @@ export class ClinicController {
   @Get(':id')
   @Auth(UserRole.ADMIN)
   @ApiOperation({ summary: 'Obtener sede por ID' })
-  @ApiResponse({ status: 200, description: 'Sede encontrada', type: ClinicResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Sede encontrada',
+    type: ClinicResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'No encontrada' })
   async findById(
     @Param('id', ParseIntPipe) id: number,
@@ -77,7 +89,11 @@ export class ClinicController {
   @Patch(':id')
   @Auth(UserRole.ADMIN)
   @ApiOperation({ summary: 'Actualizar sede' })
-  @ApiResponse({ status: 200, description: 'Sede actualizada', type: ClinicResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Sede actualizada',
+    type: ClinicResponseDto,
+  })
   @ApiResponse({ status: 404, description: 'No encontrada' })
   @ApiResponse({ status: 409, description: 'Nombre duplicado' })
   async update(

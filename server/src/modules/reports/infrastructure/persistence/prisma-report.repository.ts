@@ -23,23 +23,37 @@ const DAY_NAMES = [
 export class PrismaReportRepository implements IReportRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getWeeklyAppointments(clinicId?: number | null): Promise<WeeklyAppointmentReport[]> {
+  async getWeeklyAppointments(
+    clinicId?: number | null,
+  ): Promise<WeeklyAppointmentReport[]> {
     const now = new Date();
     const dayOfWeek = now.getUTCDay();
     // Lunes de esta semana (UTC)
     const mondayOffset = (dayOfWeek + 6) % 7;
     const monday = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - mondayOffset),
+      Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate() - mondayOffset,
+      ),
     );
 
     const results: WeeklyAppointmentReport[] = [];
 
     for (let i = 0; i < 7; i++) {
       const dayStart = new Date(
-        Date.UTC(monday.getUTCFullYear(), monday.getUTCMonth(), monday.getUTCDate() + i),
+        Date.UTC(
+          monday.getUTCFullYear(),
+          monday.getUTCMonth(),
+          monday.getUTCDate() + i,
+        ),
       );
       const dayEnd = new Date(
-        Date.UTC(monday.getUTCFullYear(), monday.getUTCMonth(), monday.getUTCDate() + i + 1),
+        Date.UTC(
+          monday.getUTCFullYear(),
+          monday.getUTCMonth(),
+          monday.getUTCDate() + i + 1,
+        ),
       );
 
       const count = await this.prisma.appointments.count({
@@ -62,7 +76,11 @@ export class PrismaReportRepository implements IReportRepository {
     return results;
   }
 
-  async getRevenue(month: number, year: number, clinicId?: number | null): Promise<RevenueReport> {
+  async getRevenue(
+    month: number,
+    year: number,
+    clinicId?: number | null,
+  ): Promise<RevenueReport> {
     const startDate = new Date(Date.UTC(year, month - 1, 1));
     const endDate = new Date(Date.UTC(year, month, 1));
 
@@ -235,9 +253,7 @@ export class PrismaReportRepository implements IReportRepository {
 
     const dailyMap = new Map<string, number>();
     for (const appt of appointments) {
-      const dateKey = appt.schedule.scheduleDate
-        .toISOString()
-        .split('T')[0];
+      const dateKey = appt.schedule.scheduleDate.toISOString().split('T')[0];
       dailyMap.set(dateKey, (dailyMap.get(dateKey) ?? 0) + 1);
     }
 
@@ -278,9 +294,7 @@ export class PrismaReportRepository implements IReportRepository {
 
     const availableSlots = totalSlots - bookedSlots;
     const occupancyRate =
-      totalSlots > 0
-        ? Math.round((bookedSlots / totalSlots) * 1000) / 10
-        : 0;
+      totalSlots > 0 ? Math.round((bookedSlots / totalSlots) * 1000) / 10 : 0;
 
     return { totalSlots, bookedSlots, availableSlots, occupancyRate };
   }

@@ -31,7 +31,9 @@ export class FindAllSchedulesUseCase {
     // Resolver timezone si hay doctorId
     let timezone: string | undefined;
     if (filters.doctorId) {
-      timezone = await this.timezoneResolver.resolveByDoctorId(filters.doctorId);
+      timezone = await this.timezoneResolver.resolveByDoctorId(
+        filters.doctorId,
+      );
     }
 
     // JWT clinicId prevails over client-supplied for staff

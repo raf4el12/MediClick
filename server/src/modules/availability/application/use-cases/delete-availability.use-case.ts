@@ -1,4 +1,9 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import type { IAvailabilityRepository } from '../../domain/repositories/availability.repository.js';
 import { ScheduleRegenerationService } from '../../../schedules/domain/services/schedule-regeneration.service.js';
 
@@ -10,10 +15,14 @@ export class DeleteAvailabilityUseCase {
     private readonly scheduleRegenerationService: ScheduleRegenerationService,
   ) {}
 
-  async execute(id: number): Promise<void> {
+  async execute(id: number, clinicId?: number | null): Promise<void> {
     const existing = await this.availabilityRepository.findById(id);
     if (!existing) {
       throw new NotFoundException('Disponibilidad no encontrada');
+    }
+
+    if (clinicId && existing.clinicId !== clinicId) {
+      throw new ForbiddenException('No tiene acceso a esta disponibilidad');
     }
 
     await this.availabilityRepository.softDelete(id);

@@ -1,5 +1,8 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { SeedHolidaysDto, SeedHolidaysResponseDto } from '../dto/seed-holidays.dto.js';
+import { Injectable, Inject, ForbiddenException } from '@nestjs/common';
+import {
+  SeedHolidaysDto,
+  SeedHolidaysResponseDto,
+} from '../dto/seed-holidays.dto.js';
 import type { IHolidayRepository } from '../../domain/repositories/holiday.repository.js';
 import { CreateHolidayData } from '../../domain/interfaces/holiday-data.interface.js';
 
@@ -10,7 +13,17 @@ export class SeedPeruHolidaysUseCase {
     private readonly holidayRepository: IHolidayRepository,
   ) {}
 
-  async execute(dto: SeedHolidaysDto): Promise<SeedHolidaysResponseDto> {
+  async execute(
+    dto: SeedHolidaysDto,
+    jwtClinicId?: number | null,
+  ): Promise<SeedHolidaysResponseDto> {
+    // Seeding national holidays is a global operation — only super-admin (no clinicId)
+    if (jwtClinicId) {
+      throw new ForbiddenException(
+        'Solo un administrador global puede sembrar feriados nacionales',
+      );
+    }
+
     const { year } = dto;
 
     // 1. Obtener feriados recurrentes creados por el usuario en OTROS años

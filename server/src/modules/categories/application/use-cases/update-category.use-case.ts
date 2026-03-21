@@ -24,7 +24,8 @@ export class UpdateCategoryUseCase {
       throw new NotFoundException('Categoría no encontrada');
     }
 
-    const clinicId = dto.clinicId !== undefined ? (dto.clinicId ?? null) : existing.clinicId;
+    const clinicId =
+      dto.clinicId !== undefined ? (dto.clinicId ?? null) : existing.clinicId;
 
     if (dto.name) {
       const nameConflict = await this.categoryRepository.existsByNameExcluding(

@@ -31,7 +31,12 @@ export interface DoctorWithRelations extends DoctorEntity {
     gender: string | null;
     user: { id: number; name: string; email: string } | null;
   };
-  clinic: { id: number; name: string; timezone: string; currency: string } | null;
+  clinic: {
+    id: number;
+    name: string;
+    timezone: string;
+    currency: string;
+  } | null;
   specialties: Array<{
     specialty: { id: number; name: string };
   }>;

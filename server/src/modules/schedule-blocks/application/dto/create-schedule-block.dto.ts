@@ -51,7 +51,8 @@ export class CreateScheduleBlockDto {
 
   @ApiPropertyOptional({
     example: '08:00',
-    description: 'Hora de inicio del bloqueo (HH:mm). Requerido si type es TIME_RANGE',
+    description:
+      'Hora de inicio del bloqueo (HH:mm). Requerido si type es TIME_RANGE',
   })
   @IsOptional()
   @IsString()
@@ -62,7 +63,8 @@ export class CreateScheduleBlockDto {
 
   @ApiPropertyOptional({
     example: '12:00',
-    description: 'Hora de fin del bloqueo (HH:mm). Requerido si type es TIME_RANGE',
+    description:
+      'Hora de fin del bloqueo (HH:mm). Requerido si type es TIME_RANGE',
   })
   @IsOptional()
   @IsString()

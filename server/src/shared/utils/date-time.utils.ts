@@ -55,7 +55,9 @@ export function toMinutesUTC(date: Date): number {
  * Útil cuando la BD tiene fechas base inconsistentes (2026-* vs 1970-01-01).
  */
 export function normalizeToTimeOnly(date: Date): Date {
-  return new Date(Date.UTC(1970, 0, 1, date.getUTCHours(), date.getUTCMinutes(), 0, 0));
+  return new Date(
+    Date.UTC(1970, 0, 1, date.getUTCHours(), date.getUTCMinutes(), 0, 0),
+  );
 }
 
 // ── Comparación de rangos ──
@@ -84,8 +86,12 @@ export function timeRangesOverlap(
  * Ejemplo: 2026-03-19T05:00:00Z → { start: 2026-03-19T00:00:00Z, end: 2026-03-20T00:00:00Z }
  */
 export function utcDayRange(date: Date): { start: Date; end: Date } {
-  const start = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-  const end = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1));
+  const start = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+  );
+  const end = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1),
+  );
   return { start, end };
 }
 
@@ -150,5 +156,7 @@ export function todayStartInTimezone(tz: string): Date {
  * Apto para comparar contra todayStartInTimezone() via getTime().
  */
 export function scheduleDateToLocalDay(date: Date): Date {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+  );
 }

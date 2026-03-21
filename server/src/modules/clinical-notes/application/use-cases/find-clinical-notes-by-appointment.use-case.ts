@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  Inject,
-} from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { ClinicalNoteResponseDto } from '../dto/clinical-note-response.dto.js';
 import type { IClinicalNoteRepository } from '../../domain/repositories/clinical-note.repository.js';
 
@@ -35,4 +32,3 @@ export class FindClinicalNotesByAppointmentUseCase {
     }));
   }
 }
-

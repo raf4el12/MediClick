@@ -47,8 +47,9 @@ export class AvailabilityController {
   @ApiResponse({ status: 409, description: 'Solapamiento de horarios' })
   async create(
     @Body() dto: CreateAvailabilityDto,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<AvailabilityResponseDto> {
-    return this.createAvailabilityUseCase.execute(dto);
+    return this.createAvailabilityUseCase.execute(dto, clinicId);
   }
 
   @Get()
@@ -96,8 +97,9 @@ export class AvailabilityController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateAvailabilityDto,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<AvailabilityResponseDto> {
-    return this.updateAvailabilityUseCase.execute(id, dto);
+    return this.updateAvailabilityUseCase.execute(id, dto, clinicId);
   }
 
   @Delete(':id')
@@ -106,7 +108,10 @@ export class AvailabilityController {
   @ApiOperation({ summary: 'Desactivar disponibilidad (soft delete)' })
   @ApiResponse({ status: 204, description: 'Disponibilidad desactivada' })
   @ApiResponse({ status: 404, description: 'No encontrada' })
-  async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.deleteAvailabilityUseCase.execute(id);
+  async delete(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentClinic() clinicId: number | null,
+  ): Promise<void> {
+    return this.deleteAvailabilityUseCase.execute(id, clinicId);
   }
 }

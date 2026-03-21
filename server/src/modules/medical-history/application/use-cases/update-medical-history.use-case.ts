@@ -5,46 +5,48 @@ import type { IMedicalHistoryRepository } from '../../domain/repositories/medica
 
 @Injectable()
 export class UpdateMedicalHistoryUseCase {
-    constructor(
-        @Inject('IMedicalHistoryRepository')
-        private readonly repository: IMedicalHistoryRepository,
-    ) { }
+  constructor(
+    @Inject('IMedicalHistoryRepository')
+    private readonly repository: IMedicalHistoryRepository,
+  ) {}
 
-    async execute(
-        id: number,
-        dto: UpdateMedicalHistoryDto,
-    ): Promise<MedicalHistoryResponseDto> {
-        const existing = await this.repository.findById(id);
-        if (!existing) {
-            throw new NotFoundException('Entrada de historial médico no encontrada');
-        }
-
-        const result = await this.repository.update(id, {
-            condition: dto.condition,
-            description: dto.description,
-            diagnosedDate: dto.diagnosedDate ? new Date(dto.diagnosedDate) : undefined,
-            notes: dto.notes,
-        });
-
-        return this.toResponse(result);
+  async execute(
+    id: number,
+    dto: UpdateMedicalHistoryDto,
+  ): Promise<MedicalHistoryResponseDto> {
+    const existing = await this.repository.findById(id);
+    if (!existing) {
+      throw new NotFoundException('Entrada de historial médico no encontrada');
     }
 
-    private toResponse(r: any): MedicalHistoryResponseDto {
-        return {
-            id: r.id,
-            patientId: r.patientId,
-            condition: r.condition,
-            description: r.description,
-            diagnosedDate: r.diagnosedDate,
-            status: r.status,
-            notes: r.notes,
-            patient: {
-                id: r.patient.id,
-                name: r.patient.profile.name,
-                lastName: r.patient.profile.lastName,
-            },
-            createdAt: r.createdAt,
-            updatedAt: r.updatedAt,
-        };
-    }
+    const result = await this.repository.update(id, {
+      condition: dto.condition,
+      description: dto.description,
+      diagnosedDate: dto.diagnosedDate
+        ? new Date(dto.diagnosedDate)
+        : undefined,
+      notes: dto.notes,
+    });
+
+    return this.toResponse(result);
+  }
+
+  private toResponse(r: any): MedicalHistoryResponseDto {
+    return {
+      id: r.id,
+      patientId: r.patientId,
+      condition: r.condition,
+      description: r.description,
+      diagnosedDate: r.diagnosedDate,
+      status: r.status,
+      notes: r.notes,
+      patient: {
+        id: r.patient.id,
+        name: r.patient.profile.name,
+        lastName: r.patient.profile.lastName,
+      },
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+    };
+  }
 }

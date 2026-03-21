@@ -32,7 +32,11 @@ const userWithProfileInclude = {
 
 function mapToUserEntity(prismaUser: any): UserEntity {
   const entity = new UserEntity();
-  Object.assign(entity, { ...prismaUser, role: prismaUser.role as UserRole });
+  Object.assign(entity, {
+    ...prismaUser,
+    role: prismaUser.role as UserRole,
+    clinicName: prismaUser.clinic?.name ?? null,
+  });
   return entity;
 }
 
@@ -44,6 +48,7 @@ function mapToUserWithProfile(raw: any): UserWithProfile {
     email: raw.email,
     role: raw.role as UserRole,
     isActive: raw.isActive,
+    clinicId: raw.clinicId ?? null,
     deleted: raw.deleted,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
@@ -53,15 +58,21 @@ function mapToUserWithProfile(raw: any): UserWithProfile {
 
 @Injectable()
 export class PrismaUserRepository implements IUserRepository {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async findByEmail(email: string): Promise<UserEntity | null> {
-    const user = await this.prisma.users.findUnique({ where: { email } });
+    const user = await this.prisma.users.findUnique({
+      where: { email },
+      include: { clinic: { select: { name: true } } },
+    });
     return user ? mapToUserEntity(user) : null;
   }
 
   async findById(id: number): Promise<UserEntity | null> {
-    const user = await this.prisma.users.findUnique({ where: { id } });
+    const user = await this.prisma.users.findUnique({
+      where: { id },
+      include: { clinic: { select: { name: true } } },
+    });
     return user ? mapToUserEntity(user) : null;
   }
 

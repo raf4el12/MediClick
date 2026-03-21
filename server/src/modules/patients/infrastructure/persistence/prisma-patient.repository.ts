@@ -81,8 +81,15 @@ export class PrismaPatientRepository implements IPatientRepository {
       inactiveCount: number;
     }
   > {
-    const { limit, offset, searchValue, orderBy, orderByMode, isActive, doctorId } =
-      params;
+    const {
+      limit,
+      offset,
+      searchValue,
+      orderBy,
+      orderByMode,
+      isActive,
+      doctorId,
+    } = params;
 
     const doctorFilter = doctorId
       ? { appointments: { some: { deleted: false, schedule: { doctorId } } } }

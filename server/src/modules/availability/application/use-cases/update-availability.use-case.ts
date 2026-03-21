@@ -4,13 +4,17 @@ import {
   NotFoundException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { UpdateAvailabilityDto } from '../dto/update-availability.dto.js';
 import { AvailabilityResponseDto } from '../dto/availability-response.dto.js';
 import type { IAvailabilityRepository } from '../../domain/repositories/availability.repository.js';
 import type { UpdateAvailabilityData } from '../../domain/interfaces/availability-data.interface.js';
 import { ScheduleRegenerationService } from '../../../schedules/domain/services/schedule-regeneration.service.js';
-import { timeStringToDate, dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
+import {
+  timeStringToDate,
+  dateToTimeString,
+} from '../../../../shared/utils/date-time.utils.js';
 
 @Injectable()
 export class UpdateAvailabilityUseCase {
@@ -23,10 +27,15 @@ export class UpdateAvailabilityUseCase {
   async execute(
     id: number,
     dto: UpdateAvailabilityDto,
+    clinicId?: number | null,
   ): Promise<AvailabilityResponseDto> {
     const existing = await this.availabilityRepository.findById(id);
     if (!existing) {
       throw new NotFoundException('Disponibilidad no encontrada');
+    }
+
+    if (clinicId && existing.clinicId !== clinicId) {
+      throw new ForbiddenException('No tiene acceso a esta disponibilidad');
     }
 
     const updateData: UpdateAvailabilityData = {};

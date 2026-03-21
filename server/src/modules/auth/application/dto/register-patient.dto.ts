@@ -41,10 +41,15 @@ export class RegisterPatientDto {
   @ApiProperty({ example: '999888777', description: 'Teléfono celular' })
   @IsString()
   @IsNotEmpty({ message: 'El teléfono es obligatorio' })
-  @Matches(/^9\d{8}$/, { message: 'Debe ser un celular válido (9 dígitos, inicia con 9)' })
+  @Matches(/^9\d{8}$/, {
+    message: 'Debe ser un celular válido (9 dígitos, inicia con 9)',
+  })
   phone: string;
 
-  @ApiPropertyOptional({ example: '1990-05-15', description: 'Fecha de nacimiento' })
+  @ApiPropertyOptional({
+    example: '1990-05-15',
+    description: 'Fecha de nacimiento',
+  })
   @IsDateString({}, { message: 'Debe ser una fecha válida' })
   @IsOptional()
   birthday?: string;

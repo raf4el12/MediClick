@@ -73,7 +73,9 @@ export class AppointmentController {
 
   @Post('patient')
   @Auth(UserRole.PATIENT)
-  @ApiOperation({ summary: 'Reservar cita como paciente (auto-asigna patientId)' })
+  @ApiOperation({
+    summary: 'Reservar cita como paciente (auto-asigna patientId)',
+  })
   @ApiResponse({
     status: 201,
     description: 'Cita creada',
@@ -101,8 +103,9 @@ export class AppointmentController {
   @ApiResponse({ status: 409, description: 'Horario ya tiene cita asignada' })
   async create(
     @Body() dto: CreateAppointmentDto,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<AppointmentResponseDto> {
-    return this.createAppointmentUseCase.execute(dto);
+    return this.createAppointmentUseCase.execute(dto, clinicId);
   }
 
   @Post('overbook')
@@ -122,8 +125,9 @@ export class AppointmentController {
   })
   async createOverbook(
     @Body() dto: CreateOverbookAppointmentDto,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<AppointmentResponseDto> {
-    return this.createOverbookAppointmentUseCase.execute(dto);
+    return this.createOverbookAppointmentUseCase.execute(dto, clinicId);
   }
 
   @Get('doctor/today')
@@ -153,7 +157,13 @@ export class AppointmentController {
       filterDto.orderBy,
       filterDto.orderByMode,
     );
-    return this.getDashboardAppointmentsUseCase.execute(pagination, filterDto, userId, role, clinicId);
+    return this.getDashboardAppointmentsUseCase.execute(
+      pagination,
+      filterDto,
+      userId,
+      role,
+      clinicId,
+    );
   }
 
   @Patch(':id/check-in')
@@ -172,7 +182,10 @@ export class AppointmentController {
 
   @Patch(':id/cancel')
   @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.PATIENT)
-  @ApiOperation({ summary: 'Cancelar cita (pacientes pueden cancelar con política de penalización)' })
+  @ApiOperation({
+    summary:
+      'Cancelar cita (pacientes pueden cancelar con política de penalización)',
+  })
   @ApiResponse({ status: 200, type: AppointmentResponseDto })
   @ApiResponse({ status: 400, description: 'No se puede cancelar' })
   @ApiResponse({ status: 404, description: 'Cita no encontrada' })

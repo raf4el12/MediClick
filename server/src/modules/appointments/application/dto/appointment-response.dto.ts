@@ -63,7 +63,10 @@ export class AppointmentResponseDto {
   @ApiProperty()
   scheduleId: number;
 
-  @ApiProperty({ example: '08:20', description: 'Hora inicio del slot (HH:mm)' })
+  @ApiProperty({
+    example: '08:20',
+    description: 'Hora inicio del slot (HH:mm)',
+  })
   startTime: string;
 
   @ApiProperty({ example: '08:40', description: 'Hora fin del slot (HH:mm)' })
@@ -87,10 +90,16 @@ export class AppointmentResponseDto {
   @ApiPropertyOptional()
   cancelReason: string | null;
 
-  @ApiPropertyOptional({ example: 75.0, description: 'Penalización por cancelación tardía' })
+  @ApiPropertyOptional({
+    example: 75.0,
+    description: 'Penalización por cancelación tardía',
+  })
   cancellationFee: number | null;
 
-  @ApiProperty({ example: false, description: 'Indica si es una cita de sobrecupo' })
+  @ApiProperty({
+    example: false,
+    description: 'Indica si es una cita de sobrecupo',
+  })
   isOverbook: boolean;
 
   @ApiProperty({ type: AppointmentPatientDto })
@@ -99,10 +108,15 @@ export class AppointmentResponseDto {
   @ApiProperty({ type: AppointmentScheduleDto })
   schedule: AppointmentScheduleDto;
 
-  @ApiProperty({ example: 'America/Lima', description: 'IANA timezone de la sede del doctor' })
+  @ApiProperty({
+    example: 'America/Lima',
+    description: 'IANA timezone de la sede del doctor',
+  })
   timezone: string;
 
-  @ApiProperty({ description: 'Indica si la cita tiene receta médica asociada' })
+  @ApiProperty({
+    description: 'Indica si la cita tiene receta médica asociada',
+  })
   hasPrescription: boolean;
 
   @ApiProperty()

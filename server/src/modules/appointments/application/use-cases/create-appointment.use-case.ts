@@ -3,6 +3,7 @@ import {
   Inject,
   BadRequestException,
   ConflictException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { CreateAppointmentDto } from '../dto/create-appointment.dto.js';
 import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
@@ -40,7 +41,10 @@ export class CreateAppointmentUseCase {
   /** Buffer mínimo en milisegundos (2 horas) */
   private static readonly MIN_BUFFER_MS = 2 * 60 * 60 * 1000;
 
-  async execute(dto: CreateAppointmentDto): Promise<AppointmentResponseDto> {
+  async execute(
+    dto: CreateAppointmentDto,
+    jwtClinicId?: number | null,
+  ): Promise<AppointmentResponseDto> {
     const patient = await this.patientRepository.findById(dto.patientId);
     if (!patient) {
       throw new BadRequestException('El paciente especificado no existe');
@@ -56,9 +60,7 @@ export class CreateAppointmentUseCase {
     const slotEnd = parseHHmm(dto.endTime);
 
     if (slotStart.getTime() >= slotEnd.getTime()) {
-      throw new BadRequestException(
-        'startTime debe ser anterior a endTime',
-      );
+      throw new BadRequestException('startTime debe ser anterior a endTime');
     }
 
     // ── Validar que el slot cabe dentro del rango del schedule ──
@@ -70,7 +72,10 @@ export class CreateAppointmentUseCase {
     const slotStartMinutes = toMinutesUTC(slotStart);
     const slotEndMinutes = toMinutesUTC(slotEnd);
 
-    if (slotStartMinutes < schedFromMinutes || slotEndMinutes > schedToMinutes) {
+    if (
+      slotStartMinutes < schedFromMinutes ||
+      slotEndMinutes > schedToMinutes
+    ) {
       throw new BadRequestException(
         `El slot ${dto.startTime}-${dto.endTime} está fuera del rango del turno ` +
           `${dateToTimeString(schedTimeFrom)}-${dateToTimeString(schedTimeTo)}`,
@@ -109,8 +114,20 @@ export class CreateAppointmentUseCase {
     }
 
     // ── Verificar si la fecha es feriado (considerando sede del doctor) ──
-    const clinicId = await this.timezoneResolver.resolveClinicIdByDoctorId(schedule.doctorId);
-    const isHoliday = await this.holidayRepository.isHoliday(scheduleDate, clinicId ?? undefined);
+    const doctorClinicId =
+      await this.timezoneResolver.resolveClinicIdByDoctorId(schedule.doctorId);
+
+    // Staff can only create appointments for doctors of their own clinic
+    if (jwtClinicId && doctorClinicId !== jwtClinicId) {
+      throw new ForbiddenException(
+        'No puede crear citas para un doctor de otra sede',
+      );
+    }
+
+    const isHoliday = await this.holidayRepository.isHoliday(
+      scheduleDate,
+      doctorClinicId ?? undefined,
+    );
     if (isHoliday) {
       throw new BadRequestException(
         'No se puede agendar una cita en un día feriado',
@@ -149,7 +166,7 @@ export class CreateAppointmentUseCase {
       startTime: slotStart,
       endTime: slotEnd,
       reason: dto.reason,
-      clinicId: clinicId ?? null,
+      clinicId: doctorClinicId ?? null,
     });
 
     return this.toResponse(appointment);

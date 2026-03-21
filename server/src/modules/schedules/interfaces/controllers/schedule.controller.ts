@@ -42,12 +42,18 @@ export class ScheduleController {
   })
   async generate(
     @Body() dto: GenerateSchedulesDto,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<GenerateSchedulesResponseDto> {
-    return this.generateSchedulesUseCase.execute(dto);
+    return this.generateSchedulesUseCase.execute(dto, clinicId);
   }
 
   @Get()
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.DOCTOR, UserRole.PATIENT)
+  @Auth(
+    UserRole.ADMIN,
+    UserRole.RECEPTIONIST,
+    UserRole.DOCTOR,
+    UserRole.PATIENT,
+  )
   @ApiOperation({ summary: 'Listar horarios con paginación y filtros' })
   @ApiQuery({ name: 'doctorId', required: false, type: Number })
   @ApiQuery({ name: 'specialtyId', required: false, type: Number })
@@ -80,18 +86,27 @@ export class ScheduleController {
       queryDto.orderByMode,
     );
 
-    return this.findAllSchedulesUseCase.execute(pagination, {
-      doctorId: queryDto.doctorId,
-      specialtyId: queryDto.specialtyId,
-      dateFrom: queryDto.dateFrom,
-      dateTo: queryDto.dateTo,
-      onlyAvailable: queryDto.onlyAvailable,
-      clinicId: queryDto.clinicId,
-    }, clinicId);
+    return this.findAllSchedulesUseCase.execute(
+      pagination,
+      {
+        doctorId: queryDto.doctorId,
+        specialtyId: queryDto.specialtyId,
+        dateFrom: queryDto.dateFrom,
+        dateTo: queryDto.dateTo,
+        onlyAvailable: queryDto.onlyAvailable,
+        clinicId: queryDto.clinicId,
+      },
+      clinicId,
+    );
   }
 
   @Get('time-slots')
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.DOCTOR, UserRole.PATIENT)
+  @Auth(
+    UserRole.ADMIN,
+    UserRole.RECEPTIONIST,
+    UserRole.DOCTOR,
+    UserRole.PATIENT,
+  )
   @ApiOperation({
     summary: 'Obtener time slots disponibles para un doctor en una fecha',
     description:

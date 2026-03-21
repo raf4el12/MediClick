@@ -94,7 +94,12 @@ export class GetAvailableTimeSlotsUseCase {
 
     return theoreticalSlots.map((slot) => {
       const isOccupied = schedule.bookedSlots.some((booked) =>
-        timeRangesOverlap(slot.startTime, slot.endTime, booked.startTime, booked.endTime),
+        timeRangesOverlap(
+          slot.startTime,
+          slot.endTime,
+          booked.startTime,
+          booked.endTime,
+        ),
       );
 
       return {

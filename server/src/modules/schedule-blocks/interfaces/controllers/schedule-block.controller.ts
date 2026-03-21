@@ -69,7 +69,10 @@ export class ScheduleBlockController {
       queryDto.orderBy,
       queryDto.orderByMode,
     );
-    return this.findAllScheduleBlocksUseCase.execute(pagination, queryDto.doctorId);
+    return this.findAllScheduleBlocksUseCase.execute(
+      pagination,
+      queryDto.doctorId,
+    );
   }
 
   @Patch(':id')

@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Inject,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import type { IPrescriptionRepository } from '../../domain/repositories/prescription.repository.js';
 import { PrescriptionPdfService } from '../../domain/services/prescription-pdf.service.js';
 

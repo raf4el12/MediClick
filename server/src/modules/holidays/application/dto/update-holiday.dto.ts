@@ -2,7 +2,10 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString, IsDateString, IsBoolean } from 'class-validator';
 
 export class UpdateHolidayDto {
-  @ApiPropertyOptional({ example: 'Año Nuevo', description: 'Nombre del feriado' })
+  @ApiPropertyOptional({
+    example: 'Año Nuevo',
+    description: 'Nombre del feriado',
+  })
   @IsString()
   @IsOptional()
   name?: string;

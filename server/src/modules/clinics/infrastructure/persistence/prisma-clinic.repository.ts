@@ -64,7 +64,10 @@ export class PrismaClinicRepository implements IClinicRepository {
     return count > 0;
   }
 
-  async existsByNameExcluding(name: string, excludeId: number): Promise<boolean> {
+  async existsByNameExcluding(
+    name: string,
+    excludeId: number,
+  ): Promise<boolean> {
     const count = await this.prisma.clinics.count({
       where: { name, deleted: false, id: { not: excludeId } },
     });

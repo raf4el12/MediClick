@@ -15,7 +15,10 @@ export class CreateAppointmentDto {
   @IsNotEmpty({ message: 'El patientId es obligatorio' })
   patientId: number;
 
-  @ApiProperty({ example: 1, description: 'ID del horario (turno general del doctor)' })
+  @ApiProperty({
+    example: 1,
+    description: 'ID del horario (turno general del doctor)',
+  })
   @Type(() => Number)
   @IsInt()
   @IsNotEmpty({ message: 'El scheduleId es obligatorio' })

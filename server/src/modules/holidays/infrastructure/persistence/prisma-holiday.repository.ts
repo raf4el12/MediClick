@@ -105,10 +105,7 @@ export class PrismaHolidayRepository implements IHolidayRepository {
           lt: endOfDay,
         },
         isActive: true,
-        OR: [
-          { clinicId: null },
-          ...(clinicId ? [{ clinicId }] : []),
-        ],
+        OR: [{ clinicId: null }, ...(clinicId ? [{ clinicId }] : [])],
       },
     });
 

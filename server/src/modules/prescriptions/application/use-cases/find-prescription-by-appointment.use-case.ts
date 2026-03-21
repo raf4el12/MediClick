@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Inject,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { PrescriptionResponseDto } from '../dto/prescription-response.dto.js';
 import type { IPrescriptionRepository } from '../../domain/repositories/prescription.repository.js';
 

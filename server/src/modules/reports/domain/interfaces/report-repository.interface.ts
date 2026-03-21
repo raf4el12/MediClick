@@ -7,8 +7,14 @@ import {
 } from '../interfaces/report-data.interface.js';
 
 export interface IReportRepository {
-  getWeeklyAppointments(clinicId?: number | null): Promise<WeeklyAppointmentReport[]>;
-  getRevenue(month: number, year: number, clinicId?: number | null): Promise<RevenueReport>;
+  getWeeklyAppointments(
+    clinicId?: number | null,
+  ): Promise<WeeklyAppointmentReport[]>;
+  getRevenue(
+    month: number,
+    year: number,
+    clinicId?: number | null,
+  ): Promise<RevenueReport>;
   getTopDoctors(
     month: number,
     year: number,

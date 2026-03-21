@@ -190,8 +190,7 @@ export class PrescriptionPdfService {
           vLineWidth: () => 0.5,
           hLineColor: () => '#CCCCCC',
           vLineColor: () => '#CCCCCC',
-          fillColor: (rowIndex: number) =>
-            rowIndex === 0 ? '#F5F5F5' : null,
+          fillColor: (rowIndex: number) => (rowIndex === 0 ? '#F5F5F5' : null),
           paddingLeft: () => 6,
           paddingRight: () => 6,
           paddingTop: () => 4,

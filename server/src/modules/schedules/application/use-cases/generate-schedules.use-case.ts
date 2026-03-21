@@ -1,4 +1,9 @@
-import { Injectable, Inject, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { GenerateSchedulesDto } from '../dto/generate-schedules.dto.js';
 import { GenerateSchedulesResponseDto } from '../dto/generate-schedules-response.dto.js';
 import type { IScheduleRepository } from '../../domain/repositories/schedule.repository.js';
@@ -40,6 +45,7 @@ export class GenerateSchedulesUseCase {
 
   async execute(
     dto: GenerateSchedulesDto,
+    jwtClinicId?: number | null,
   ): Promise<GenerateSchedulesResponseDto> {
     if (dto.month < 1 || dto.month > 12) {
       throw new BadRequestException('El mes debe estar entre 1 y 12');
@@ -58,13 +64,37 @@ export class GenerateSchedulesUseCase {
       if (!doctor) {
         throw new BadRequestException('El doctor especificado no existe');
       }
+
+      // Staff can only generate schedules for doctors of their own clinic
+      if (jwtClinicId && doctor.clinicId !== jwtClinicId) {
+        throw new ForbiddenException(
+          'No puede generar horarios para un doctor de otra sede',
+        );
+      }
+
       doctorIds = [dto.doctorId];
-      doctorClinicCache.set(dto.doctorId, (doctor as any).clinicId ?? null);
+      doctorClinicCache.set(dto.doctorId, doctor.clinicId ?? null);
     } else {
       // Obtener todos los doctores con disponibilidad activa
       const allAvailabilities =
         await this.availabilityRepository.findActiveByDoctorIds([]);
-      doctorIds = [...new Set(allAvailabilities.map((a) => a.doctorId))];
+      let allDoctorIds = [...new Set(allAvailabilities.map((a) => a.doctorId))];
+
+      // Staff with clinicId: filter to only their clinic's doctors
+      if (jwtClinicId) {
+        const filteredIds: number[] = [];
+        for (const docId of allDoctorIds) {
+          const doc = await this.doctorRepository.findById(docId);
+          const docClinicId = doc?.clinicId ?? null;
+          doctorClinicCache.set(docId, docClinicId);
+          if (docClinicId === jwtClinicId) {
+            filteredIds.push(docId);
+          }
+        }
+        allDoctorIds = filteredIds;
+      }
+
+      doctorIds = allDoctorIds;
     }
 
     if (doctorIds.length === 0) {
@@ -111,7 +141,7 @@ export class GenerateSchedulesUseCase {
       // Resolver clinicId del doctor si no está en caché
       if (!doctorClinicCache.has(doctorId)) {
         const doc = await this.doctorRepository.findById(doctorId);
-        doctorClinicCache.set(doctorId, (doc as any)?.clinicId ?? null);
+        doctorClinicCache.set(doctorId, doc?.clinicId ?? null);
       }
       const doctorClinicId = doctorClinicCache.get(doctorId) ?? null;
 
@@ -124,8 +154,10 @@ export class GenerateSchedulesUseCase {
         );
 
       // Obtener schedules existentes para evitar duplicados
-      const existingSchedules =
-        await this.scheduleRepository.findExistingDates(doctorId, dates);
+      const existingSchedules = await this.scheduleRepository.findExistingDates(
+        doctorId,
+        dates,
+      );
 
       const existingSet = new Set(
         existingSchedules.map(

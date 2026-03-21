@@ -96,8 +96,9 @@ export class UsersController {
   @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
   async findById(
     @Param('id', ParseIntPipe) id: number,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<UserDetailResponseDto> {
-    return this.findUserByIdUseCase.execute(id);
+    return this.findUserByIdUseCase.execute(id, clinicId);
   }
 
   @Patch(':id')
@@ -112,8 +113,9 @@ export class UsersController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateUserDto,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<UserDetailResponseDto> {
-    return this.updateUserUseCase.execute(id, dto);
+    return this.updateUserUseCase.execute(id, dto, clinicId);
   }
 
   @Delete(':id')
@@ -122,7 +124,10 @@ export class UsersController {
   @ApiOperation({ summary: 'Eliminar usuario (soft delete)' })
   @ApiResponse({ status: 204, description: 'Usuario eliminado exitosamente' })
   @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
-  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.deleteUserUseCase.execute(id);
+  async remove(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentClinic() clinicId: number | null,
+  ): Promise<void> {
+    return this.deleteUserUseCase.execute(id, clinicId);
   }
 }

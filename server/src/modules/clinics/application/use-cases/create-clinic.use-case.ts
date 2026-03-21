@@ -19,9 +19,7 @@ export class CreateClinicUseCase {
     // Validar timezone IANA
     const validTimezones = Intl.supportedValuesOf('timeZone');
     if (!validTimezones.includes(dto.timezone)) {
-      throw new BadRequestException(
-        `Zona horaria inválida: ${dto.timezone}`,
-      );
+      throw new BadRequestException(`Zona horaria inválida: ${dto.timezone}`);
     }
 
     const exists = await this.clinicRepository.existsByName(dto.name);

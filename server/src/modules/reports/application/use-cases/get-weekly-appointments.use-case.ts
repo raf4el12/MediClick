@@ -9,7 +9,9 @@ export class GetWeeklyAppointmentsUseCase {
     private readonly reportRepository: IReportRepository,
   ) {}
 
-  async execute(clinicId?: number | null): Promise<WeeklyAppointmentReportDto[]> {
+  async execute(
+    clinicId?: number | null,
+  ): Promise<WeeklyAppointmentReportDto[]> {
     return this.reportRepository.getWeeklyAppointments(clinicId);
   }
 }

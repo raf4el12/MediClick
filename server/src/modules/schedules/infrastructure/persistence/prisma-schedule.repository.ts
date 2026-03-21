@@ -9,7 +9,10 @@ import {
 } from '../../domain/interfaces/schedule-data.interface.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
-import { todayStartInTimezone, utcDayRange } from '../../../../shared/utils/date-time.utils.js';
+import {
+  todayStartInTimezone,
+  utcDayRange,
+} from '../../../../shared/utils/date-time.utils.js';
 
 const scheduleInclude = {
   doctor: {
@@ -209,7 +212,11 @@ export class PrismaScheduleRepository implements IScheduleRepository {
       Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
     );
     const endOfDay = new Date(
-      Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() + 1),
+      Date.UTC(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate() + 1,
+      ),
     );
 
     const rows = await this.prisma.schedules.findMany({

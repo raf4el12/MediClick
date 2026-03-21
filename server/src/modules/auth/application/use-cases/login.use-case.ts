@@ -72,6 +72,7 @@ export class LoginUseCase {
         name: user.name,
         email: user.email,
         role: user.role,
+        clinicName: user.clinicName,
       },
     };
   }

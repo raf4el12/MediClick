@@ -25,7 +25,10 @@ export class CreateInternalUserUseCase {
     private readonly passwordService: IPasswordService,
   ) {}
 
-  async execute(dto: CreateInternalUserDto, clinicId?: number | null): Promise<UserResponseDto> {
+  async execute(
+    dto: CreateInternalUserDto,
+    clinicId?: number | null,
+  ): Promise<UserResponseDto> {
     if (!ALLOWED_INTERNAL_ROLES.includes(dto.role)) {
       throw new BadRequestException(
         'No se permite crear usuarios con rol PATIENT por este endpoint',

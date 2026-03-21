@@ -74,7 +74,12 @@ export class PatientController {
         : query.isActive === 'false'
           ? false
           : undefined;
-    return this.findAllPatientsUseCase.execute(pagination, isActiveFilter, userId, role);
+    return this.findAllPatientsUseCase.execute(
+      pagination,
+      isActiveFilter,
+      userId,
+      role,
+    );
   }
 
   @Get(':id/history')

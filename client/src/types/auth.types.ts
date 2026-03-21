@@ -11,6 +11,7 @@ export interface AuthUser {
   email: string;
   role: UserRole;
   avatarUrl?: string;
+  clinicName?: string | null;
 }
 
 export interface LoginRequest {

@@ -20,7 +20,10 @@ import { UpdateHolidayDto } from '../../application/dto/update-holiday.dto.js';
 import { FindAllHolidaysQueryDto } from '../../application/dto/find-all-holidays-query.dto.js';
 import { HolidayResponseDto } from '../../application/dto/holiday-response.dto.js';
 import { PaginatedHolidayResponseDto } from '../../application/dto/paginated-holiday-response.dto.js';
-import { SeedHolidaysDto, SeedHolidaysResponseDto } from '../../application/dto/seed-holidays.dto.js';
+import {
+  SeedHolidaysDto,
+  SeedHolidaysResponseDto,
+} from '../../application/dto/seed-holidays.dto.js';
 import { CreateHolidayUseCase } from '../../application/use-cases/create-holiday.use-case.js';
 import { FindAllHolidaysUseCase } from '../../application/use-cases/find-all-holidays.use-case.js';
 import { UpdateHolidayUseCase } from '../../application/use-cases/update-holiday.use-case.js';
@@ -46,8 +49,11 @@ export class HolidayController {
     description: 'Feriado creado exitosamente',
     type: HolidayResponseDto,
   })
-  async create(@Body() dto: CreateHolidayDto): Promise<HolidayResponseDto> {
-    return this.createHolidayUseCase.execute(dto);
+  async create(
+    @Body() dto: CreateHolidayDto,
+    @CurrentClinic() clinicId: number | null,
+  ): Promise<HolidayResponseDto> {
+    return this.createHolidayUseCase.execute(dto, clinicId);
   }
 
   @Post('seed')
@@ -60,8 +66,9 @@ export class HolidayController {
   })
   async seedPeruHolidays(
     @Body() dto: SeedHolidaysDto,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<SeedHolidaysResponseDto> {
-    return this.seedPeruHolidaysUseCase.execute(dto);
+    return this.seedPeruHolidaysUseCase.execute(dto, clinicId);
   }
 
   @Get()
@@ -83,7 +90,11 @@ export class HolidayController {
       queryDto.orderBy,
       queryDto.orderByMode,
     );
-    return this.findAllHolidaysUseCase.execute(pagination, queryDto.year, clinicId);
+    return this.findAllHolidaysUseCase.execute(
+      pagination,
+      queryDto.year,
+      clinicId,
+    );
   }
 
   @Patch(':id')
@@ -98,8 +109,9 @@ export class HolidayController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateHolidayDto,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<HolidayResponseDto> {
-    return this.updateHolidayUseCase.execute(id, dto);
+    return this.updateHolidayUseCase.execute(id, dto, clinicId);
   }
 
   @Delete(':id')
@@ -108,7 +120,10 @@ export class HolidayController {
   @ApiOperation({ summary: 'Eliminar feriado' })
   @ApiResponse({ status: 204, description: 'Feriado eliminado' })
   @ApiResponse({ status: 404, description: 'Feriado no encontrado' })
-  async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.deleteHolidayUseCase.execute(id);
+  async delete(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentClinic() clinicId: number | null,
+  ): Promise<void> {
+    return this.deleteHolidayUseCase.execute(id, clinicId);
   }
 }

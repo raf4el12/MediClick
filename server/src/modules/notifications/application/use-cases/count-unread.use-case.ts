@@ -4,13 +4,13 @@ import type { INotificationRepository } from '../../domain/repositories/notifica
 
 @Injectable()
 export class CountUnreadUseCase {
-    constructor(
-        @Inject('INotificationRepository')
-        private readonly notificationRepository: INotificationRepository,
-    ) { }
+  constructor(
+    @Inject('INotificationRepository')
+    private readonly notificationRepository: INotificationRepository,
+  ) {}
 
-    async execute(userId: number): Promise<UnreadCountResponseDto> {
-        const count = await this.notificationRepository.countUnread(userId);
-        return { count };
-    }
+  async execute(userId: number): Promise<UnreadCountResponseDto> {
+    const count = await this.notificationRepository.countUnread(userId);
+    return { count };
+  }
 }

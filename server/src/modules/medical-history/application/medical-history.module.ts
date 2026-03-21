@@ -8,18 +8,18 @@ import { DeleteMedicalHistoryUseCase } from './use-cases/delete-medical-history.
 import { MedicalHistoryController } from '../interfaces/controllers/medical-history.controller.js';
 
 @Module({
-    controllers: [MedicalHistoryController],
-    providers: [
-        {
-            provide: 'IMedicalHistoryRepository',
-            useClass: PrismaMedicalHistoryRepository,
-        },
-        CreateMedicalHistoryUseCase,
-        FindMedicalHistoryByPatientUseCase,
-        UpdateMedicalHistoryUseCase,
-        UpdateMedicalHistoryStatusUseCase,
-        DeleteMedicalHistoryUseCase,
-    ],
-    exports: [FindMedicalHistoryByPatientUseCase],
+  controllers: [MedicalHistoryController],
+  providers: [
+    {
+      provide: 'IMedicalHistoryRepository',
+      useClass: PrismaMedicalHistoryRepository,
+    },
+    CreateMedicalHistoryUseCase,
+    FindMedicalHistoryByPatientUseCase,
+    UpdateMedicalHistoryUseCase,
+    UpdateMedicalHistoryStatusUseCase,
+    DeleteMedicalHistoryUseCase,
+  ],
+  exports: [FindMedicalHistoryByPatientUseCase],
 })
-export class MedicalHistoryModule { }
+export class MedicalHistoryModule {}

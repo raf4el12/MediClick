@@ -1,4 +1,9 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { UserDetailResponseDto } from '../dto/user-detail-response.dto.js';
 import type { IUserRepository } from '../../domain/repositories/user.repository.js';
 
@@ -9,10 +14,17 @@ export class FindUserByIdUseCase {
     private readonly userRepository: IUserRepository,
   ) {}
 
-  async execute(id: number): Promise<UserDetailResponseDto> {
+  async execute(
+    id: number,
+    clinicId?: number | null,
+  ): Promise<UserDetailResponseDto> {
     const u = await this.userRepository.findByIdWithProfile(id);
     if (!u) {
       throw new NotFoundException('Usuario no encontrado');
+    }
+
+    if (clinicId && u.clinicId !== clinicId) {
+      throw new ForbiddenException('No tiene acceso a este usuario');
     }
 
     return {

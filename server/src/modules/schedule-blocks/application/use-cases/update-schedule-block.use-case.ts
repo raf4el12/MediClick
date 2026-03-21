@@ -9,7 +9,10 @@ import { ScheduleBlockResponseDto } from '../dto/schedule-block-response.dto.js'
 import type { IScheduleBlockRepository } from '../../domain/repositories/schedule-block.repository.js';
 import { UpdateScheduleBlockData } from '../../domain/interfaces/schedule-block-data.interface.js';
 import { ScheduleRegenerationService } from '../../../schedules/domain/services/schedule-regeneration.service.js';
-import { timeStringToDate, dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
+import {
+  timeStringToDate,
+  dateToTimeString,
+} from '../../../../shared/utils/date-time.utils.js';
 
 @Injectable()
 export class UpdateScheduleBlockUseCase {
@@ -33,8 +36,18 @@ export class UpdateScheduleBlockUseCase {
 
     // Si el tipo final es TIME_RANGE, validar que se tengan las horas
     if (finalType === 'TIME_RANGE') {
-      const finalTimeFrom = dto.timeFrom !== undefined ? dto.timeFrom : (existing.timeFrom ? dateToTimeString(existing.timeFrom) : null);
-      const finalTimeTo = dto.timeTo !== undefined ? dto.timeTo : (existing.timeTo ? dateToTimeString(existing.timeTo) : null);
+      const finalTimeFrom =
+        dto.timeFrom !== undefined
+          ? dto.timeFrom
+          : existing.timeFrom
+            ? dateToTimeString(existing.timeFrom)
+            : null;
+      const finalTimeTo =
+        dto.timeTo !== undefined
+          ? dto.timeTo
+          : existing.timeTo
+            ? dateToTimeString(existing.timeTo)
+            : null;
 
       if (!finalTimeFrom || !finalTimeTo) {
         throw new BadRequestException(
@@ -56,13 +69,16 @@ export class UpdateScheduleBlockUseCase {
     const updateData: UpdateScheduleBlockData = {};
 
     if (dto.type !== undefined) updateData.type = dto.type;
-    if (dto.startDate !== undefined) updateData.startDate = new Date(dto.startDate);
+    if (dto.startDate !== undefined)
+      updateData.startDate = new Date(dto.startDate);
     if (dto.endDate !== undefined) updateData.endDate = new Date(dto.endDate);
     if (dto.reason !== undefined) updateData.reason = dto.reason;
     if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
 
     if (dto.timeFrom !== undefined) {
-      updateData.timeFrom = dto.timeFrom ? timeStringToDate(dto.timeFrom) : null;
+      updateData.timeFrom = dto.timeFrom
+        ? timeStringToDate(dto.timeFrom)
+        : null;
     }
     if (dto.timeTo !== undefined) {
       updateData.timeTo = dto.timeTo ? timeStringToDate(dto.timeTo) : null;

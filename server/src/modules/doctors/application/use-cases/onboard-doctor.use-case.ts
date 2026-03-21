@@ -3,6 +3,7 @@ import {
   Inject,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { OnboardDoctorDto } from '../dto/onboard-doctor.dto.js';
 import { DoctorResponseDto } from '../dto/doctor-response.dto.js';
@@ -21,7 +22,18 @@ export class OnboardDoctorUseCase {
     private readonly passwordService: IPasswordService,
   ) {}
 
-  async execute(dto: OnboardDoctorDto): Promise<DoctorResponseDto> {
+  async execute(
+    dto: OnboardDoctorDto,
+    jwtClinicId?: number | null,
+  ): Promise<DoctorResponseDto> {
+    // JWT clinicId prevails over body for staff; super-admin uses dto value
+    const effectiveClinicId = jwtClinicId ?? dto.clinicId;
+
+    // Staff with clinicId can only onboard doctors to their own clinic
+    if (jwtClinicId && dto.clinicId && dto.clinicId !== jwtClinicId) {
+      throw new ForbiddenException('No puede asignar un doctor a otra sede');
+    }
+
     const emailExists = await this.doctorRepository.existsByEmail(
       dto.user.email,
     );
@@ -67,7 +79,7 @@ export class OnboardDoctorUseCase {
       doctor: {
         licenseNumber: dto.cmp,
         resume: dto.resume,
-        clinicId: dto.clinicId,
+        clinicId: effectiveClinicId,
       },
       specialtyIds: dto.specialtyIds,
     });

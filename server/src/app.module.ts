@@ -67,9 +67,6 @@ import { ScheduleBlocksModule } from './modules/schedule-blocks/application/sche
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(RequestLoggerMiddleware)
-      .exclude('health')
-      .forRoutes('*');
+    consumer.apply(RequestLoggerMiddleware).exclude('health').forRoutes('*');
   }
 }

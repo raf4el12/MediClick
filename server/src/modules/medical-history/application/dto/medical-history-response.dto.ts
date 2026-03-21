@@ -1,61 +1,61 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class MedicalHistoryPatientDto {
-    @ApiProperty()
-    id: number;
+  @ApiProperty()
+  id: number;
 
-    @ApiProperty()
-    name: string;
+  @ApiProperty()
+  name: string;
 
-    @ApiProperty()
-    lastName: string;
+  @ApiProperty()
+  lastName: string;
 }
 
 export class MedicalHistoryResponseDto {
-    @ApiProperty()
-    id: number;
+  @ApiProperty()
+  id: number;
 
-    @ApiProperty()
-    patientId: number;
+  @ApiProperty()
+  patientId: number;
 
-    @ApiProperty()
-    condition: string;
+  @ApiProperty()
+  condition: string;
 
-    @ApiPropertyOptional()
-    description: string | null;
+  @ApiPropertyOptional()
+  description: string | null;
 
-    @ApiPropertyOptional()
-    diagnosedDate: Date | null;
+  @ApiPropertyOptional()
+  diagnosedDate: Date | null;
 
-    @ApiProperty()
-    status: string;
+  @ApiProperty()
+  status: string;
 
-    @ApiPropertyOptional()
-    notes: string | null;
+  @ApiPropertyOptional()
+  notes: string | null;
 
-    @ApiProperty({ type: MedicalHistoryPatientDto })
-    patient: MedicalHistoryPatientDto;
+  @ApiProperty({ type: MedicalHistoryPatientDto })
+  patient: MedicalHistoryPatientDto;
 
-    @ApiProperty()
-    createdAt: Date;
+  @ApiProperty()
+  createdAt: Date;
 
-    @ApiPropertyOptional()
-    updatedAt: Date | null;
+  @ApiPropertyOptional()
+  updatedAt: Date | null;
 }
 
 export class PaginatedMedicalHistoryResponseDto {
-    @ApiProperty({ type: [MedicalHistoryResponseDto] })
-    data: MedicalHistoryResponseDto[];
+  @ApiProperty({ type: [MedicalHistoryResponseDto] })
+  data: MedicalHistoryResponseDto[];
 
-    @ApiProperty()
-    total: number;
+  @ApiProperty()
+  total: number;
 
-    @ApiProperty()
-    page: number;
+  @ApiProperty()
+  page: number;
 
-    @ApiProperty()
-    limit: number;
+  @ApiProperty()
+  limit: number;
 
-    @ApiProperty()
-    totalPages: number;
+  @ApiProperty()
+  totalPages: number;
 }

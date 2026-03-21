@@ -28,7 +28,9 @@ const scheduleBlockInclude = {
 export class PrismaScheduleBlockRepository implements IScheduleBlockRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: CreateScheduleBlockData): Promise<ScheduleBlockWithDoctor> {
+  async create(
+    data: CreateScheduleBlockData,
+  ): Promise<ScheduleBlockWithDoctor> {
     return this.prisma.scheduleBlocks.create({
       data: {
         doctorId: data.doctorId,

@@ -37,6 +37,7 @@ export interface UserWithProfile {
   email: string;
   role: UserRole;
   isActive: boolean;
+  clinicId: number | null;
   deleted: boolean;
   createdAt: Date;
   updatedAt: Date | null;

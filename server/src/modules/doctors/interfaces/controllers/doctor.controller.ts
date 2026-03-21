@@ -35,7 +35,7 @@ export class DoctorController {
     private readonly findDoctorByIdUseCase: FindDoctorByIdUseCase,
     private readonly updateDoctorUseCase: UpdateDoctorUseCase,
     private readonly deleteDoctorUseCase: DeleteDoctorUseCase,
-  ) { }
+  ) {}
 
   @Post('onboard')
   @Auth(UserRole.ADMIN)
@@ -50,8 +50,11 @@ export class DoctorController {
   })
   @ApiResponse({ status: 400, description: 'Especialidades inválidas' })
   @ApiResponse({ status: 409, description: 'Email o CMP duplicado' })
-  async onboard(@Body() dto: OnboardDoctorDto): Promise<DoctorResponseDto> {
-    return this.onboardDoctorUseCase.execute(dto);
+  async onboard(
+    @Body() dto: OnboardDoctorDto,
+    @CurrentClinic() clinicId: number | null,
+  ): Promise<DoctorResponseDto> {
+    return this.onboardDoctorUseCase.execute(dto, clinicId);
   }
 
   @Get()
@@ -73,7 +76,11 @@ export class DoctorController {
       queryDto.orderBy,
       queryDto.orderByMode,
     );
-    return this.findAllDoctorsUseCase.execute(pagination, queryDto.specialtyId, clinicId);
+    return this.findAllDoctorsUseCase.execute(
+      pagination,
+      queryDto.specialtyId,
+      clinicId,
+    );
   }
 
   @Get(':id')
@@ -87,8 +94,9 @@ export class DoctorController {
   @ApiResponse({ status: 404, description: 'Doctor no encontrado' })
   async findById(
     @Param('id', ParseIntPipe) id: number,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<DoctorResponseDto> {
-    return this.findDoctorByIdUseCase.execute(id);
+    return this.findDoctorByIdUseCase.execute(id, clinicId);
   }
 
   @Patch(':id')
@@ -99,8 +107,9 @@ export class DoctorController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateDoctorDto,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<DoctorResponseDto> {
-    return this.updateDoctorUseCase.execute(id, dto);
+    return this.updateDoctorUseCase.execute(id, dto, clinicId);
   }
 
   @Delete(':id')
@@ -109,7 +118,10 @@ export class DoctorController {
   @ApiOperation({ summary: 'Eliminar doctor (soft delete)' })
   @ApiResponse({ status: 204, description: 'Doctor eliminado' })
   @ApiResponse({ status: 404, description: 'No encontrado' })
-  async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    return this.deleteDoctorUseCase.execute(id);
+  async delete(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentClinic() clinicId: number | null,
+  ): Promise<void> {
+    return this.deleteDoctorUseCase.execute(id, clinicId);
   }
 }

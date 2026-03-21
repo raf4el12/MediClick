@@ -9,7 +9,10 @@ import { ScheduleBlockResponseDto } from '../dto/schedule-block-response.dto.js'
 import type { IScheduleBlockRepository } from '../../domain/repositories/schedule-block.repository.js';
 import type { IDoctorRepository } from '../../../doctors/domain/repositories/doctor.repository.js';
 import { ScheduleRegenerationService } from '../../../schedules/domain/services/schedule-regeneration.service.js';
-import { timeStringToDate, dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
+import {
+  timeStringToDate,
+  dateToTimeString,
+} from '../../../../shared/utils/date-time.utils.js';
 
 @Injectable()
 export class CreateScheduleBlockUseCase {
@@ -21,7 +24,9 @@ export class CreateScheduleBlockUseCase {
     private readonly scheduleRegenerationService: ScheduleRegenerationService,
   ) {}
 
-  async execute(dto: CreateScheduleBlockDto): Promise<ScheduleBlockResponseDto> {
+  async execute(
+    dto: CreateScheduleBlockDto,
+  ): Promise<ScheduleBlockResponseDto> {
     // Validar que el doctor exista
     const doctor = await this.doctorRepository.findById(dto.doctorId);
     if (!doctor) {

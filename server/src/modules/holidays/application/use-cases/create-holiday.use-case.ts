@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, ForbiddenException } from '@nestjs/common';
 import { CreateHolidayDto } from '../dto/create-holiday.dto.js';
 import { HolidayResponseDto } from '../dto/holiday-response.dto.js';
 import type { IHolidayRepository } from '../../domain/repositories/holiday.repository.js';
@@ -10,8 +10,19 @@ export class CreateHolidayUseCase {
     private readonly holidayRepository: IHolidayRepository,
   ) {}
 
-  async execute(dto: CreateHolidayDto): Promise<HolidayResponseDto> {
-    const datePart = dto.date.split('T')[0]!;
+  async execute(
+    dto: CreateHolidayDto,
+    jwtClinicId?: number | null,
+  ): Promise<HolidayResponseDto> {
+    // JWT clinicId prevails for staff; super-admin uses dto value
+    const effectiveClinicId = jwtClinicId ?? dto.clinicId ?? undefined;
+
+    // Staff cannot create holidays for another clinic
+    if (jwtClinicId && dto.clinicId && dto.clinicId !== jwtClinicId) {
+      throw new ForbiddenException('No puede crear feriados para otra sede');
+    }
+
+    const datePart = dto.date.split('T')[0];
     const parsedDate = new Date(`${datePart}T12:00:00Z`);
     const year = parsedDate.getUTCFullYear();
     const month = parsedDate.getUTCMonth();
@@ -22,7 +33,7 @@ export class CreateHolidayUseCase {
       date: parsedDate,
       year,
       isRecurring: dto.isRecurring ?? false,
-      clinicId: dto.clinicId,
+      clinicId: effectiveClinicId,
     });
 
     // Si es recurrente, propagar a todos los años que ya tienen feriados sembrados
@@ -36,7 +47,7 @@ export class CreateHolidayUseCase {
           date: new Date(Date.UTC(y, month, day, 12, 0, 0)),
           year: y,
           isRecurring: true,
-          clinicId: dto.clinicId,
+          clinicId: effectiveClinicId,
         }));
         await this.holidayRepository.createMany(copies);
       }

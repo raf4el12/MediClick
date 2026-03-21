@@ -5,20 +5,20 @@ import type { INotificationRepository } from '../../domain/repositories/notifica
 
 @Injectable()
 export class FindUserNotificationsUseCase {
-    constructor(
-        @Inject('INotificationRepository')
-        private readonly notificationRepository: INotificationRepository,
-    ) { }
+  constructor(
+    @Inject('INotificationRepository')
+    private readonly notificationRepository: INotificationRepository,
+  ) {}
 
-    async execute(
-        userId: number,
-        query: NotificationQueryDto,
-    ): Promise<PaginatedNotificationsResponseDto> {
-        return this.notificationRepository.findByUserId(userId, {
-            isRead: query.isRead,
-            type: query.type,
-            page: query.page,
-            limit: query.limit,
-        });
-    }
+  async execute(
+    userId: number,
+    query: NotificationQueryDto,
+  ): Promise<PaginatedNotificationsResponseDto> {
+    return this.notificationRepository.findByUserId(userId, {
+      isRead: query.isRead,
+      type: query.type,
+      page: query.page,
+      limit: query.limit,
+    });
+  }
 }

@@ -14,7 +14,10 @@ import {
   MIN_CANCELLATION_HOURS_PATIENT,
   CANCELLATION_FEE_PERCENTAGE,
 } from '../../domain/constants/cancellation-policy.constants.js';
-import { dateToTimeString, nowInTimezone } from '../../../../shared/utils/date-time.utils.js';
+import {
+  dateToTimeString,
+  nowInTimezone,
+} from '../../../../shared/utils/date-time.utils.js';
 import { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
 
 @Injectable()
@@ -48,7 +51,9 @@ export class CancelAppointmentUseCase {
     }
 
     // Calcular horas restantes hasta la cita (zona horaria de la sede del doctor)
-    const tz = await this.timezoneResolver.resolveByDoctorId(appointment.schedule.doctor.id);
+    const tz = await this.timezoneResolver.resolveByDoctorId(
+      appointment.schedule.doctor.id,
+    );
     const now = nowInTimezone(tz);
     const scheduleDate = new Date(appointment.schedule.scheduleDate);
     const appointmentDateTime = new Date(

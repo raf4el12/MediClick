@@ -3,13 +3,13 @@ import type { INotificationRepository } from '../../domain/repositories/notifica
 
 @Injectable()
 export class MarkAllReadUseCase {
-    constructor(
-        @Inject('INotificationRepository')
-        private readonly notificationRepository: INotificationRepository,
-    ) { }
+  constructor(
+    @Inject('INotificationRepository')
+    private readonly notificationRepository: INotificationRepository,
+  ) {}
 
-    async execute(userId: number): Promise<{ markedCount: number }> {
-        const count = await this.notificationRepository.markAllAsRead(userId);
-        return { markedCount: count };
-    }
+  async execute(userId: number): Promise<{ markedCount: number }> {
+    const count = await this.notificationRepository.markAllAsRead(userId);
+    return { markedCount: count };
+  }
 }

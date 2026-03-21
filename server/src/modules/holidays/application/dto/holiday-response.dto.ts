@@ -19,7 +19,11 @@ export class HolidayResponseDto {
   @ApiProperty({ example: true })
   isActive: boolean;
 
-  @ApiProperty({ example: null, nullable: true, description: 'ID de la sede (null = global)' })
+  @ApiProperty({
+    example: null,
+    nullable: true,
+    description: 'ID de la sede (null = global)',
+  })
   clinicId: number | null;
 
   @ApiProperty()

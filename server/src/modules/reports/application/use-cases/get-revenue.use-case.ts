@@ -9,7 +9,11 @@ export class GetRevenueUseCase {
     private readonly reportRepository: IReportRepository,
   ) {}
 
-  async execute(month: number, year: number, clinicId?: number | null): Promise<RevenueReportDto> {
+  async execute(
+    month: number,
+    year: number,
+    clinicId?: number | null,
+  ): Promise<RevenueReportDto> {
     return this.reportRepository.getRevenue(month, year, clinicId);
   }
 }

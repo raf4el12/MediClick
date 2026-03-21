@@ -33,7 +33,7 @@ const doctorInclude = {
 
 @Injectable()
 export class PrismaDoctorRepository implements IDoctorRepository {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async onboard(data: OnboardDoctorData): Promise<DoctorWithRelations> {
     return this.prisma.$transaction(async (tx) => {

@@ -10,7 +10,9 @@ export class FindAllClinicsUseCase {
     private readonly clinicRepository: IClinicRepository,
   ) {}
 
-  async execute(pagination: PaginationImproved): Promise<PaginatedClinicResponseDto> {
+  async execute(
+    pagination: PaginationImproved,
+  ): Promise<PaginatedClinicResponseDto> {
     const { limit, offset } = pagination.getOffsetLimit();
 
     const result = await this.clinicRepository.findAllPaginated({

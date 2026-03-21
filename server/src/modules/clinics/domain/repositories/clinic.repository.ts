@@ -23,7 +23,9 @@ export interface UpdateClinicData {
 
 export interface IClinicRepository {
   create(data: CreateClinicData): Promise<ClinicEntity>;
-  findAllPaginated(params: PaginationParams): Promise<PaginatedResult<ClinicEntity>>;
+  findAllPaginated(
+    params: PaginationParams,
+  ): Promise<PaginatedResult<ClinicEntity>>;
   findById(id: number): Promise<ClinicEntity | null>;
   existsByName(name: string): Promise<boolean>;
   existsByNameExcluding(name: string, excludeId: number): Promise<boolean>;

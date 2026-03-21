@@ -1,4 +1,9 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { UpdateHolidayDto } from '../dto/update-holiday.dto.js';
 import { HolidayResponseDto } from '../dto/holiday-response.dto.js';
 import type { IHolidayRepository } from '../../domain/repositories/holiday.repository.js';
@@ -14,10 +19,20 @@ export class UpdateHolidayUseCase {
   async execute(
     id: number,
     dto: UpdateHolidayDto,
+    clinicId?: number | null,
   ): Promise<HolidayResponseDto> {
     const existing = await this.holidayRepository.findById(id);
     if (!existing) {
       throw new NotFoundException('Feriado no encontrado');
+    }
+
+    // Staff can only edit holidays of their own clinic (or global holidays clinicId=null)
+    if (
+      clinicId &&
+      existing.clinicId !== null &&
+      existing.clinicId !== clinicId
+    ) {
+      throw new ForbiddenException('No tiene acceso a este feriado');
     }
 
     const updateData: UpdateHolidayData = {};
@@ -43,7 +58,10 @@ export class UpdateHolidayUseCase {
     const updated = await this.holidayRepository.update(id, updateData);
 
     // Manejar cambios de recurrencia
-    if (dto.isRecurring !== undefined && dto.isRecurring !== existing.isRecurring) {
+    if (
+      dto.isRecurring !== undefined &&
+      dto.isRecurring !== existing.isRecurring
+    ) {
       const existingYears = await this.holidayRepository.findDistinctYears();
       const otherYears = existingYears.filter((y) => y !== updated.year);
 
@@ -60,7 +78,10 @@ export class UpdateHolidayUseCase {
         await this.holidayRepository.createMany(copies);
       } else if (!dto.isRecurring && otherYears.length > 0) {
         // Desactivó recurrencia → eliminar copias de otros años
-        await this.holidayRepository.deleteByNameAndYear(updated.name, otherYears);
+        await this.holidayRepository.deleteByNameAndYear(
+          updated.name,
+          otherYears,
+        );
       }
     }
 

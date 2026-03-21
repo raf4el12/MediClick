@@ -115,8 +115,13 @@ export class CreatePatientAppointmentUseCase {
     }
 
     // ── Verificar si la fecha es feriado (considerando sede del doctor) ──
-    const clinicId = await this.timezoneResolver.resolveClinicIdByDoctorId(schedule.doctorId);
-    const isHoliday = await this.holidayRepository.isHoliday(scheduleDate, clinicId ?? undefined);
+    const clinicId = await this.timezoneResolver.resolveClinicIdByDoctorId(
+      schedule.doctorId,
+    );
+    const isHoliday = await this.holidayRepository.isHoliday(
+      scheduleDate,
+      clinicId ?? undefined,
+    );
     if (isHoliday) {
       throw new BadRequestException(
         'No se puede agendar una cita en un día feriado',

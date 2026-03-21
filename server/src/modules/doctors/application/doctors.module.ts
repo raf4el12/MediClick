@@ -25,5 +25,4 @@ import { DoctorController } from '../interfaces/controllers/doctor.controller.js
   ],
   exports: ['IDoctorRepository'],
 })
-export class DoctorsModule { }
-
+export class DoctorsModule {}

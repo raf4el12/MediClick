@@ -17,7 +17,12 @@ export class DoctorResponseDto {
   clinicId: number | null;
 
   @ApiProperty({ nullable: true })
-  clinic: { id: number; name: string; timezone: string; currency: string } | null;
+  clinic: {
+    id: number;
+    name: string;
+    timezone: string;
+    currency: string;
+  } | null;
 
   @ApiProperty()
   isActive: boolean;

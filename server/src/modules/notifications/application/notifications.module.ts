@@ -9,19 +9,19 @@ import { DeleteNotificationUseCase } from './use-cases/delete-notification.use-c
 import { NotificationController } from '../interfaces/controllers/notification.controller.js';
 
 @Module({
-    controllers: [NotificationController],
-    providers: [
-        {
-            provide: 'INotificationRepository',
-            useClass: PrismaNotificationRepository,
-        },
-        CreateNotificationUseCase,
-        FindUserNotificationsUseCase,
-        MarkNotificationReadUseCase,
-        MarkAllReadUseCase,
-        CountUnreadUseCase,
-        DeleteNotificationUseCase,
-    ],
-    exports: [CreateNotificationUseCase],
+  controllers: [NotificationController],
+  providers: [
+    {
+      provide: 'INotificationRepository',
+      useClass: PrismaNotificationRepository,
+    },
+    CreateNotificationUseCase,
+    FindUserNotificationsUseCase,
+    MarkNotificationReadUseCase,
+    MarkAllReadUseCase,
+    CountUnreadUseCase,
+    DeleteNotificationUseCase,
+  ],
+  exports: [CreateNotificationUseCase],
 })
-export class NotificationsModule { }
+export class NotificationsModule {}

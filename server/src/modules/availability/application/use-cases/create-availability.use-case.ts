@@ -3,12 +3,16 @@ import {
   Inject,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { CreateAvailabilityDto } from '../dto/create-availability.dto.js';
 import { AvailabilityResponseDto } from '../dto/availability-response.dto.js';
 import type { IAvailabilityRepository } from '../../domain/repositories/availability.repository.js';
 import type { IDoctorRepository } from '../../../doctors/domain/repositories/doctor.repository.js';
-import { timeStringToDate, dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
+import {
+  timeStringToDate,
+  dateToTimeString,
+} from '../../../../shared/utils/date-time.utils.js';
 
 @Injectable()
 export class CreateAvailabilityUseCase {
@@ -19,10 +23,19 @@ export class CreateAvailabilityUseCase {
     private readonly doctorRepository: IDoctorRepository,
   ) {}
 
-  async execute(dto: CreateAvailabilityDto): Promise<AvailabilityResponseDto> {
+  async execute(
+    dto: CreateAvailabilityDto,
+    jwtClinicId?: number | null,
+  ): Promise<AvailabilityResponseDto> {
     const doctor = await this.doctorRepository.findById(dto.doctorId);
     if (!doctor) {
       throw new BadRequestException('El doctor especificado no existe');
+    }
+
+    if (jwtClinicId && doctor.clinicId !== jwtClinicId) {
+      throw new ForbiddenException(
+        'No puede crear disponibilidad para un doctor de otra sede',
+      );
     }
 
     const hasDoctorSpecialty =

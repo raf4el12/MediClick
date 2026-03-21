@@ -13,6 +13,12 @@ export class AuthUserDto {
 
   @ApiProperty({ enum: UserRole })
   role: UserRole;
+
+  @ApiPropertyOptional({
+    example: 'Sede Principal',
+    description: 'Nombre de la clínica asignada',
+  })
+  clinicName?: string | null;
 }
 
 export class AuthResponseDto {

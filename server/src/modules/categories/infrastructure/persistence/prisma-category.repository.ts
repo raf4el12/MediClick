@@ -25,9 +25,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
 
     const where = {
       deleted: false,
-      ...(clinicId
-        ? { OR: [{ clinicId: null }, { clinicId }] }
-        : {}),
+      ...(clinicId ? { OR: [{ clinicId: null }, { clinicId }] } : {}),
       ...(searchValue && {
         AND: [
           {
@@ -74,10 +72,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
     });
   }
 
-  async existsByName(
-    name: string,
-    clinicId?: number | null,
-  ): Promise<boolean> {
+  async existsByName(name: string, clinicId?: number | null): Promise<boolean> {
     const count = await this.prisma.categories.count({
       where: {
         name,
