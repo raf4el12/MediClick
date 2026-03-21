@@ -4,16 +4,19 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
 import { dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
+import type { AppointmentConfirmedEvent } from '../../../../shared/mail/events/mail-events.interface.js';
 
 @Injectable()
 export class ConfirmAppointmentUseCase {
   constructor(
     @Inject('IAppointmentRepository')
     private readonly appointmentRepository: IAppointmentRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(id: number): Promise<AppointmentResponseDto> {
@@ -32,6 +35,23 @@ export class ConfirmAppointmentUseCase {
       status: AppointmentStatus.CONFIRMED,
       updatedAt: new Date(),
     });
+
+    if (updated.patient.profile.userId) {
+      const event: AppointmentConfirmedEvent = {
+        appointmentId: updated.id,
+        patientEmail: updated.patient.profile.email,
+        patientName: `${updated.patient.profile.name} ${updated.patient.profile.lastName}`,
+        patientUserId: updated.patient.profile.userId,
+        doctorName: `${updated.schedule.doctor.profile.name} ${updated.schedule.doctor.profile.lastName}`,
+        specialty: updated.schedule.specialty.name,
+        clinicName: updated.schedule.doctor.clinic?.name ?? 'MediClick',
+        clinicTimezone: updated.schedule.doctor.clinic?.timezone ?? 'America/Lima',
+        scheduleDate: updated.schedule.scheduleDate,
+        startTime: updated.startTime,
+        endTime: updated.endTime,
+      };
+      this.eventEmitter.emit('appointment.confirmed', event);
+    }
 
     return this.toResponse(updated);
   }

@@ -1,0 +1,31 @@
+{{#> base subject="Cita confirmada"}}
+<h2>Hola, {{patientName}}</h2>
+<p>Tu cita ha sido <strong>confirmada</strong> exitosamente. A continuacion los detalles:</p>
+
+<div class="info-card">
+  <div class="row">
+    <span class="label">Doctor:</span>
+    <span class="value">Dr(a). {{doctorName}}</span>
+  </div>
+  <div class="row">
+    <span class="label">Especialidad:</span>
+    <span class="value">{{specialty}}</span>
+  </div>
+  <div class="row">
+    <span class="label">Fecha:</span>
+    <span class="value">{{formatDate scheduleDate clinicTimezone}}</span>
+  </div>
+  <div class="row">
+    <span class="label">Horario:</span>
+    <span class="value">{{formatTime startTime clinicTimezone}} - {{formatTime endTime clinicTimezone}}</span>
+  </div>
+  <div class="row">
+    <span class="label">Sede:</span>
+    <span class="value">{{clinicName}}</span>
+  </div>
+</div>
+
+<p style="font-size: 13px; color: #64748b;">
+  Recuerda llegar con al menos 15 minutos de anticipacion. Si necesitas cancelar o reprogramar, hazlo con al menos 24 horas de antelacion para evitar cargos.
+</p>
+{{/base}}

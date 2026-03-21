@@ -41,7 +41,7 @@ export interface AppointmentWithRelations {
   hasPrescription: boolean;
   patient: {
     id: number;
-    profile: { name: string; lastName: string; email: string };
+    profile: { name: string; lastName: string; email: string; userId: number | null };
   };
   schedule: {
     id: number;
@@ -51,7 +51,7 @@ export interface AppointmentWithRelations {
     doctor: {
       id: number;
       profile: { name: string; lastName: string };
-      clinic: { timezone: string } | null;
+      clinic: { name: string; timezone: string } | null;
     };
     specialty: { id: number; name: string };
   };

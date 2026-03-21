@@ -4,6 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CancelAppointmentDto } from '../dto/cancel-appointment.dto.js';
 import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
@@ -19,6 +20,7 @@ import {
   nowInTimezone,
 } from '../../../../shared/utils/date-time.utils.js';
 import { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
+import type { AppointmentCancelledEvent } from '../../../../shared/mail/events/mail-events.interface.js';
 
 @Injectable()
 export class CancelAppointmentUseCase {
@@ -28,6 +30,7 @@ export class CancelAppointmentUseCase {
     @Inject('ISpecialtyRepository')
     private readonly specialtyRepository: ISpecialtyRepository,
     private readonly timezoneResolver: TimezoneResolverService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(
@@ -91,6 +94,21 @@ export class CancelAppointmentUseCase {
       ...(cancellationFee !== undefined && { cancellationFee }),
       updatedAt: new Date(),
     });
+
+    if (updated.patient.profile.userId) {
+      const event: AppointmentCancelledEvent = {
+        appointmentId: updated.id,
+        patientEmail: updated.patient.profile.email,
+        patientName: `${updated.patient.profile.name} ${updated.patient.profile.lastName}`,
+        patientUserId: updated.patient.profile.userId,
+        doctorName: `${updated.schedule.doctor.profile.name} ${updated.schedule.doctor.profile.lastName}`,
+        clinicName: updated.schedule.doctor.clinic?.name ?? 'MediClick',
+        clinicTimezone: updated.schedule.doctor.clinic?.timezone ?? 'America/Lima',
+        scheduleDate: updated.schedule.scheduleDate,
+        cancelReason: dto.reason ?? null,
+      };
+      this.eventEmitter.emit('appointment.cancelled', event);
+    }
 
     return this.toResponse(updated);
   }

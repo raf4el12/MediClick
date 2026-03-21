@@ -1,0 +1,33 @@
+{{#> base subject="Cita cancelada"}}
+<h2>Hola, {{patientName}}</h2>
+<p>Lamentamos informarte que tu cita ha sido <strong>cancelada</strong>.</p>
+
+<div class="info-card">
+  <div class="row">
+    <span class="label">Doctor:</span>
+    <span class="value">Dr(a). {{doctorName}}</span>
+  </div>
+  <div class="row">
+    <span class="label">Fecha:</span>
+    <span class="value">{{formatDate scheduleDate clinicTimezone}}</span>
+  </div>
+  <div class="row">
+    <span class="label">Sede:</span>
+    <span class="value">{{clinicName}}</span>
+  </div>
+  {{#if cancelReason}}
+  <div class="row">
+    <span class="label">Motivo:</span>
+    <span class="value">{{cancelReason}}</span>
+  </div>
+  {{/if}}
+</div>
+
+<p>Si deseas agendar una nueva cita, puedes hacerlo desde la plataforma MediClick.</p>
+
+<div style="text-align: center; margin: 28px 0;">
+  <a href="{{clientUrl}}/patient/book-appointment" class="btn" style="display: inline-block; padding: 12px 28px; background-color: #3b82f6; color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 15px; font-weight: 600;">
+    Agendar nueva cita
+  </a>
+</div>
+{{/base}}

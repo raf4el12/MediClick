@@ -6,12 +6,14 @@ import {
   NotFoundException,
   ConflictException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreatePrescriptionDto } from '../dto/create-prescription.dto.js';
 import { PrescriptionResponseDto } from '../dto/prescription-response.dto.js';
 import type { IPrescriptionRepository } from '../../domain/repositories/prescription.repository.js';
 import type { IAppointmentRepository } from '../../../appointments/domain/repositories/appointment.repository.js';
 import type { IDoctorRepository } from '../../../doctors/domain/repositories/doctor.repository.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
+import type { PrescriptionCreatedEvent } from '../../../../shared/mail/events/mail-events.interface.js';
 
 @Injectable()
 export class CreatePrescriptionUseCase {
@@ -22,6 +24,7 @@ export class CreatePrescriptionUseCase {
     private readonly appointmentRepository: IAppointmentRepository,
     @Inject('IDoctorRepository')
     private readonly doctorRepository: IDoctorRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(
@@ -77,6 +80,27 @@ export class CreatePrescriptionUseCase {
           notes: item.notes,
         })),
       });
+
+    if (appointment.patient.profile.userId) {
+      const event: PrescriptionCreatedEvent = {
+        prescriptionId: prescription.id,
+        patientEmail: appointment.patient.profile.email,
+        patientName: `${appointment.patient.profile.name} ${appointment.patient.profile.lastName}`,
+        patientUserId: appointment.patient.profile.userId,
+        doctorName: `${appointment.schedule.doctor.profile.name} ${appointment.schedule.doctor.profile.lastName}`,
+        clinicName: appointment.schedule.doctor.clinic?.name ?? 'MediClick',
+        clinicTimezone: appointment.schedule.doctor.clinic?.timezone ?? 'America/Lima',
+        medications: dto.items.map((item) => ({
+          medication: item.medication,
+          dosage: item.dosage,
+          frequency: item.frequency,
+          duration: item.duration,
+          notes: item.notes ?? null,
+        })),
+        instructions: dto.instructions ?? null,
+      };
+      this.eventEmitter.emit('prescription.created', event);
+    }
 
     return this.toResponse(prescription);
   }
