@@ -162,7 +162,7 @@ export class CreateOverbookAppointmentUseCase {
       endTime: overbookEndTime,
       reason: dto.reason,
       isOverbook: true,
-      clinicId: (doctor as any).clinicId ?? null,
+      clinicId: doctor.clinicId ?? null,
     });
 
     return this.toResponse(appointment);

@@ -158,12 +158,14 @@ export const ScheduleBlockList = memo(function ScheduleBlockList({
                   </Box>
 
                   <Box sx={{ mb: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.5 }}>
-                      <i className="ri-user-line" style={{ fontSize: 14, color: theme.palette.text.secondary }} />
-                      <Typography variant="body2" color="text.secondary">
-                        {entry.doctor.profile.name} {entry.doctor.profile.lastName}
-                      </Typography>
-                    </Box>
+                    {entry.doctor?.profile && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.5 }}>
+                        <i className="ri-user-line" style={{ fontSize: 14, color: theme.palette.text.secondary }} />
+                        <Typography variant="body2" color="text.secondary">
+                          {entry.doctor.profile.name} {entry.doctor.profile.lastName}
+                        </Typography>
+                      </Box>
+                    )}
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.5 }}>
                       <i className="ri-calendar-line" style={{ fontSize: 14, color: theme.palette.text.secondary }} />
                       <Typography variant="body2" color="text.secondary">

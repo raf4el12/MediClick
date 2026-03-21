@@ -206,14 +206,13 @@ export default function Navigation({ mobileOpen = false, onMobileClose }: Naviga
   const showText = !isCollapsed || isHovered;
   const currentWidth = isCollapsed && !isHovered ? 80 : DRAWER_WIDTH;
 
-  const isPatient = userRole === UserRole.PATIENT;
-  const isDark = settings.semiDark || settings.mode === 'dark' || isPatient;
+  const isDark = true; // Mantenemos el estado 'dark' para las sombras y contrastes
 
-  const bgColor = isPatient ? '#0f172a' : isDark ? '#0F1B2D' : 'background.paper';
-  const textColor = isDark ? 'rgba(255, 255, 255, 0.9)' : 'text.primary';
-  const secondaryText = isDark ? 'rgba(255, 255, 255, 0.5)' : 'text.secondary';
-  const dividerColor = isDark ? 'rgba(255, 255, 255, 0.12)' : 'divider';
-  const hoverBg = isDark ? 'rgba(255, 255, 255, 0.06)' : 'action.hover';
+  const bgColor = '#001849';
+  const textColor = '#FFFFFF';
+  const secondaryText = 'rgba(255, 255, 255, 0.8)';
+  const dividerColor = 'rgba(255, 255, 255, 0.2)';
+  const hoverBg = 'rgba(255, 255, 255, 0.1)';
 
   const filteredSections = navigationItems
     .map((section) => ({

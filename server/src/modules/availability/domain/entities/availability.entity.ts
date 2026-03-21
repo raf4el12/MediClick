@@ -13,6 +13,7 @@ export class AvailabilityEntity {
   isAvailable: boolean;
   type: AvailabilityType;
   reason: string | null;
+  clinicId: number | null;
   createdAt: Date;
   updatedAt: Date | null;
 }

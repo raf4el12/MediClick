@@ -90,7 +90,7 @@ export class CreateAvailabilityUseCase {
       timeTo,
       type: dto.type,
       reason: dto.reason,
-      clinicId: (doctor as any).clinicId ?? null,
+      clinicId: doctor.clinicId ?? null,
     });
 
     return {

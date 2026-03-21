@@ -78,23 +78,13 @@ export class GenerateSchedulesUseCase {
       // Obtener todos los doctores con disponibilidad activa
       const allAvailabilities =
         await this.availabilityRepository.findActiveByDoctorIds([]);
-      let allDoctorIds = [...new Set(allAvailabilities.map((a) => a.doctorId))];
 
-      // Staff with clinicId: filter to only their clinic's doctors
-      if (jwtClinicId) {
-        const filteredIds: number[] = [];
-        for (const docId of allDoctorIds) {
-          const doc = await this.doctorRepository.findById(docId);
-          const docClinicId = doc?.clinicId ?? null;
-          doctorClinicCache.set(docId, docClinicId);
-          if (docClinicId === jwtClinicId) {
-            filteredIds.push(docId);
-          }
-        }
-        allDoctorIds = filteredIds;
-      }
+      // Staff with clinicId: filter availabilities by clinic (no extra queries)
+      const filteredAvailabilities = jwtClinicId
+        ? allAvailabilities.filter((a) => a.clinicId === jwtClinicId)
+        : allAvailabilities;
 
-      doctorIds = allDoctorIds;
+      doctorIds = [...new Set(filteredAvailabilities.map((a) => a.doctorId))];
     }
 
     if (doctorIds.length === 0) {

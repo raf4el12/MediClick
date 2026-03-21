@@ -74,6 +74,7 @@ export class UpdateHolidayUseCase {
           date: new Date(Date.UTC(y, month, day, 12, 0, 0)),
           year: y,
           isRecurring: true,
+          clinicId: updated.clinicId ?? undefined,
         }));
         await this.holidayRepository.createMany(copies);
       } else if (!dto.isRecurring && otherYears.length > 0) {
