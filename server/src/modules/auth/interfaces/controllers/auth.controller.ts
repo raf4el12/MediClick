@@ -24,6 +24,8 @@ import { LoginDto } from '../../application/dto/login.dto.js';
 import { RegisterPatientDto } from '../../application/dto/register-patient.dto.js';
 import { RefreshTokenDto } from '../../application/dto/refresh-token.dto.js';
 import { LogoutDto } from '../../application/dto/logout.dto.js';
+import { ForgotPasswordDto } from '../../application/dto/forgot-password.dto.js';
+import { ResetPasswordDto } from '../../application/dto/reset-password.dto.js';
 import { AuthResponseDto } from '../../application/dto/auth-response.dto.js';
 import { LoginUseCase } from '../../application/use-cases/login.use-case.js';
 import { RegisterPatientUseCase } from '../../application/use-cases/register-patient.use-case.js';
@@ -32,6 +34,8 @@ import { LogoutUseCase } from '../../application/use-cases/logout.use-case.js';
 import { LogoutAllDevicesUseCase } from '../../application/use-cases/logout-all-devices.use-case.js';
 import { GetProfileUseCase } from '../../application/use-cases/get-profile.use-case.js';
 import { UpdateProfileUseCase } from '../../application/use-cases/update-profile.use-case.js';
+import { ForgotPasswordUseCase } from '../../application/use-cases/forgot-password.use-case.js';
+import { ResetPasswordUseCase } from '../../application/use-cases/reset-password.use-case.js';
 import { UpdateMyProfileDto } from '../../application/dto/update-profile.dto.js';
 import { CheckEmailDto } from '../../application/dto/check-email.dto.js';
 import { CheckDocumentDto } from '../../application/dto/check-document.dto.js';
@@ -50,6 +54,8 @@ export class AuthController {
     private readonly getProfileUseCase: GetProfileUseCase,
     private readonly updateProfileUseCase: UpdateProfileUseCase,
     private readonly checkAvailabilityUseCase: CheckAvailabilityUseCase,
+    private readonly forgotPasswordUseCase: ForgotPasswordUseCase,
+    private readonly resetPasswordUseCase: ResetPasswordUseCase,
     private readonly configService: ConfigService,
   ) {
     this.isProduction = this.configService.get('NODE_ENV') === 'production';
@@ -129,6 +135,43 @@ export class AuthController {
       dto.typeDocument,
       dto.numberDocument,
     );
+  }
+
+  @Post('forgot-password')
+  @Throttle({ long: { ttl: 60000, limit: 3 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Solicitar restablecimiento de contraseña (público)',
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      'Si el email existe, se enviará un enlace de recuperación. Siempre retorna 200.',
+  })
+  async forgotPassword(
+    @Body() dto: ForgotPasswordDto,
+  ): Promise<{ message: string }> {
+    await this.forgotPasswordUseCase.execute(dto);
+    return {
+      message:
+        'Si el email está registrado, recibirás un enlace para restablecer tu contraseña',
+    };
+  }
+
+  @Post('reset-password')
+  @Throttle({ long: { ttl: 60000, limit: 5 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Restablecer contraseña con token (público)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Contraseña restablecida exitosamente',
+  })
+  @ApiResponse({ status: 400, description: 'Token inválido o expirado' })
+  async resetPassword(
+    @Body() dto: ResetPasswordDto,
+  ): Promise<{ message: string }> {
+    await this.resetPasswordUseCase.execute(dto);
+    return { message: 'Contraseña restablecida exitosamente' };
   }
 
   @Post('register')

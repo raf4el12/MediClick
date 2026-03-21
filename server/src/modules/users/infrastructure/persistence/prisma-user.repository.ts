@@ -253,6 +253,13 @@ export class PrismaUserRepository implements IUserRepository {
     });
   }
 
+  async updatePassword(id: number, hashedPassword: string): Promise<void> {
+    await this.prisma.users.update({
+      where: { id },
+      data: { password: hashedPassword, updatedAt: new Date() },
+    });
+  }
+
   async softDelete(id: number): Promise<void> {
     await this.prisma.users.update({
       where: { id },

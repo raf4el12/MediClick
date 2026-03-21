@@ -4,12 +4,14 @@ import { useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
+import Typography from '@mui/material/Typography';
 import { PasswordField } from '@/components/shared/PasswordField';
 import { useAppDispatch, useAppSelector } from '@/redux-store/hooks';
 import {
@@ -117,6 +119,19 @@ export function LoginForm() {
           />
         )}
       />
+
+      <Box sx={{ textAlign: 'right', mt: -1 }}>
+        <Typography
+          component={Link}
+          href="/forgot-password"
+          variant="body2"
+          color="primary"
+          fontWeight={500}
+          sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
+        >
+          ¿Olvidaste tu contraseña?
+        </Typography>
+      </Box>
 
       <Button
         type="submit"

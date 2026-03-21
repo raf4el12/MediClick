@@ -21,5 +21,6 @@ export interface IUserRepository {
   ): Promise<PaginatedResult<UserWithProfile>>;
   findByIdWithProfile(id: number): Promise<UserWithProfile | null>;
   updateUser(id: number, data: UpdateUserData): Promise<UserWithProfile>;
+  updatePassword(id: number, hashedPassword: string): Promise<void>;
   softDelete(id: number): Promise<void>;
 }
