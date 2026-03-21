@@ -27,6 +27,7 @@ import { NotificationsModule } from './modules/notifications/application/notific
 import { MedicalHistoryModule } from './modules/medical-history/application/medical-history.module.js';
 import { HolidaysModule } from './modules/holidays/application/holidays.module.js';
 import { ScheduleBlocksModule } from './modules/schedule-blocks/application/schedule-blocks.module.js';
+import { SchedulerModule } from './modules/scheduler/application/scheduler.module.js';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { ScheduleBlocksModule } from './modules/schedule-blocks/application/sche
     MedicalHistoryModule,
     HolidaysModule,
     ScheduleBlocksModule,
+    SchedulerModule,
   ],
   controllers: [],
   providers: [

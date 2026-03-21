@@ -1,0 +1,40 @@
+{{#> base subject="Recordatorio de cita"}}
+<h2>Hola, {{patientName}}</h2>
+<p>Te recordamos que tienes una <strong>cita programada para manana</strong>. Aqui los detalles:</p>
+
+<div class="info-card">
+  <div class="row">
+    <span class="label">Doctor:</span>
+    <span class="value">Dr(a). {{doctorName}}</span>
+  </div>
+  <div class="row">
+    <span class="label">Especialidad:</span>
+    <span class="value">{{specialty}}</span>
+  </div>
+  <div class="row">
+    <span class="label">Fecha:</span>
+    <span class="value">{{formatDate scheduleDate clinicTimezone}}</span>
+  </div>
+  <div class="row">
+    <span class="label">Horario:</span>
+    <span class="value">{{formatTime startTime clinicTimezone}} - {{formatTime endTime clinicTimezone}}</span>
+  </div>
+  <div class="row">
+    <span class="label">Sede:</span>
+    <span class="value">{{clinicName}}</span>
+  </div>
+</div>
+
+<p style="font-size: 14px; color: #475569;">
+  <strong>Recomendaciones:</strong>
+</p>
+<ul style="font-size: 14px; color: #475569; padding-left: 20px;">
+  <li>Llega con al menos 15 minutos de anticipacion</li>
+  <li>Trae tu documento de identidad</li>
+  <li>Si necesitas cancelar, hazlo con al menos 24 horas de anticipacion</li>
+</ul>
+
+<p style="font-size: 13px; color: #64748b; margin-top: 20px;">
+  Si no puedes asistir, puedes cancelar o reprogramar tu cita desde la plataforma MediClick.
+</p>
+{{/base}}

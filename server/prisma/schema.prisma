@@ -298,6 +298,7 @@ model Appointments {
   cancelReason    String?
   cancellationFee Decimal?          @db.Decimal(10, 2)
   isOverbook      Boolean           @default(false) // Cita de sobrecupo
+  reminderSent    Boolean           @default(false)
   clinicId        Int?
   deleted         Boolean           @default(false)
   createdAt     DateTime          @default(now())
