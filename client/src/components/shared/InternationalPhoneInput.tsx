@@ -17,12 +17,12 @@ interface InternationalPhoneInputProps {
   disabled?: boolean;
 }
 
-const MuiPhoneTextField = forwardRef<HTMLDivElement, React.ComponentProps<typeof TextField>>(
+const MuiPhoneTextField = forwardRef<HTMLInputElement, React.ComponentProps<typeof TextField>>(
   function MuiPhoneTextField(props, ref) {
     return (
       <TextField
         {...props}
-        ref={ref}
+        inputRef={ref}
         variant="outlined"
         fullWidth
         size="medium"
