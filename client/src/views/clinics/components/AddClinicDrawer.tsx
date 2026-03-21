@@ -12,6 +12,7 @@ import Alert from '@mui/material/Alert';
 import Autocomplete from '@mui/material/Autocomplete';
 import { Controller } from 'react-hook-form';
 import { useClinicForm } from '../hooks/useClinicForm';
+import { InternationalPhoneInput } from '@/components/shared/InternationalPhoneInput';
 import type { Clinic } from '../types';
 
 const KEEP_MOUNTED = { keepMounted: true };
@@ -120,13 +121,11 @@ export function AddClinicDrawer({
           name="phone"
           control={control}
           render={({ field }) => (
-            <TextField
-              {...field}
-              fullWidth
+            <InternationalPhoneInput
+              value={field.value}
+              onChange={(val) => field.onChange(val ?? '')}
+              error={errors.phone?.message}
               label="Teléfono"
-              placeholder="Ej: +51 1 234 5678"
-              error={!!errors.phone}
-              helperText={errors.phone?.message}
             />
           )}
         />

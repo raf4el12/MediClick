@@ -16,6 +16,7 @@ import MenuItem from '@mui/material/MenuItem';
 import FormHelperText from '@mui/material/FormHelperText';
 import { Controller } from 'react-hook-form';
 import { useProfileForm } from '../hooks/useProfileForm';
+import { InternationalPhoneInput } from '@/components/shared/InternationalPhoneInput';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
 
@@ -123,13 +124,11 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
               name="phone"
               control={control}
               render={({ field }) => (
-                <TextField
-                  {...field}
-                  fullWidth
+                <InternationalPhoneInput
+                  value={field.value}
+                  onChange={(val) => field.onChange(val ?? '')}
+                  error={errors.phone?.message}
                   label="Teléfono"
-                  placeholder="Ej: 999888777"
-                  error={!!errors.phone}
-                  helperText={errors.phone?.message}
                 />
               )}
             />

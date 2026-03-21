@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { isValidPhoneNumber } from 'libphonenumber-js';
 import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
@@ -18,6 +19,7 @@ import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
 import { alpha } from '@mui/material/styles';
 import { PasswordField } from '@/components/shared/PasswordField';
+import { InternationalPhoneInput } from '@/components/shared/InternationalPhoneInput';
 import { authService } from '@/services/auth.service';
 import { useAppDispatch, useAppSelector } from '@/redux-store/hooks';
 import {
@@ -65,7 +67,7 @@ const registerSchema = z
     phone: z
       .string()
       .min(1, 'El teléfono es obligatorio')
-      .regex(/^9\d{8}$/, 'Debe ser un celular válido (9 dígitos, inicia con 9)'),
+      .refine(isValidPhoneNumber, 'Número de teléfono inválido'),
     birthday: z.string().optional(),
     gender: z.string().optional(),
     password: z
@@ -382,21 +384,11 @@ export function RegisterForm() {
                 name="phone"
                 control={control}
                 render={({ field, fieldState: { error: fieldError } }) => (
-                  <TextField
-                    {...field}
+                  <InternationalPhoneInput
+                    value={field.value}
+                    onChange={(val) => field.onChange(val ?? '')}
+                    error={fieldError?.message}
                     label="Celular"
-                    fullWidth
-                    error={!!fieldError}
-                    helperText={fieldError?.message}
-                    slotProps={{
-                      input: {
-                        startAdornment: (
-                          <Box sx={{ mr: 1, display: 'flex', color: 'action.active' }}>
-                            <i className="ri-phone-line" style={{ fontSize: 20 }} />
-                          </Box>
-                        ),
-                      },
-                    }}
                   />
                 )}
               />

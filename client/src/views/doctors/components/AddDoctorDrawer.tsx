@@ -19,6 +19,7 @@ import Alert from '@mui/material/Alert';
 import { useMemo } from 'react';
 import { Controller } from 'react-hook-form';
 import { useDoctorForm } from '../hooks/useDoctorForm';
+import { InternationalPhoneInput } from '@/components/shared/InternationalPhoneInput';
 import type { Specialty } from '@/views/specialties/types';
 import type { Clinic } from '@/views/clinics/types';
 
@@ -174,13 +175,11 @@ export function AddDoctorDrawer({
             name="phone"
             control={control}
             render={({ field }) => (
-              <TextField
-                {...field}
-                fullWidth
+              <InternationalPhoneInput
+                value={field.value}
+                onChange={(val) => field.onChange(val ?? '')}
+                error={errors.phone?.message}
                 label="Teléfono"
-                placeholder="999888777"
-                error={!!errors.phone}
-                helperText={errors.phone?.message}
               />
             )}
           />

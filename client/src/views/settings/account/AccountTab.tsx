@@ -17,6 +17,7 @@ import { authService } from '@/services/auth.service';
 import { useAppDispatch } from '@/redux-store/hooks';
 import { updateUserProfile } from '@/redux-store/slices/auth';
 import { profileSchema, type ProfileFormValues } from '@/views/profile/functions/profile.schema';
+import { InternationalPhoneInput } from '@/components/shared/InternationalPhoneInput';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
 import type { ProfileResponse, UpdateProfileData } from '@/types/profile.types';
@@ -187,13 +188,11 @@ export default function AccountTab({ userData }: AccountTabProps) {
                                 name="phone"
                                 control={control}
                                 render={({ field }) => (
-                                    <TextField
-                                        {...field}
-                                        fullWidth
+                                    <InternationalPhoneInput
+                                        value={field.value}
+                                        onChange={(val) => field.onChange(val ?? '')}
+                                        error={errors.phone?.message}
                                         label="Teléfono"
-                                        placeholder="Ej: 999888777"
-                                        error={!!errors.phone}
-                                        helperText={errors.phone?.message}
                                     />
                                 )}
                             />

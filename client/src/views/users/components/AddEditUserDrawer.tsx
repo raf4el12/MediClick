@@ -18,6 +18,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Alert from '@mui/material/Alert';
 import { Controller } from 'react-hook-form';
 import { useUserForm } from '../hooks/useUserForm';
+import { InternationalPhoneInput } from '@/components/shared/InternationalPhoneInput';
 import type { User } from '../types';
 
 const KEEP_MOUNTED = { keepMounted: true };
@@ -218,13 +219,11 @@ export function AddEditUserDrawer({
           name="phone"
           control={control}
           render={({ field }) => (
-            <TextField
-              {...field}
-              fullWidth
+            <InternationalPhoneInput
+              value={field.value}
+              onChange={(val) => field.onChange(val ?? '')}
+              error={(errors as any).phone?.message}
               label="Teléfono"
-              placeholder="999888777"
-              error={!!(errors as any).phone}
-              helperText={(errors as any).phone?.message}
             />
           )}
         />

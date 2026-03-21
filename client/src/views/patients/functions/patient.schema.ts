@@ -1,6 +1,6 @@
 import { z } from 'zod';
+import { isValidPhoneNumber } from 'libphonenumber-js';
 
-const PHONE_REGEX = /^9\d{8}$/;
 const DNI_REGEX = /^\d{8}$/;
 const DOC_GENERAL_REGEX = /^[a-zA-Z0-9]{1,12}$/;
 
@@ -20,7 +20,7 @@ export const patientSchema = z
       .email('El email debe tener un formato válido'),
     phone: z
       .string()
-      .regex(PHONE_REGEX, 'Debe ser un celular válido (9 dígitos, inicia con 9)')
+      .refine((v) => !v || isValidPhoneNumber(v), 'Número de teléfono inválido')
       .optional()
       .or(z.literal('')),
     birthday: z.string().optional().or(z.literal('')),
@@ -34,7 +34,7 @@ export const patientSchema = z
     emergencyContact: z
       .string()
       .min(1, 'El contacto de emergencia es obligatorio')
-      .regex(PHONE_REGEX, 'Debe ser un celular válido (9 dígitos, inicia con 9)'),
+      .refine(isValidPhoneNumber, 'Número de teléfono inválido'),
     bloodType: z
       .string()
       .min(1, 'El tipo de sangre es obligatorio'),

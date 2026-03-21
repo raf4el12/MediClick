@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { isValidPhoneNumber } from 'libphonenumber-js';
 import { useAppDispatch } from '@/redux-store/hooks';
 import {
   createClinicThunk,
@@ -14,7 +15,7 @@ import type { Clinic } from '../types';
 const clinicSchema = z.object({
   name: z.string().min(1, 'El nombre es obligatorio'),
   address: z.string().optional(),
-  phone: z.string().optional(),
+  phone: z.string().refine((v) => !v || isValidPhoneNumber(v), 'Número de teléfono inválido').optional(),
   email: z.union([z.string().email('Email inválido'), z.literal('')]).optional(),
   timezone: z.string().min(1, 'La zona horaria es obligatoria'),
   currency: z.string().min(1, 'La moneda es obligatoria'),

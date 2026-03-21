@@ -1,6 +1,6 @@
 import { z } from 'zod';
+import { isValidPhoneNumber } from 'libphonenumber-js';
 
-const PHONE_REGEX = /^9\d{8}$/;
 const DNI_REGEX = /^\d{8}$/;
 const DOC_GENERAL_REGEX = /^[a-zA-Z0-9]{1,12}$/;
 
@@ -44,7 +44,7 @@ export const createUserSchema = z
       .max(100, 'El apellido no debe exceder 100 caracteres'),
     phone: z
       .string()
-      .regex(PHONE_REGEX, 'Debe ser un celular válido (9 dígitos, inicia con 9)')
+      .refine((v) => !v || isValidPhoneNumber(v), 'Número de teléfono inválido')
       .optional()
       .or(z.literal('')),
     typeDocument: z.enum(DOC_TYPES, {
@@ -72,7 +72,7 @@ export const editUserSchema = z
       .max(100, 'El apellido no debe exceder 100 caracteres'),
     phone: z
       .string()
-      .regex(PHONE_REGEX, 'Debe ser un celular válido (9 dígitos, inicia con 9)')
+      .refine((v) => !v || isValidPhoneNumber(v), 'Número de teléfono inválido')
       .optional()
       .or(z.literal('')),
     typeDocument: z.enum(DOC_TYPES, {

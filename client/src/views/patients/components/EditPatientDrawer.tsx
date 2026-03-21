@@ -20,15 +20,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { patientsService } from '@/services/patients.service';
 import type { Patient } from '../types';
-
-const PHONE_REGEX = /^9\d{8}$/;
+import { isValidPhoneNumber } from 'libphonenumber-js';
+import { InternationalPhoneInput } from '@/components/shared/InternationalPhoneInput';
 
 const editPatientSchema = z.object({
     name: z.string().min(1, 'El nombre es obligatorio').max(100),
     lastName: z.string().min(1, 'El apellido es obligatorio').max(100),
     phone: z
         .string()
-        .regex(PHONE_REGEX, 'Debe ser un celular válido (9 dígitos, inicia con 9)')
+        .refine((v) => !v || isValidPhoneNumber(v), 'Número de teléfono inválido')
         .optional()
         .or(z.literal('')),
     birthday: z.string().optional().or(z.literal('')),
@@ -36,7 +36,7 @@ const editPatientSchema = z.object({
     emergencyContact: z
         .string()
         .min(1, 'El contacto de emergencia es obligatorio')
-        .regex(PHONE_REGEX, 'Debe ser un celular válido (9 dígitos, inicia con 9)'),
+        .refine(isValidPhoneNumber, 'Número de teléfono inválido'),
     bloodType: z.string().min(1, 'El tipo de sangre es obligatorio'),
     allergies: z.string().max(500).optional().or(z.literal('')),
     chronicConditions: z.string().max(500).optional().or(z.literal('')),
@@ -194,12 +194,11 @@ export function EditPatientDrawer({ open, patient, onClose, onSuccess }: EditPat
                         name="phone"
                         control={control}
                         render={({ field }) => (
-                            <TextField
-                                {...field}
-                                fullWidth
+                            <InternationalPhoneInput
+                                value={field.value}
+                                onChange={(val) => field.onChange(val ?? '')}
+                                error={errors.phone?.message}
                                 label="Teléfono"
-                                error={!!errors.phone}
-                                helperText={errors.phone?.message}
                             />
                         )}
                     />
@@ -252,12 +251,11 @@ export function EditPatientDrawer({ open, patient, onClose, onSuccess }: EditPat
                         name="emergencyContact"
                         control={control}
                         render={({ field }) => (
-                            <TextField
-                                {...field}
-                                fullWidth
+                            <InternationalPhoneInput
+                                value={field.value}
+                                onChange={(val) => field.onChange(val ?? '')}
+                                error={errors.emergencyContact?.message}
                                 label="Contacto de emergencia *"
-                                error={!!errors.emergencyContact}
-                                helperText={errors.emergencyContact?.message}
                             />
                         )}
                     />

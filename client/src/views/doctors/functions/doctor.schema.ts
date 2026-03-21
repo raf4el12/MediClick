@@ -1,6 +1,6 @@
 import { z } from 'zod';
+import { isValidPhoneNumber } from 'libphonenumber-js';
 
-const PHONE_REGEX = /^9\d{8}$/;
 const CMP_REGEX = /^\d{5,6}$/;
 
 export const doctorSchema = z.object({
@@ -25,7 +25,7 @@ export const doctorSchema = z.object({
     .max(100, 'El apellido no debe exceder 100 caracteres'),
   phone: z
     .string()
-    .regex(PHONE_REGEX, 'Debe ser un celular válido (9 dígitos, inicia con 9)')
+    .refine((v) => !v || isValidPhoneNumber(v), 'Número de teléfono inválido')
     .optional()
     .or(z.literal('')),
   gender: z.string().optional().or(z.literal('')),

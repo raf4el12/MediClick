@@ -16,6 +16,7 @@ import FormHelperText from '@mui/material/FormHelperText';
 import Alert from '@mui/material/Alert';
 import { Controller } from 'react-hook-form';
 import { usePatientForm } from '../hooks/usePatientForm';
+import { InternationalPhoneInput } from '@/components/shared/InternationalPhoneInput';
 
 const KEEP_MOUNTED = { keepMounted: true };
 
@@ -125,13 +126,11 @@ export function AddPatientDrawer({
             name="phone"
             control={control}
             render={({ field }) => (
-              <TextField
-                {...field}
-                fullWidth
+              <InternationalPhoneInput
+                value={field.value}
+                onChange={(val) => field.onChange(val ?? '')}
+                error={errors.phone?.message}
                 label="Teléfono"
-                placeholder="+51 999 888 777"
-                error={!!errors.phone}
-                helperText={errors.phone?.message}
               />
             )}
           />
@@ -228,13 +227,11 @@ export function AddPatientDrawer({
             name="emergencyContact"
             control={control}
             render={({ field }) => (
-              <TextField
-                {...field}
-                fullWidth
+              <InternationalPhoneInput
+                value={field.value}
+                onChange={(val) => field.onChange(val ?? '')}
+                error={errors.emergencyContact?.message}
                 label="Contacto de emergencia *"
-                placeholder="+51 999 111 222"
-                error={!!errors.emergencyContact}
-                helperText={errors.emergencyContact?.message}
               />
             )}
           />

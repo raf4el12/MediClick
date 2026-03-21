@@ -24,8 +24,9 @@ import { doctorsService } from '@/services/doctors.service';
 import type { Doctor } from '../types';
 import type { Specialty } from '@/views/specialties/types';
 import type { Clinic } from '@/views/clinics/types';
+import { isValidPhoneNumber } from 'libphonenumber-js';
+import { InternationalPhoneInput } from '@/components/shared/InternationalPhoneInput';
 
-const PHONE_REGEX = /^9\d{8}$/;
 const CMP_REGEX = /^\d{5,6}$/;
 
 const editDoctorSchema = z.object({
@@ -33,7 +34,7 @@ const editDoctorSchema = z.object({
     lastName: z.string().min(1, 'El apellido es obligatorio').max(100),
     phone: z
         .string()
-        .regex(PHONE_REGEX, 'Debe ser un celular válido (9 dígitos, inicia con 9)')
+        .refine((v) => !v || isValidPhoneNumber(v), 'Número de teléfono inválido')
         .optional()
         .or(z.literal('')),
     gender: z.string().optional().or(z.literal('')),
@@ -198,12 +199,11 @@ export function EditDoctorDrawer({ open, doctor, specialties, clinics, onClose, 
                         name="phone"
                         control={control}
                         render={({ field }) => (
-                            <TextField
-                                {...field}
-                                fullWidth
+                            <InternationalPhoneInput
+                                value={field.value}
+                                onChange={(val) => field.onChange(val ?? '')}
+                                error={errors.phone?.message}
                                 label="Teléfono"
-                                error={!!errors.phone}
-                                helperText={errors.phone?.message}
                             />
                         )}
                     />
