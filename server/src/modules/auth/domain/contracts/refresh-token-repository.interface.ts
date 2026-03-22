@@ -6,6 +6,7 @@ export interface IRefreshTokenRepository {
     userId: number,
     deviceId: string,
   ): Promise<RefreshTokenData | null>;
+  findAllByUser(userId: number): Promise<RefreshTokenData[]>;
   deleteByUserDevice(userId: number, deviceId: string): Promise<void>;
   deleteAllByUser(userId: number): Promise<void>;
 }

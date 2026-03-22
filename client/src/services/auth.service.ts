@@ -8,6 +8,12 @@ import type {
 } from '@/types/auth.types';
 import type { ProfileResponse, UpdateProfileData } from '@/types/profile.types';
 
+export interface SessionInfo {
+  deviceId: string;
+  createdAt: number;
+  isCurrent: boolean;
+}
+
 export const authService = {
   async login(data: LoginRequest): Promise<AuthResponse> {
     const response = await api.post<AuthResponse>('/auth/login', data);
@@ -43,6 +49,25 @@ export const authService = {
 
   async logoutAllDevices(): Promise<void> {
     await api.post('/auth/logout-all');
+  },
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<{ message: string }> {
+    const response = await api.patch<{ message: string }>('/auth/change-password', {
+      currentPassword,
+      newPassword,
+    });
+    return response.data;
+  },
+
+  async getSessions(deviceId: string): Promise<SessionInfo[]> {
+    const response = await api.get<SessionInfo[]>('/auth/sessions', {
+      headers: { 'x-device-id': deviceId },
+    });
+    return response.data;
+  },
+
+  async logoutDevice(deviceId: string): Promise<void> {
+    await api.post('/auth/logout', { deviceId });
   },
 
   async getProfile(): Promise<ProfileResponse> {

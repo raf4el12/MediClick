@@ -42,6 +42,24 @@ export class RedisRefreshTokenRepository implements IRefreshTokenRepository {
     }
   }
 
+  async findAllByUser(userId: number): Promise<RefreshTokenData[]> {
+    const pattern = this.buildUserPattern(userId);
+    const keys = await this.redisService.getClient().keys(pattern);
+    const sessions: RefreshTokenData[] = [];
+
+    for (const key of keys) {
+      const value = await this.redisService.get(key);
+      if (!value) continue;
+      try {
+        sessions.push(JSON.parse(value) as RefreshTokenData);
+      } catch {
+        this.logger.warn(`Invalid refresh token data for key: ${key}`);
+      }
+    }
+
+    return sessions;
+  }
+
   async deleteByUserDevice(userId: number, deviceId: string): Promise<void> {
     const key = this.buildKey(userId, deviceId);
     await this.redisService.del(key);

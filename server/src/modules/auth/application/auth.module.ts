@@ -17,6 +17,8 @@ import { UpdateProfileUseCase } from './use-cases/update-profile.use-case.js';
 import { CheckAvailabilityUseCase } from './use-cases/check-availability.use-case.js';
 import { ForgotPasswordUseCase } from './use-cases/forgot-password.use-case.js';
 import { ResetPasswordUseCase } from './use-cases/reset-password.use-case.js';
+import { ChangePasswordUseCase } from './use-cases/change-password.use-case.js';
+import { GetSessionsUseCase } from './use-cases/get-sessions.use-case.js';
 import { AuthController } from '../interfaces/controllers/auth.controller.js';
 import { UsersModule } from '../../users/application/users.module.js';
 import { PatientsModule } from '../../patients/application/patients.module.js';
@@ -63,6 +65,8 @@ import { PatientsModule } from '../../patients/application/patients.module.js';
     CheckAvailabilityUseCase,
     ForgotPasswordUseCase,
     ResetPasswordUseCase,
+    ChangePasswordUseCase,
+    GetSessionsUseCase,
   ],
   exports: ['IPasswordService', 'ITokenService'],
 })

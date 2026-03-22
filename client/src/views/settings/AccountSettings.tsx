@@ -5,7 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
-import Typography from '@mui/material/Typography';
 import Skeleton from '@mui/material/Skeleton';
 import Card from '@mui/material/Card';
 import Divider from '@mui/material/Divider';
@@ -13,6 +12,7 @@ import Grid from '@mui/material/Grid';
 import { useQuery } from '@tanstack/react-query';
 import { authService } from '@/services/auth.service';
 import AccountTab from './account/AccountTab';
+import SecurityTab from './security/SecurityTab';
 import NotificationsView from '@/views/notifications';
 
 interface TabPanelProps {
@@ -151,11 +151,7 @@ export default function AccountSettings() {
 
             {/* Security Tab */}
             <CustomTabPanel value={value} index={1}>
-                <Box sx={{ p: 4, textAlign: 'center' }}>
-                    <Typography variant="h6" color="text.secondary">
-                        Configuración de Seguridad (Próximamente)
-                    </Typography>
-                </Box>
+                <SecurityTab />
             </CustomTabPanel>
 
             {/* Notifications Tab */}

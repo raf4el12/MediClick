@@ -26,6 +26,7 @@ import { RefreshTokenDto } from '../../application/dto/refresh-token.dto.js';
 import { LogoutDto } from '../../application/dto/logout.dto.js';
 import { ForgotPasswordDto } from '../../application/dto/forgot-password.dto.js';
 import { ResetPasswordDto } from '../../application/dto/reset-password.dto.js';
+import { ChangePasswordDto } from '../../application/dto/change-password.dto.js';
 import { AuthResponseDto } from '../../application/dto/auth-response.dto.js';
 import { LoginUseCase } from '../../application/use-cases/login.use-case.js';
 import { RegisterPatientUseCase } from '../../application/use-cases/register-patient.use-case.js';
@@ -36,6 +37,11 @@ import { GetProfileUseCase } from '../../application/use-cases/get-profile.use-c
 import { UpdateProfileUseCase } from '../../application/use-cases/update-profile.use-case.js';
 import { ForgotPasswordUseCase } from '../../application/use-cases/forgot-password.use-case.js';
 import { ResetPasswordUseCase } from '../../application/use-cases/reset-password.use-case.js';
+import { ChangePasswordUseCase } from '../../application/use-cases/change-password.use-case.js';
+import {
+  GetSessionsUseCase,
+  type SessionInfo,
+} from '../../application/use-cases/get-sessions.use-case.js';
 import { UpdateMyProfileDto } from '../../application/dto/update-profile.dto.js';
 import { CheckEmailDto } from '../../application/dto/check-email.dto.js';
 import { CheckDocumentDto } from '../../application/dto/check-document.dto.js';
@@ -56,6 +62,8 @@ export class AuthController {
     private readonly checkAvailabilityUseCase: CheckAvailabilityUseCase,
     private readonly forgotPasswordUseCase: ForgotPasswordUseCase,
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
+    private readonly changePasswordUseCase: ChangePasswordUseCase,
+    private readonly getSessionsUseCase: GetSessionsUseCase,
     private readonly configService: ConfigService,
   ) {
     this.isProduction = this.configService.get('NODE_ENV') === 'production';
@@ -283,6 +291,35 @@ export class AuthController {
     await this.logoutAllDevicesUseCase.execute(userId);
     this.clearTokenCookies(res);
     return { message: 'Todas las sesiones han sido cerradas' };
+  }
+
+  @Patch('change-password')
+  @Auth()
+  @ApiOperation({ summary: 'Cambiar contraseña del usuario autenticado' })
+  @ApiResponse({ status: 200, description: 'Contraseña cambiada exitosamente' })
+  @ApiResponse({ status: 400, description: 'Contraseña actual incorrecta' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  async changePassword(
+    @CurrentUser('id') userId: number,
+    @Body() dto: ChangePasswordDto,
+    @Body('deviceId') deviceId: string,
+  ): Promise<{ message: string }> {
+    await this.changePasswordUseCase.execute(userId, dto, deviceId ?? '');
+    return { message: 'Contraseña cambiada exitosamente' };
+  }
+
+  @Get('sessions')
+  @Auth()
+  @ApiOperation({ summary: 'Obtener sesiones activas del usuario' })
+  @ApiResponse({ status: 200, description: 'Lista de sesiones activas' })
+  @ApiResponse({ status: 401, description: 'No autenticado' })
+  async getSessions(
+    @CurrentUser('id') userId: number,
+    @Req() req: express.Request,
+  ): Promise<SessionInfo[]> {
+    const deviceId =
+      (req.headers['x-device-id'] as string) ?? '';
+    return this.getSessionsUseCase.execute(userId, deviceId);
   }
 
   @Get('me')
