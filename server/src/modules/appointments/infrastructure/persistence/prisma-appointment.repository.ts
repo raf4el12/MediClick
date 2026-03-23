@@ -20,7 +20,9 @@ const appointmentInclude = {
   patient: {
     select: {
       id: true,
-      profile: { select: { name: true, lastName: true, email: true, userId: true } },
+      profile: {
+        select: { name: true, lastName: true, email: true, userId: true },
+      },
     },
   },
   schedule: {

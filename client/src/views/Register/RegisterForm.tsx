@@ -99,11 +99,14 @@ export function RegisterForm() {
   const [activeStep, setActiveStep] = useState(0);
   const [checking, setChecking] = useState(false);
 
+  const [lookingUp, setLookingUp] = useState(false);
+
   const {
     control,
     handleSubmit,
     trigger,
     getValues,
+    setValue,
     setError,
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -150,6 +153,25 @@ export function RegisterForm() {
         });
         return false;
       }
+
+      // Consultar datos del DNI en RENIEC para autocompletar
+      if (typeDocument === 'DNI' && /^\d{8}$/.test(numberDocument)) {
+        setLookingUp(true);
+        try {
+          const result = await authService.lookupDocument(typeDocument, numberDocument);
+          if (result.found) {
+            if (result.name) setValue('name', result.name);
+            if (result.lastName) setValue('lastName', result.lastName);
+            if (result.birthday) setValue('birthday', result.birthday);
+            if (result.gender) setValue('gender', result.gender);
+          }
+        } catch {
+          // No bloquear el flujo si la consulta RENIEC falla
+        } finally {
+          setLookingUp(false);
+        }
+      }
+
       return true;
     } catch {
       setError('numberDocument', {
@@ -210,7 +232,7 @@ export function RegisterForm() {
     void dispatch(registerThunk(payload));
   };
 
-  const isStepLoading = checking || isLoading;
+  const isStepLoading = checking || isLoading || lookingUp;
 
   return (
     <Box

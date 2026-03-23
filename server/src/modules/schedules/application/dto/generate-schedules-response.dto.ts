@@ -10,6 +10,12 @@ export class GenerateSchedulesResponseDto {
   })
   skipped: number;
 
+  @ApiProperty({
+    example: 0,
+    description: 'Total de horarios eliminados (solo cuando overwrite = true)',
+  })
+  deleted: number;
+
   @ApiProperty({ example: 'Generación completada: 42 creados, 3 omitidos' })
   message: string;
 }

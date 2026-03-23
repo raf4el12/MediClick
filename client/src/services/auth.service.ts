@@ -35,6 +35,26 @@ export const authService = {
     return response.data;
   },
 
+  async lookupDocument(
+    typeDocument: string,
+    numberDocument: string,
+  ): Promise<{
+    found: boolean;
+    name?: string;
+    lastName?: string;
+    birthday?: string;
+    gender?: string;
+  }> {
+    const response = await api.post<{
+      found: boolean;
+      name?: string;
+      lastName?: string;
+      birthday?: string;
+      gender?: string;
+    }>('/auth/lookup-document', { typeDocument, numberDocument });
+    return response.data;
+  },
+
   async refreshToken(data: RefreshTokenRequest): Promise<AuthResponse> {
     const response = await api.post<AuthResponse>(
       '/auth/refresh-token',

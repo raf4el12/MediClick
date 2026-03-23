@@ -18,8 +18,7 @@ export class GetSessionsUseCase {
     userId: number,
     currentDeviceId: string,
   ): Promise<SessionInfo[]> {
-    const sessions =
-      await this.refreshTokenRepository.findAllByUser(userId);
+    const sessions = await this.refreshTokenRepository.findAllByUser(userId);
 
     return sessions
       .map((s) => ({

@@ -42,7 +42,12 @@ export interface AppointmentWithRelations {
   notesCount: number;
   patient: {
     id: number;
-    profile: { name: string; lastName: string; email: string; userId: number | null };
+    profile: {
+      name: string;
+      lastName: string;
+      email: string;
+      userId: number | null;
+    };
   };
   schedule: {
     id: number;

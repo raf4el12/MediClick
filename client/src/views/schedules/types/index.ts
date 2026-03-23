@@ -23,13 +23,18 @@ export interface Schedule {
 
 export interface GenerateSchedulesPayload {
   doctorId?: number;
-  month: number;
-  year: number;
+  specialtyId?: number;
+  month?: number;
+  year?: number;
+  dateFrom?: string;
+  dateTo?: string;
+  overwrite?: boolean;
 }
 
 export interface GenerateSchedulesResponse {
   generated: number;
   skipped: number;
+  deleted: number;
   message: string;
 }
 

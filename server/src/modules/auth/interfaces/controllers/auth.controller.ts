@@ -25,6 +25,7 @@ import { RegisterPatientDto } from '../../application/dto/register-patient.dto.j
 import { RefreshTokenDto } from '../../application/dto/refresh-token.dto.js';
 import { LogoutDto } from '../../application/dto/logout.dto.js';
 import { ForgotPasswordDto } from '../../application/dto/forgot-password.dto.js';
+import { VerifyResetCodeDto } from '../../application/dto/verify-reset-code.dto.js';
 import { ResetPasswordDto } from '../../application/dto/reset-password.dto.js';
 import { ChangePasswordDto } from '../../application/dto/change-password.dto.js';
 import { AuthResponseDto } from '../../application/dto/auth-response.dto.js';
@@ -36,6 +37,7 @@ import { LogoutAllDevicesUseCase } from '../../application/use-cases/logout-all-
 import { GetProfileUseCase } from '../../application/use-cases/get-profile.use-case.js';
 import { UpdateProfileUseCase } from '../../application/use-cases/update-profile.use-case.js';
 import { ForgotPasswordUseCase } from '../../application/use-cases/forgot-password.use-case.js';
+import { VerifyResetCodeUseCase } from '../../application/use-cases/verify-reset-code.use-case.js';
 import { ResetPasswordUseCase } from '../../application/use-cases/reset-password.use-case.js';
 import { ChangePasswordUseCase } from '../../application/use-cases/change-password.use-case.js';
 import {
@@ -46,6 +48,11 @@ import { UpdateMyProfileDto } from '../../application/dto/update-profile.dto.js'
 import { CheckEmailDto } from '../../application/dto/check-email.dto.js';
 import { CheckDocumentDto } from '../../application/dto/check-document.dto.js';
 import { CheckAvailabilityUseCase } from '../../application/use-cases/check-availability.use-case.js';
+import {
+  LookupDocumentDto,
+  LookupDocumentResponseDto,
+} from '../../application/dto/lookup-document.dto.js';
+import { LookupDocumentUseCase } from '../../application/use-cases/lookup-document.use-case.js';
 import { Auth, CurrentUser } from '../../../../shared/decorators/index.js';
 
 @ApiTags('Auth')
@@ -61,9 +68,11 @@ export class AuthController {
     private readonly updateProfileUseCase: UpdateProfileUseCase,
     private readonly checkAvailabilityUseCase: CheckAvailabilityUseCase,
     private readonly forgotPasswordUseCase: ForgotPasswordUseCase,
+    private readonly verifyResetCodeUseCase: VerifyResetCodeUseCase,
     private readonly resetPasswordUseCase: ResetPasswordUseCase,
     private readonly changePasswordUseCase: ChangePasswordUseCase,
     private readonly getSessionsUseCase: GetSessionsUseCase,
+    private readonly lookupDocumentUseCase: LookupDocumentUseCase,
     private readonly configService: ConfigService,
   ) {
     this.isProduction = this.configService.get('NODE_ENV') === 'production';
@@ -145,6 +154,26 @@ export class AuthController {
     );
   }
 
+  @Post('lookup-document')
+  @Throttle({ long: { ttl: 60000, limit: 10 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Consultar datos de un documento (DNI) en RENIEC',
+    description:
+      'Consulta la API de RENIEC para obtener nombre, apellidos y otros datos ' +
+      'asociados a un DNI peruano. Solo funciona con tipo DNI.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Resultado de la consulta',
+    type: LookupDocumentResponseDto,
+  })
+  async lookupDocument(
+    @Body() dto: LookupDocumentDto,
+  ): Promise<LookupDocumentResponseDto> {
+    return this.lookupDocumentUseCase.execute(dto);
+  }
+
   @Post('forgot-password')
   @Throttle({ long: { ttl: 60000, limit: 3 } })
   @HttpCode(HttpStatus.OK)
@@ -154,7 +183,7 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description:
-      'Si el email existe, se enviará un enlace de recuperación. Siempre retorna 200.',
+      'Si el email existe, se enviará un código de verificación. Siempre retorna 200.',
   })
   async forgotPassword(
     @Body() dto: ForgotPasswordDto,
@@ -162,8 +191,25 @@ export class AuthController {
     await this.forgotPasswordUseCase.execute(dto);
     return {
       message:
-        'Si el email está registrado, recibirás un enlace para restablecer tu contraseña',
+        'Si el email está registrado, recibirás un código de verificación',
     };
+  }
+
+  @Post('verify-reset-code')
+  @Throttle({ long: { ttl: 60000, limit: 5 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Verificar código de recuperación (público)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Código verificado, retorna resetToken',
+  })
+  @ApiResponse({ status: 400, description: 'Código inválido o expirado' })
+  async verifyResetCode(
+    @Body() dto: VerifyResetCodeDto,
+  ): Promise<{ resetToken: string }> {
+    return this.verifyResetCodeUseCase.execute(dto);
   }
 
   @Post('reset-password')
@@ -317,8 +363,7 @@ export class AuthController {
     @CurrentUser('id') userId: number,
     @Req() req: express.Request,
   ): Promise<SessionInfo[]> {
-    const deviceId =
-      (req.headers['x-device-id'] as string) ?? '';
+    const deviceId = (req.headers['x-device-id'] as string) ?? '';
     return this.getSessionsUseCase.execute(userId, deviceId);
   }
 

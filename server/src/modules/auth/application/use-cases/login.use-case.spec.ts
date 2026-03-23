@@ -99,7 +99,11 @@ describe('LoginUseCase', () => {
 
     await expect(
       useCase.execute(
-        { email: 'notfound@mediclick.com', password: '123456', deviceId: 'device-1' },
+        {
+          email: 'notfound@mediclick.com',
+          password: '123456',
+          deviceId: 'device-1',
+        },
         'device-1',
       ),
     ).rejects.toThrow(UnauthorizedException);
@@ -111,7 +115,11 @@ describe('LoginUseCase', () => {
 
     await expect(
       useCase.execute(
-        { email: 'test@mediclick.com', password: 'wrong', deviceId: 'device-1' },
+        {
+          email: 'test@mediclick.com',
+          password: 'wrong',
+          deviceId: 'device-1',
+        },
         'device-1',
       ),
     ).rejects.toThrow(UnauthorizedException);
@@ -125,7 +133,11 @@ describe('LoginUseCase', () => {
 
     await expect(
       useCase.execute(
-        { email: 'test@mediclick.com', password: '123456', deviceId: 'device-1' },
+        {
+          email: 'test@mediclick.com',
+          password: '123456',
+          deviceId: 'device-1',
+        },
         'device-1',
       ),
     ).rejects.toThrow(UnauthorizedException);
@@ -139,7 +151,11 @@ describe('LoginUseCase', () => {
 
     await expect(
       useCase.execute(
-        { email: 'test@mediclick.com', password: '123456', deviceId: 'device-1' },
+        {
+          email: 'test@mediclick.com',
+          password: '123456',
+          deviceId: 'device-1',
+        },
         'device-1',
       ),
     ).rejects.toThrow(UnauthorizedException);
