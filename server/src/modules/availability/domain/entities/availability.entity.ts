@@ -5,8 +5,8 @@ export class AvailabilityEntity {
   id: number;
   doctorId: number;
   specialtyId: number;
-  startDate: Date;
-  endDate: Date;
+  startDate: Date | null;
+  endDate: Date | null;
   dayOfWeek: DayOfWeek;
   timeFrom: Date;
   timeTo: Date;

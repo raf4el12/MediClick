@@ -194,6 +194,8 @@ export class GenerateSchedulesUseCase {
         const matchingRules = availabilities.filter((a) => {
           if (a.dayOfWeek !== dayOfWeek) return false;
           if (!a.isAvailable) return false;
+          // Si no tiene rango de vigencia, aplica siempre
+          if (!a.startDate || !a.endDate) return true;
           // Verificar que la fecha está dentro del rango de vigencia (todo en UTC)
           const startMs = Date.UTC(
             a.startDate.getUTCFullYear(),
