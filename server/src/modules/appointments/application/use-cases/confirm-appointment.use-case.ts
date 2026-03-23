@@ -45,7 +45,8 @@ export class ConfirmAppointmentUseCase {
         doctorName: `${updated.schedule.doctor.profile.name} ${updated.schedule.doctor.profile.lastName}`,
         specialty: updated.schedule.specialty.name,
         clinicName: updated.schedule.doctor.clinic?.name ?? 'MediClick',
-        clinicTimezone: updated.schedule.doctor.clinic?.timezone ?? 'America/Lima',
+        clinicTimezone:
+          updated.schedule.doctor.clinic?.timezone ?? 'America/Lima',
         scheduleDate: updated.schedule.scheduleDate,
         startTime: updated.startTime,
         endTime: updated.endTime,

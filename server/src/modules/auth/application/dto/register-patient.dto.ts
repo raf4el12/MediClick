@@ -38,11 +38,11 @@ export class RegisterPatientDto {
   @IsNotEmpty({ message: 'El email es obligatorio' })
   email: string;
 
-  @ApiProperty({ example: '999888777', description: 'Teléfono celular' })
+  @ApiProperty({ example: '+51999888777', description: 'Teléfono celular (formato E.164)' })
   @IsString()
   @IsNotEmpty({ message: 'El teléfono es obligatorio' })
-  @Matches(/^9\d{8}$/, {
-    message: 'Debe ser un celular válido (9 dígitos, inicia con 9)',
+  @Matches(/^\+[1-9]\d{6,14}$/, {
+    message: 'Debe ser un número válido en formato internacional (ej: +51999888777)',
   })
   phone: string;
 

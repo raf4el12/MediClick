@@ -103,7 +103,8 @@ export class CancelAppointmentUseCase {
         patientUserId: updated.patient.profile.userId,
         doctorName: `${updated.schedule.doctor.profile.name} ${updated.schedule.doctor.profile.lastName}`,
         clinicName: updated.schedule.doctor.clinic?.name ?? 'MediClick',
-        clinicTimezone: updated.schedule.doctor.clinic?.timezone ?? 'America/Lima',
+        clinicTimezone:
+          updated.schedule.doctor.clinic?.timezone ?? 'America/Lima',
         scheduleDate: updated.schedule.scheduleDate,
         cancelReason: dto.reason ?? null,
       };

@@ -9,6 +9,7 @@ import {
 } from '../functions/patient.schema';
 import { useAppDispatch } from '@/redux-store/hooks';
 import { createPatientThunk } from '@/redux-store/thunks/patients.thunks';
+import { authService } from '@/services/auth.service';
 
 interface UsePatientFormProps {
   onSuccess: () => void;
@@ -19,8 +20,10 @@ export function usePatientForm({ onSuccess, onClose }: UsePatientFormProps) {
   const dispatch = useAppDispatch();
   const [isLoading, setIsLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [lookingUp, setLookingUp] = useState(false);
+  const [lookupDone, setLookupDone] = useState(false);
 
-  const { control, handleSubmit, reset, formState } =
+  const { control, handleSubmit, reset, formState, getValues, setValue } =
     useForm<PatientFormValues>({
       resolver: zodResolver(patientSchema),
       defaultValues: {
@@ -80,7 +83,34 @@ export function usePatientForm({ onSuccess, onClose }: UsePatientFormProps) {
 
   const handleReset = () => {
     reset();
+    setLookupDone(false);
     onClose();
+  };
+
+  const handleLookupDocument = async () => {
+    const typeDocument = getValues('typeDocument');
+    const numberDocument = getValues('numberDocument');
+
+    if (typeDocument !== 'DNI' || !/^\d{8}$/.test(numberDocument)) return;
+
+    setLookingUp(true);
+    setLookupDone(false);
+    try {
+      const result = await authService.lookupDocument(typeDocument, numberDocument);
+      if (result.found) {
+        if (result.name) setValue('name', result.name, { shouldValidate: true });
+        if (result.lastName) setValue('lastName', result.lastName, { shouldValidate: true });
+        if (result.birthday) setValue('birthday', result.birthday, { shouldValidate: true });
+        if (result.gender) setValue('gender', result.gender, { shouldValidate: true });
+        setLookupDone(true);
+      } else {
+        setSubmitError('No se encontraron datos para este DNI');
+      }
+    } catch {
+      setSubmitError('Error al consultar RENIEC. Completa los datos manualmente.');
+    } finally {
+      setLookingUp(false);
+    }
   };
 
   return {
@@ -90,5 +120,9 @@ export function usePatientForm({ onSuccess, onClose }: UsePatientFormProps) {
     isLoading,
     submitError,
     handleReset,
+    lookingUp,
+    lookupDone,
+    handleLookupDocument,
+    getValues,
   };
 }

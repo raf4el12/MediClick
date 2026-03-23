@@ -14,6 +14,8 @@ import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import FormHelperText from '@mui/material/FormHelperText';
 import Alert from '@mui/material/Alert';
+import Tooltip from '@mui/material/Tooltip';
+import InputAdornment from '@mui/material/InputAdornment';
 import { Controller } from 'react-hook-form';
 import { usePatientForm } from '../hooks/usePatientForm';
 import { InternationalPhoneInput } from '@/components/shared/InternationalPhoneInput';
@@ -31,8 +33,20 @@ export function AddPatientDrawer({
   onClose,
   onSuccess,
 }: AddPatientDrawerProps) {
-  const { control, errors, handleSubmit, isLoading, submitError, handleReset } =
-    usePatientForm({ onSuccess, onClose });
+  const {
+    control,
+    errors,
+    handleSubmit,
+    isLoading,
+    submitError,
+    handleReset,
+    lookingUp,
+    lookupDone,
+    handleLookupDocument,
+    getValues,
+  } = usePatientForm({ onSuccess, onClose });
+
+  const canLookup = getValues('typeDocument') === 'DNI' && /^\d{8}$/.test(getValues('numberDocument') || '');
 
   return (
     <Drawer
@@ -210,10 +224,44 @@ export function AddPatientDrawer({
                 placeholder="12345678"
                 error={!!errors.numberDocument}
                 helperText={errors.numberDocument?.message}
+                slotProps={{
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <Tooltip title="Buscar datos en RENIEC">
+                          <span>
+                            <IconButton
+                              size="small"
+                              onClick={() => void handleLookupDocument()}
+                              disabled={lookingUp || !canLookup}
+                              color={lookupDone ? 'success' : 'primary'}
+                            >
+                              {lookingUp ? (
+                                <CircularProgress size={18} />
+                              ) : lookupDone ? (
+                                <i className="ri-check-line" style={{ fontSize: 18 }} />
+                              ) : (
+                                <i className="ri-search-line" style={{ fontSize: 18 }} />
+                              )}
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
               />
             )}
           />
         </Box>
+
+        {lookupDone && (
+          <Alert severity="success" variant="outlined" sx={{ py: 0.5 }}>
+            <Typography variant="caption">
+              Datos completados automáticamente desde RENIEC
+            </Typography>
+          </Alert>
+        )}
 
         <Divider />
 

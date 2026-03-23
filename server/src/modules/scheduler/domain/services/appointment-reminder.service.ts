@@ -77,7 +77,8 @@ export class AppointmentReminderService {
         const patientName = `${appt.patient.profile.name} ${appt.patient.profile.lastName}`;
         const doctorName = `${appt.schedule.doctor.profile.name} ${appt.schedule.doctor.profile.lastName}`;
         const clinicName = appt.schedule.doctor.clinic?.name ?? 'MediClick';
-        const clinicTimezone = appt.schedule.doctor.clinic?.timezone ?? 'America/Lima';
+        const clinicTimezone =
+          appt.schedule.doctor.clinic?.timezone ?? 'America/Lima';
         const patientUserId = appt.patient.profile.userId;
 
         await this.mailService.send({
@@ -121,6 +122,8 @@ export class AppointmentReminderService {
       }
     }
 
-    this.logger.log(`Recordatorios enviados: ${sent} de ${appointments.length}`);
+    this.logger.log(
+      `Recordatorios enviados: ${sent} de ${appointments.length}`,
+    );
   }
 }

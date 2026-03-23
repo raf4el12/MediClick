@@ -47,15 +47,10 @@ export class GenerateSchedulesUseCase {
     dto: GenerateSchedulesDto,
     jwtClinicId?: number | null,
   ): Promise<GenerateSchedulesResponseDto> {
-    if (dto.month < 1 || dto.month > 12) {
-      throw new BadRequestException('El mes debe estar entre 1 y 12');
-    }
-    if (dto.year < 2020 || dto.year > 2100) {
-      throw new BadRequestException('El año debe estar entre 2020 y 2100');
-    }
+    // ── Resolver rango de fechas ──
+    const { rangeStart, rangeEnd, dates } = this.resolveDateRange(dto);
 
     // Determinar doctores a procesar
-    // Caché de clinicId por doctor
     const doctorClinicCache = new Map<number, number | null>();
 
     let doctorIds: number[];
@@ -65,7 +60,6 @@ export class GenerateSchedulesUseCase {
         throw new BadRequestException('El doctor especificado no existe');
       }
 
-      // Staff can only generate schedules for doctors of their own clinic
       if (jwtClinicId && doctor.clinicId !== jwtClinicId) {
         throw new ForbiddenException(
           'No puede generar horarios para un doctor de otra sede',
@@ -75,11 +69,9 @@ export class GenerateSchedulesUseCase {
       doctorIds = [dto.doctorId];
       doctorClinicCache.set(dto.doctorId, doctor.clinicId ?? null);
     } else {
-      // Obtener todos los doctores con disponibilidad activa
       const allAvailabilities =
         await this.availabilityRepository.findActiveByDoctorIds([]);
 
-      // Staff with clinicId: filter availabilities by clinic (no extra queries)
       const filteredAvailabilities = jwtClinicId
         ? allAvailabilities.filter((a) => a.clinicId === jwtClinicId)
         : allAvailabilities;
@@ -91,29 +83,21 @@ export class GenerateSchedulesUseCase {
       return {
         generated: 0,
         skipped: 0,
+        deleted: 0,
         message: 'No hay doctores con disponibilidad activa',
       };
     }
 
-    // Obtener días del mes (usar UTC para consistencia con la BD)
-    const daysInMonth = new Date(Date.UTC(dto.year, dto.month, 0)).getUTCDate();
-    const dates: Date[] = [];
-    for (let day = 1; day <= daysInMonth; day++) {
-      dates.push(new Date(Date.UTC(dto.year, dto.month - 1, day)));
-    }
-
-    // Pre-cargar feriados del mes para evitar consultas repetidas
-    const monthStart = new Date(Date.UTC(dto.year, dto.month - 1, 1));
-    const monthEnd = new Date(Date.UTC(dto.year, dto.month - 1, daysInMonth));
+    // Pre-cargar feriados para el rango
     const holidays = await this.holidayRepository.findByDateRange(
-      monthStart,
-      monthEnd,
+      rangeStart,
+      rangeEnd,
     );
     const holidayDatesSet = new Set(
       holidays.map((h) => h.date.toISOString().split('T')[0]),
     );
 
-    // Cachear duraciones y buffer de especialidades para evitar consultas repetidas
+    // Cachear duraciones y buffer de especialidades
     const specialtyCache = new Map<
       number,
       { duration: number | null; bufferMinutes: number }
@@ -121,26 +105,46 @@ export class GenerateSchedulesUseCase {
 
     let totalGenerated = 0;
     let totalSkipped = 0;
+    let totalDeleted = 0;
 
     for (const doctorId of doctorIds) {
-      // Obtener todas las availability rules del doctor
-      const availabilities =
+      // Obtener availability rules del doctor
+      let availabilities =
         await this.availabilityRepository.findActiveByDoctorIds([doctorId]);
+
+      // Filtrar por especialidad si se especificó
+      if (dto.specialtyId) {
+        availabilities = availabilities.filter(
+          (a) => a.specialtyId === dto.specialtyId,
+        );
+      }
+
       if (availabilities.length === 0) continue;
 
-      // Resolver clinicId del doctor si no está en caché
+      // Resolver clinicId del doctor
       if (!doctorClinicCache.has(doctorId)) {
         const doc = await this.doctorRepository.findById(doctorId);
         doctorClinicCache.set(doctorId, doc?.clinicId ?? null);
       }
       const doctorClinicId = doctorClinicCache.get(doctorId) ?? null;
 
-      // Pre-cargar bloqueos activos del doctor para el mes
+      // ── Overwrite: eliminar horarios no reservados ──
+      if (dto.overwrite) {
+        const deleted =
+          await this.scheduleRepository.deleteUnbookedByDoctorAndDateRange(
+            doctorId,
+            rangeStart,
+            rangeEnd,
+          );
+        totalDeleted += deleted;
+      }
+
+      // Pre-cargar bloqueos activos del doctor para el rango
       const scheduleBlocks =
         await this.scheduleBlockRepository.findActiveByDoctorAndDateRange(
           doctorId,
-          monthStart,
-          monthEnd,
+          rangeStart,
+          rangeEnd,
         );
 
       // Obtener schedules existentes para evitar duplicados
@@ -166,7 +170,7 @@ export class GenerateSchedulesUseCase {
           continue;
         }
 
-        // Verificar si el día completo está bloqueado para este doctor
+        // Verificar si el día completo está bloqueado
         const dateMs = date.getTime();
         const isFullDayBlocked = scheduleBlocks.some((block) => {
           if (block.type !== 'FULL_DAY') return false;
@@ -194,9 +198,7 @@ export class GenerateSchedulesUseCase {
         const matchingRules = availabilities.filter((a) => {
           if (a.dayOfWeek !== dayOfWeek) return false;
           if (!a.isAvailable) return false;
-          // Si no tiene rango de vigencia, aplica siempre
           if (!a.startDate || !a.endDate) return true;
-          // Verificar que la fecha está dentro del rango de vigencia (todo en UTC)
           const startMs = Date.UTC(
             a.startDate.getUTCFullYear(),
             a.startDate.getUTCMonth(),
@@ -241,8 +243,7 @@ export class GenerateSchedulesUseCase {
             rule.specialtyId,
           )!;
 
-          // Fragmentar el rango en slots individuales si hay duración configurada;
-          // de lo contrario, crear un único slot con el rango completo (comportamiento anterior).
+          // Fragmentar el rango en slots individuales si hay duración configurada
           let slots: { startTime: Date; endTime: Date }[];
           if (duration && duration > 0) {
             slots = TimeSlotCalculatorService.generate(
@@ -259,7 +260,6 @@ export class GenerateSchedulesUseCase {
             // Verificar si el slot se solapa con algún bloqueo TIME_RANGE
             const isSlotBlocked = timeRangeBlocks.some((block) => {
               if (!block.timeFrom || !block.timeTo) return false;
-              // Solapamiento: slot.start < block.end AND slot.end > block.start
               return (
                 slot.startTime < block.timeTo && slot.endTime > block.timeFrom
               );
@@ -297,10 +297,82 @@ export class GenerateSchedulesUseCase {
       }
     }
 
+    // Construir mensaje
+    const parts: string[] = [`${totalGenerated} creados`];
+    if (totalSkipped > 0) parts.push(`${totalSkipped} omitidos`);
+    if (totalDeleted > 0) parts.push(`${totalDeleted} eliminados`);
+
     return {
       generated: totalGenerated,
       skipped: totalSkipped,
-      message: `Generación completada: ${totalGenerated} creados, ${totalSkipped} omitidos`,
+      deleted: totalDeleted,
+      message: `Generación completada: ${parts.join(', ')}`,
     };
+  }
+
+  /**
+   * Resuelve el rango de fechas a partir del DTO.
+   * Soporta dos modos: month/year o dateFrom/dateTo.
+   */
+  private resolveDateRange(dto: GenerateSchedulesDto): {
+    rangeStart: Date;
+    rangeEnd: Date;
+    dates: Date[];
+  } {
+    if (dto.dateFrom && dto.dateTo) {
+      const rangeStart = new Date(dto.dateFrom + 'T00:00:00Z');
+      const rangeEnd = new Date(dto.dateTo + 'T00:00:00Z');
+
+      if (isNaN(rangeStart.getTime()) || isNaN(rangeEnd.getTime())) {
+        throw new BadRequestException(
+          'Las fechas deben tener formato YYYY-MM-DD',
+        );
+      }
+      if (rangeEnd < rangeStart) {
+        throw new BadRequestException(
+          'La fecha fin debe ser igual o posterior a la fecha inicio',
+        );
+      }
+
+      // Limitar a máximo 366 días
+      const diffDays =
+        (rangeEnd.getTime() - rangeStart.getTime()) / (1000 * 60 * 60 * 24);
+      if (diffDays > 366) {
+        throw new BadRequestException('El rango no puede exceder 366 días');
+      }
+
+      const dates: Date[] = [];
+      const current = new Date(rangeStart);
+      while (current <= rangeEnd) {
+        dates.push(new Date(current));
+        current.setUTCDate(current.getUTCDate() + 1);
+      }
+
+      return { rangeStart, rangeEnd, dates };
+    }
+
+    // Modo month/year (retrocompatible)
+    if (dto.month == null || dto.year == null) {
+      throw new BadRequestException(
+        'Debe indicar month/year o dateFrom/dateTo',
+      );
+    }
+    if (dto.month < 1 || dto.month > 12) {
+      throw new BadRequestException('El mes debe estar entre 1 y 12');
+    }
+    if (dto.year < 2020 || dto.year > 2100) {
+      throw new BadRequestException('El año debe estar entre 2020 y 2100');
+    }
+
+    const daysInMonth = new Date(Date.UTC(dto.year, dto.month, 0)).getUTCDate();
+    const rangeStart = new Date(Date.UTC(dto.year, dto.month - 1, 1));
+    const rangeEnd = new Date(Date.UTC(dto.year, dto.month - 1, daysInMonth));
+
+    const dates: Date[] = [];
+    for (let day = 1; day <= daysInMonth; day++) {
+      dates.push(new Date(Date.UTC(dto.year, dto.month - 1, day)));
+    }
+
+    return { rangeStart, rangeEnd, dates };
   }
 }
