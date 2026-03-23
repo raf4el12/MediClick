@@ -26,6 +26,44 @@ import {
   isSameDay,
 } from '../types';
 
+// ── Merge consecutive schedule slots into continuous visual blocks ──
+
+/**
+ * Groups consecutive (or near-consecutive) schedule slots from the same doctor
+ * and specialty into single visual blocks.
+ * E.g. 08:00-08:20, 08:25-08:45, 08:50-09:10 → 08:00-09:10
+ */
+function mergeSchedules(schedules: Schedule[]): Schedule[] {
+  if (schedules.length <= 1) return schedules;
+
+  const sorted = [...schedules].sort(
+    (a, b) => parseTime(a.timeFrom) - parseTime(b.timeFrom),
+  );
+
+  const merged: Schedule[] = [];
+  let current: Schedule = sorted[0]!;
+
+  for (let i = 1; i < sorted.length; i++) {
+    const next: Schedule = sorted[i]!;
+    const currentEnd = parseTime(current.timeTo);
+    const nextStart = parseTime(next.timeFrom);
+    // Same doctor+specialty and gap ≤ 10 min (0.167 h) → merge
+    const sameGroup =
+      next.doctorId === current.doctorId &&
+      next.specialtyId === current.specialtyId &&
+      nextStart - currentEnd <= 10 / 60;
+
+    if (sameGroup) {
+      current = { ...current, timeTo: next.timeTo };
+    } else {
+      merged.push(current);
+      current = next;
+    }
+  }
+  merged.push(current);
+  return merged;
+}
+
 // ── Constants ──
 const TIME_COL_WIDTH = 56;
 const ROW_HEIGHT = 60; // px per hour
@@ -467,6 +505,7 @@ export function ScheduleCalendar({
 
               {doctorsForDay.map((doc) => {
                 const docSchedules = schedulesByDoctor.get(doc.id) ?? [];
+                const docMerged = mergeSchedules(docSchedules);
                 const colors = getDoctorColor(doc.id);
 
                 return (
@@ -512,14 +551,14 @@ export function ScheduleCalendar({
                         variant="caption"
                         sx={{ color: colors.text, opacity: 0.7, fontSize: '0.65rem', lineHeight: 1.2 }}
                       >
-                        {docSchedules.length} bloque{docSchedules.length !== 1 ? 's' : ''}
+                        {docMerged.length} bloque{docMerged.length !== 1 ? 's' : ''}
                       </Typography>
                     </Box>
 
                     {/* Time body */}
                     <Box sx={{ position: 'relative', height: ROW_HEIGHT * TOTAL_HOURS }}>
                       <HourGridLines />
-                      {docSchedules.map((sch) => (
+                      {docMerged.map((sch) => (
                         <ScheduleBlock key={sch.id} sch={sch} />
                       ))}
                     </Box>
@@ -589,7 +628,7 @@ export function ScheduleCalendar({
                   {/* Time body */}
                   <Box sx={{ position: 'relative', height: ROW_HEIGHT * TOTAL_HOURS }}>
                     <HourGridLines />
-                    {daySchedules.map((sch) => (
+                    {mergeSchedules(daySchedules).map((sch) => (
                       <ScheduleBlock key={sch.id} sch={sch} />
                     ))}
                   </Box>
