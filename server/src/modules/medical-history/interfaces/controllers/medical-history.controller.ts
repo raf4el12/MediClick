@@ -40,7 +40,7 @@ export class MedicalHistoryController {
   ) {}
 
   @Post()
-  @Auth(UserRole.DOCTOR)
+  @Auth(UserRole.ADMIN, UserRole.DOCTOR)
   @ApiOperation({ summary: 'Crear entrada de historial médico' })
   @ApiResponse({
     status: 201,
@@ -68,7 +68,7 @@ export class MedicalHistoryController {
   }
 
   @Patch(':id')
-  @Auth(UserRole.DOCTOR)
+  @Auth(UserRole.ADMIN, UserRole.DOCTOR)
   @ApiOperation({ summary: 'Actualizar entrada de historial médico' })
   @ApiResponse({ status: 200, type: MedicalHistoryResponseDto })
   @ApiResponse({ status: 404, description: 'Entrada no encontrada' })
@@ -80,7 +80,7 @@ export class MedicalHistoryController {
   }
 
   @Patch(':id/status')
-  @Auth(UserRole.DOCTOR)
+  @Auth(UserRole.ADMIN, UserRole.DOCTOR)
   @ApiOperation({ summary: 'Cambiar estado de una condición' })
   @ApiResponse({ status: 200, type: MedicalHistoryResponseDto })
   @ApiResponse({ status: 404, description: 'Entrada no encontrada' })

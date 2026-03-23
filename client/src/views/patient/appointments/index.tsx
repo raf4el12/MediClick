@@ -71,6 +71,7 @@ export default function PatientAppointmentsView() {
   const [prescription, setPrescription] = useState<Prescription | null>(null);
   const [prescriptionLoading, setPrescriptionLoading] = useState(false);
   const [prescriptionError, setPrescriptionError] = useState<string | null>(null);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
 
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
@@ -159,6 +160,18 @@ export default function PatientAppointmentsView() {
     setPrescriptionOpen(false);
     setPrescription(null);
     setPrescriptionError(null);
+  };
+
+  const handleDownloadPdf = async () => {
+    if (!selectedApt) return;
+    setDownloadingPdf(true);
+    try {
+      await prescriptionsService.downloadMyPdf(selectedApt.id);
+    } catch {
+      // silent — browser handles the download
+    } finally {
+      setDownloadingPdf(false);
+    }
   };
 
   const canCancel = (status: AppointmentStatus) =>
@@ -617,8 +630,23 @@ export default function PatientAppointmentsView() {
             </Box>
           ) : null}
         </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
+        <DialogActions sx={{ px: 3, py: 2, justifyContent: 'space-between' }}>
           <Button onClick={closePrescription}>Cerrar</Button>
+          {prescription && (
+            <Button
+              variant="contained"
+              onClick={handleDownloadPdf}
+              disabled={downloadingPdf}
+              startIcon={
+                downloadingPdf
+                  ? <CircularProgress size={18} color="inherit" />
+                  : <i className="ri-download-2-line" style={{ fontSize: 18 }} />
+              }
+              sx={{ textTransform: 'none' }}
+            >
+              {downloadingPdf ? 'Descargando...' : 'Descargar PDF'}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </Box>

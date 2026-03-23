@@ -55,8 +55,8 @@ export class PrescriptionController {
   }
 
   @Get('appointment/:appointmentId/pdf')
-  @Auth(UserRole.DOCTOR)
-  @ApiOperation({ summary: 'Descargar receta en PDF (doctor)' })
+  @Auth(UserRole.ADMIN, UserRole.DOCTOR)
+  @ApiOperation({ summary: 'Descargar receta en PDF (doctor/admin)' })
   @ApiProduces('application/pdf')
   @ApiResponse({ status: 200, description: 'PDF de la receta' })
   @ApiResponse({ status: 403, description: 'No es el doctor de esta cita' })
@@ -113,7 +113,7 @@ export class PrescriptionController {
   }
 
   @Get('appointment/:appointmentId')
-  @Auth(UserRole.DOCTOR)
+  @Auth(UserRole.ADMIN, UserRole.DOCTOR)
   @ApiOperation({ summary: 'Obtener receta de una cita' })
   @ApiResponse({ status: 200, type: PrescriptionResponseDto })
   @ApiResponse({ status: 403, description: 'No es el doctor de esta cita' })

@@ -41,7 +41,7 @@ export class ClinicalNoteController {
   }
 
   @Get('appointment/:appointmentId')
-  @Auth(UserRole.DOCTOR)
+  @Auth(UserRole.ADMIN, UserRole.DOCTOR)
   @ApiOperation({ summary: 'Obtener notas clínicas de una cita' })
   @ApiResponse({ status: 200, type: [ClinicalNoteResponseDto] })
   @ApiResponse({ status: 403, description: 'No es el doctor de esta cita' })
