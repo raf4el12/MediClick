@@ -52,6 +52,7 @@ export interface Appointment {
   schedule: AppointmentSchedule;
   timezone: string;     // IANA timezone de la clínica del doctor
   hasPrescription: boolean;
+  notesCount: number;
   createdAt: string;
 }
 

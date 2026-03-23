@@ -41,6 +41,7 @@
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.2.4",
     "handlebars": "^4.7.8",
+    "helmet": "^8.1.0",
     "ioredis": "^5.9.2",
     "nodemailer": "^8.0.3",
     "passport": "^0.7.0",
@@ -93,6 +94,9 @@
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
     },
     "collectCoverageFrom": [
       "**/*.(t|j)s"

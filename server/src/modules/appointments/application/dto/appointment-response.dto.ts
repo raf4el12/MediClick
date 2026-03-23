@@ -119,6 +119,12 @@ export class AppointmentResponseDto {
   })
   hasPrescription: boolean;
 
+  @ApiProperty({
+    example: 2,
+    description: 'Cantidad de notas clínicas asociadas',
+  })
+  notesCount: number;
+
   @ApiProperty()
   createdAt: Date;
 }

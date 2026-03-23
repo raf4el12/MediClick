@@ -91,6 +91,7 @@ export class ConfirmAppointmentUseCase {
       },
       timezone: a.schedule.doctor.clinic?.timezone ?? 'America/Lima',
       hasPrescription: a.hasPrescription,
+      notesCount: a.notesCount,
       createdAt: a.createdAt,
     };
   }

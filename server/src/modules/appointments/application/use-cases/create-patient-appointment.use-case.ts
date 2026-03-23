@@ -197,6 +197,7 @@ export class CreatePatientAppointmentUseCase {
       },
       timezone: appointment.schedule.doctor.clinic?.timezone ?? 'America/Lima',
       hasPrescription: appointment.hasPrescription,
+      notesCount: appointment.notesCount,
       createdAt: appointment.createdAt,
     };
   }

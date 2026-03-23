@@ -165,7 +165,7 @@ export function ClinicalNotesTable({
         header: 'Notas',
         meta: { align: 'center' },
         cell: ({ row }) => {
-          const count = notesCounts[row.original.id] ?? 0;
+          const count = notesCounts[row.original.id] ?? row.original.notesCount ?? 0;
 
           return (
             <Typography variant="body2" color={count > 0 ? 'primary.main' : 'text.secondary'} sx={{ textAlign: 'center' }}>

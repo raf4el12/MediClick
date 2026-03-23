@@ -39,6 +39,7 @@ export interface AppointmentWithRelations {
   createdAt: Date;
   updatedAt: Date | null;
   hasPrescription: boolean;
+  notesCount: number;
   patient: {
     id: number;
     profile: { name: string; lastName: string; email: string; userId: number | null };
