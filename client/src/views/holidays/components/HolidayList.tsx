@@ -156,7 +156,7 @@ export const HolidayList = memo(function HolidayList({
                       lineHeight: 1.6,
                     }}
                   >
-                    {new Date(entry.date).toLocaleDateString('es-ES', {
+                    {new Date(entry.date).toLocaleDateString('es-PE', {
                       day: '2-digit',
                       month: 'long',
                       year: 'numeric',

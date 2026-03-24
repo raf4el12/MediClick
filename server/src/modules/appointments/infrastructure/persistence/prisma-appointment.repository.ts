@@ -148,7 +148,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       deleted: false,
       ...(filters.status && { status: filters.status }),
       ...(filters.upcoming && {
-        schedule: { scheduleDate: { gte: todayStartInTimezone('UTC') } },
+        schedule: { scheduleDate: { gte: todayStartInTimezone('America/Lima') } },
         status: filters.status || { notIn: ['CANCELLED', 'NO_SHOW'] },
       }),
     };

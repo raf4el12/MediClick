@@ -32,7 +32,7 @@ function formatDate(dateStr: string): string {
   // would display as March 18 in UTC-5)
   const [y, m, d] = dateStr.split('-').map(Number);
   const date = new Date(y ?? 2026, (m ?? 1) - 1, d ?? 1);
-  return date.toLocaleDateString('es-MX', {
+  return date.toLocaleDateString('es-PE', {
     weekday: 'long',
     day: '2-digit',
     month: 'long',

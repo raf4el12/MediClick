@@ -44,7 +44,7 @@ const AVATAR_COLORS = ['primary', 'info', 'success'] as const;
 
 function formatDate(dateStr: string): string {
   const date = new Date(dateStr + 'T00:00:00');
-  return date.toLocaleDateString('es-MX', {
+  return date.toLocaleDateString('es-PE', {
     weekday: 'long',
     day: '2-digit',
     month: 'long',

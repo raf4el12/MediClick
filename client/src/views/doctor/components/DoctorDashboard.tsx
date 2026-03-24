@@ -14,7 +14,7 @@ import { DoctorStatCards } from './DoctorStatCards';
 import { TodayAppointmentsList } from './TodayAppointmentsList';
 import { AppointmentWorkspaceDialog } from './AppointmentWorkspaceDialog';
 
-const TODAY_LABEL = new Date().toLocaleDateString('es-ES', {
+const TODAY_LABEL = new Date().toLocaleDateString('es-PE', {
   weekday: 'long',
   year: 'numeric',
   month: 'long',

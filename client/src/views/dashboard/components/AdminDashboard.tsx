@@ -13,7 +13,7 @@ import { selectUser } from '@/redux-store/slices/auth';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useDashboard } from '../hooks/useDashboard'; // Adjust import path
 
-const TODAY_LABEL = new Date().toLocaleDateString('es-ES', {
+const TODAY_LABEL = new Date().toLocaleDateString('es-PE', {
   weekday: 'long',
   year: 'numeric',
   month: 'long',

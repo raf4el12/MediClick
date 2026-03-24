@@ -197,10 +197,11 @@ export const MedicalHistoryList = memo(function MedicalHistoryList({
                       <i className="ri-calendar-line" style={{ fontSize: 14, color: theme.palette.text.disabled }} />
                       <Typography variant="caption" color="text.disabled">
                         {entry.diagnosedDate
-                          ? new Date(entry.diagnosedDate).toLocaleDateString('es-ES', {
+                          ? new Date(entry.diagnosedDate).toLocaleDateString('es-PE', {
                               day: '2-digit',
                               month: 'short',
                               year: 'numeric',
+                              timeZone: 'UTC',
                             })
                           : 'Sin fecha'}
                       </Typography>

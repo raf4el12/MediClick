@@ -43,13 +43,15 @@ export class TemplateService {
     );
     Handlebars.registerHelper(
       'formatTime',
-      (date: Date | string, timezone: string) => {
+      (date: Date | string, _timezone: string) => {
+        // Las horas se almacenan como epoch UTC (1970-01-01THH:mm:00Z)
+        // y ya representan wall-clock time, así que leemos UTC directo.
         const d = typeof date === 'string' ? new Date(date) : date;
-        return new Intl.DateTimeFormat('es-PE', {
-          timeZone: timezone || 'America/Lima',
-          timeStyle: 'short',
-          hour12: true,
-        }).format(d);
+        const h = d.getUTCHours();
+        const m = d.getUTCMinutes().toString().padStart(2, '0');
+        const ampm = h >= 12 ? 'p.m.' : 'a.m.';
+        const h12 = h % 12 || 12;
+        return `${h12}:${m} ${ampm}`;
       },
     );
   }
