@@ -30,10 +30,11 @@ export function HolidayDeleteDialog({
 
   if (!entry) return null;
 
-  const formattedDate = new Date(entry.date).toLocaleDateString('es-ES', {
+  const formattedDate = new Date(entry.date).toLocaleDateString('es-PE', {
     day: '2-digit',
     month: 'long',
     year: 'numeric',
+    timeZone: 'UTC',
   });
 
   return (

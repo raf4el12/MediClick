@@ -104,10 +104,11 @@ export function MedicalHistoryDetail({ entry, open, onClose }: MedicalHistoryDet
         <InfoRow icon="ri-calendar-check-line" label="Fecha de Diagnóstico">
           <Typography variant="body2">
             {entry.diagnosedDate
-              ? new Date(entry.diagnosedDate).toLocaleDateString('es-ES', {
+              ? new Date(entry.diagnosedDate).toLocaleDateString('es-PE', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric',
+                  timeZone: 'UTC',
                 })
               : 'No especificada'}
           </Typography>
@@ -133,7 +134,7 @@ export function MedicalHistoryDetail({ entry, open, onClose }: MedicalHistoryDet
               Creado
             </Typography>
             <Typography variant="body2" sx={{ mt: 0.25 }}>
-              {new Date(entry.createdAt).toLocaleDateString('es-ES', {
+              {new Date(entry.createdAt).toLocaleDateString('es-PE', {
                 day: '2-digit',
                 month: 'short',
                 year: 'numeric',
@@ -148,7 +149,7 @@ export function MedicalHistoryDetail({ entry, open, onClose }: MedicalHistoryDet
                 Actualizado
               </Typography>
               <Typography variant="body2" sx={{ mt: 0.25 }}>
-                {new Date(entry.updatedAt).toLocaleDateString('es-ES', {
+                {new Date(entry.updatedAt).toLocaleDateString('es-PE', {
                   day: '2-digit',
                   month: 'short',
                   year: 'numeric',

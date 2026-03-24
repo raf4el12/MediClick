@@ -31,7 +31,7 @@ function getAge(birthday: string | null): string {
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return 'N/A';
   const date = new Date(dateStr);
-  return date.toLocaleDateString('es-MX', {
+  return date.toLocaleDateString('es-PE', {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
