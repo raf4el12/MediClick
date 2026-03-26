@@ -185,7 +185,7 @@ model Specialties {
   categoryId   Int
   name         String
   description  String?
-  duration      Int?
+  duration      Int                  @default(30)
   bufferMinutes Int?                 @default(0) // Minutos de descanso entre citas consecutivas
   price         Decimal?             @db.Decimal(10, 2)
   requirements String?
@@ -372,7 +372,7 @@ model Transactions {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime?
 
-  appointment Appointments @relation(fields: [appointmentId], references: [id])
+  appointment Appointments @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
 
   @@index([appointmentId])
   @@index([gatewayId])
