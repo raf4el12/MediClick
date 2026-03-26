@@ -93,7 +93,7 @@ model Users {
   email         String          @unique
   password      String
   photo         String?
-  role          UserRole        @default(USER)
+  role          UserRole        @default(PATIENT)
   isActive      Boolean         @default(true)
   validateEmail Boolean         @default(false)
   clinicId      Int?

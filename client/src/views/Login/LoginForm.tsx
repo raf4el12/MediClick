@@ -5,7 +5,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
@@ -43,6 +43,7 @@ export function LoginForm() {
   const error = useAppSelector(selectAuthError);
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const user = useAppSelector(selectUser);
+  const searchParams = useSearchParams();
 
   const { control, handleSubmit } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -54,10 +55,11 @@ export function LoginForm() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      const target = user.role === UserRole.PATIENT ? '/patient' : '/dashboard';
-      router.push(target);
+      const from = searchParams.get('from');
+      const defaultTarget = user.role === UserRole.PATIENT ? '/patient' : '/dashboard';
+      router.push(from || defaultTarget);
     }
-  }, [isAuthenticated, user, router]);
+  }, [isAuthenticated, user, router, searchParams]);
 
   useEffect(() => {
     return () => {

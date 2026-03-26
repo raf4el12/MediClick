@@ -186,19 +186,19 @@ export default function Navbar() {
               selected={settings.mode === 'light'}
               onClick={() => handleModeChange('light')}
             >
-              <i className="ri-sun-line" /> Light
+              <i className="ri-sun-line" /> Claro
             </MenuItem>
             <MenuItem
               selected={settings.mode === 'dark'}
               onClick={() => handleModeChange('dark')}
             >
-              <i className="ri-moon-clear-line" /> Dark
+              <i className="ri-moon-clear-line" /> Oscuro
             </MenuItem>
             <MenuItem
               selected={settings.mode === 'system'}
               onClick={() => handleModeChange('system')}
             >
-              <i className="ri-computer-line" /> System
+              <i className="ri-computer-line" /> Sistema
             </MenuItem>
           </Menu>
 
@@ -241,10 +241,10 @@ export default function Navbar() {
               </Badge>
               <Box sx={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                 <Typography fontWeight={600} variant="body2" noWrap>
-                  {user?.name || 'John Doe'}
+                  {user?.name || 'Usuario'}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" noWrap>
-                  {user?.email || 'admin@materio.com'}
+                  {user?.email || 'usuario@mediclick.com'}
                 </Typography>
               </Box>
             </Box>

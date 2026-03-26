@@ -1,5 +1,10 @@
+import { Suspense } from 'react';
 import LoginView from '@/views/Login';
 
 export default function LoginPage() {
-  return <LoginView />;
+  return (
+    <Suspense>
+      <LoginView />
+    </Suspense>
+  );
 }
