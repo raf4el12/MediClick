@@ -10,8 +10,9 @@ export function middleware(request: NextRequest) {
   const isPublicPath =
     pathname === '/' || PUBLIC_PATHS.some((path) => path !== '/' && pathname.startsWith(path));
 
-  // Authenticated user visiting login or register → redirect to dashboard
-  if ((pathname.startsWith('/login') || pathname.startsWith('/register')) && accessToken) {
+  // Authenticated user visiting auth pages → redirect to dashboard
+  const authOnlyPaths = ['/login', '/register', '/forgot-password', '/reset-password'];
+  if (authOnlyPaths.some((p) => pathname.startsWith(p)) && accessToken) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 

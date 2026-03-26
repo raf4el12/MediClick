@@ -69,15 +69,7 @@ function formatGender(gender: string | null): string {
   return gender;
 }
 
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return 'N/A';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('es-PE', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-}
+import { formatDate } from '@/utils/formatDate';
 
 const bloodTypeColors: Record<string, 'error' | 'primary' | 'secondary' | 'warning' | 'info' | 'success'> = {
   'O+': 'error',

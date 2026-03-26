@@ -11,7 +11,7 @@ export class SpecialtyResponseDto {
   description: string | null;
 
   @ApiProperty()
-  duration: number | null;
+  duration: number;
 
   @ApiProperty()
   price: number | null;

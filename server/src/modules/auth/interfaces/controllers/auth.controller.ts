@@ -132,6 +132,7 @@ export class AuthController {
   }
 
   @Post('check-email')
+  @Throttle({ long: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verificar disponibilidad de email (público)' })
   @ApiResponse({ status: 200, description: '{ available: boolean }' })
@@ -142,6 +143,7 @@ export class AuthController {
   }
 
   @Post('check-document')
+  @Throttle({ long: { ttl: 60000, limit: 5 } })
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verificar disponibilidad de documento (público)' })
   @ApiResponse({ status: 200, description: '{ available: boolean }' })
@@ -254,7 +256,7 @@ export class AuthController {
   }
 
   @Post('refresh-token')
-  @SkipThrottle()
+  @Throttle({ long: { ttl: 60000, limit: 20 } })
   @HttpCode(HttpStatus.OK)
   @ApiCookieAuth('refreshToken')
   @ApiOperation({ summary: 'Renovar tokens con refresh token (cookie)' })

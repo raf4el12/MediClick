@@ -1,6 +1,6 @@
 import { NotFoundException } from '@nestjs/common';
-import { FindPrescriptionByAppointmentUseCase } from './find-prescription-by-appointment.use-case';
-import type { IPrescriptionRepository } from '../../domain/repositories/prescription.repository';
+import { FindPrescriptionByAppointmentUseCase } from './find-prescription-by-appointment.use-case.js';
+import type { IPrescriptionRepository } from '../../domain/repositories/prescription.repository.js';
 
 describe('FindPrescriptionByAppointmentUseCase', () => {
   let useCase: FindPrescriptionByAppointmentUseCase;

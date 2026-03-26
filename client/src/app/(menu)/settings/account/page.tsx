@@ -1,5 +1,10 @@
+import { Suspense } from 'react';
 import AccountSettings from '@/views/settings/AccountSettings';
 
 export default function SettingsPage() {
-    return <AccountSettings />;
+    return (
+        <Suspense>
+            <AccountSettings />
+        </Suspense>
+    );
 }

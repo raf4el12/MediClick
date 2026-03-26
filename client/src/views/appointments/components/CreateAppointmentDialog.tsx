@@ -42,15 +42,8 @@ const MONTH_SHORT = [
 
 const AVATAR_COLORS = ['primary', 'info', 'success'] as const;
 
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr + 'T00:00:00');
-  return date.toLocaleDateString('es-PE', {
-    weekday: 'long',
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  });
-}
+import { formatDate as formatDateUtil } from '@/utils/formatDate';
+const formatDate = (dateStr: string) => formatDateUtil(dateStr, { weekday: 'long', month: 'long' });
 
 function parseDateParts(dateStr: string) {
   const date = new Date(dateStr + 'T00:00:00');

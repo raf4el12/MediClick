@@ -109,7 +109,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
   async softDelete(id: number): Promise<void> {
     await this.prisma.categories.update({
       where: { id },
-      data: { deleted: true, deletedAt: new Date(), updatedAt: new Date() },
+      data: { deleted: true, updatedAt: new Date() },
     });
   }
 }

@@ -31,17 +31,19 @@ async function bootstrap() {
     }),
   );
 
-  const config = new DocumentBuilder()
-    .setTitle('MediClick API')
-    .setDescription('API del sistema médico MediClick')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .addCookieAuth('accessToken')
-    .addCookieAuth('refreshToken')
-    .build();
+  if (!isProduction) {
+    const config = new DocumentBuilder()
+      .setTitle('MediClick API')
+      .setDescription('API del sistema médico MediClick')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .addCookieAuth('accessToken')
+      .addCookieAuth('refreshToken')
+      .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document);
+  }
 
   await app.listen(process.env.PORT ?? 5100);
 }

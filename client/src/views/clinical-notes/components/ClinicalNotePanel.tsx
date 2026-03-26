@@ -14,17 +14,8 @@ import type { Appointment } from '@/views/appointments/types';
 import type { ClinicalNote, CreateClinicalNotePayload } from '../types';
 import { ClinicalNoteForm } from './ClinicalNoteForm';
 
-function formatDateTime(dateStr: string): string {
-  const date = new Date(dateStr);
-
-  return date.toLocaleString('es-MX', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
+import { formatDate } from '@/utils/formatDate';
+const formatDateTime = (dateStr: string) => formatDate(dateStr, { time: true });
 
 interface ClinicalNotePanelProps {
   appointment: Appointment | null;
