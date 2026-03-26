@@ -28,15 +28,7 @@ function getAge(birthday: string | null): string {
   return `${Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000))} años`;
 }
 
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return 'N/A';
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('es-PE', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-}
+import { formatDate } from '@/utils/formatDate';
 
 function getInitials(name: string, lastName: string): string {
   return `${name.charAt(0)}${lastName.charAt(0)}`.toUpperCase();

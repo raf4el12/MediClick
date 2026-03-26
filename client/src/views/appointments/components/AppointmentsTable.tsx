@@ -46,15 +46,7 @@ const statusConfig: Record<
   [AppointmentStatus.NO_SHOW]: { label: 'No asistió', color: 'default' },
 };
 
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('es-PE', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
-}
+import { formatDate } from '@/utils/formatDate';
 
 interface AppointmentsTableProps {
   data: PaginatedResponse<Appointment>;

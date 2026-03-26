@@ -1089,13 +1089,14 @@ async function main() {
   ];
 
   for (const h of holidays) {
+    // Feriados nacionales: clinicId null = visibles para todas las clínicas
     await prisma.holidays.create({
       data: {
         name: h.name,
         date: new Date(`${h.date}T00:00:00Z`),
         year,
         isRecurring: h.isRecurring,
-        clinicId: clinicLima.id,
+        clinicId: null,
       },
     });
   }
@@ -1108,14 +1109,14 @@ async function main() {
   console.log('   • 2 clínicas (Lima, Arequipa)');
   console.log('   • 5 categorías');
   console.log('   • 6 especialidades');
-  console.log(`   • ${8} usuarios (1 super-admin, 1 admin clínica, 1 recepcionista, 3 doctores, 3 pacientes, contraseña: ${PASSWORD})`);
+  console.log(`   • 9 usuarios (1 super-admin, 1 admin clínica, 1 recepcionista, 3 doctores, 3 pacientes, contraseña: ${PASSWORD})`);
   console.log('   • 3 doctores con disponibilidad L-V');
   console.log('   • 5 schedules (hoy, mañana, pasado)');
   console.log('   • 6 citas (1 completada, 2 confirmadas, 1 pendiente, 1 cancelada, 1 arequipa)');
   console.log('   • 1 receta con 3 medicamentos');
   console.log('   • 4 historiales médicos');
   console.log('   • 5 notificaciones');
-  console.log('   • 12 feriados Perú ' + year);
+  console.log('   • 12 feriados Perú ' + year + ' (globales, visibles para todas las clínicas)');
   console.log('\n🔑 Credenciales de prueba:');
   console.log('   admin@mediclick.com / 123456 (Super Admin)');
   console.log('   adminlima@mediclick.com / 123456 (Admin Lima)');

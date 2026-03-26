@@ -1,6 +1,6 @@
-import { GetSessionsUseCase } from './get-sessions.use-case';
-import type { IRefreshTokenRepository } from '../../domain/contracts/refresh-token-repository.interface';
-import type { RefreshTokenData } from '../../domain/interfaces/refresh-token-data.interface';
+import { GetSessionsUseCase } from './get-sessions.use-case.js';
+import type { IRefreshTokenRepository } from '../../domain/contracts/refresh-token-repository.interface.js';
+import type { RefreshTokenData } from '../../domain/interfaces/refresh-token-data.interface.js';
 
 describe('GetSessionsUseCase', () => {
   let useCase: GetSessionsUseCase;

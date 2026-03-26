@@ -1,10 +1,10 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { ChangePasswordUseCase } from './change-password.use-case';
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum';
-import type { IUserRepository } from '../../../users/domain/repositories/user.repository';
-import type { IPasswordService } from '../../../../shared/domain/contracts/password-service.interface';
-import type { IRefreshTokenRepository } from '../../domain/contracts/refresh-token-repository.interface';
-import { UserEntity } from '../../../users/domain/entities/user.entity';
+import { ChangePasswordUseCase } from './change-password.use-case.js';
+import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
+import type { IUserRepository } from '../../../users/domain/repositories/user.repository.js';
+import type { IPasswordService } from '../../../../shared/domain/contracts/password-service.interface.js';
+import type { IRefreshTokenRepository } from '../../domain/contracts/refresh-token-repository.interface.js';
+import { UserEntity } from '../../../users/domain/entities/user.entity.js';
 
 describe('ChangePasswordUseCase', () => {
   let useCase: ChangePasswordUseCase;

@@ -15,6 +15,8 @@ import Tooltip from '@mui/material/Tooltip';
 import { alpha } from '@mui/material/styles';
 
 import { notificationsService } from '@/services/notifications.service';
+import { useSnackbar } from '@/hooks/useSnackbar';
+import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
 import type { Notification } from '@/views/notifications/types';
 import { NotificationType } from '@/views/notifications/types';
 
@@ -72,6 +74,7 @@ export default function NotificationDropdown() {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(false);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
 
     const fetchUnreadCount = useCallback(async () => {
         try {
@@ -128,7 +131,7 @@ export default function NotificationDropdown() {
             );
             setUnreadCount((prev) => Math.max(0, prev - 1));
         } catch {
-            // ignore
+            showSnackbar('Error al marcar la notificación como leída', 'error');
         }
     };
 
@@ -138,7 +141,7 @@ export default function NotificationDropdown() {
             setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
             setUnreadCount(0);
         } catch {
-            // ignore
+            showSnackbar('Error al marcar todas como leídas', 'error');
         }
     };
 
@@ -400,6 +403,8 @@ export default function NotificationDropdown() {
                     </Button>
                 </Box>
             </Popover>
+
+            <SuccessSnackbar snackbar={snackbar} onClose={closeSnackbar} />
         </>
     );
 }

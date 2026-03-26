@@ -26,15 +26,8 @@ const statusConfig: Record<
   [AppointmentStatus.NO_SHOW]: { label: 'No asistió', color: 'default' },
 };
 
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('es-PE', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
-}
+import { formatDate as formatDateUtil } from '@/utils/formatDate';
+const formatDate = (dateStr: string) => formatDateUtil(dateStr, { month: 'long' });
 
 export function AppointmentDetailDialog({
   appointment,

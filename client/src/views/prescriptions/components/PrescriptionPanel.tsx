@@ -20,16 +20,7 @@ import type { Appointment } from '@/views/appointments/types';
 import type { Prescription, CreatePrescriptionPayload } from '../types';
 import { PrescriptionForm } from './PrescriptionForm';
 
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr);
-
-  return date.toLocaleDateString('es-PE', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
-}
+import { formatDate } from '@/utils/formatDate';
 
 interface PrescriptionPanelProps {
   appointment: Appointment | null;

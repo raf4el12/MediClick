@@ -34,13 +34,7 @@ interface ScheduleBlockListProps {
   onDelete: (entry: ScheduleBlock) => void;
 }
 
-function formatDate(date: string): string {
-  return new Date(date).toLocaleDateString('es-PE', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
-}
+import { formatDate } from '@/utils/formatDate';
 
 export const ScheduleBlockList = memo(function ScheduleBlockList({
   entries,

@@ -256,7 +256,7 @@ export class AuthController {
   }
 
   @Post('refresh-token')
-  @SkipThrottle()
+  @Throttle({ long: { ttl: 60000, limit: 20 } })
   @HttpCode(HttpStatus.OK)
   @ApiCookieAuth('refreshToken')
   @ApiOperation({ summary: 'Renovar tokens con refresh token (cookie)' })

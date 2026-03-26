@@ -1,5 +1,5 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth, CurrentClinic } from '../../../../shared/decorators/index.js';
 import {
@@ -9,6 +9,7 @@ import {
   AppointmentsSummaryReportDto,
   ScheduleOccupancyReportDto,
 } from '../../application/dto/report-response.dto.js';
+import { MonthYearQueryDto } from '../../application/dto/report-query.dto.js';
 import { GetWeeklyAppointmentsUseCase } from '../../application/use-cases/get-weekly-appointments.use-case.js';
 import { GetRevenueUseCase } from '../../application/use-cases/get-revenue.use-case.js';
 import { GetTopDoctorsUseCase } from '../../application/use-cases/get-top-doctors.use-case.js';
@@ -39,19 +40,12 @@ export class ReportController {
   @Get('revenue')
   @Auth(UserRole.ADMIN)
   @ApiOperation({ summary: 'Reporte de ingresos (proyectados vs reales)' })
-  @ApiQuery({ name: 'month', required: true, type: Number, example: 2 })
-  @ApiQuery({ name: 'year', required: true, type: Number, example: 2026 })
   @ApiResponse({ status: 200, type: RevenueReportDto })
   async getRevenue(
-    @Query('month') month: string,
-    @Query('year') year: string,
+    @Query() query: MonthYearQueryDto,
     @CurrentClinic() clinicId: number | null,
   ): Promise<RevenueReportDto> {
-    return this.getRevenueUseCase.execute(
-      parseInt(month, 10),
-      parseInt(year, 10),
-      clinicId,
-    );
+    return this.getRevenueUseCase.execute(query.month, query.year, clinicId);
   }
 
   @Get('top-doctors')
@@ -59,20 +53,15 @@ export class ReportController {
   @ApiOperation({
     summary: 'Ranking de doctores con más citas completadas en el mes',
   })
-  @ApiQuery({ name: 'month', required: true, type: Number, example: 2 })
-  @ApiQuery({ name: 'year', required: true, type: Number, example: 2026 })
-  @ApiQuery({ name: 'limit', required: false, type: Number, example: 10 })
   @ApiResponse({ status: 200, type: [TopDoctorReportDto] })
   async getTopDoctors(
-    @Query('month') month: string,
-    @Query('year') year: string,
-    @Query('limit') limit: string | undefined,
+    @Query() query: MonthYearQueryDto,
     @CurrentClinic() clinicId: number | null,
   ): Promise<TopDoctorReportDto[]> {
     return this.getTopDoctorsUseCase.execute(
-      parseInt(month, 10),
-      parseInt(year, 10),
-      limit ? parseInt(limit, 10) : 10,
+      query.month,
+      query.year,
+      query.limit ?? 10,
       clinicId,
     );
   }
@@ -80,17 +69,14 @@ export class ReportController {
   @Get('appointments-summary')
   @Auth(UserRole.ADMIN)
   @ApiOperation({ summary: 'Resumen de citas del mes (por estado y por día)' })
-  @ApiQuery({ name: 'month', required: true, type: Number, example: 2 })
-  @ApiQuery({ name: 'year', required: true, type: Number, example: 2026 })
   @ApiResponse({ status: 200, type: AppointmentsSummaryReportDto })
   async getAppointmentsSummary(
-    @Query('month') month: string,
-    @Query('year') year: string,
+    @Query() query: MonthYearQueryDto,
     @CurrentClinic() clinicId: number | null,
   ): Promise<AppointmentsSummaryReportDto> {
     return this.getAppointmentsSummaryUseCase.execute(
-      parseInt(month, 10),
-      parseInt(year, 10),
+      query.month,
+      query.year,
       clinicId,
     );
   }
@@ -98,17 +84,14 @@ export class ReportController {
   @Get('schedule-occupancy')
   @Auth(UserRole.ADMIN)
   @ApiOperation({ summary: 'Ocupación de horarios del mes' })
-  @ApiQuery({ name: 'month', required: true, type: Number, example: 2 })
-  @ApiQuery({ name: 'year', required: true, type: Number, example: 2026 })
   @ApiResponse({ status: 200, type: ScheduleOccupancyReportDto })
   async getScheduleOccupancy(
-    @Query('month') month: string,
-    @Query('year') year: string,
+    @Query() query: MonthYearQueryDto,
     @CurrentClinic() clinicId: number | null,
   ): Promise<ScheduleOccupancyReportDto> {
     return this.getScheduleOccupancyUseCase.execute(
-      parseInt(month, 10),
-      parseInt(year, 10),
+      query.month,
+      query.year,
       clinicId,
     );
   }

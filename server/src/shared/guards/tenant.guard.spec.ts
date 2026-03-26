@@ -1,6 +1,6 @@
 import { ForbiddenException, ExecutionContext } from '@nestjs/common';
-import { TenantGuard } from './tenant.guard';
-import { UserRole } from '../domain/enums/user-role.enum';
+import { TenantGuard } from './tenant.guard.js';
+import { UserRole } from '../domain/enums/user-role.enum.js';
 
 function createMockContext(user: any): ExecutionContext {
   return {

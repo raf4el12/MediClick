@@ -27,18 +27,8 @@ interface RescheduleAppointmentDialogProps {
 /** Buffer mínimo en minutos antes de poder agendar */
 const MIN_BUFFER_MINUTES = 120; // 2 horas
 
-function formatDate(dateStr: string): string {
-  // Parse as local date to avoid UTC→local shift (e.g. "2026-03-19" UTC midnight
-  // would display as March 18 in UTC-5)
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const date = new Date(y ?? 2026, (m ?? 1) - 1, d ?? 1);
-  return date.toLocaleDateString('es-PE', {
-    weekday: 'long',
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  });
-}
+import { formatDate as formatDateUtil } from '@/utils/formatDate';
+const formatDate = (dateStr: string) => formatDateUtil(dateStr, { weekday: 'long', month: 'long' });
 
 export function RescheduleAppointmentDialog({
   open,

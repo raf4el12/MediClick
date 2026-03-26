@@ -17,6 +17,8 @@ import Fade from '@mui/material/Fade';
 import { alpha } from '@mui/material/styles';
 
 import { notificationsService } from '@/services/notifications.service';
+import { useSnackbar } from '@/hooks/useSnackbar';
+import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
 import type { PaginatedNotifications } from './types';
 import { NotificationType } from './types';
 
@@ -55,27 +57,7 @@ const typeConfig: Record<string, { icon: string; color: string; label: string }>
     },
 };
 
-function formatDate(dateStr: string): string {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMin = Math.floor(diffMs / 60_000);
-
-    if (diffMin < 1) return 'Ahora mismo';
-    if (diffMin < 60) return `Hace ${diffMin} minutos`;
-    const diffH = Math.floor(diffMin / 60);
-    if (diffH < 24) return `Hace ${diffH} horas`;
-    const diffD = Math.floor(diffH / 24);
-    if (diffD < 7) return `Hace ${diffD} días`;
-
-    return date.toLocaleDateString('es-PE', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    });
-}
+import { formatRelativeTime } from '@/utils/formatDate';
 
 type TabFilter = 'all' | 'unread' | 'read';
 
@@ -85,6 +67,7 @@ export default function NotificationsView() {
     const [data, setData] = useState<PaginatedNotifications | null>(null);
     const [loading, setLoading] = useState(true);
     const [unreadCount, setUnreadCount] = useState(0);
+    const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
 
     const fetchNotifications = useCallback(async () => {
         setLoading(true);
@@ -135,7 +118,7 @@ export default function NotificationsView() {
             });
             setUnreadCount((prev) => Math.max(0, prev - 1));
         } catch {
-            // ignore
+            showSnackbar('Error al marcar la notificación como leída', 'error');
         }
     };
 
@@ -151,7 +134,7 @@ export default function NotificationsView() {
             });
             setUnreadCount(0);
         } catch {
-            // ignore
+            showSnackbar('Error al marcar todas como leídas', 'error');
         }
     };
 
@@ -166,7 +149,7 @@ export default function NotificationsView() {
             });
             void fetchUnread();
         } catch {
-            // ignore
+            showSnackbar('Error al eliminar la notificación', 'error');
         }
     };
 
@@ -388,7 +371,7 @@ export default function NotificationsView() {
                                                 color="text.disabled"
                                                 sx={{ mt: 0.5, display: 'block', fontSize: '0.75rem' }}
                                             >
-                                                {formatDate(n.createdAt)}
+                                                {formatRelativeTime(n.createdAt)}
                                             </Typography>
                                         </Box>
 
@@ -463,6 +446,8 @@ export default function NotificationsView() {
                     </>
                 )}
             </Card>
+
+            <SuccessSnackbar snackbar={snackbar} onClose={closeSnackbar} />
         </Box>
     );
 }
