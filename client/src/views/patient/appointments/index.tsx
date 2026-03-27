@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSnackbar } from '@/hooks/useSnackbar';
+import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import ToggleButton from '@mui/material/ToggleButton';
@@ -49,6 +51,7 @@ type TabValue = 'upcoming' | 'all' | 'past';
 export default function PatientAppointmentsView() {
   const router = useRouter();
   const theme = useTheme();
+  const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
   const [tab, setTab] = useState<TabValue>('upcoming');
   const [page, setPage] = useState(1);
   const [data, setData] = useState<PaginatedResponse<Appointment> | null>(null);
@@ -118,6 +121,7 @@ export default function PatientAppointmentsView() {
       setDetailOpen(false);
       setSelectedApt(null);
       fetchAppointments();
+      showSnackbar('Cita cancelada exitosamente', 'success');
     } catch {
       setActionError('No se pudo cancelar la cita. Intenta de nuevo.');
     } finally {
@@ -131,6 +135,7 @@ export default function PatientAppointmentsView() {
     try {
       await appointmentsService.confirm(apt.id);
       fetchAppointments();
+      showSnackbar('Cita confirmada exitosamente', 'success');
       if (detailOpen && selectedApt?.id === apt.id) {
         setSelectedApt({ ...apt, status: AppointmentStatus.CONFIRMED });
       }
@@ -305,6 +310,7 @@ export default function PatientAppointmentsView() {
                         <IconButton
                           size="small"
                           title="Ver Receta"
+                          aria-label="Ver receta médica"
                           onClick={(e) => { e.stopPropagation(); openPrescription(apt); }}
                           sx={{ color: theme.palette.primary.main }}
                         >
@@ -316,6 +322,7 @@ export default function PatientAppointmentsView() {
                           size="small"
                           color="success"
                           title="Confirmar"
+                          aria-label="Confirmar cita"
                           onClick={(e) => { e.stopPropagation(); handleConfirm(apt); }}
                           disabled={confirming}
                         >
@@ -327,6 +334,7 @@ export default function PatientAppointmentsView() {
                           size="small"
                           color="error"
                           title="Cancelar"
+                          aria-label="Cancelar cita"
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedApt(apt);
@@ -373,7 +381,7 @@ export default function PatientAppointmentsView() {
             <>
               <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 Detalle de Cita
-                <IconButton size="small" onClick={() => setDetailOpen(false)}>
+                <IconButton size="small" aria-label="Cerrar detalle" onClick={() => setDetailOpen(false)}>
                   <i className="ri-close-line" />
                 </IconButton>
               </DialogTitle>
@@ -522,7 +530,7 @@ export default function PatientAppointmentsView() {
             <i className="ri-file-list-3-line" style={{ fontSize: 22, color: theme.palette.primary.main }} />
             Receta Médica
           </Box>
-          <IconButton size="small" onClick={closePrescription}>
+          <IconButton size="small" aria-label="Cerrar receta" onClick={closePrescription}>
             <i className="ri-close-line" />
           </IconButton>
         </DialogTitle>
@@ -672,6 +680,8 @@ export default function PatientAppointmentsView() {
           )}
         </DialogActions>
       </Dialog>
+
+      <SuccessSnackbar snackbar={snackbar} onClose={closeSnackbar} />
     </Box>
   );
 }

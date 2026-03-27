@@ -91,7 +91,7 @@ export function AppointmentDetailPanel({
           </Typography>
         }
         action={
-          <IconButton size="small" onClick={onClose}>
+          <IconButton size="small" aria-label="Cerrar panel de cita" onClick={onClose}>
             <i className="ri-close-line" style={{ fontSize: 18 }} />
           </IconButton>
         }

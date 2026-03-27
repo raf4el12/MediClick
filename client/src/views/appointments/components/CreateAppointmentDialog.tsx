@@ -469,6 +469,7 @@ export function CreateAppointmentDialog({
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
                   <IconButton
                     size="small"
+                    aria-label="Desplazar fechas a la izquierda"
                     onClick={() => scrollDates('left')}
                     sx={{ flexShrink: 0 }}
                   >
@@ -561,6 +562,7 @@ export function CreateAppointmentDialog({
                   </Box>
                   <IconButton
                     size="small"
+                    aria-label="Desplazar fechas a la derecha"
                     onClick={() => scrollDates('right')}
                     sx={{ flexShrink: 0 }}
                   >

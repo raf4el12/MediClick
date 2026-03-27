@@ -8,6 +8,7 @@ import {
   Query,
   ParseIntPipe,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UserRole, toUserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth } from '../../../../shared/decorators/index.js';
@@ -73,6 +74,7 @@ export class AppointmentController {
 
   @Post('patient')
   @Auth(UserRole.PATIENT)
+  @Throttle({ long: { ttl: 60000, limit: 5 } })
   @ApiOperation({
     summary: 'Reservar cita como paciente (auto-asigna patientId)',
   })
@@ -93,6 +95,7 @@ export class AppointmentController {
 
   @Post()
   @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST)
+  @Throttle({ long: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: 'Crear cita médica' })
   @ApiResponse({
     status: 201,
@@ -110,6 +113,7 @@ export class AppointmentController {
 
   @Post('overbook')
   @Auth(UserRole.ADMIN, UserRole.DOCTOR)
+  @Throttle({ long: { ttl: 60000, limit: 5 } })
   @ApiOperation({
     summary: 'Crear cita de sobrecupo (al final del último slot del día)',
   })

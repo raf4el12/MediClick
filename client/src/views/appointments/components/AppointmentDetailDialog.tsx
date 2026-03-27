@@ -95,7 +95,7 @@ export function AppointmentDetailDialog({
         <Typography variant="h6" fontWeight={600}>
           Detalle de la Cita
         </Typography>
-        <IconButton size="small" onClick={onClose}>
+        <IconButton size="small" aria-label="Cerrar detalle de cita" onClick={onClose}>
           <i className="ri-close-line" style={{ fontSize: 20 }} />
         </IconButton>
       </Box>

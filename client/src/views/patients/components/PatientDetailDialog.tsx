@@ -94,7 +94,7 @@ export function PatientDetailDialog({ patient, onClose }: PatientDetailDialogPro
         <Typography variant="subtitle1" fontWeight={600}>
           Detalle del Paciente
         </Typography>
-        <IconButton size="small" onClick={onClose}>
+        <IconButton size="small" aria-label="Cerrar detalle de paciente" onClick={onClose}>
           <i className="ri-close-line" style={{ fontSize: 18 }} />
         </IconButton>
       </Box>
