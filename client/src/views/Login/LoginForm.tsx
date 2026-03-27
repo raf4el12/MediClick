@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,6 +20,7 @@ import {
   selectIsAuthenticated,
   selectUser,
   clearError,
+  resetAuth,
 } from '@/redux-store/slices/auth';
 import { loginThunk } from '@/redux-store/thunks/auth.thunks';
 import { UserRole } from '@/types/auth.types';
@@ -45,6 +46,8 @@ export function LoginForm() {
   const user = useAppSelector(selectUser);
   const searchParams = useSearchParams();
 
+  const loginDispatched = useRef(false);
+
   const { control, handleSubmit } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -53,8 +56,16 @@ export function LoginForm() {
     },
   });
 
+  // Si estamos en /login es porque el middleware NO encontró cookie válida.
+  // Limpiamos estado de Redux que podría estar obsoleto (redux-persist).
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated) {
+      dispatch(resetAuth());
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (loginDispatched.current && isAuthenticated && user) {
       const from = searchParams.get('from');
       const defaultTarget = user.role === UserRole.PATIENT ? '/patient' : '/dashboard';
       router.push(from || defaultTarget);
@@ -68,6 +79,7 @@ export function LoginForm() {
   }, [dispatch]);
 
   const onSubmit = (data: LoginFormValues) => {
+    loginDispatched.current = true;
     void dispatch(loginThunk(data));
   };
 

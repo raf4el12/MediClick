@@ -64,7 +64,7 @@ export class PrismaPatientRepository implements IPatientRepository {
           emergencyContact: data.patient.emergencyContact,
           bloodType: data.patient.bloodType,
           allergies: data.patient.allergies,
-          chronic_conditions: data.patient.chronicConditions,
+          chronicConditions: data.patient.chronicConditions,
         },
         include: patientInclude,
       });
@@ -271,7 +271,7 @@ export class PrismaPatientRepository implements IPatientRepository {
           allergies: data.patient.allergies,
         }),
         ...(data.patient?.chronicConditions !== undefined && {
-          chronic_conditions: data.patient.chronicConditions,
+          chronicConditions: data.patient.chronicConditions,
         }),
         updatedAt: new Date(),
       },
@@ -312,7 +312,7 @@ export class PrismaPatientRepository implements IPatientRepository {
       emergencyContact: raw.emergencyContact,
       bloodType: raw.bloodType,
       allergies: raw.allergies,
-      chronicConditions: raw.chronic_conditions,
+      chronicConditions: raw.chronicConditions,
       isActive: raw.isActive,
       deleted: raw.deleted,
       createdAt: raw.createdAt,

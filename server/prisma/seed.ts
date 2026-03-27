@@ -508,7 +508,7 @@ async function main() {
       emergencyContact: '+51999111222',
       bloodType: 'O+',
       allergies: 'Penicilina, Sulfas',
-      chronic_conditions: 'Hipertensión arterial',
+      chronicConditions: 'Hipertensión arterial',
     },
   });
 
@@ -547,7 +547,7 @@ async function main() {
       emergencyContact: '+51999333444',
       bloodType: 'A+',
       allergies: null,
-      chronic_conditions: 'Asma leve',
+      chronicConditions: 'Asma leve',
     },
   });
 
@@ -586,7 +586,7 @@ async function main() {
       emergencyContact: '+51999555666',
       bloodType: 'B+',
       allergies: 'Ibuprofeno',
-      chronic_conditions: 'Diabetes tipo 2',
+      chronicConditions: 'Diabetes tipo 2',
     },
   });
 

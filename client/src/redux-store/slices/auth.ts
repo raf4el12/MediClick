@@ -25,6 +25,9 @@ export const authSlice = createSlice({
     clearError(state) {
       state.error = null;
     },
+    resetAuth() {
+      return initialState;
+    },
     updateUserProfile(state, action: PayloadAction<Partial<AuthUser>>) {
       if (state.user) {
         state.user = { ...state.user, ...action.payload };
@@ -68,7 +71,7 @@ export const authSlice = createSlice({
   },
 });
 
-export const { clearError, updateUserProfile } = authSlice.actions;
+export const { clearError, resetAuth, updateUserProfile } = authSlice.actions;
 
 // Selectors
 export const selectAuth = (state: { auth: AuthState }) => state.auth;
