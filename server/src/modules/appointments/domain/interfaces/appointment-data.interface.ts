@@ -75,4 +75,6 @@ export interface DashboardFilters {
 export interface PatientAppointmentFilters {
   status?: AppointmentStatus;
   upcoming?: boolean;
+  /** IANA timezone para calcular "hoy" al filtrar upcoming. Fallback: America/Lima */
+  timezone?: string;
 }

@@ -15,11 +15,41 @@ export class AppointmentReminderService {
     private readonly createNotification: CreateNotificationUseCase,
   ) {}
 
-  @Cron('0 8 * * *', { timeZone: 'America/Lima' })
+  /**
+   * Cron cada hora en punto. Detecta qué zonas horarias están a las 8 AM
+   * y envía recordatorios solo para clínicas en esas zonas.
+   */
+  @Cron('0 * * * *')
   async sendReminders(): Promise<void> {
-    this.logger.log('Iniciando envio de recordatorios de citas...');
+    const clinics = await this.prisma.clinics.findMany({
+      where: { isActive: true, deleted: false },
+      select: { timezone: true },
+      distinct: ['timezone'],
+    });
 
-    const todayStart = todayStartInTimezone('America/Lima');
+    const targetTimezones = clinics
+      .map((c) => c.timezone)
+      .filter((tz) => {
+        const parts = new Intl.DateTimeFormat('en-US', {
+          timeZone: tz,
+          hour: '2-digit',
+          hour12: false,
+        }).formatToParts(new Date());
+        const hour = Number(parts.find((p) => p.type === 'hour')!.value);
+        return hour === 8;
+      });
+
+    if (targetTimezones.length === 0) return;
+
+    for (const tz of targetTimezones) {
+      await this.sendRemindersForTimezone(tz);
+    }
+  }
+
+  private async sendRemindersForTimezone(tz: string): Promise<void> {
+    this.logger.log(`Procesando recordatorios para timezone: ${tz}`);
+
+    const todayStart = todayStartInTimezone(tz);
     const tomorrowStart = new Date(todayStart.getTime() + 86_400_000);
     const tomorrowEnd = new Date(tomorrowStart.getTime() + 86_400_000);
 
@@ -29,6 +59,7 @@ export class AppointmentReminderService {
         deleted: false,
         reminderSent: false,
         schedule: {
+          doctor: { clinic: { timezone: tz } },
           scheduleDate: {
             gte: tomorrowStart,
             lt: tomorrowEnd,
@@ -66,7 +97,7 @@ export class AppointmentReminderService {
     });
 
     if (appointments.length === 0) {
-      this.logger.log('No hay citas para recordar manana.');
+      this.logger.log(`No hay citas para recordar mañana en ${tz}.`);
       return;
     }
 
@@ -78,12 +109,12 @@ export class AppointmentReminderService {
         const doctorName = `${appt.schedule.doctor.profile.name} ${appt.schedule.doctor.profile.lastName}`;
         const clinicName = appt.schedule.doctor.clinic?.name ?? 'MediClick';
         const clinicTimezone =
-          appt.schedule.doctor.clinic?.timezone ?? 'America/Lima';
+          appt.schedule.doctor.clinic?.timezone ?? tz;
         const patientUserId = appt.patient.profile.userId;
 
         await this.mailService.send({
           to: appt.patient.profile.email,
-          subject: 'Recordatorio: Tu cita es manana — MediClick',
+          subject: 'Recordatorio: Tu cita es mañana — MediClick',
           template: 'appointment-reminder',
           context: {
             patientName,
@@ -102,7 +133,7 @@ export class AppointmentReminderService {
             userId: patientUserId,
             type: 'APPOINTMENT_REMINDER',
             title: 'Recordatorio de cita',
-            message: `Tu cita con el Dr(a). ${doctorName} es manana.`,
+            message: `Tu cita con el Dr(a). ${doctorName} es mañana.`,
             metadata: { appointmentId: appt.id },
           });
         }
@@ -123,7 +154,7 @@ export class AppointmentReminderService {
     }
 
     this.logger.log(
-      `Recordatorios enviados: ${sent} de ${appointments.length}`,
+      `[${tz}] Recordatorios enviados: ${sent} de ${appointments.length}`,
     );
   }
 }

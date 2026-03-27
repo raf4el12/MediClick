@@ -73,6 +73,7 @@ export class LoginUseCase {
         email: user.email,
         role: user.role,
         clinicName: user.clinicName,
+        clinicTimezone: user.clinicTimezone,
       },
     };
   }
