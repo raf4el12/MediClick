@@ -5,8 +5,8 @@ import { useAppSelector } from '@/redux-store/hooks';
 import { api } from '@/libs/axios';
 import { getDeviceId } from '@/utils/device-id';
 
-// Refresh proactively every 12 min (access token lives 15 min)
-const VALIDATION_INTERVAL_MS = 12 * 60 * 1000;
+// Refresh proactively every 10 min (access token lives 15 min → 5 min buffer)
+const VALIDATION_INTERVAL_MS = 10 * 60 * 1000;
 
 export function useSessionValidator() {
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);

@@ -1,7 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { AxiosError } from 'axios';
 import { categoriesService } from '@/services/categories.service';
-import type { ApiErrorResponse } from '@/types/auth.types';
+import { extractThunkError } from '@/utils/extractThunkError';
 import type { PaginationParams, PaginatedResponse } from '@/types/pagination.types';
 import type {
   Category,
@@ -17,10 +16,7 @@ export const fetchCategoriesPaginatedThunk = createAsyncThunk<
   try {
     return await categoriesService.findAllPaginated(params);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al cargar categorías');
+    return rejectWithValue(extractThunkError(err, 'Error al cargar categorías'));
   }
 });
 
@@ -32,10 +28,7 @@ export const createCategoryThunk = createAsyncThunk<
   try {
     return await categoriesService.create(payload);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al crear la categoría');
+    return rejectWithValue(extractThunkError(err, 'Error al crear la categoría'));
   }
 });
 
@@ -47,10 +40,7 @@ export const updateCategoryThunk = createAsyncThunk<
   try {
     return await categoriesService.update(id, payload);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al actualizar la categoría');
+    return rejectWithValue(extractThunkError(err, 'Error al actualizar la categoría'));
   }
 });
 
@@ -63,9 +53,6 @@ export const deleteCategoryThunk = createAsyncThunk<
     await categoriesService.delete(id);
     return id;
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al eliminar la categoría');
+    return rejectWithValue(extractThunkError(err, 'Error al eliminar la categoría'));
   }
 });

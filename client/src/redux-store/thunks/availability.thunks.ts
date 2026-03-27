@@ -1,8 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { AxiosError } from 'axios';
 import { availabilityService } from '@/services/availability.service';
 import { doctorsService } from '@/services/doctors.service';
-import type { ApiErrorResponse } from '@/types/auth.types';
+import { extractThunkError } from '@/utils/extractThunkError';
 import type { PaginationParams, PaginatedResponse } from '@/types/pagination.types';
 import type {
   Availability,
@@ -24,10 +23,7 @@ export const fetchAvailabilityThunk = createAsyncThunk<
   try {
     return await availabilityService.findAllPaginated(pagination, doctorId);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al cargar disponibilidad');
+    return rejectWithValue(extractThunkError(err, 'Error al cargar disponibilidad'));
   }
 });
 
@@ -43,10 +39,7 @@ export const fetchAvailabilityDoctorsThunk = createAsyncThunk<
     });
     return result.rows;
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al cargar doctores');
+    return rejectWithValue(extractThunkError(err, 'Error al cargar doctores'));
   }
 });
 
@@ -58,10 +51,7 @@ export const createAvailabilityThunk = createAsyncThunk<
   try {
     return await availabilityService.create(payload);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al crear disponibilidad');
+    return rejectWithValue(extractThunkError(err, 'Error al crear disponibilidad'));
   }
 });
 
@@ -76,10 +66,7 @@ export const createBulkAvailabilityThunk = createAsyncThunk<
     );
     return results;
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al guardar disponibilidad');
+    return rejectWithValue(extractThunkError(err, 'Error al guardar disponibilidad'));
   }
 });
 
@@ -91,10 +78,7 @@ export const updateAvailabilityThunk = createAsyncThunk<
   try {
     return await availabilityService.update(id, payload);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al actualizar disponibilidad');
+    return rejectWithValue(extractThunkError(err, 'Error al actualizar disponibilidad'));
   }
 });
 
@@ -107,9 +91,6 @@ export const deleteAvailabilityThunk = createAsyncThunk<
     await availabilityService.delete(id);
     return id;
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al eliminar disponibilidad');
+    return rejectWithValue(extractThunkError(err, 'Error al eliminar disponibilidad'));
   }
 });

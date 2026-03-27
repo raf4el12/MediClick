@@ -14,6 +14,10 @@ import type { IAppointmentRepository } from '../../../appointments/domain/reposi
 import type { IDoctorRepository } from '../../../doctors/domain/repositories/doctor.repository.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
 import type { PrescriptionCreatedEvent } from '../../../../shared/mail/events/mail-events.interface.js';
+import {
+  DEFAULT_TIMEZONE,
+  DEFAULT_CLINIC_NAME,
+} from '../../../../shared/constants/defaults.constant.js';
 
 @Injectable()
 export class CreatePrescriptionUseCase {
@@ -88,9 +92,9 @@ export class CreatePrescriptionUseCase {
         patientName: `${appointment.patient.profile.name} ${appointment.patient.profile.lastName}`,
         patientUserId: appointment.patient.profile.userId,
         doctorName: `${appointment.schedule.doctor.profile.name} ${appointment.schedule.doctor.profile.lastName}`,
-        clinicName: appointment.schedule.doctor.clinic?.name ?? 'MediClick',
+        clinicName: appointment.schedule.doctor.clinic?.name ?? DEFAULT_CLINIC_NAME,
         clinicTimezone:
-          appointment.schedule.doctor.clinic?.timezone ?? 'America/Lima',
+          appointment.schedule.doctor.clinic?.timezone ?? DEFAULT_TIMEZONE,
         medications: dto.items.map((item) => ({
           medication: item.medication,
           dosage: item.dosage,

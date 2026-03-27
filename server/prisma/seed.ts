@@ -1117,16 +1117,18 @@ async function main() {
   console.log('   • 4 historiales médicos');
   console.log('   • 5 notificaciones');
   console.log('   • 12 feriados Perú ' + year + ' (globales, visibles para todas las clínicas)');
-  console.log('\n🔑 Credenciales de prueba:');
-  console.log('   admin@mediclick.com / 123456 (Super Admin)');
-  console.log('   adminlima@mediclick.com / 123456 (Admin Lima)');
-  console.log('   recepcion@mediclick.com / 123456 (Recepcionista)');
-  console.log('   ramirez@mediclick.com / 123456 (Doctor - Cardiólogo)');
-  console.log('   flores@mediclick.com / 123456 (Doctora - Dermatóloga)');
-  console.log('   chavez@mediclick.com / 123456 (Doctor - Arequipa)');
-  console.log('   juan@gmail.com / 123456 (Paciente)');
-  console.log('   maria@gmail.com / 123456 (Paciente)');
-  console.log('   pedro@gmail.com / 123456 (Paciente)');
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('\n🔑 Credenciales de prueba:');
+    console.log(`   admin@mediclick.com / ${PASSWORD} (Super Admin)`);
+    console.log(`   adminlima@mediclick.com / ${PASSWORD} (Admin Lima)`);
+    console.log(`   recepcion@mediclick.com / ${PASSWORD} (Recepcionista)`);
+    console.log(`   ramirez@mediclick.com / ${PASSWORD} (Doctor - Cardiólogo)`);
+    console.log(`   flores@mediclick.com / ${PASSWORD} (Doctora - Dermatóloga)`);
+    console.log(`   chavez@mediclick.com / ${PASSWORD} (Doctor - Arequipa)`);
+    console.log(`   juan@gmail.com / ${PASSWORD} (Paciente)`);
+    console.log(`   maria@gmail.com / ${PASSWORD} (Paciente)`);
+    console.log(`   pedro@gmail.com / ${PASSWORD} (Paciente)`);
+  }
 }
 
 main()

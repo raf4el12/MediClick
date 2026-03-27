@@ -13,6 +13,7 @@ import {
   todayStartInTimezone,
   utcDayRange,
 } from '../../../../shared/utils/date-time.utils.js';
+import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
 
 const scheduleInclude = {
   doctor: {
@@ -59,7 +60,7 @@ export class PrismaScheduleRepository implements IScheduleRepository {
     const { limit, offset, orderBy, orderByMode } = params;
 
     // Zona horaria de la sede (o fallback America/Lima)
-    const todayStart = todayStartInTimezone(filters.timezone ?? 'America/Lima');
+    const todayStart = todayStartInTimezone(filters.timezone ?? DEFAULT_TIMEZONE);
 
     // Nunca devolver fechas pasadas: forzar dateFrom >= hoy
     const effectiveDateFrom =

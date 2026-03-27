@@ -1,8 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { AxiosError } from 'axios';
 import { schedulesService } from '@/services/schedules.service';
 import { doctorsService } from '@/services/doctors.service';
-import type { ApiErrorResponse } from '@/types/auth.types';
+import { extractThunkError } from '@/utils/extractThunkError';
 import type { PaginationParams, PaginatedResponse } from '@/types/pagination.types';
 import type {
   Schedule,
@@ -25,10 +24,7 @@ export const fetchSchedulesThunk = createAsyncThunk<
   try {
     return await schedulesService.findAllPaginated(pagination, filters);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al cargar horarios');
+    return rejectWithValue(extractThunkError(err, 'Error al cargar horarios'));
   }
 });
 
@@ -44,10 +40,7 @@ export const fetchSchedulesDoctorsThunk = createAsyncThunk<
     });
     return result.rows;
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al cargar doctores');
+    return rejectWithValue(extractThunkError(err, 'Error al cargar doctores'));
   }
 });
 
@@ -59,9 +52,6 @@ export const generateSchedulesThunk = createAsyncThunk<
   try {
     return await schedulesService.generate(payload);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al generar horarios');
+    return rejectWithValue(extractThunkError(err, 'Error al generar horarios'));
   }
 });

@@ -21,6 +21,7 @@ import {
   scheduleDateToLocalDay,
 } from '../../../../shared/utils/date-time.utils.js';
 import { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
+import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
 
 @Injectable()
 export class CreatePatientAppointmentUseCase {
@@ -195,7 +196,7 @@ export class CreatePatientAppointmentUseCase {
         },
         specialty: appointment.schedule.specialty,
       },
-      timezone: appointment.schedule.doctor.clinic?.timezone ?? 'America/Lima',
+      timezone: appointment.schedule.doctor.clinic?.timezone ?? DEFAULT_TIMEZONE,
       hasPrescription: appointment.hasPrescription,
       notesCount: appointment.notesCount,
       createdAt: appointment.createdAt,

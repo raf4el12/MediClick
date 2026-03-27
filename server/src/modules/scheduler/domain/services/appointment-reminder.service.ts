@@ -4,6 +4,7 @@ import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { MailService } from '../../../../shared/mail/mail.service.js';
 import { CreateNotificationUseCase } from '../../../notifications/application/use-cases/create-notification.use-case.js';
 import { todayStartInTimezone } from '../../../../shared/utils/date-time.utils.js';
+import { DEFAULT_CLINIC_NAME } from '../../../../shared/constants/defaults.constant.js';
 
 @Injectable()
 export class AppointmentReminderService {
@@ -107,7 +108,7 @@ export class AppointmentReminderService {
       try {
         const patientName = `${appt.patient.profile.name} ${appt.patient.profile.lastName}`;
         const doctorName = `${appt.schedule.doctor.profile.name} ${appt.schedule.doctor.profile.lastName}`;
-        const clinicName = appt.schedule.doctor.clinic?.name ?? 'MediClick';
+        const clinicName = appt.schedule.doctor.clinic?.name ?? DEFAULT_CLINIC_NAME;
         const clinicTimezone =
           appt.schedule.doctor.clinic?.timezone ?? tz;
         const patientUserId = appt.patient.profile.userId;

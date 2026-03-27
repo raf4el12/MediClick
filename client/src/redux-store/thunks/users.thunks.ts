@@ -1,7 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { AxiosError } from 'axios';
 import { usersService } from '@/services/users.service';
-import type { ApiErrorResponse } from '@/types/auth.types';
+import { extractThunkError } from '@/utils/extractThunkError';
 import type { PaginationParams, PaginatedResponse } from '@/types/pagination.types';
 import type { User, CreateUserPayload, UpdateUserPayload } from '@/views/users/types';
 
@@ -18,10 +17,7 @@ export const fetchUsersThunk = createAsyncThunk<
   try {
     return await usersService.findAllPaginated(pagination, role);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al cargar usuarios');
+    return rejectWithValue(extractThunkError(err, 'Error al cargar usuarios'));
   }
 });
 
@@ -33,10 +29,7 @@ export const createUserThunk = createAsyncThunk<
   try {
     return await usersService.createInternal(payload);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al crear usuario');
+    return rejectWithValue(extractThunkError(err, 'Error al crear usuario'));
   }
 });
 
@@ -48,10 +41,7 @@ export const updateUserThunk = createAsyncThunk<
   try {
     return await usersService.update(id, payload);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al actualizar usuario');
+    return rejectWithValue(extractThunkError(err, 'Error al actualizar usuario'));
   }
 });
 
@@ -64,9 +54,6 @@ export const deleteUserThunk = createAsyncThunk<
     await usersService.remove(id);
     return id;
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al eliminar usuario');
+    return rejectWithValue(extractThunkError(err, 'Error al eliminar usuario'));
   }
 });

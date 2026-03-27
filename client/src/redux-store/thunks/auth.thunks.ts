@@ -1,8 +1,8 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { AxiosError } from 'axios';
 import { authService } from '@/services/auth.service';
-import type { AuthResponse, ApiErrorResponse, RegisterPatientRequest } from '@/types/auth.types';
+import type { AuthResponse, RegisterPatientRequest } from '@/types/auth.types';
 import { getDeviceId } from '@/utils/device-id';
+import { extractThunkError } from '@/utils/extractThunkError';
 
 interface LoginPayload {
   email: string;
@@ -20,10 +20,7 @@ export const loginThunk = createAsyncThunk<
       deviceId: getDeviceId(),
     });
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al iniciar sesión');
+    return rejectWithValue(extractThunkError(err, 'Error al iniciar sesión'));
   }
 });
 
@@ -35,10 +32,7 @@ export const registerThunk = createAsyncThunk<
   try {
     return await authService.register(data);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al registrar');
+    return rejectWithValue(extractThunkError(err, 'Error al registrar'));
   }
 });
 
@@ -48,10 +42,7 @@ export const logoutThunk = createAsyncThunk<void, void, { rejectValue: string }>
     try {
       await authService.logout({ deviceId: getDeviceId() });
     } catch (err) {
-      const error = err as AxiosError<ApiErrorResponse>;
-      return rejectWithValue(
-        (error.response?.data?.message as string) ?? 'Error al cerrar sesión',
-      );
+      return rejectWithValue(extractThunkError(err, 'Error al cerrar sesión'));
     }
   },
 );

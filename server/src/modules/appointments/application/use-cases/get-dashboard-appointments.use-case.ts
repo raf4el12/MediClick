@@ -8,6 +8,7 @@ import type { DashboardFilters } from '../../domain/interfaces/appointment-data.
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
+import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
 
 @Injectable()
 export class GetDashboardAppointmentsUseCase {
@@ -91,7 +92,7 @@ export class GetDashboardAppointmentsUseCase {
         },
         specialty: a.schedule.specialty,
       },
-      timezone: a.schedule.doctor.clinic?.timezone ?? 'America/Lima',
+      timezone: a.schedule.doctor.clinic?.timezone ?? DEFAULT_TIMEZONE,
       hasPrescription: a.hasPrescription,
       notesCount: a.notesCount,
       createdAt: a.createdAt,
