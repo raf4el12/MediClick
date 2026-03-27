@@ -21,6 +21,10 @@ import {
 } from '../../../../shared/utils/date-time.utils.js';
 import { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
 import type { AppointmentCancelledEvent } from '../../../../shared/mail/events/mail-events.interface.js';
+import {
+  DEFAULT_TIMEZONE,
+  DEFAULT_CLINIC_NAME,
+} from '../../../../shared/constants/defaults.constant.js';
 
 @Injectable()
 export class CancelAppointmentUseCase {
@@ -102,9 +106,9 @@ export class CancelAppointmentUseCase {
         patientName: `${updated.patient.profile.name} ${updated.patient.profile.lastName}`,
         patientUserId: updated.patient.profile.userId,
         doctorName: `${updated.schedule.doctor.profile.name} ${updated.schedule.doctor.profile.lastName}`,
-        clinicName: updated.schedule.doctor.clinic?.name ?? 'MediClick',
+        clinicName: updated.schedule.doctor.clinic?.name ?? DEFAULT_CLINIC_NAME,
         clinicTimezone:
-          updated.schedule.doctor.clinic?.timezone ?? 'America/Lima',
+          updated.schedule.doctor.clinic?.timezone ?? DEFAULT_TIMEZONE,
         scheduleDate: updated.schedule.scheduleDate,
         cancelReason: dto.reason ?? null,
       };
@@ -147,7 +151,7 @@ export class CancelAppointmentUseCase {
         },
         specialty: a.schedule.specialty,
       },
-      timezone: a.schedule.doctor.clinic?.timezone ?? 'America/Lima',
+      timezone: a.schedule.doctor.clinic?.timezone ?? DEFAULT_TIMEZONE,
       hasPrescription: a.hasPrescription,
       notesCount: a.notesCount,
       createdAt: a.createdAt,

@@ -8,6 +8,7 @@ import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
 import { dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
+import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
 
 @Injectable()
 export class CheckInAppointmentUseCase {
@@ -73,7 +74,7 @@ export class CheckInAppointmentUseCase {
         },
         specialty: a.schedule.specialty,
       },
-      timezone: a.schedule.doctor.clinic?.timezone ?? 'America/Lima',
+      timezone: a.schedule.doctor.clinic?.timezone ?? DEFAULT_TIMEZONE,
       hasPrescription: a.hasPrescription,
       notesCount: a.notesCount,
       createdAt: a.createdAt,

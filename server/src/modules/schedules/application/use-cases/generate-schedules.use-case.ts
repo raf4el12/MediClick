@@ -108,193 +108,19 @@ export class GenerateSchedulesUseCase {
     let totalDeleted = 0;
 
     for (const doctorId of doctorIds) {
-      // Obtener availability rules del doctor
-      let availabilities =
-        await this.availabilityRepository.findActiveByDoctorIds([doctorId]);
-
-      // Filtrar por especialidad si se especificó
-      if (dto.specialtyId) {
-        availabilities = availabilities.filter(
-          (a) => a.specialtyId === dto.specialtyId,
-        );
-      }
-
-      if (availabilities.length === 0) continue;
-
-      // Resolver clinicId del doctor
-      if (!doctorClinicCache.has(doctorId)) {
-        const doc = await this.doctorRepository.findById(doctorId);
-        doctorClinicCache.set(doctorId, doc?.clinicId ?? null);
-      }
-      const doctorClinicId = doctorClinicCache.get(doctorId) ?? null;
-
-      // ── Overwrite: eliminar horarios no reservados ──
-      if (dto.overwrite) {
-        const deleted =
-          await this.scheduleRepository.deleteUnbookedByDoctorAndDateRange(
-            doctorId,
-            rangeStart,
-            rangeEnd,
-          );
-        totalDeleted += deleted;
-      }
-
-      // Pre-cargar bloqueos activos del doctor para el rango
-      const scheduleBlocks =
-        await this.scheduleBlockRepository.findActiveByDoctorAndDateRange(
-          doctorId,
-          rangeStart,
-          rangeEnd,
-        );
-
-      // Obtener schedules existentes para evitar duplicados
-      const existingSchedules = await this.scheduleRepository.findExistingDates(
+      const result = await this.processDoctor(
         doctorId,
+        dto,
         dates,
+        rangeStart,
+        rangeEnd,
+        holidayDatesSet,
+        doctorClinicCache,
+        specialtyCache,
       );
-
-      const existingSet = new Set(
-        existingSchedules.map(
-          (s) =>
-            `${s.scheduleDate.toISOString().split('T')[0]}_${s.timeFrom.getTime()}_${s.timeTo.getTime()}`,
-        ),
-      );
-
-      const schedulesToCreate: CreateScheduleData[] = [];
-
-      for (const date of dates) {
-        const dateStr = date.toISOString().split('T')[0];
-
-        // Saltar feriados
-        if (holidayDatesSet.has(dateStr)) {
-          continue;
-        }
-
-        // Verificar si el día completo está bloqueado
-        const dateMs = date.getTime();
-        const isFullDayBlocked = scheduleBlocks.some((block) => {
-          if (block.type !== 'FULL_DAY') return false;
-          const blockStart = Date.UTC(
-            block.startDate.getUTCFullYear(),
-            block.startDate.getUTCMonth(),
-            block.startDate.getUTCDate(),
-          );
-          const blockEnd = Date.UTC(
-            block.endDate.getUTCFullYear(),
-            block.endDate.getUTCMonth(),
-            block.endDate.getUTCDate(),
-          );
-          return dateMs >= blockStart && dateMs <= blockEnd;
-        });
-
-        if (isFullDayBlocked) {
-          continue;
-        }
-
-        const jsDayOfWeek = date.getUTCDay();
-        const dayOfWeek = JS_DAY_TO_ENUM[jsDayOfWeek];
-
-        // Verificar vigencia y día de semana
-        const matchingRules = availabilities.filter((a) => {
-          if (a.dayOfWeek !== dayOfWeek) return false;
-          if (!a.isAvailable) return false;
-          if (!a.startDate || !a.endDate) return true;
-          const startMs = Date.UTC(
-            a.startDate.getUTCFullYear(),
-            a.startDate.getUTCMonth(),
-            a.startDate.getUTCDate(),
-          );
-          const endMs = Date.UTC(
-            a.endDate.getUTCFullYear(),
-            a.endDate.getUTCMonth(),
-            a.endDate.getUTCDate(),
-          );
-          return dateMs >= startMs && dateMs <= endMs;
-        });
-
-        // Recopilar bloqueos TIME_RANGE para este día
-        const timeRangeBlocks = scheduleBlocks.filter((block) => {
-          if (block.type !== 'TIME_RANGE') return false;
-          const blockStart = Date.UTC(
-            block.startDate.getUTCFullYear(),
-            block.startDate.getUTCMonth(),
-            block.startDate.getUTCDate(),
-          );
-          const blockEnd = Date.UTC(
-            block.endDate.getUTCFullYear(),
-            block.endDate.getUTCMonth(),
-            block.endDate.getUTCDate(),
-          );
-          return dateMs >= blockStart && dateMs <= blockEnd;
-        });
-
-        for (const rule of matchingRules) {
-          // Obtener la duración y buffer de la especialidad (con caché)
-          if (!specialtyCache.has(rule.specialtyId)) {
-            const specialty = await this.specialtyRepository.findById(
-              rule.specialtyId,
-            );
-            specialtyCache.set(rule.specialtyId, {
-              duration: specialty?.duration ?? null,
-              bufferMinutes: specialty?.bufferMinutes ?? 0,
-            });
-          }
-          const { duration, bufferMinutes } = specialtyCache.get(
-            rule.specialtyId,
-          )!;
-
-          // Fragmentar el rango en slots individuales si hay duración configurada
-          let slots: { startTime: Date; endTime: Date }[];
-          if (duration && duration > 0) {
-            slots = TimeSlotCalculatorService.generate(
-              rule.timeFrom,
-              rule.timeTo,
-              duration,
-              bufferMinutes,
-            );
-          } else {
-            slots = [{ startTime: rule.timeFrom, endTime: rule.timeTo }];
-          }
-
-          for (const slot of slots) {
-            // Verificar si el slot se solapa con algún bloqueo TIME_RANGE
-            const isSlotBlocked = timeRangeBlocks.some((block) => {
-              if (!block.timeFrom || !block.timeTo) return false;
-              return (
-                slot.startTime < block.timeTo && slot.endTime > block.timeFrom
-              );
-            });
-
-            if (isSlotBlocked) {
-              totalSkipped++;
-              continue;
-            }
-
-            const key = `${dateStr}_${slot.startTime.getTime()}_${slot.endTime.getTime()}`;
-
-            if (existingSet.has(key)) {
-              totalSkipped++;
-              continue;
-            }
-
-            existingSet.add(key);
-            schedulesToCreate.push({
-              doctorId,
-              specialtyId: rule.specialtyId,
-              scheduleDate: date,
-              timeFrom: slot.startTime,
-              timeTo: slot.endTime,
-              clinicId: doctorClinicId,
-            });
-          }
-        }
-      }
-
-      if (schedulesToCreate.length > 0) {
-        const created =
-          await this.scheduleRepository.createMany(schedulesToCreate);
-        totalGenerated += created;
-      }
+      totalGenerated += result.generated;
+      totalSkipped += result.skipped;
+      totalDeleted += result.deleted;
     }
 
     // Construir mensaje
@@ -308,6 +134,240 @@ export class GenerateSchedulesUseCase {
       deleted: totalDeleted,
       message: `Generación completada: ${parts.join(', ')}`,
     };
+  }
+
+  /**
+   * Procesa la generación de horarios para un doctor individual.
+   */
+  private async processDoctor(
+    doctorId: number,
+    dto: GenerateSchedulesDto,
+    dates: Date[],
+    rangeStart: Date,
+    rangeEnd: Date,
+    holidayDatesSet: Set<string>,
+    doctorClinicCache: Map<number, number | null>,
+    specialtyCache: Map<number, { duration: number | null; bufferMinutes: number }>,
+  ): Promise<{ generated: number; skipped: number; deleted: number }> {
+    let skipped = 0;
+    let deleted = 0;
+
+    let availabilities =
+      await this.availabilityRepository.findActiveByDoctorIds([doctorId]);
+
+    if (dto.specialtyId) {
+      availabilities = availabilities.filter(
+        (a) => a.specialtyId === dto.specialtyId,
+      );
+    }
+
+    if (availabilities.length === 0) {
+      return { generated: 0, skipped: 0, deleted: 0 };
+    }
+
+    // Resolver clinicId del doctor
+    if (!doctorClinicCache.has(doctorId)) {
+      const doc = await this.doctorRepository.findById(doctorId);
+      doctorClinicCache.set(doctorId, doc?.clinicId ?? null);
+    }
+    const doctorClinicId = doctorClinicCache.get(doctorId) ?? null;
+
+    if (dto.overwrite) {
+      deleted =
+        await this.scheduleRepository.deleteUnbookedByDoctorAndDateRange(
+          doctorId,
+          rangeStart,
+          rangeEnd,
+        );
+    }
+
+    const scheduleBlocks =
+      await this.scheduleBlockRepository.findActiveByDoctorAndDateRange(
+        doctorId,
+        rangeStart,
+        rangeEnd,
+      );
+
+    const existingSchedules = await this.scheduleRepository.findExistingDates(
+      doctorId,
+      dates,
+    );
+
+    const existingSet = new Set(
+      existingSchedules.map(
+        (s) =>
+          `${s.scheduleDate.toISOString().split('T')[0]}_${s.timeFrom.getTime()}_${s.timeTo.getTime()}`,
+      ),
+    );
+
+    const schedulesToCreate: CreateScheduleData[] = [];
+
+    for (const date of dates) {
+      const result = await this.processDayForDoctor(
+        date,
+        doctorId,
+        doctorClinicId,
+        availabilities,
+        scheduleBlocks,
+        holidayDatesSet,
+        existingSet,
+        specialtyCache,
+      );
+      schedulesToCreate.push(...result.slots);
+      skipped += result.skipped;
+    }
+
+    let generated = 0;
+    if (schedulesToCreate.length > 0) {
+      generated = await this.scheduleRepository.createMany(schedulesToCreate);
+    }
+
+    return { generated, skipped, deleted };
+  }
+
+  /**
+   * Procesa un día específico para un doctor: verifica feriados, bloqueos,
+   * y genera los slots correspondientes.
+   */
+  private async processDayForDoctor(
+    date: Date,
+    doctorId: number,
+    doctorClinicId: number | null,
+    availabilities: any[],
+    scheduleBlocks: any[],
+    holidayDatesSet: Set<string>,
+    existingSet: Set<string>,
+    specialtyCache: Map<number, { duration: number | null; bufferMinutes: number }>,
+  ): Promise<{ slots: CreateScheduleData[]; skipped: number }> {
+    const slots: CreateScheduleData[] = [];
+    let skipped = 0;
+    const dateStr = date.toISOString().split('T')[0];
+
+    if (holidayDatesSet.has(dateStr)) {
+      return { slots, skipped };
+    }
+
+    const dateMs = date.getTime();
+
+    if (this.isFullDayBlocked(dateMs, scheduleBlocks)) {
+      return { slots, skipped };
+    }
+
+    const dayOfWeek = JS_DAY_TO_ENUM[date.getUTCDay()];
+
+    const matchingRules = availabilities.filter((a) => {
+      if (a.dayOfWeek !== dayOfWeek || !a.isAvailable) return false;
+      if (!a.startDate || !a.endDate) return true;
+      const startMs = Date.UTC(a.startDate.getUTCFullYear(), a.startDate.getUTCMonth(), a.startDate.getUTCDate());
+      const endMs = Date.UTC(a.endDate.getUTCFullYear(), a.endDate.getUTCMonth(), a.endDate.getUTCDate());
+      return dateMs >= startMs && dateMs <= endMs;
+    });
+
+    const timeRangeBlocks = this.getTimeRangeBlocks(dateMs, scheduleBlocks);
+
+    for (const rule of matchingRules) {
+      const result = await this.generateSlotsForRule(
+        rule,
+        date,
+        dateStr,
+        doctorId,
+        doctorClinicId,
+        timeRangeBlocks,
+        existingSet,
+        specialtyCache,
+      );
+      slots.push(...result.slots);
+      skipped += result.skipped;
+    }
+
+    return { slots, skipped };
+  }
+
+  /**
+   * Genera los slots individuales para una regla de disponibilidad.
+   */
+  private async generateSlotsForRule(
+    rule: any,
+    date: Date,
+    dateStr: string,
+    doctorId: number,
+    doctorClinicId: number | null,
+    timeRangeBlocks: any[],
+    existingSet: Set<string>,
+    specialtyCache: Map<number, { duration: number | null; bufferMinutes: number }>,
+  ): Promise<{ slots: CreateScheduleData[]; skipped: number }> {
+    const slots: CreateScheduleData[] = [];
+    let skipped = 0;
+
+    if (!specialtyCache.has(rule.specialtyId)) {
+      const specialty = await this.specialtyRepository.findById(rule.specialtyId);
+      specialtyCache.set(rule.specialtyId, {
+        duration: specialty?.duration ?? null,
+        bufferMinutes: specialty?.bufferMinutes ?? 0,
+      });
+    }
+    const { duration, bufferMinutes } = specialtyCache.get(rule.specialtyId)!;
+
+    let timeSlots: { startTime: Date; endTime: Date }[];
+    if (duration && duration > 0) {
+      timeSlots = TimeSlotCalculatorService.generate(
+        rule.timeFrom,
+        rule.timeTo,
+        duration,
+        bufferMinutes,
+      );
+    } else {
+      timeSlots = [{ startTime: rule.timeFrom, endTime: rule.timeTo }];
+    }
+
+    for (const slot of timeSlots) {
+      const isBlocked = timeRangeBlocks.some((block) => {
+        if (!block.timeFrom || !block.timeTo) return false;
+        return slot.startTime < block.timeTo && slot.endTime > block.timeFrom;
+      });
+
+      if (isBlocked) {
+        skipped++;
+        continue;
+      }
+
+      const key = `${dateStr}_${slot.startTime.getTime()}_${slot.endTime.getTime()}`;
+
+      if (existingSet.has(key)) {
+        skipped++;
+        continue;
+      }
+
+      existingSet.add(key);
+      slots.push({
+        doctorId,
+        specialtyId: rule.specialtyId,
+        scheduleDate: date,
+        timeFrom: slot.startTime,
+        timeTo: slot.endTime,
+        clinicId: doctorClinicId,
+      });
+    }
+
+    return { slots, skipped };
+  }
+
+  private isFullDayBlocked(dateMs: number, scheduleBlocks: any[]): boolean {
+    return scheduleBlocks.some((block) => {
+      if (block.type !== 'FULL_DAY') return false;
+      const blockStart = Date.UTC(block.startDate.getUTCFullYear(), block.startDate.getUTCMonth(), block.startDate.getUTCDate());
+      const blockEnd = Date.UTC(block.endDate.getUTCFullYear(), block.endDate.getUTCMonth(), block.endDate.getUTCDate());
+      return dateMs >= blockStart && dateMs <= blockEnd;
+    });
+  }
+
+  private getTimeRangeBlocks(dateMs: number, scheduleBlocks: any[]): any[] {
+    return scheduleBlocks.filter((block) => {
+      if (block.type !== 'TIME_RANGE') return false;
+      const blockStart = Date.UTC(block.startDate.getUTCFullYear(), block.startDate.getUTCMonth(), block.startDate.getUTCDate());
+      const blockEnd = Date.UTC(block.endDate.getUTCFullYear(), block.endDate.getUTCMonth(), block.endDate.getUTCDate());
+      return dateMs >= blockStart && dateMs <= blockEnd;
+    });
   }
 
   /**

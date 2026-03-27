@@ -5,6 +5,7 @@ import type { IScheduleRepository } from '../../domain/repositories/schedule.rep
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
 import { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
+import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
 
 @Injectable()
 export class FindAllSchedulesUseCase {
@@ -71,7 +72,7 @@ export class FindAllSchedulesUseCase {
         lastName: s.doctor.profile.lastName,
       },
       specialty: s.specialty,
-      timezone: s.doctor.clinic?.timezone ?? 'America/Lima',
+      timezone: s.doctor.clinic?.timezone ?? DEFAULT_TIMEZONE,
       createdAt: s.createdAt,
     }));
 

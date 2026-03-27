@@ -15,6 +15,7 @@ import {
   utcDayRange,
   todayStartInTimezone,
 } from '../../../../shared/utils/date-time.utils.js';
+import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
 
 const appointmentInclude = {
   patient: {
@@ -148,7 +149,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       deleted: false,
       ...(filters.status && { status: filters.status }),
       ...(filters.upcoming && {
-        schedule: { scheduleDate: { gte: todayStartInTimezone(filters.timezone ?? 'America/Lima') } },
+        schedule: { scheduleDate: { gte: todayStartInTimezone(filters.timezone ?? DEFAULT_TIMEZONE) } },
         status: filters.status || { notIn: ['CANCELLED', 'NO_SHOW'] },
       }),
     };

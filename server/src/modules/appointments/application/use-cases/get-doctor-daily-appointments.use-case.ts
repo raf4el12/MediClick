@@ -7,6 +7,7 @@ import {
   todayStartInTimezone,
 } from '../../../../shared/utils/date-time.utils.js';
 import { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
+import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
 
 @Injectable()
 export class GetDoctorDailyAppointmentsUseCase {
@@ -65,7 +66,7 @@ export class GetDoctorDailyAppointmentsUseCase {
         },
         specialty: a.schedule.specialty,
       },
-      timezone: a.schedule.doctor.clinic?.timezone ?? 'America/Lima',
+      timezone: a.schedule.doctor.clinic?.timezone ?? DEFAULT_TIMEZONE,
       hasPrescription: a.hasPrescription,
       notesCount: a.notesCount,
       createdAt: a.createdAt,

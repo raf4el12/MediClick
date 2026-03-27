@@ -14,6 +14,7 @@ import {
 } from '@/redux-store/slices/appointments';
 import { fetchAppointmentsThunk } from '@/redux-store/thunks/appointments.thunks';
 import { appointmentsService } from '@/services/appointments.service';
+import { extractApiError } from '@/utils/extractApiError';
 import type { Appointment, AppointmentFilters } from '../types';
 
 export function useAppointments() {
@@ -30,6 +31,7 @@ export function useAppointments() {
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [detailAppointment, setDetailAppointment] = useState<Appointment | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const fetchData = useCallback(() => {
     void dispatch(
@@ -110,39 +112,43 @@ export function useAppointments() {
 
   const handleCheckIn = async (id: number) => {
     try {
+      setActionError(null);
       await appointmentsService.checkIn(id);
       fetchData();
-    } catch {
-      // Error handled by UI
+    } catch (err: unknown) {
+      setActionError(extractApiError(err, 'Error al registrar llegada').message);
     }
   };
 
   const handleCancel = async (id: number, reason: string) => {
     try {
+      setActionError(null);
       await appointmentsService.cancel(id, { reason });
       fetchData();
       closeCancelDialog();
-    } catch {
-      // Error handled by UI
+    } catch (err: unknown) {
+      setActionError(extractApiError(err, 'Error al cancelar la cita').message);
     }
   };
 
   const handleReschedule = async (id: number, newScheduleId: number, startTime: string, endTime: string, reason?: string) => {
     try {
+      setActionError(null);
       await appointmentsService.reschedule(id, { newScheduleId, startTime, endTime, reason });
       fetchData();
       closeRescheduleDialog();
-    } catch {
-      // Error handled by UI
+    } catch (err: unknown) {
+      setActionError(extractApiError(err, 'Error al reagendar la cita').message);
     }
   };
 
   const handleComplete = async (id: number) => {
     try {
+      setActionError(null);
       await appointmentsService.complete(id);
       fetchData();
-    } catch {
-      // Error handled by UI
+    } catch (err: unknown) {
+      setActionError(extractApiError(err, 'Error al completar la cita').message);
     }
   };
 
@@ -176,6 +182,8 @@ export function useAppointments() {
     handleCancel,
     handleReschedule,
     handleComplete,
+    actionError,
+    clearActionError: () => setActionError(null),
     refreshData: fetchData,
   };
 }

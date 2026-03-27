@@ -90,24 +90,6 @@ export class NotificationController {
     return this.countUnreadUseCase.execute(userId);
   }
 
-  @Patch(':id/read')
-  @Auth(
-    UserRole.ADMIN,
-    UserRole.DOCTOR,
-    UserRole.PATIENT,
-    UserRole.RECEPTIONIST,
-  )
-  @ApiOperation({ summary: 'Marcar notificación como leída' })
-  @ApiResponse({ status: 200, type: NotificationResponseDto })
-  @ApiResponse({ status: 403, description: 'No es tu notificación' })
-  @ApiResponse({ status: 404, description: 'Notificación no encontrada' })
-  async markAsRead(
-    @CurrentUser('id') userId: number,
-    @Param('id', ParseIntPipe) id: number,
-  ): Promise<NotificationResponseDto> {
-    return this.markNotificationReadUseCase.execute(userId, id);
-  }
-
   @Patch('read-all')
   @Auth(
     UserRole.ADMIN,
@@ -124,6 +106,24 @@ export class NotificationController {
     @CurrentUser('id') userId: number,
   ): Promise<{ markedCount: number }> {
     return this.markAllReadUseCase.execute(userId);
+  }
+
+  @Patch(':id/read')
+  @Auth(
+    UserRole.ADMIN,
+    UserRole.DOCTOR,
+    UserRole.PATIENT,
+    UserRole.RECEPTIONIST,
+  )
+  @ApiOperation({ summary: 'Marcar notificación como leída' })
+  @ApiResponse({ status: 200, type: NotificationResponseDto })
+  @ApiResponse({ status: 403, description: 'No es tu notificación' })
+  @ApiResponse({ status: 404, description: 'Notificación no encontrada' })
+  async markAsRead(
+    @CurrentUser('id') userId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<NotificationResponseDto> {
+    return this.markNotificationReadUseCase.execute(userId, id);
   }
 
   @Delete(':id')

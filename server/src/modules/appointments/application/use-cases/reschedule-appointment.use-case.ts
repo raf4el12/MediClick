@@ -15,6 +15,7 @@ import {
   dateToTimeString,
   toMinutesUTC,
 } from '../../../../shared/utils/date-time.utils.js';
+import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
 
 @Injectable()
 export class RescheduleAppointmentUseCase {
@@ -137,7 +138,7 @@ export class RescheduleAppointmentUseCase {
         },
         specialty: a.schedule.specialty,
       },
-      timezone: a.schedule.doctor.clinic?.timezone ?? 'America/Lima',
+      timezone: a.schedule.doctor.clinic?.timezone ?? DEFAULT_TIMEZONE,
       hasPrescription: a.hasPrescription,
       notesCount: a.notesCount,
       createdAt: a.createdAt,

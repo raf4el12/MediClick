@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PdfService } from '../../../../shared/pdf/pdf.service.js';
 import type { TDocumentDefinitions, Content } from 'pdfmake/interfaces.js';
 import type { PrescriptionForPdf } from '../interfaces/prescription-data.interface.js';
+import { DEFAULT_CLINIC_NAME } from '../../../../shared/constants/defaults.constant.js';
 
 @Injectable()
 export class PrescriptionPdfService {
@@ -20,7 +21,7 @@ export class PrescriptionPdfService {
     const specialty = data.appointment.schedule.specialty;
     const scheduleDate = new Date(data.appointment.schedule.scheduleDate);
 
-    const clinicName = clinic?.name ?? 'MediClick';
+    const clinicName = clinic?.name ?? DEFAULT_CLINIC_NAME;
     const doctorFullName = `${doctor.profile.name} ${doctor.profile.lastName}`;
     const patientFullName = `${patient.profile.name} ${patient.profile.lastName}`;
 

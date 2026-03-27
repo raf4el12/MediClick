@@ -1,8 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { AxiosError } from 'axios';
 import { doctorsService } from '@/services/doctors.service';
 import { specialtiesService } from '@/services/specialties.service';
-import type { ApiErrorResponse } from '@/types/auth.types';
+import { extractThunkError } from '@/utils/extractThunkError';
 import type { PaginationParams, PaginatedResponse } from '@/types/pagination.types';
 import type { Doctor, OnboardDoctorPayload } from '@/views/doctors/types';
 import type { Specialty } from '@/views/specialties/types';
@@ -20,10 +19,7 @@ export const fetchDoctorsThunk = createAsyncThunk<
   try {
     return await doctorsService.findAllPaginated(pagination, specialtyId);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al cargar doctores');
+    return rejectWithValue(extractThunkError(err, 'Error al cargar doctores'));
   }
 });
 
@@ -39,10 +35,7 @@ export const fetchDoctorSpecialtiesThunk = createAsyncThunk<
     });
     return result.rows;
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al cargar especialidades');
+    return rejectWithValue(extractThunkError(err, 'Error al cargar especialidades'));
   }
 });
 
@@ -54,9 +47,6 @@ export const onboardDoctorThunk = createAsyncThunk<
   try {
     return await doctorsService.onboard(payload);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al registrar el doctor');
+    return rejectWithValue(extractThunkError(err, 'Error al registrar el doctor'));
   }
 });

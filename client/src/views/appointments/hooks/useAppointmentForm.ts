@@ -226,10 +226,9 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
         onSuccess();
         onClose();
       }
-    } catch (err: any) {
-      const isConflict =
-        (typeof err === 'string' && err.toLowerCase().includes('superpone')) ||
-        err?.response?.status === 409;
+    } catch (err: unknown) {
+      const { message, status } = (await import('@/utils/extractApiError')).extractApiError(err, 'Error al crear la cita');
+      const isConflict = status === 409 || message.toLowerCase().includes('superpone');
 
       if (isConflict) {
         setSelectedScheduleId(null);
@@ -238,7 +237,7 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
         setActiveStep(2);
         setError('El horario seleccionado ya fue reservado. Selecciona otro horario disponible.');
       } else {
-        setError(typeof err === 'string' ? err : 'Error al crear la cita');
+        setError(message);
       }
     } finally {
       setSubmitting(false);

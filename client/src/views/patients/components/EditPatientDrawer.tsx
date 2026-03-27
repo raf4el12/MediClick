@@ -111,9 +111,9 @@ export function EditPatientDrawer({ open, patient, onClose, onSuccess }: EditPat
                 chronicConditions: values.chronicConditions || undefined,
             });
             onSuccess();
-        } catch (err: any) {
-            const msg = err?.response?.data?.message;
-            setSubmitError(Array.isArray(msg) ? msg[0] : msg ?? 'Error al actualizar el paciente');
+        } catch (err: unknown) {
+            const { message } = (await import('@/utils/extractApiError')).extractApiError(err, 'Error al actualizar el paciente');
+            setSubmitError(message);
         } finally {
             setIsLoading(false);
         }

@@ -305,7 +305,7 @@ model Appointments {
   createdAt     DateTime          @default(now())
   updatedAt     DateTime?
 
-  patient  Patients  @relation(fields: [patientId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  patient  Patients  @relation(fields: [patientId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   schedule Schedules @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
   clinic   Clinics?  @relation(fields: [clinicId], references: [id], onDelete: SetNull)
 
@@ -358,6 +358,8 @@ model PrescriptionItems {
   duration       String // Duración (Por 5 días)
   notes          String? // Notas extra por medicina
   prescription   Prescriptions @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+
+  @@index([prescriptionId])
 }
 
 // MODELO NUEVO: Transacciones Financieras (Output para el negocio)
@@ -393,6 +395,7 @@ model Reviews {
   patient Patients @relation(fields: [patientId], references: [id])
 
   @@index([doctorId])
+  @@index([patientId])
 }
 
 model Notifications {

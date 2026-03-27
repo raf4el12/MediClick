@@ -6,6 +6,7 @@ import type { IAppointmentRepository } from '../../domain/repositories/appointme
 import type { IPatientRepository } from '../../../patients/domain/repositories/patient.repository.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
+import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
 
 @Injectable()
 export class GetMyAppointmentsUseCase {
@@ -44,7 +45,7 @@ export class GetMyAppointmentsUseCase {
         ...(filterDto.status && { status: filterDto.status }),
         ...(filterDto.upcoming !== undefined && {
           upcoming: filterDto.upcoming,
-          timezone: 'America/Lima',
+          timezone: DEFAULT_TIMEZONE,
         }),
       },
     );
@@ -81,7 +82,7 @@ export class GetMyAppointmentsUseCase {
         },
         specialty: a.schedule.specialty,
       },
-      timezone: a.schedule.doctor.clinic?.timezone ?? 'America/Lima',
+      timezone: a.schedule.doctor.clinic?.timezone ?? DEFAULT_TIMEZONE,
       hasPrescription: a.hasPrescription,
       notesCount: a.notesCount,
       createdAt: a.createdAt,

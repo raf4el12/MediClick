@@ -1,7 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { AxiosError } from 'axios';
 import { clinicsService } from '@/services/clinics.service';
-import type { ApiErrorResponse } from '@/types/auth.types';
+import { extractThunkError } from '@/utils/extractThunkError';
 import type { PaginationParams, PaginatedResponse } from '@/types/pagination.types';
 import type {
   Clinic,
@@ -17,10 +16,7 @@ export const fetchClinicsPaginatedThunk = createAsyncThunk<
   try {
     return await clinicsService.findAllPaginated(params);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al cargar sedes');
+    return rejectWithValue(extractThunkError(err, 'Error al cargar sedes'));
   }
 });
 
@@ -32,10 +28,7 @@ export const createClinicThunk = createAsyncThunk<
   try {
     return await clinicsService.create(payload);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al crear la sede');
+    return rejectWithValue(extractThunkError(err, 'Error al crear la sede'));
   }
 });
 
@@ -47,10 +40,7 @@ export const updateClinicThunk = createAsyncThunk<
   try {
     return await clinicsService.update(id, payload);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al actualizar la sede');
+    return rejectWithValue(extractThunkError(err, 'Error al actualizar la sede'));
   }
 });
 
@@ -63,9 +53,6 @@ export const deleteClinicThunk = createAsyncThunk<
     await clinicsService.delete(id);
     return id;
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al eliminar la sede');
+    return rejectWithValue(extractThunkError(err, 'Error al eliminar la sede'));
   }
 });

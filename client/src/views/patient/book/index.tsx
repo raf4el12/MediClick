@@ -180,10 +180,8 @@ export default function PatientBookView() {
         reason: reason || undefined,
       });
       setSuccess(true);
-    } catch (err: any) {
-      const status = err?.response?.status;
-      const msg = err?.response?.data?.message;
-      const errorMsg = Array.isArray(msg) ? msg.join('. ') : msg || 'Error al reservar la cita';
+    } catch (err: unknown) {
+      const { message: errorMsg, status } = (await import('@/utils/extractApiError')).extractApiError(err, 'Error al reservar la cita');
 
       // Si el slot ya fue tomado (409 Conflict), refrescar slots y volver al paso de horarios
       if (status === 409) {

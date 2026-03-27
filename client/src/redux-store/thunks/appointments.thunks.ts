@@ -1,7 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { AxiosError } from 'axios';
 import { appointmentsService } from '@/services/appointments.service';
-import type { ApiErrorResponse } from '@/types/auth.types';
+import { extractThunkError } from '@/utils/extractThunkError';
 import type { PaginationParams, PaginatedResponse } from '@/types/pagination.types';
 import type {
   Appointment,
@@ -22,10 +21,7 @@ export const fetchAppointmentsThunk = createAsyncThunk<
   try {
     return await appointmentsService.findAllPaginated(pagination, filters);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al cargar citas');
+    return rejectWithValue(extractThunkError(err, 'Error al cargar citas'));
   }
 });
 
@@ -37,9 +33,6 @@ export const createAppointmentThunk = createAsyncThunk<
   try {
     return await appointmentsService.create(payload);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al crear la cita');
+    return rejectWithValue(extractThunkError(err, 'Error al crear la cita'));
   }
 });

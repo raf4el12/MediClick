@@ -1,7 +1,6 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { AxiosError } from 'axios';
 import { patientsService } from '@/services/patients.service';
-import type { ApiErrorResponse } from '@/types/auth.types';
+import { extractThunkError } from '@/utils/extractThunkError';
 import type { PaginationParams, PaginatedResponse } from '@/types/pagination.types';
 import type { Patient, CreatePatientPayload } from '@/views/patients/types';
 
@@ -13,10 +12,7 @@ export const fetchPatientsThunk = createAsyncThunk<
   try {
     return await patientsService.findAllPaginated(pagination);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al cargar pacientes');
+    return rejectWithValue(extractThunkError(err, 'Error al cargar pacientes'));
   }
 });
 
@@ -28,9 +24,6 @@ export const createPatientThunk = createAsyncThunk<
   try {
     return await patientsService.create(payload);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al registrar el paciente');
+    return rejectWithValue(extractThunkError(err, 'Error al registrar el paciente'));
   }
 });

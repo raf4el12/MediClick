@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import * as Handlebars from 'handlebars';
 import * as fs from 'fs';
 import * as path from 'path';
+import { DEFAULT_TIMEZONE } from '../constants/defaults.constant.js';
 
 @Injectable()
 export class TemplateService {
@@ -36,7 +37,7 @@ export class TemplateService {
       (date: Date | string, timezone: string) => {
         const d = typeof date === 'string' ? new Date(date) : date;
         return new Intl.DateTimeFormat('es-PE', {
-          timeZone: timezone || 'America/Lima',
+          timeZone: timezone || DEFAULT_TIMEZONE,
           dateStyle: 'long',
         }).format(d);
       },

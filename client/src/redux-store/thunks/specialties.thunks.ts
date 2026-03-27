@@ -1,8 +1,7 @@
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import { AxiosError } from 'axios';
 import { specialtiesService } from '@/services/specialties.service';
 import { categoriesService } from '@/services/categories.service';
-import type { ApiErrorResponse } from '@/types/auth.types';
+import { extractThunkError } from '@/utils/extractThunkError';
 import type { PaginationParams, PaginatedResponse } from '@/types/pagination.types';
 import type {
   Specialty,
@@ -24,10 +23,7 @@ export const fetchSpecialtiesThunk = createAsyncThunk<
   try {
     return await specialtiesService.findAllPaginated(pagination, categoryId);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al cargar especialidades');
+    return rejectWithValue(extractThunkError(err, 'Error al cargar especialidades'));
   }
 });
 
@@ -39,10 +35,7 @@ export const fetchCategoriesThunk = createAsyncThunk<
   try {
     return await categoriesService.findAll();
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al cargar categorías');
+    return rejectWithValue(extractThunkError(err, 'Error al cargar categorías'));
   }
 });
 
@@ -54,10 +47,7 @@ export const createSpecialtyThunk = createAsyncThunk<
   try {
     return await specialtiesService.create(payload);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al crear la especialidad');
+    return rejectWithValue(extractThunkError(err, 'Error al crear la especialidad'));
   }
 });
 
@@ -69,10 +59,7 @@ export const updateSpecialtyThunk = createAsyncThunk<
   try {
     return await specialtiesService.update(id, payload);
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al actualizar la especialidad');
+    return rejectWithValue(extractThunkError(err, 'Error al actualizar la especialidad'));
   }
 });
 
@@ -85,9 +72,6 @@ export const deleteSpecialtyThunk = createAsyncThunk<
     await specialtiesService.delete(id);
     return id;
   } catch (err) {
-    const error = err as AxiosError<ApiErrorResponse>;
-    const message = error.response?.data?.message;
-    const errorText = Array.isArray(message) ? message[0] : message;
-    return rejectWithValue(errorText ?? 'Error al eliminar la especialidad');
+    return rejectWithValue(extractThunkError(err, 'Error al eliminar la especialidad'));
   }
 });
