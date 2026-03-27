@@ -3,22 +3,36 @@
 import dynamic from 'next/dynamic';
 import Grid from '@mui/material/Grid';
 import Collapse from '@mui/material/Collapse';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
+import Box from '@mui/material/Box';
 import { useAppointments } from './hooks/useAppointments';
 import { AppointmentsTable } from './components/AppointmentsTable';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
 
+const DynamicLoading = () => (
+  <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+    <CircularProgress size={28} />
+  </Box>
+);
+
 const AppointmentDetailDialog = dynamic(
   () => import('./components/AppointmentDetailDialog').then((m) => m.AppointmentDetailDialog),
+  { loading: DynamicLoading },
 );
 const CreateAppointmentDialog = dynamic(
   () => import('./components/CreateAppointmentDialog').then((m) => m.CreateAppointmentDialog),
+  { loading: DynamicLoading },
 );
 const CancelAppointmentDialog = dynamic(
   () => import('./components/CancelAppointmentDialog').then((m) => m.CancelAppointmentDialog),
+  { loading: DynamicLoading },
 );
 const RescheduleAppointmentDialog = dynamic(
   () => import('./components/RescheduleAppointmentDialog').then((m) => m.RescheduleAppointmentDialog),
+  { loading: DynamicLoading },
 );
 
 export default function AppointmentsView() {
@@ -86,6 +100,17 @@ export default function AppointmentsView() {
       />
 
       <SuccessSnackbar snackbar={snackbar} onClose={closeSnackbar} />
+
+      <Snackbar
+        open={!!controller.actionError}
+        autoHideDuration={5000}
+        onClose={controller.clearActionError}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="error" onClose={controller.clearActionError} variant="filled">
+          {controller.actionError}
+        </Alert>
+      </Snackbar>
     </>
   );
 }

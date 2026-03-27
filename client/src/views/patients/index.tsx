@@ -7,11 +7,20 @@ import { PatientsTable } from './components/PatientsTable';
 import { EditPatientDrawer } from './components/EditPatientDrawer';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog/ConfirmDialog';
 import dynamic from 'next/dynamic';
+import CircularProgress from '@mui/material/CircularProgress';
+import Box from '@mui/material/Box';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
 
+const DynamicLoading = () => (
+  <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+    <CircularProgress size={28} />
+  </Box>
+);
+
 const PatientDetailDialog = dynamic(
   () => import('./components/PatientDetailDialog').then((m) => m.PatientDetailDialog),
+  { loading: DynamicLoading },
 );
 
 export default function PatientsView() {

@@ -9,7 +9,7 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
+import { UserRole, toUserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth } from '../../../../shared/decorators/index.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreateAppointmentDto } from '../../application/dto/create-appointment.dto.js';
@@ -194,7 +194,7 @@ export class AppointmentController {
     @Body() dto: CancelAppointmentDto,
     @CurrentUser('role') userRole: string,
   ): Promise<AppointmentResponseDto> {
-    return this.cancelAppointmentUseCase.execute(id, dto, userRole as any);
+    return this.cancelAppointmentUseCase.execute(id, dto, toUserRole(userRole));
   }
 
   @Patch(':id/confirm')

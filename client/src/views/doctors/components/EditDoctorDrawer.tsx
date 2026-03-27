@@ -116,9 +116,9 @@ export function EditDoctorDrawer({ open, doctor, specialties, clinics, onClose, 
                 specialtyIds: values.specialtyIds,
             });
             onSuccess();
-        } catch (err: any) {
-            const msg = err?.response?.data?.message;
-            setSubmitError(Array.isArray(msg) ? msg[0] : msg ?? 'Error al actualizar el doctor');
+        } catch (err: unknown) {
+            const { message } = (await import('@/utils/extractApiError')).extractApiError(err, 'Error al actualizar el doctor');
+            setSubmitError(message);
         } finally {
             setIsLoading(false);
         }
