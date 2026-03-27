@@ -72,7 +72,7 @@ export const ClinicalNotePanel = memo(function ClinicalNotePanel({
           </Typography>
         }
         action={
-          <IconButton size="small" onClick={onClose}>
+          <IconButton size="small" aria-label="Cerrar notas clínicas" onClick={onClose}>
             <i className="ri-close-line" style={{ fontSize: 18 }} />
           </IconButton>
         }

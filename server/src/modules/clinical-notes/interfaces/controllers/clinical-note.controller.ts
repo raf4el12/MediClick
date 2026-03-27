@@ -47,8 +47,9 @@ export class ClinicalNoteController {
   @ApiResponse({ status: 403, description: 'No es el doctor de esta cita' })
   async findByAppointment(
     @CurrentUser('id') userId: number,
+    @CurrentUser('role') role: string,
     @Param('appointmentId', ParseIntPipe) appointmentId: number,
   ): Promise<ClinicalNoteResponseDto[]> {
-    return this.findByAppointmentUseCase.execute(userId, appointmentId);
+    return this.findByAppointmentUseCase.execute(userId, appointmentId, role);
   }
 }

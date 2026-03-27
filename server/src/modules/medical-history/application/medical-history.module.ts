@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PatientsModule } from '../../patients/application/patients.module.js';
+import { DoctorsModule } from '../../doctors/application/doctors.module.js';
 import { PrismaMedicalHistoryRepository } from '../infrastructure/persistence/prisma-medical-history.repository.js';
 import { CreateMedicalHistoryUseCase } from './use-cases/create-medical-history.use-case.js';
 import { FindMedicalHistoryByPatientUseCase } from './use-cases/find-medical-history-by-patient.use-case.js';
@@ -9,7 +10,7 @@ import { DeleteMedicalHistoryUseCase } from './use-cases/delete-medical-history.
 import { MedicalHistoryController } from '../interfaces/controllers/medical-history.controller.js';
 
 @Module({
-  imports: [PatientsModule],
+  imports: [PatientsModule, DoctorsModule],
   controllers: [MedicalHistoryController],
   providers: [
     {

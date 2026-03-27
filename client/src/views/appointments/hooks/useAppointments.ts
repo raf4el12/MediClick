@@ -11,10 +11,12 @@ import {
   selectAppointmentsFilters,
   setAppointmentsPagination,
   setAppointmentsFilters,
+  updateAppointmentLocally,
 } from '@/redux-store/slices/appointments';
 import { fetchAppointmentsThunk } from '@/redux-store/thunks/appointments.thunks';
 import { appointmentsService } from '@/services/appointments.service';
 import { extractApiError } from '@/utils/extractApiError';
+import { AppointmentStatus } from '../types';
 import type { Appointment, AppointmentFilters } from '../types';
 
 export function useAppointments() {
@@ -113,9 +115,11 @@ export function useAppointments() {
   const handleCheckIn = async (id: number) => {
     try {
       setActionError(null);
+      dispatch(updateAppointmentLocally({ id, changes: { status: AppointmentStatus.IN_PROGRESS } }));
       await appointmentsService.checkIn(id);
       fetchData();
     } catch (err: unknown) {
+      fetchData();
       setActionError(extractApiError(err, 'Error al registrar llegada').message);
     }
   };
@@ -123,10 +127,12 @@ export function useAppointments() {
   const handleCancel = async (id: number, reason: string) => {
     try {
       setActionError(null);
+      dispatch(updateAppointmentLocally({ id, changes: { status: AppointmentStatus.CANCELLED, cancelReason: reason } }));
       await appointmentsService.cancel(id, { reason });
-      fetchData();
       closeCancelDialog();
+      fetchData();
     } catch (err: unknown) {
+      fetchData();
       setActionError(extractApiError(err, 'Error al cancelar la cita').message);
     }
   };
@@ -135,8 +141,8 @@ export function useAppointments() {
     try {
       setActionError(null);
       await appointmentsService.reschedule(id, { newScheduleId, startTime, endTime, reason });
-      fetchData();
       closeRescheduleDialog();
+      fetchData();
     } catch (err: unknown) {
       setActionError(extractApiError(err, 'Error al reagendar la cita').message);
     }
@@ -145,9 +151,11 @@ export function useAppointments() {
   const handleComplete = async (id: number) => {
     try {
       setActionError(null);
+      dispatch(updateAppointmentLocally({ id, changes: { status: AppointmentStatus.COMPLETED } }));
       await appointmentsService.complete(id);
       fetchData();
     } catch (err: unknown) {
+      fetchData();
       setActionError(extractApiError(err, 'Error al completar la cita').message);
     }
   };

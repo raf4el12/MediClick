@@ -62,7 +62,7 @@ export function LoginForm() {
     if (isAuthenticated) {
       dispatch(resetAuth());
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- Intentional: only run on mount to clear stale persisted auth state
 
   useEffect(() => {
     if (loginDispatched.current && isAuthenticated && user) {

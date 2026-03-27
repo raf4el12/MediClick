@@ -3,7 +3,6 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
-  ConflictException,
 } from '@nestjs/common';
 import { RescheduleAppointmentDto } from '../dto/reschedule-appointment.dto.js';
 import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
@@ -80,27 +79,20 @@ export class RescheduleAppointmentUseCase {
       );
     }
 
-    // Verificar superposición con citas existentes en el nuevo schedule
-    const hasOverlap =
-      await this.appointmentRepository.hasOverlappingAppointment(
-        dto.newScheduleId,
-        newStartTime,
-        newEndTime,
-        id, // excluir la cita actual
-      );
-    if (hasOverlap) {
-      throw new ConflictException(
-        'Ya existe una cita que se superpone con el horario seleccionado',
-      );
-    }
-
-    const updated = await this.appointmentRepository.update(id, {
-      scheduleId: dto.newScheduleId,
-      startTime: newStartTime,
-      endTime: newEndTime,
-      status: AppointmentStatus.PENDING,
-      updatedAt: new Date(),
-    });
+    // Verificar superposición y reagendar atómicamente (previene double-booking)
+    const updated = await this.appointmentRepository.rescheduleWithOverlapCheck(
+      id,
+      {
+        scheduleId: dto.newScheduleId,
+        startTime: newStartTime,
+        endTime: newEndTime,
+        status: AppointmentStatus.PENDING,
+        updatedAt: new Date(),
+      },
+      dto.newScheduleId,
+      newStartTime,
+      newEndTime,
+    );
 
     return this.toResponse(updated);
   }

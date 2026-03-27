@@ -1,18 +1,48 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrescriptionResponseDto } from '../dto/prescription-response.dto.js';
 import type { IPrescriptionRepository } from '../../domain/repositories/prescription.repository.js';
+import type { IAppointmentRepository } from '../../../appointments/domain/repositories/appointment.repository.js';
+import type { IDoctorRepository } from '../../../doctors/domain/repositories/doctor.repository.js';
+import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 
 @Injectable()
 export class FindPrescriptionByAppointmentUseCase {
   constructor(
     @Inject('IPrescriptionRepository')
     private readonly prescriptionRepository: IPrescriptionRepository,
+    @Inject('IAppointmentRepository')
+    private readonly appointmentRepository: IAppointmentRepository,
+    @Inject('IDoctorRepository')
+    private readonly doctorRepository: IDoctorRepository,
   ) {}
 
   async execute(
     userId: number,
     appointmentId: number,
+    role?: string,
   ): Promise<PrescriptionResponseDto> {
+    // Doctores solo pueden ver recetas de sus propias citas
+    if (role === UserRole.DOCTOR) {
+      const appointment =
+        await this.appointmentRepository.findById(appointmentId);
+      if (!appointment) {
+        throw new NotFoundException('Cita no encontrada');
+      }
+
+      const doctorId =
+        await this.doctorRepository.findDoctorIdByUserId(userId);
+      if (appointment.schedule.doctor.id !== doctorId) {
+        throw new ForbiddenException(
+          'No tiene permiso para ver recetas de esta cita',
+        );
+      }
+    }
+
     const prescription =
       await this.prescriptionRepository.findByAppointmentId(appointmentId);
     if (!prescription) {

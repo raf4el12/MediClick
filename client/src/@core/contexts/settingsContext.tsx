@@ -67,12 +67,12 @@ export const SettingsProvider = ({ children, mode }: SettingsProviderProps) => {
 
   const resetSettings = useCallback(() => {
     setSettingsState(initialSettings);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initialSettings is a stable reference defined outside the component
   }, []);
 
   const isSettingsChanged = useMemo(
     () => JSON.stringify(initialSettings) !== JSON.stringify(settingsState),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- initialSettings is a stable reference; only settingsState changes matter
     [settingsState],
   );
 

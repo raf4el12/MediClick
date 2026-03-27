@@ -148,27 +148,20 @@ export class CreateAppointmentUseCase {
       );
     }
 
-    // ── Verificar colisión con citas existentes en el mismo schedule ──
-    const hasOverlap =
-      await this.appointmentRepository.hasOverlappingAppointment(
-        dto.scheduleId,
+    // ── Verificar colisión y crear cita atómicamente (previene double-booking) ──
+    const appointment =
+      await this.appointmentRepository.createWithOverlapCheck(
+        {
+          patientId: dto.patientId,
+          scheduleId: dto.scheduleId,
+          startTime: slotStart,
+          endTime: slotEnd,
+          reason: dto.reason,
+          clinicId: doctorClinicId ?? null,
+        },
         slotStart,
         slotEnd,
       );
-    if (hasOverlap) {
-      throw new ConflictException(
-        'Ya existe una cita que se superpone con el horario seleccionado',
-      );
-    }
-
-    const appointment = await this.appointmentRepository.create({
-      patientId: dto.patientId,
-      scheduleId: dto.scheduleId,
-      startTime: slotStart,
-      endTime: slotEnd,
-      reason: dto.reason,
-      clinicId: doctorClinicId ?? null,
-    });
 
     return this.toResponse(appointment);
   }

@@ -20,6 +20,7 @@ export class FindAllPatientsUseCase {
     isActive?: boolean,
     userId?: number,
     role?: string,
+    jwtClinicId?: number | null,
   ): Promise<PaginatedPatientResponseDto> {
     const { limit, offset } = pagination.getOffsetLimit();
 
@@ -38,6 +39,7 @@ export class FindAllPatientsUseCase {
       orderByMode: pagination.orderByMode,
       isActive,
       doctorId,
+      ...(jwtClinicId && { clinicId: jwtClinicId }),
     });
 
     const rows: PatientResponseDto[] = result.rows.map((p) => ({

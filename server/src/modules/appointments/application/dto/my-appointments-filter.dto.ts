@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsEnum, IsBoolean } from 'class-validator';
+import { IsOptional, IsEnum, IsBoolean, IsString } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
 import { PaginationDto } from '../../../../shared/utils/dtos/pagination-dto.js';
@@ -21,4 +21,12 @@ export class MyAppointmentsFilterDto extends PaginationDto {
   @IsBoolean()
   @IsOptional()
   upcoming?: boolean;
+
+  @ApiPropertyOptional({
+    example: 'America/Lima',
+    description: 'Zona horaria IANA del cliente para calcular "hoy"',
+  })
+  @IsString()
+  @IsOptional()
+  timezone?: string;
 }

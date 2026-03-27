@@ -155,9 +155,9 @@ export function useUserForm({ onSuccess, onClose, editUser }: UseUserFormProps) 
 
   return {
     isEdit,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Create and edit forms have different schemas; unified control type requires any
     control: (isEdit ? editForm.control : createForm.control) as any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Same reason: unified error type for both create/edit form schemas
     errors: (isEdit ? editForm.formState.errors : createForm.formState.errors) as any,
     handleSubmit: isEdit
       ? editForm.handleSubmit(onEditSubmit)

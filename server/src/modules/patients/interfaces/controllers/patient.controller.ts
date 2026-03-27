@@ -15,6 +15,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth } from '../../../../shared/decorators/index.js';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator.js';
+import { CurrentClinic } from '../../../../shared/decorators/current-clinic.decorator.js';
 import { FindAllPatientsQueryDto } from '../../application/dto/find-all-patients-query.dto.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreatePatientDto } from '../../application/dto/create-patient.dto.js';
@@ -59,6 +60,7 @@ export class PatientController {
   async findAll(
     @CurrentUser('id') userId: number,
     @CurrentUser('role') role: string,
+    @CurrentClinic() clinicId: number | null,
     @Query() query: FindAllPatientsQueryDto,
   ): Promise<PaginatedPatientResponseDto> {
     const pagination = new PaginationImproved(
@@ -79,6 +81,7 @@ export class PatientController {
       isActiveFilter,
       userId,
       role,
+      clinicId,
     );
   }
 

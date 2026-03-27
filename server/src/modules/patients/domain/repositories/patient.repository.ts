@@ -10,7 +10,7 @@ import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-
 export interface IPatientRepository {
   create(data: CreatePatientData): Promise<PatientWithRelations>;
   findAllPaginated(
-    params: PaginationParams & { isActive?: boolean; doctorId?: number },
+    params: PaginationParams & { isActive?: boolean; doctorId?: number; clinicId?: number },
   ): Promise<
     PaginatedResult<PatientWithRelations> & {
       activeCount: number;
@@ -24,4 +24,10 @@ export interface IPatientRepository {
   softDelete(id: number): Promise<void>;
   existsByEmail(email: string): Promise<boolean>;
   existsByDni(typeDocument: string, numberDocument: string): Promise<boolean>;
+
+  /**
+   * Verifica si un paciente tiene al menos una cita con el doctor dado.
+   * Útil para validar acceso a datos médicos sensibles.
+   */
+  hasRelationWithDoctor(patientId: number, doctorId: number): Promise<boolean>;
 }

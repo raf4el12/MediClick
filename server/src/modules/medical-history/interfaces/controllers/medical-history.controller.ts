@@ -14,6 +14,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth } from '../../../../shared/decorators/index.js';
+import { CurrentUser } from '../../../../shared/decorators/current-user.decorator.js';
 import { CreateMedicalHistoryDto } from '../../application/dto/create-medical-history.dto.js';
 import { UpdateMedicalHistoryDto } from '../../application/dto/update-medical-history.dto.js';
 import { UpdateStatusDto } from '../../application/dto/update-status.dto.js';
@@ -61,10 +62,12 @@ export class MedicalHistoryController {
     type: PaginatedMedicalHistoryResponseDto,
   })
   async findByPatient(
+    @CurrentUser('id') userId: number,
+    @CurrentUser('role') role: string,
     @Param('patientId', ParseIntPipe) patientId: number,
     @Query() query: MedicalHistoryQueryDto,
   ): Promise<PaginatedMedicalHistoryResponseDto> {
-    return this.findByPatientUseCase.execute(patientId, query);
+    return this.findByPatientUseCase.execute(patientId, query, userId, role);
   }
 
   @Patch(':id')

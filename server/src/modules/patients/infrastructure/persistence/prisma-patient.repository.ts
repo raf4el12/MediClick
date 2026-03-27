@@ -74,7 +74,7 @@ export class PrismaPatientRepository implements IPatientRepository {
   }
 
   async findAllPaginated(
-    params: PaginationParams & { isActive?: boolean; doctorId?: number },
+    params: PaginationParams & { isActive?: boolean; doctorId?: number; clinicId?: number },
   ): Promise<
     PaginatedResult<PatientWithRelations> & {
       activeCount: number;
@@ -89,15 +89,22 @@ export class PrismaPatientRepository implements IPatientRepository {
       orderByMode,
       isActive,
       doctorId,
+      clinicId,
     } = params;
 
     const doctorFilter = doctorId
       ? { appointments: { some: { deleted: false, schedule: { doctorId } } } }
       : {};
 
+    // Filtrar pacientes que tienen citas en la clínica del staff
+    const clinicFilter = clinicId
+      ? { appointments: { some: { deleted: false, clinicId } } }
+      : {};
+
     const baseWhere = {
       deleted: false,
       ...doctorFilter,
+      ...clinicFilter,
       ...(isActive !== undefined && { isActive }),
       ...(searchValue && {
         OR: [
@@ -301,6 +308,21 @@ export class PrismaPatientRepository implements IPatientRepository {
   ): Promise<boolean> {
     const count = await this.prisma.profiles.count({
       where: { typeDocument, numberDocument, deleted: false },
+    });
+    return count > 0;
+  }
+
+  async hasRelationWithDoctor(
+    patientId: number,
+    doctorId: number,
+  ): Promise<boolean> {
+    const count = await this.prisma.appointments.count({
+      where: {
+        patientId,
+        deleted: false,
+        schedule: { doctorId },
+      },
+      take: 1,
     });
     return count > 0;
   }

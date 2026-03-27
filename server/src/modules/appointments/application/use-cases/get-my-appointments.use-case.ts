@@ -45,7 +45,7 @@ export class GetMyAppointmentsUseCase {
         ...(filterDto.status && { status: filterDto.status }),
         ...(filterDto.upcoming !== undefined && {
           upcoming: filterDto.upcoming,
-          timezone: DEFAULT_TIMEZONE,
+          timezone: filterDto.timezone || DEFAULT_TIMEZONE,
         }),
       },
     );

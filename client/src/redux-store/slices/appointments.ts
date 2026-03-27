@@ -54,6 +54,20 @@ export const appointmentsSlice = createSlice({
     clearAppointmentsError(state) {
       state.error = null;
     },
+    updateAppointmentLocally(
+      state,
+      action: PayloadAction<{ id: number; changes: Partial<Appointment> }>,
+    ) {
+      const { id, changes } = action.payload;
+      const idx = state.data.rows.findIndex((a) => a.id === id);
+      if (idx !== -1) {
+        state.data.rows[idx] = { ...state.data.rows[idx]!, ...changes };
+      }
+    },
+    removeAppointmentLocally(state, action: PayloadAction<number>) {
+      state.data.rows = state.data.rows.filter((a) => a.id !== action.payload);
+      state.data.totalRows = Math.max(0, state.data.totalRows - 1);
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -77,6 +91,8 @@ export const {
   setAppointmentsPagination,
   setAppointmentsFilters,
   clearAppointmentsError,
+  updateAppointmentLocally,
+  removeAppointmentLocally,
 } = appointmentsSlice.actions;
 
 export const selectAppointmentsData = (state: { appointments: AppointmentsState }) =>

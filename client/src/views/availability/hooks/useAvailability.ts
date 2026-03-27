@@ -81,7 +81,7 @@ export function useAvailability() {
     }
 
     setSchedule(newSchedule);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Only rebuild schedule when source data or selected doctor changes; other deps are stable callbacks
   }, [data.rows, selectedDoctorId]);
 
   // Doctor index map for O(1) lookup

@@ -6,6 +6,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  MaxLength,
   ValidateNested,
   ArrayMinSize,
 } from 'class-validator';
@@ -14,21 +15,25 @@ import { Type } from 'class-transformer';
 export class PrescriptionItemDto {
   @ApiProperty({ example: 'Ibuprofeno', description: 'Nombre del medicamento' })
   @IsString()
+  @MaxLength(255, { message: 'El medicamento no debe exceder 255 caracteres' })
   @IsNotEmpty({ message: 'El medicamento es obligatorio' })
   medication: string;
 
   @ApiProperty({ example: '400mg', description: 'Dosis' })
   @IsString()
+  @MaxLength(255, { message: 'La dosis no debe exceder 255 caracteres' })
   @IsNotEmpty({ message: 'La dosis es obligatoria' })
   dosage: string;
 
   @ApiProperty({ example: 'Cada 8 horas', description: 'Frecuencia' })
   @IsString()
+  @MaxLength(255, { message: 'La frecuencia no debe exceder 255 caracteres' })
   @IsNotEmpty({ message: 'La frecuencia es obligatoria' })
   frequency: string;
 
   @ApiProperty({ example: 'Por 5 días', description: 'Duración' })
   @IsString()
+  @MaxLength(255, { message: 'La duración no debe exceder 255 caracteres' })
   @IsNotEmpty({ message: 'La duración es obligatoria' })
   duration: string;
 
@@ -37,6 +42,7 @@ export class PrescriptionItemDto {
     description: 'Notas adicionales',
   })
   @IsString()
+  @MaxLength(500, { message: 'Las notas no deben exceder 500 caracteres' })
   @IsOptional()
   notes?: string;
 }
@@ -53,6 +59,7 @@ export class CreatePrescriptionDto {
     description: 'Indicaciones generales',
   })
   @IsString()
+  @MaxLength(2000, { message: 'Las indicaciones no deben exceder 2000 caracteres' })
   @IsOptional()
   instructions?: string;
 
