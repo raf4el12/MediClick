@@ -2,6 +2,23 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 const PUBLIC_PATHS = ['/login', '/register', '/forgot-password', '/reset-password', '/'];
+const AUTH_ONLY_PATHS = ['/login', '/register', '/forgot-password', '/reset-password'];
+
+function getRoleFromToken(token: string): string | null {
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    const payload = JSON.parse(atob(parts[1] as string));
+    return (payload.role as string) ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function getDefaultRoute(role: string | null): string {
+  if (role === 'PATIENT') return '/patient';
+  return '/dashboard';
+}
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -10,10 +27,10 @@ export function middleware(request: NextRequest) {
   const isPublicPath =
     pathname === '/' || PUBLIC_PATHS.some((path) => path !== '/' && pathname.startsWith(path));
 
-  // Authenticated user visiting auth pages → redirect to dashboard
-  const authOnlyPaths = ['/login', '/register', '/forgot-password', '/reset-password'];
-  if (authOnlyPaths.some((p) => pathname.startsWith(p)) && accessToken) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+  // Authenticated user visiting auth pages → redirect based on role
+  if (AUTH_ONLY_PATHS.some((p) => pathname.startsWith(p)) && accessToken) {
+    const role = getRoleFromToken(accessToken);
+    return NextResponse.redirect(new URL(getDefaultRoute(role), request.url));
   }
 
   // Unauthenticated user visiting protected route → redirect to login

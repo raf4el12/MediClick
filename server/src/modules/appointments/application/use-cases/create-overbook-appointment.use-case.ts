@@ -2,7 +2,6 @@ import {
   Injectable,
   Inject,
   BadRequestException,
-  ConflictException,
   ForbiddenException,
 } from '@nestjs/common';
 import { CreateOverbookAppointmentDto } from '../dto/create-overbook-appointment.dto.js';
@@ -95,19 +94,7 @@ export class CreateOverbookAppointmentUseCase {
       );
     }
 
-    // 5. Verificar límite de sobrecupos
-    const currentOverbooks =
-      await this.appointmentRepository.countOverbooksByDoctorAndDate(
-        dto.doctorId,
-        appointmentDate,
-      );
-    if (currentOverbooks >= doctor.maxOverbookPerDay) {
-      throw new ConflictException(
-        `Se alcanzó el límite de sobrecupos (${doctor.maxOverbookPerDay}) para este doctor en esta fecha`,
-      );
-    }
-
-    // 6. Obtener los schedules del doctor para esa fecha y especialidad
+    // 5. Obtener los schedules del doctor para esa fecha y especialidad
     const schedules = await this.scheduleRepository.findByDoctorAndDate(
       dto.doctorId,
       appointmentDate,
@@ -155,16 +142,21 @@ export class CreateOverbookAppointmentUseCase {
     const durationMs = specialty.duration * 60 * 1000;
     const overbookEndTime = new Date(overbookStartTime.getTime() + durationMs);
 
-    // 10. Crear la cita de sobrecupo (auto-asignar clinicId del doctor)
-    const appointment = await this.appointmentRepository.create({
-      patientId: dto.patientId,
-      scheduleId: lastSchedule.id,
-      startTime: overbookStartTime,
-      endTime: overbookEndTime,
-      reason: dto.reason,
-      isOverbook: true,
-      clinicId: doctor.clinicId ?? null,
-    });
+    // 10. Verificar límite y crear sobrecupo atómicamente (previene exceder maxOverbookPerDay)
+    const appointment = await this.appointmentRepository.createOverbookAtomic(
+      {
+        patientId: dto.patientId,
+        scheduleId: lastSchedule.id,
+        startTime: overbookStartTime,
+        endTime: overbookEndTime,
+        reason: dto.reason,
+        isOverbook: true,
+        clinicId: doctor.clinicId ?? null,
+      },
+      dto.doctorId,
+      appointmentDate,
+      doctor.maxOverbookPerDay,
+    );
 
     return this.toResponse(appointment);
   }

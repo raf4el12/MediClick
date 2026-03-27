@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
-import {
+import type {
   CreateAppointmentData,
   UpdateAppointmentData,
   AppointmentWithRelations,
@@ -75,9 +75,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     const where: any = {
       deleted: false,
       ...(filters.status && { status: filters.status }),
-      ...(filters.clinicId
-        ? { OR: [{ clinicId: null }, { clinicId: filters.clinicId }] }
-        : {}),
+      ...(filters.clinicId && { clinicId: filters.clinicId }),
       ...(filters.doctorId && {
         schedule: { doctorId: filters.doctorId },
       }),
@@ -286,6 +284,139 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         },
       },
     });
+  }
+
+  async createWithOverlapCheck(
+    data: CreateAppointmentData,
+    startTime: Date,
+    endTime: Date,
+  ): Promise<AppointmentWithRelations> {
+    return this.prisma.$transaction(
+      async (tx) => {
+        const overlap = await tx.appointments.count({
+          where: {
+            scheduleId: data.scheduleId,
+            deleted: false,
+            status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+            startTime: { lt: endTime },
+            endTime: { gt: startTime },
+          },
+        });
+
+        if (overlap > 0) {
+          throw new ConflictException(
+            'Ya existe una cita que se superpone con el horario seleccionado',
+          );
+        }
+
+        const result = await tx.appointments.create({
+          data: {
+            patientId: data.patientId,
+            scheduleId: data.scheduleId,
+            startTime: data.startTime,
+            endTime: data.endTime,
+            reason: data.reason,
+            ...(data.isOverbook && { isOverbook: true }),
+            clinicId: data.clinicId ?? null,
+          },
+          include: appointmentInclude,
+        });
+
+        return this.mapToRelations(result);
+      },
+      { isolationLevel: 'Serializable' },
+    );
+  }
+
+  async rescheduleWithOverlapCheck(
+    id: number,
+    data: UpdateAppointmentData,
+    newScheduleId: number,
+    startTime: Date,
+    endTime: Date,
+  ): Promise<AppointmentWithRelations> {
+    return this.prisma.$transaction(
+      async (tx) => {
+        const overlap = await tx.appointments.count({
+          where: {
+            scheduleId: newScheduleId,
+            deleted: false,
+            status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+            startTime: { lt: endTime },
+            endTime: { gt: startTime },
+            id: { not: id },
+          },
+        });
+
+        if (overlap > 0) {
+          throw new ConflictException(
+            'Ya existe una cita que se superpone con el horario seleccionado',
+          );
+        }
+
+        const result = await tx.appointments.update({
+          where: { id },
+          data: {
+            ...(data.status && { status: data.status }),
+            ...(data.scheduleId && { scheduleId: data.scheduleId }),
+            ...(data.startTime && { startTime: data.startTime }),
+            ...(data.endTime && { endTime: data.endTime }),
+            updatedAt: data.updatedAt ?? new Date(),
+          },
+          include: appointmentInclude,
+        });
+
+        return this.mapToRelations(result);
+      },
+      { isolationLevel: 'Serializable' },
+    );
+  }
+
+  async createOverbookAtomic(
+    data: CreateAppointmentData,
+    doctorId: number,
+    date: Date,
+    maxOverbookPerDay: number,
+  ): Promise<AppointmentWithRelations> {
+    const { start: startOfDay, end: endOfDay } = utcDayRange(date);
+
+    return this.prisma.$transaction(
+      async (tx) => {
+        const currentOverbooks = await tx.appointments.count({
+          where: {
+            deleted: false,
+            isOverbook: true,
+            status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+            schedule: {
+              doctorId,
+              scheduleDate: { gte: startOfDay, lt: endOfDay },
+            },
+          },
+        });
+
+        if (currentOverbooks >= maxOverbookPerDay) {
+          throw new ConflictException(
+            `Se alcanzó el límite de sobrecupos (${maxOverbookPerDay}) para este doctor en esta fecha`,
+          );
+        }
+
+        const result = await tx.appointments.create({
+          data: {
+            patientId: data.patientId,
+            scheduleId: data.scheduleId,
+            startTime: data.startTime,
+            endTime: data.endTime,
+            reason: data.reason,
+            isOverbook: true,
+            clinicId: data.clinicId ?? null,
+          },
+          include: appointmentInclude,
+        });
+
+        return this.mapToRelations(result);
+      },
+      { isolationLevel: 'Serializable' },
+    );
   }
 
   private mapToRelations(raw: any): AppointmentWithRelations {

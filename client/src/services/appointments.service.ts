@@ -118,7 +118,10 @@ export const appointmentsService = {
     if (params.orderBy) queryParams.orderBy = params.orderBy;
     if (params.orderByMode) queryParams.orderByMode = params.orderByMode;
     if (filters?.status) queryParams.status = filters.status;
-    if (filters?.upcoming !== undefined) queryParams.upcoming = filters.upcoming;
+    if (filters?.upcoming !== undefined) {
+      queryParams.upcoming = filters.upcoming;
+      queryParams.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    }
 
     const response = await api.get<PaginatedResponse<Appointment>>(
       '/appointments/my',

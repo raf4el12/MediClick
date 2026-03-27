@@ -63,10 +63,11 @@ export class PrescriptionController {
   @ApiResponse({ status: 404, description: 'Receta no encontrada' })
   async downloadPdf(
     @CurrentUser('id') userId: number,
+    @CurrentUser('role') role: string,
     @Param('appointmentId', ParseIntPipe) appointmentId: number,
     @Res() res: Response,
   ): Promise<void> {
-    const buffer = await this.generatePdfUseCase.execute(userId, appointmentId);
+    const buffer = await this.generatePdfUseCase.execute(userId, appointmentId, role);
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': `inline; filename="receta-${appointmentId}.pdf"`,
@@ -120,8 +121,9 @@ export class PrescriptionController {
   @ApiResponse({ status: 404, description: 'Receta no encontrada' })
   async findByAppointment(
     @CurrentUser('id') userId: number,
+    @CurrentUser('role') role: string,
     @Param('appointmentId', ParseIntPipe) appointmentId: number,
   ): Promise<PrescriptionResponseDto> {
-    return this.findByAppointmentUseCase.execute(userId, appointmentId);
+    return this.findByAppointmentUseCase.execute(userId, appointmentId, role);
   }
 }

@@ -1,10 +1,14 @@
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, ForbiddenException } from '@nestjs/common';
 import { FindPrescriptionByAppointmentUseCase } from './find-prescription-by-appointment.use-case.js';
 import type { IPrescriptionRepository } from '../../domain/repositories/prescription.repository.js';
+import type { IAppointmentRepository } from '../../../appointments/domain/repositories/appointment.repository.js';
+import type { IDoctorRepository } from '../../../doctors/domain/repositories/doctor.repository.js';
 
 describe('FindPrescriptionByAppointmentUseCase', () => {
   let useCase: FindPrescriptionByAppointmentUseCase;
   let prescriptionRepository: jest.Mocked<IPrescriptionRepository>;
+  let appointmentRepository: jest.Mocked<Pick<IAppointmentRepository, 'findById'>>;
+  let doctorRepository: jest.Mocked<Pick<IDoctorRepository, 'findDoctorIdByUserId'>>;
 
   const mockPrescription = {
     id: 1,
@@ -47,7 +51,19 @@ describe('FindPrescriptionByAppointmentUseCase', () => {
       findAppointmentDoctorId: jest.fn(),
     };
 
-    useCase = new FindPrescriptionByAppointmentUseCase(prescriptionRepository);
+    appointmentRepository = {
+      findById: jest.fn(),
+    };
+
+    doctorRepository = {
+      findDoctorIdByUserId: jest.fn(),
+    };
+
+    useCase = new FindPrescriptionByAppointmentUseCase(
+      prescriptionRepository,
+      appointmentRepository as any,
+      doctorRepository as any,
+    );
   });
 
   it('should return prescription data for a valid appointment', async () => {
@@ -70,5 +86,29 @@ describe('FindPrescriptionByAppointmentUseCase', () => {
     prescriptionRepository.findByAppointmentId.mockResolvedValue(null);
 
     await expect(useCase.execute(1, 999)).rejects.toThrow(NotFoundException);
+  });
+
+  it('should throw ForbiddenException when doctor accesses another doctors prescription', async () => {
+    const appointment = {
+      schedule: { doctor: { id: 99 } },
+    } as any;
+
+    appointmentRepository.findById.mockResolvedValue(appointment);
+    doctorRepository.findDoctorIdByUserId.mockResolvedValue(1);
+
+    await expect(useCase.execute(1, 10, 'DOCTOR')).rejects.toThrow(
+      ForbiddenException,
+    );
+  });
+
+  it('should allow admin to access any prescription', async () => {
+    prescriptionRepository.findByAppointmentId.mockResolvedValue(
+      mockPrescription,
+    );
+
+    const result = await useCase.execute(1, 10, 'ADMIN');
+
+    expect(result.id).toBe(1);
+    expect(appointmentRepository.findById).not.toHaveBeenCalled();
   });
 });

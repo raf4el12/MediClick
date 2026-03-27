@@ -1,4 +1,4 @@
-import {
+import type {
   CreateAppointmentData,
   UpdateAppointmentData,
   AppointmentWithRelations,
@@ -48,4 +48,37 @@ export interface IAppointmentRepository {
    * Cuenta las citas de sobrecupo activas de un doctor en una fecha específica.
    */
   countOverbooksByDoctorAndDate(doctorId: number, date: Date): Promise<number>;
+
+  /**
+   * Verifica overlap y crea la cita dentro de una transacción serializable.
+   * Lanza ConflictException si hay superposición.
+   */
+  createWithOverlapCheck(
+    data: CreateAppointmentData,
+    startTime: Date,
+    endTime: Date,
+  ): Promise<AppointmentWithRelations>;
+
+  /**
+   * Reagenda una cita verificando overlap dentro de una transacción serializable.
+   * Lanza ConflictException si hay superposición.
+   */
+  rescheduleWithOverlapCheck(
+    id: number,
+    data: UpdateAppointmentData,
+    newScheduleId: number,
+    startTime: Date,
+    endTime: Date,
+  ): Promise<AppointmentWithRelations>;
+
+  /**
+   * Verifica el límite de sobrecupos y crea la cita dentro de una transacción serializable.
+   * Lanza ConflictException si se excede el límite.
+   */
+  createOverbookAtomic(
+    data: CreateAppointmentData,
+    doctorId: number,
+    date: Date,
+    maxOverbookPerDay: number,
+  ): Promise<AppointmentWithRelations>;
 }

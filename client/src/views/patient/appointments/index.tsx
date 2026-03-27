@@ -53,6 +53,8 @@ export default function PatientAppointmentsView() {
   const [page, setPage] = useState(1);
   const [data, setData] = useState<PaginatedResponse<Appointment> | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   // Detail dialog
   const [detailOpen, setDetailOpen] = useState(false);
@@ -75,6 +77,7 @@ export default function PatientAppointmentsView() {
 
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
       const filters: PatientAppointmentFilters = {};
       if (tab === 'upcoming') filters.upcoming = true;
@@ -87,6 +90,7 @@ export default function PatientAppointmentsView() {
       setData(res);
     } catch {
       setData(null);
+      setError('No se pudieron cargar las citas. Intenta de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -106,6 +110,7 @@ export default function PatientAppointmentsView() {
   const handleCancel = async () => {
     if (!selectedApt) return;
     setCancelling(true);
+    setActionError(null);
     try {
       await appointmentsService.cancel(selectedApt.id, { reason: cancelReason });
       setCancelOpen(false);
@@ -114,7 +119,7 @@ export default function PatientAppointmentsView() {
       setSelectedApt(null);
       fetchAppointments();
     } catch {
-      // handle error
+      setActionError('No se pudo cancelar la cita. Intenta de nuevo.');
     } finally {
       setCancelling(false);
     }
@@ -122,6 +127,7 @@ export default function PatientAppointmentsView() {
 
   const handleConfirm = async (apt: Appointment) => {
     setConfirming(true);
+    setActionError(null);
     try {
       await appointmentsService.confirm(apt.id);
       fetchAppointments();
@@ -129,7 +135,7 @@ export default function PatientAppointmentsView() {
         setSelectedApt({ ...apt, status: AppointmentStatus.CONFIRMED });
       }
     } catch {
-      // handle error
+      setActionError('No se pudo confirmar la cita. Intenta de nuevo.');
     } finally {
       setConfirming(false);
     }
@@ -168,7 +174,7 @@ export default function PatientAppointmentsView() {
     try {
       await prescriptionsService.downloadMyPdf(selectedApt.id);
     } catch {
-      // silent — browser handles the download
+      setActionError('No se pudo descargar el PDF. Intenta de nuevo.');
     } finally {
       setDownloadingPdf(false);
     }
@@ -211,6 +217,18 @@ export default function PatientAppointmentsView() {
         <ToggleButton value="all">Todas</ToggleButton>
         <ToggleButton value="past">Completadas</ToggleButton>
       </ToggleButtonGroup>
+
+      {/* Error alerts */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setError(null)}>
+          {error}
+        </Alert>
+      )}
+      {actionError && (
+        <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }} onClose={() => setActionError(null)}>
+          {actionError}
+        </Alert>
+      )}
 
       {/* List */}
       {loading ? (
@@ -462,6 +480,11 @@ export default function PatientAppointmentsView() {
       >
         <DialogTitle>Cancelar Cita</DialogTitle>
         <DialogContent>
+          {actionError && (
+            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
+              {actionError}
+            </Alert>
+          )}
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
             Por favor indica el motivo de la cancelación.
           </Typography>
