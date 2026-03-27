@@ -8,6 +8,8 @@ import { specialtiesService } from '@/services/specialties.service';
 import { appointmentsService } from '@/services/appointments.service';
 import { reportsService } from '@/services/reports.service';
 import { getTodayInTimezone, nowInTimezone } from '@/utils/timezone';
+import { useAppSelector } from '@/redux-store/hooks';
+import { selectUser } from '@/redux-store/slices/auth';
 import type { AppointmentsSummary, ScheduleOccupancy } from '@/views/reports/types';
 
 interface DashboardStats {
@@ -27,8 +29,10 @@ interface DashboardData {
 const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 export function useDashboard(): DashboardData {
-  const today = getTodayInTimezone(browserTz);
-  const now = nowInTimezone(browserTz);
+  const user = useAppSelector(selectUser);
+  const dashboardTz = user?.clinicTimezone ?? browserTz;
+  const today = getTodayInTimezone(dashboardTz);
+  const now = nowInTimezone(dashboardTz);
   const month = now.getMonth() + 1;
   const year = now.getFullYear();
   const results = useQueries({

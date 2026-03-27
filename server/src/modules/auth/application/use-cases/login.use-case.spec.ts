@@ -25,6 +25,7 @@ describe('LoginUseCase', () => {
     validateEmail: true,
     clinicId: 1,
     clinicName: 'MediClick Sede Lima',
+    clinicTimezone: 'America/Lima',
     deleted: false,
     createdAt: new Date(),
     updatedAt: null,

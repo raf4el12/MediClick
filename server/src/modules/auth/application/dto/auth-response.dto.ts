@@ -19,6 +19,12 @@ export class AuthUserDto {
     description: 'Nombre de la clínica asignada',
   })
   clinicName?: string | null;
+
+  @ApiPropertyOptional({
+    example: 'America/Lima',
+    description: 'Timezone IANA de la clínica asignada',
+  })
+  clinicTimezone?: string | null;
 }
 
 export class AuthResponseDto {

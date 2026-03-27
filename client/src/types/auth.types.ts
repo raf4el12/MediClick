@@ -12,6 +12,7 @@ export interface AuthUser {
   role: UserRole;
   avatarUrl?: string;
   clinicName?: string | null;
+  clinicTimezone?: string | null;
 }
 
 export interface LoginRequest {

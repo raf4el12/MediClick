@@ -11,6 +11,7 @@ export class UserEntity {
   validateEmail: boolean;
   clinicId: number | null;
   clinicName: string | null;
+  clinicTimezone: string | null;
   deleted: boolean;
   createdAt: Date;
   updatedAt: Date | null;

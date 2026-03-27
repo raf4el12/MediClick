@@ -36,6 +36,7 @@ function mapToUserEntity(prismaUser: any): UserEntity {
     ...prismaUser,
     role: prismaUser.role as UserRole,
     clinicName: prismaUser.clinic?.name ?? null,
+    clinicTimezone: prismaUser.clinic?.timezone ?? null,
   });
   return entity;
 }
@@ -63,7 +64,7 @@ export class PrismaUserRepository implements IUserRepository {
   async findByEmail(email: string): Promise<UserEntity | null> {
     const user = await this.prisma.users.findUnique({
       where: { email },
-      include: { clinic: { select: { name: true } } },
+      include: { clinic: { select: { name: true, timezone: true } } },
     });
     return user ? mapToUserEntity(user) : null;
   }
@@ -71,7 +72,7 @@ export class PrismaUserRepository implements IUserRepository {
   async findById(id: number): Promise<UserEntity | null> {
     const user = await this.prisma.users.findUnique({
       where: { id },
-      include: { clinic: { select: { name: true } } },
+      include: { clinic: { select: { name: true, timezone: true } } },
     });
     return user ? mapToUserEntity(user) : null;
   }
