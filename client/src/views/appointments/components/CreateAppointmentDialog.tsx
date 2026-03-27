@@ -65,7 +65,7 @@ export function CreateAppointmentDialog({
   const [patientSearch, setPatientSearch] = useState('');
   const dateScrollRef = useRef<HTMLDivElement>(null);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- Debounced callback must be stable; form.searchPatients is recreated each render but functionally identical
   const debouncedPatientSearch = useCallback(
     debounce((value: string) => {
       void form.searchPatients(value);

@@ -1,5 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateOverbookAppointmentDto {
@@ -26,6 +33,9 @@ export class CreateOverbookAppointmentDto {
     description: 'Fecha de la cita (YYYY-MM-DD)',
   })
   @IsString()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: 'La fecha debe tener formato YYYY-MM-DD',
+  })
   @IsNotEmpty({ message: 'La fecha es obligatoria' })
   date: string;
 
@@ -34,6 +44,7 @@ export class CreateOverbookAppointmentDto {
     description: 'Motivo de la cita de sobrecupo',
   })
   @IsString()
+  @MaxLength(500, { message: 'El motivo no debe exceder 500 caracteres' })
   @IsOptional()
   reason?: string;
 }

@@ -6,6 +6,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -21,6 +22,7 @@ export class CreateMedicalHistoryDto {
     description: 'Condición o diagnóstico',
   })
   @IsString()
+  @MaxLength(255, { message: 'La condición no debe exceder 255 caracteres' })
   @IsNotEmpty({ message: 'La condición es obligatoria' })
   condition: string;
 
@@ -30,6 +32,7 @@ export class CreateMedicalHistoryDto {
     description: 'Descripción detallada',
   })
   @IsString()
+  @MaxLength(2000, { message: 'La descripción no debe exceder 2000 caracteres' })
   @IsOptional()
   description?: string;
 
@@ -55,6 +58,7 @@ export class CreateMedicalHistoryDto {
     description: 'Notas adicionales',
   })
   @IsString()
+  @MaxLength(2000, { message: 'Las notas no deben exceder 2000 caracteres' })
   @IsOptional()
   notes?: string;
 }

@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsDateString, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class UpdateMedicalHistoryDto {
   @ApiPropertyOptional({
@@ -7,6 +7,7 @@ export class UpdateMedicalHistoryDto {
     description: 'Condición o diagnóstico',
   })
   @IsString()
+  @MaxLength(255, { message: 'La condición no debe exceder 255 caracteres' })
   @IsOptional()
   condition?: string;
 
@@ -15,6 +16,7 @@ export class UpdateMedicalHistoryDto {
     description: 'Descripción detallada',
   })
   @IsString()
+  @MaxLength(2000, { message: 'La descripción no debe exceder 2000 caracteres' })
   @IsOptional()
   description?: string;
 
@@ -31,6 +33,7 @@ export class UpdateMedicalHistoryDto {
     description: 'Notas adicionales',
   })
   @IsString()
+  @MaxLength(2000, { message: 'Las notas no deben exceder 2000 caracteres' })
   @IsOptional()
   notes?: string;
 }

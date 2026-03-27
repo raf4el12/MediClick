@@ -32,7 +32,7 @@ const VerticalLayout = ({ navbar, navigation, footer, children }: VerticalLayout
   const navigationWithProps = navigation
     ? (() => {
       const { type, props } = navigation;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic component from layout config; props vary per navigation type
       const Component = type as React.ComponentType<any>;
       return <Component {...props} mobileOpen={mobileOpen} onMobileClose={handleMobileClose} />;
     })()

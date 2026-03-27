@@ -5,6 +5,7 @@ import {
   IsOptional,
   IsString,
   Matches,
+  MaxLength,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -42,6 +43,7 @@ export class CreatePatientAppointmentDto {
     description: 'Motivo de consulta',
   })
   @IsString()
+  @MaxLength(500, { message: 'El motivo no debe exceder 500 caracteres' })
   @IsOptional()
   reason?: string;
 }

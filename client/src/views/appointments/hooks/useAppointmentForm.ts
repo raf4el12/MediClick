@@ -261,7 +261,7 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
   // Reset on close
   useEffect(() => {
     if (!open) reset();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional: reset is stable and should only trigger when dialog visibility changes
   }, [open]);
 
   return {
