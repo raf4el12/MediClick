@@ -59,6 +59,31 @@ export class RegisterPatientDto {
   @IsOptional()
   gender?: string;
 
+  @ApiProperty({ example: '+51999888777', description: 'Contacto de emergencia (formato E.164)' })
+  @IsString()
+  @IsNotEmpty({ message: 'El contacto de emergencia es obligatorio' })
+  @Matches(/^\+[1-9]\d{6,14}$/, {
+    message: 'Debe ser un número válido en formato internacional (ej: +51999888777)',
+  })
+  emergencyContact: string;
+
+  @ApiProperty({ example: 'O+', description: 'Tipo de sangre' })
+  @IsString()
+  @IsNotEmpty({ message: 'El tipo de sangre es obligatorio' })
+  bloodType: string;
+
+  @ApiPropertyOptional({ example: 'Penicilina, Sulfas', description: 'Alergias' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(500)
+  allergies?: string;
+
+  @ApiPropertyOptional({ example: 'Diabetes, Hipertensión', description: 'Condiciones crónicas' })
+  @IsString()
+  @IsOptional()
+  @MaxLength(500)
+  chronicConditions?: string;
+
   @ApiProperty({ example: 'MiPassword123!', description: 'Contraseña' })
   @IsString()
   @MinLength(8, { message: 'La contraseña debe tener al menos 8 caracteres' })

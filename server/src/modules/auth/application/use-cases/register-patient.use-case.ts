@@ -59,10 +59,10 @@ export class RegisterPatientUseCase {
         numberDocument: dto.numberDocument,
       },
       patient: {
-        emergencyContact: dto.phone,
-        bloodType: '',
-        allergies: undefined,
-        chronicConditions: undefined,
+        emergencyContact: dto.emergencyContact,
+        bloodType: dto.bloodType,
+        allergies: dto.allergies,
+        chronicConditions: dto.chronicConditions,
       },
     });
 
