@@ -79,7 +79,7 @@ export class DoctorController {
     return this.findAllDoctorsUseCase.execute(
       pagination,
       queryDto.specialtyId,
-      clinicId,
+      clinicId ?? queryDto.clinicId,
     );
   }
 

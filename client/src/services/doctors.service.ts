@@ -6,6 +6,7 @@ export const doctorsService = {
   findAllPaginated: async (
     params: PaginationParams,
     specialtyId?: number,
+    clinicId?: number,
   ): Promise<PaginatedResponse<Doctor>> => {
     const queryParams: Record<string, string | number> = {};
 
@@ -15,6 +16,7 @@ export const doctorsService = {
     if (params.orderBy) queryParams.orderBy = params.orderBy;
     if (params.orderByMode) queryParams.orderByMode = params.orderByMode;
     if (specialtyId) queryParams.specialtyId = specialtyId;
+    if (clinicId) queryParams.clinicId = clinicId;
 
     const response = await api.get<PaginatedResponse<Doctor>>(
       '/doctors',

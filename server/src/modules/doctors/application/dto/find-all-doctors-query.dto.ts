@@ -12,4 +12,13 @@ export class FindAllDoctorsQueryDto extends PaginationDto {
   @IsInt()
   @IsOptional()
   specialtyId?: number;
+
+  @ApiPropertyOptional({
+    example: 1,
+    description: 'Filtrar por ID de sede (solo para pacientes)',
+  })
+  @Type(() => Number)
+  @IsInt()
+  @IsOptional()
+  clinicId?: number;
 }

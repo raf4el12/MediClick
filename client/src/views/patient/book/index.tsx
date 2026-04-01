@@ -18,6 +18,7 @@ import Skeleton from '@mui/material/Skeleton';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
+import { clinicsService } from '@/services/clinics.service';
 import { specialtiesService } from '@/services/specialties.service';
 import { doctorsService } from '@/services/doctors.service';
 import { schedulesService } from '@/services/schedules.service';
@@ -26,7 +27,7 @@ import { filterAvailableSlots } from '@/views/appointments/functions/filterAvail
 import { getTodayInTimezone } from '@/utils/timezone';
 import type { TimeSlot } from '@/views/schedules/types';
 
-const steps = ['Especialidad', 'Doctor', 'Fecha y Hora', 'Confirmar'];
+const steps = ['Sede', 'Especialidad', 'Doctor', 'Fecha y Hora', 'Confirmar'];
 
 export default function PatientBookView() {
   const router = useRouter();
@@ -37,11 +38,19 @@ export default function PatientBookView() {
   const [success, setSuccess] = useState(false);
 
   // Selections
+  const [selectedClinicId, setSelectedClinicId] = useState<number | null>(null);
   const [selectedSpecialtyId, setSelectedSpecialtyId] = useState<number | null>(null);
   const [selectedDoctorId, setSelectedDoctorId] = useState<number | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [selectedSlotTime, setSelectedSlotTime] = useState<{ scheduleId: number; startTime: string; endTime: string } | null>(null);
   const [reason, setReason] = useState('');
+
+  // ── Clinics ──
+  const { data: clinics = [], isLoading: loadingClinics } = useQuery({
+    queryKey: ['clinics', 'patient-booking'],
+    queryFn: () => clinicsService.findAll(),
+    staleTime: 10 * 60 * 1000,
+  });
 
   // ── Specialties ──
   const { data: specialties = [], isLoading: loadingSpecialties } = useQuery({
@@ -50,15 +59,22 @@ export default function PatientBookView() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // ── Doctors by specialty ──
+  // ── Doctors by specialty + clinic ──
   const { data: doctors = [], isLoading: loadingDoctors } = useQuery({
-    queryKey: ['doctors', 'by-specialty', selectedSpecialtyId],
-    queryFn: () => doctorsService.findAllPaginated({ pageSize: 100 }, selectedSpecialtyId!).then((r) => r.rows),
-    enabled: selectedSpecialtyId !== null,
+    queryKey: ['doctors', 'by-specialty-clinic', selectedSpecialtyId, selectedClinicId],
+    queryFn: () =>
+      doctorsService
+        .findAllPaginated({ pageSize: 100 }, selectedSpecialtyId!, selectedClinicId!)
+        .then((r) => r.rows),
+    enabled: selectedSpecialtyId !== null && selectedClinicId !== null,
     staleTime: 5 * 60 * 1000,
   });
 
-  // Derived (antes de schedules para resolver timezone del doctor)
+  // Derived
+  const selectedClinic = useMemo(
+    () => clinics.find((c) => c.id === selectedClinicId) ?? null,
+    [clinics, selectedClinicId],
+  );
   const selectedSpecialty = useMemo(
     () => specialties.find((s) => s.id === selectedSpecialtyId) ?? null,
     [specialties, selectedSpecialtyId],
@@ -126,19 +142,28 @@ export default function PatientBookView() {
     setSelectedSlotTime(null);
   }, [selectedDoctorId]);
 
-  const handleSelectSpecialty = (id: number) => {
-    setSelectedSpecialtyId(id);
+  const handleSelectClinic = (id: number) => {
+    setSelectedClinicId(id);
+    setSelectedSpecialtyId(null);
     setSelectedDoctorId(null);
     setSelectedDate(null);
     setSelectedSlotTime(null);
     setActiveStep(1);
   };
 
+  const handleSelectSpecialty = (id: number) => {
+    setSelectedSpecialtyId(id);
+    setSelectedDoctorId(null);
+    setSelectedDate(null);
+    setSelectedSlotTime(null);
+    setActiveStep(2);
+  };
+
   const handleSelectDoctor = (id: number) => {
     setSelectedDoctorId(id);
     setSelectedDate(null);
     setSelectedSlotTime(null);
-    setActiveStep(2);
+    setActiveStep(3);
   };
 
   const handleSelectSlot = (slot: TimeSlot) => {
@@ -149,21 +174,23 @@ export default function PatientBookView() {
   const handleBack = () => {
     setError(null);
     if (activeStep === 1) {
+      setSelectedSpecialtyId(null);
+    } else if (activeStep === 2) {
       setSelectedDoctorId(null);
       setSelectedDate(null);
       setSelectedSlotTime(null);
-    } else if (activeStep === 2) {
+    } else if (activeStep === 3) {
       setSelectedDate(null);
       setSelectedSlotTime(null);
-    } else if (activeStep === 3) {
+    } else if (activeStep === 4) {
       setSelectedSlotTime(null);
     }
     setActiveStep((p) => Math.max(0, p - 1));
   };
 
   const handleNext = () => {
-    if (activeStep === 2 && selectedSlotTime) {
-      setActiveStep(3);
+    if (activeStep === 3 && selectedSlotTime) {
+      setActiveStep(4);
     }
   };
 
@@ -183,11 +210,10 @@ export default function PatientBookView() {
     } catch (err: unknown) {
       const { message: errorMsg, status } = (await import('@/utils/extractApiError')).extractApiError(err, 'Error al reservar la cita');
 
-      // Si el slot ya fue tomado (409 Conflict), refrescar slots y volver al paso de horarios
       if (status === 409) {
         setSelectedSlotTime(null);
         await queryClient.invalidateQueries({ queryKey: ['time-slots', selectedDoctorId, selectedSpecialtyId, selectedDate] });
-        setActiveStep(2);
+        setActiveStep(3);
         setError('El horario seleccionado ya fue reservado. Por favor selecciona otro horario disponible.');
       } else {
         setError(errorMsg);
@@ -248,8 +274,68 @@ export default function PatientBookView() {
         </Alert>
       )}
 
-      {/* Step 0: Select Specialty */}
+      {/* Step 0: Select Clinic/Sede */}
       {activeStep === 0 && (
+        <Box>
+          <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+            Selecciona una sede
+          </Typography>
+          {loadingClinics ? (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {[1, 2, 3].map((i) => <Skeleton key={i} variant="rounded" height={80} />)}
+            </Box>
+          ) : clinics.length === 0 ? (
+            <Alert severity="info">No hay sedes disponibles en este momento.</Alert>
+          ) : (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {clinics.filter((c) => c.isActive).map((clinic) => (
+                <Card
+                  key={clinic.id}
+                  variant="outlined"
+                  sx={{
+                    borderRadius: 2,
+                    borderColor: selectedClinicId === clinic.id ? 'primary.main' : undefined,
+                    borderWidth: selectedClinicId === clinic.id ? 2 : 1,
+                  }}
+                >
+                  <CardActionArea onClick={() => handleSelectClinic(clinic.id)}>
+                    <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 1.5 }}>
+                      <Box
+                        sx={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: 2,
+                          bgcolor: 'primary.lighter',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        <i className="ri-hospital-line" style={{ fontSize: 22, color: 'var(--mui-palette-primary-main)' }} />
+                      </Box>
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography variant="subtitle2" fontWeight={600} noWrap>
+                          {clinic.name}
+                        </Typography>
+                        {clinic.address && (
+                          <Typography variant="caption" color="text.secondary" noWrap>
+                            <i className="ri-map-pin-line" style={{ fontSize: 12, marginRight: 4 }} />
+                            {clinic.address}
+                          </Typography>
+                        )}
+                      </Box>
+                    </CardContent>
+                  </CardActionArea>
+                </Card>
+              ))}
+            </Box>
+          )}
+        </Box>
+      )}
+
+      {/* Step 1: Select Specialty */}
+      {activeStep === 1 && (
         <Box>
           <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
             Selecciona una especialidad
@@ -302,11 +388,14 @@ export default function PatientBookView() {
               ))}
             </Box>
           )}
+          <Button sx={{ mt: 2 }} onClick={handleBack} startIcon={<i className="ri-arrow-left-line" />}>
+            Volver
+          </Button>
         </Box>
       )}
 
-      {/* Step 1: Select Doctor */}
-      {activeStep === 1 && (
+      {/* Step 2: Select Doctor */}
+      {activeStep === 2 && (
         <Box>
           <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
             Selecciona un doctor
@@ -316,7 +405,7 @@ export default function PatientBookView() {
               {[1, 2, 3].map((i) => <Skeleton key={i} variant="rounded" height={70} />)}
             </Box>
           ) : doctors.length === 0 ? (
-            <Alert severity="info">No hay doctores disponibles para esta especialidad.</Alert>
+            <Alert severity="info">No hay doctores disponibles para esta especialidad en la sede seleccionada.</Alert>
           ) : (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {doctors.filter((d) => d.isActive).map((doc) => (
@@ -365,8 +454,8 @@ export default function PatientBookView() {
         </Box>
       )}
 
-      {/* Step 2: Select Date & Time */}
-      {activeStep === 2 && (
+      {/* Step 3: Select Date & Time */}
+      {activeStep === 3 && (
         <Box>
           <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
             Selecciona fecha y hora
@@ -457,8 +546,8 @@ export default function PatientBookView() {
         </Box>
       )}
 
-      {/* Step 3: Confirm */}
-      {activeStep === 3 && (
+      {/* Step 4: Confirm */}
+      {activeStep === 4 && (
         <Box>
           <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
             Confirma tu cita
@@ -466,6 +555,19 @@ export default function PatientBookView() {
 
           <Card variant="outlined" sx={{ borderRadius: 2, mb: 3 }}>
             <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box>
+                <Typography variant="caption" color="text.secondary">Sede</Typography>
+                <Typography variant="body1" fontWeight={500}>
+                  {selectedClinic?.name}
+                </Typography>
+                {selectedClinic?.address && (
+                  <Typography variant="caption" color="text.secondary">
+                    <i className="ri-map-pin-line" style={{ fontSize: 12, marginRight: 4 }} />
+                    {selectedClinic.address}
+                  </Typography>
+                )}
+              </Box>
+              <Divider />
               <Box>
                 <Typography variant="caption" color="text.secondary">Especialidad</Typography>
                 <Typography variant="body1" fontWeight={500}>
