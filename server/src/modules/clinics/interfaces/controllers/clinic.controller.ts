@@ -51,7 +51,7 @@ export class ClinicController {
   }
 
   @Get()
-  @Auth(UserRole.ADMIN)
+  @Auth(UserRole.ADMIN, UserRole.PATIENT)
   @ApiOperation({ summary: 'Listar sedes con paginación' })
   @ApiResponse({
     status: 200,

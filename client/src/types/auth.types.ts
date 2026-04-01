@@ -43,6 +43,10 @@ export interface RegisterPatientRequest {
   phone: string;
   birthday?: string;
   gender?: string;
+  emergencyContact: string;
+  bloodType: string;
+  allergies?: string;
+  chronicConditions?: string;
   password: string;
 }
 

@@ -43,7 +43,9 @@ const GENDER_OPTIONS = [
   { value: 'F', label: 'Femenino' },
 ];
 
-const STEPS = ['Identificación', 'Datos Personales', 'Credenciales'];
+const BLOOD_TYPE_OPTIONS = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
+
+const STEPS = ['Identificación', 'Datos Personales', 'Inf. Médica', 'Credenciales'];
 
 const registerSchema = z
   .object({
@@ -70,9 +72,19 @@ const registerSchema = z
       .refine(isValidPhoneNumber, 'Número de teléfono inválido'),
     birthday: z.string().optional(),
     gender: z.string().optional(),
+    emergencyContact: z
+      .string()
+      .min(1, 'El contacto de emergencia es obligatorio')
+      .refine(isValidPhoneNumber, 'Número de teléfono inválido'),
+    bloodType: z.string().min(1, 'El tipo de sangre es obligatorio'),
+    allergies: z.string().max(500, 'Máximo 500 caracteres').optional().or(z.literal('')),
+    chronicConditions: z.string().max(500, 'Máximo 500 caracteres').optional().or(z.literal('')),
     password: z
       .string()
-      .min(6, 'La contraseña debe tener al menos 6 caracteres'),
+      .min(8, 'La contraseña debe tener al menos 8 caracteres')
+      .regex(/(?=.*[a-z])/, 'Debe incluir al menos una letra minúscula')
+      .regex(/(?=.*[A-Z])/, 'Debe incluir al menos una letra mayúscula')
+      .regex(/(?=.*\d)/, 'Debe incluir al menos un número'),
     confirmPassword: z.string().min(1, 'Confirma tu contraseña'),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -85,6 +97,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 const STEP_FIELDS: (keyof RegisterFormValues)[][] = [
   ['typeDocument', 'numberDocument'],
   ['name', 'lastName', 'email', 'phone', 'birthday', 'gender'],
+  ['emergencyContact', 'bloodType', 'allergies', 'chronicConditions'],
   ['password', 'confirmPassword'],
 ];
 
@@ -119,6 +132,10 @@ export function RegisterForm() {
       phone: '',
       birthday: '',
       gender: '',
+      emergencyContact: '',
+      bloodType: '',
+      allergies: '',
+      chronicConditions: '',
       password: '',
       confirmPassword: '',
     },
@@ -217,6 +234,8 @@ export function RegisterForm() {
       canProceed = await validateStep0();
     } else if (activeStep === 1) {
       canProceed = await validateStep1();
+    } else if (activeStep === 2) {
+      canProceed = await trigger(STEP_FIELDS[2]);
     }
     if (canProceed) {
       setActiveStep((prev) => prev + 1);
@@ -475,8 +494,108 @@ export function RegisterForm() {
         </Box>
       )}
 
-      {/* ── Step 3: Credenciales ── */}
+      {/* ── Step 3: Información Médica ── */}
       {activeStep === 2 && (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
+          <Box
+            sx={{
+              p: 2,
+              borderRadius: 2,
+              bgcolor: (t) => alpha(t.palette.error.main, 0.08),
+              border: (t) => `1px solid ${alpha(t.palette.error.main, 0.2)}`,
+            }}
+          >
+            <Typography variant="body2" color="error.main" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <i className="ri-heart-pulse-line" style={{ fontSize: 18 }} />
+              Esta información es necesaria para tu atención médica.
+            </Typography>
+          </Box>
+
+          <Grid container spacing={2}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Controller
+                name="emergencyContact"
+                control={control}
+                render={({ field, fieldState: { error: fieldError } }) => (
+                  <InternationalPhoneInput
+                    value={field.value}
+                    onChange={(val) => field.onChange(val ?? '')}
+                    error={fieldError?.message}
+                    label="Contacto de emergencia *"
+                  />
+                )}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Controller
+                name="bloodType"
+                control={control}
+                render={({ field, fieldState: { error: fieldError } }) => (
+                  <TextField
+                    {...field}
+                    select
+                    label="Tipo de sangre *"
+                    fullWidth
+                    error={!!fieldError}
+                    helperText={fieldError?.message}
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                          <Box sx={{ mr: 1, display: 'flex', color: 'action.active' }}>
+                            <i className="ri-drop-line" style={{ fontSize: 20 }} />
+                          </Box>
+                        ),
+                      },
+                    }}
+                  >
+                    <MenuItem value="">Seleccionar</MenuItem>
+                    {BLOOD_TYPE_OPTIONS.map((t) => (
+                      <MenuItem key={t} value={t}>{t}</MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+            </Grid>
+          </Grid>
+
+          <Controller
+            name="allergies"
+            control={control}
+            render={({ field, fieldState: { error: fieldError } }) => (
+              <TextField
+                {...field}
+                label="Alergias (opcional)"
+                multiline
+                minRows={2}
+                maxRows={4}
+                placeholder="Penicilina, Sulfas..."
+                error={!!fieldError}
+                helperText={fieldError?.message}
+              />
+            )}
+          />
+
+          <Controller
+            name="chronicConditions"
+            control={control}
+            render={({ field, fieldState: { error: fieldError } }) => (
+              <TextField
+                {...field}
+                label="Condiciones crónicas (opcional)"
+                multiline
+                minRows={2}
+                maxRows={4}
+                placeholder="Diabetes, Hipertensión..."
+                error={!!fieldError}
+                helperText={fieldError?.message}
+              />
+            )}
+          />
+        </Box>
+      )}
+
+      {/* ── Step 4: Credenciales ── */}
+      {activeStep === 3 && (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
           <Box
             sx={{
@@ -488,7 +607,7 @@ export function RegisterForm() {
           >
             <Typography variant="body2" color="warning.main" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <i className="ri-lock-line" style={{ fontSize: 18 }} />
-              Crea una contraseña segura de al menos 6 caracteres.
+              Crea una contraseña segura: mínimo 8 caracteres, con mayúscula, minúscula y número.
             </Typography>
           </Box>
 
