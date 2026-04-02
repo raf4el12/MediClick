@@ -12,8 +12,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth } from '../../../../shared/decorators/index.js';
+import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator.js';
 import { CreateNotificationDto } from '../../application/dto/create-notification.dto.js';
 import { NotificationQueryDto } from '../../application/dto/notification-query.dto.js';
@@ -42,7 +42,8 @@ export class NotificationController {
   ) {}
 
   @Post()
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('CREATE', 'NOTIFICATIONS')
   @ApiOperation({ summary: 'Crear notificación (admin)' })
   @ApiResponse({
     status: 201,
@@ -56,12 +57,8 @@ export class NotificationController {
   }
 
   @Get()
-  @Auth(
-    UserRole.ADMIN,
-    UserRole.DOCTOR,
-    UserRole.PATIENT,
-    UserRole.RECEPTIONIST,
-  )
+  @Auth()
+  @RequirePermissions('READ', 'NOTIFICATIONS')
   @ApiOperation({ summary: 'Listar mis notificaciones' })
   @ApiResponse({
     status: 200,
@@ -76,12 +73,8 @@ export class NotificationController {
   }
 
   @Get('unread-count')
-  @Auth(
-    UserRole.ADMIN,
-    UserRole.DOCTOR,
-    UserRole.PATIENT,
-    UserRole.RECEPTIONIST,
-  )
+  @Auth()
+  @RequirePermissions('READ', 'NOTIFICATIONS')
   @ApiOperation({ summary: 'Contar notificaciones no leídas' })
   @ApiResponse({ status: 200, type: UnreadCountResponseDto })
   async countUnread(
@@ -91,12 +84,8 @@ export class NotificationController {
   }
 
   @Patch('read-all')
-  @Auth(
-    UserRole.ADMIN,
-    UserRole.DOCTOR,
-    UserRole.PATIENT,
-    UserRole.RECEPTIONIST,
-  )
+  @Auth()
+  @RequirePermissions('UPDATE', 'NOTIFICATIONS')
   @ApiOperation({ summary: 'Marcar todas las notificaciones como leídas' })
   @ApiResponse({
     status: 200,
@@ -109,12 +98,8 @@ export class NotificationController {
   }
 
   @Patch(':id/read')
-  @Auth(
-    UserRole.ADMIN,
-    UserRole.DOCTOR,
-    UserRole.PATIENT,
-    UserRole.RECEPTIONIST,
-  )
+  @Auth()
+  @RequirePermissions('UPDATE', 'NOTIFICATIONS')
   @ApiOperation({ summary: 'Marcar notificación como leída' })
   @ApiResponse({ status: 200, type: NotificationResponseDto })
   @ApiResponse({ status: 403, description: 'No es tu notificación' })
@@ -127,12 +112,8 @@ export class NotificationController {
   }
 
   @Delete(':id')
-  @Auth(
-    UserRole.ADMIN,
-    UserRole.DOCTOR,
-    UserRole.PATIENT,
-    UserRole.RECEPTIONIST,
-  )
+  @Auth()
+  @RequirePermissions('DELETE', 'NOTIFICATIONS')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Eliminar notificación' })
   @ApiResponse({ status: 204, description: 'Notificación eliminada' })

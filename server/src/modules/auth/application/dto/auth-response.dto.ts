@@ -1,5 +1,4 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 
 export class AuthUserDto {
   @ApiProperty()
@@ -11,8 +10,15 @@ export class AuthUserDto {
   @ApiProperty()
   email: string;
 
-  @ApiProperty({ enum: UserRole })
-  role: UserRole;
+  @ApiProperty({ description: 'Nombre del rol del usuario' })
+  role: string;
+
+  @ApiProperty({
+    description: 'Permisos aplanados del usuario',
+    example: ['READ:APPOINTMENTS', 'CREATE:PATIENTS'],
+    type: [String],
+  })
+  permissions: string[];
 
   @ApiPropertyOptional({
     example: 'Sede Principal',

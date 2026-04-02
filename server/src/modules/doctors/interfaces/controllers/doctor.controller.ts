@@ -12,8 +12,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth, CurrentClinic } from '../../../../shared/decorators/index.js';
+import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { OnboardDoctorDto } from '../../application/dto/onboard-doctor.dto.js';
 import { UpdateDoctorDto } from '../../application/dto/update-doctor.dto.js';
@@ -38,7 +38,8 @@ export class DoctorController {
   ) {}
 
   @Post('onboard')
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('CREATE', 'DOCTORS')
   @ApiOperation({
     summary:
       'Onboarding de doctor (crear usuario + perfil + doctor + especialidades)',
@@ -58,7 +59,8 @@ export class DoctorController {
   }
 
   @Get()
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.PATIENT)
+  @Auth()
+  @RequirePermissions('READ', 'DOCTORS')
   @ApiOperation({ summary: 'Listar doctores con paginación' })
   @ApiResponse({
     status: 200,
@@ -84,7 +86,8 @@ export class DoctorController {
   }
 
   @Get(':id')
-  @Auth(UserRole.ADMIN, UserRole.DOCTOR, UserRole.PATIENT)
+  @Auth()
+  @RequirePermissions('READ', 'DOCTORS')
   @ApiOperation({ summary: 'Obtener doctor por ID' })
   @ApiResponse({
     status: 200,
@@ -100,7 +103,8 @@ export class DoctorController {
   }
 
   @Patch(':id')
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('UPDATE', 'DOCTORS')
   @ApiOperation({ summary: 'Actualizar datos del doctor' })
   @ApiResponse({ status: 200, type: DoctorResponseDto })
   @ApiResponse({ status: 404, description: 'Doctor no encontrado' })
@@ -114,7 +118,8 @@ export class DoctorController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('DELETE', 'DOCTORS')
   @ApiOperation({ summary: 'Eliminar doctor (soft delete)' })
   @ApiResponse({ status: 204, description: 'Doctor eliminado' })
   @ApiResponse({ status: 404, description: 'No encontrado' })

@@ -7,8 +7,8 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth } from '../../../../shared/decorators/index.js';
+import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator.js';
 import { CreateClinicalNoteDto } from '../../application/dto/create-clinical-note.dto.js';
 import { ClinicalNoteResponseDto } from '../../application/dto/clinical-note-response.dto.js';
@@ -24,7 +24,8 @@ export class ClinicalNoteController {
   ) {}
 
   @Post()
-  @Auth(UserRole.DOCTOR)
+  @Auth()
+  @RequirePermissions('CREATE', 'CLINICAL_NOTES')
   @ApiOperation({ summary: 'Crear nota clínica para una cita' })
   @ApiResponse({
     status: 201,
@@ -41,13 +42,14 @@ export class ClinicalNoteController {
   }
 
   @Get('appointment/:appointmentId')
-  @Auth(UserRole.ADMIN, UserRole.DOCTOR)
+  @Auth()
+  @RequirePermissions('READ', 'CLINICAL_NOTES')
   @ApiOperation({ summary: 'Obtener notas clínicas de una cita' })
   @ApiResponse({ status: 200, type: [ClinicalNoteResponseDto] })
   @ApiResponse({ status: 403, description: 'No es el doctor de esta cita' })
   async findByAppointment(
     @CurrentUser('id') userId: number,
-    @CurrentUser('role') role: string,
+    @CurrentUser('roleName') role: string,
     @Param('appointmentId', ParseIntPipe) appointmentId: number,
   ): Promise<ClinicalNoteResponseDto[]> {
     return this.findByAppointmentUseCase.execute(userId, appointmentId, role);

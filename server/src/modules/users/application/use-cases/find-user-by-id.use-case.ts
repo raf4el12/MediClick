@@ -4,6 +4,7 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
+import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { UserDetailResponseDto } from '../dto/user-detail-response.dto.js';
 import type { IUserRepository } from '../../domain/repositories/user.repository.js';
 
@@ -31,7 +32,7 @@ export class FindUserByIdUseCase {
       id: u.id,
       name: u.name,
       email: u.email,
-      role: u.role,
+      role: u.roleName as UserRole,
       isActive: u.isActive,
       createdAt: u.createdAt,
       updatedAt: u.updatedAt,

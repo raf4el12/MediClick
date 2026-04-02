@@ -1,6 +1,5 @@
 import {
   PrismaClient,
-  UserRole,
   AppointmentStatus,
   PaymentStatus,
   PaymentMethod,
@@ -262,13 +261,23 @@ async function main() {
   // ════════════════════════════════════════════════════
   console.log('👤 Creando usuarios...');
 
+  // Look up system role IDs
+  const systemRoles = await prisma.roles.findMany({
+    where: { isSystem: true },
+    select: { id: true, name: true },
+  });
+  const roleIds: Record<string, number> = {};
+  for (const r of systemRoles) {
+    roleIds[r.name] = r.id;
+  }
+
   // --- Super Admin (no clinicId) ---
   const adminUser = await prisma.users.create({
     data: {
       name: 'Super Admin',
       email: 'admin@mediclick.com',
       password: hashedPassword,
-      role: UserRole.ADMIN,
+      roleId: roleIds['ADMIN'],
       isActive: true,
       validateEmail: true,
     },
@@ -294,7 +303,7 @@ async function main() {
       name: 'Admin Lima',
       email: 'adminlima@mediclick.com',
       password: hashedPassword,
-      role: UserRole.ADMIN,
+      roleId: roleIds['ADMIN'],
       isActive: true,
       validateEmail: true,
       clinicId: clinicLima.id,
@@ -321,7 +330,7 @@ async function main() {
       name: 'Recepcionista Lima',
       email: 'recepcion@mediclick.com',
       password: hashedPassword,
-      role: UserRole.RECEPTIONIST,
+      roleId: roleIds['RECEPTIONIST'],
       isActive: true,
       validateEmail: true,
       clinicId: clinicLima.id,
@@ -348,7 +357,7 @@ async function main() {
       name: 'Dr. Ramírez',
       email: 'ramirez@mediclick.com',
       password: hashedPassword,
-      role: UserRole.DOCTOR,
+      roleId: roleIds['DOCTOR'],
       isActive: true,
       validateEmail: true,
       clinicId: clinicLima.id,
@@ -393,7 +402,7 @@ async function main() {
       name: 'Dra. Flores',
       email: 'flores@mediclick.com',
       password: hashedPassword,
-      role: UserRole.DOCTOR,
+      roleId: roleIds['DOCTOR'],
       isActive: true,
       validateEmail: true,
       clinicId: clinicLima.id,
@@ -438,7 +447,7 @@ async function main() {
       name: 'Dr. Chávez',
       email: 'chavez@mediclick.com',
       password: hashedPassword,
-      role: UserRole.DOCTOR,
+      roleId: roleIds['DOCTOR'],
       isActive: true,
       validateEmail: true,
       clinicId: clinicArequipa.id,
@@ -479,7 +488,7 @@ async function main() {
       name: 'Juan Pérez',
       email: 'juan@gmail.com',
       password: hashedPassword,
-      role: UserRole.PATIENT,
+      roleId: roleIds['PATIENT'],
       isActive: true,
       validateEmail: true,
     },
@@ -518,7 +527,7 @@ async function main() {
       name: 'María López',
       email: 'maria@gmail.com',
       password: hashedPassword,
-      role: UserRole.PATIENT,
+      roleId: roleIds['PATIENT'],
       isActive: true,
       validateEmail: true,
     },
@@ -557,7 +566,7 @@ async function main() {
       name: 'Pedro Quispe',
       email: 'pedro@gmail.com',
       password: hashedPassword,
-      role: UserRole.PATIENT,
+      roleId: roleIds['PATIENT'],
       isActive: true,
       validateEmail: true,
     },

@@ -10,8 +10,8 @@ import {
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { UserRole, toUserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth } from '../../../../shared/decorators/index.js';
+import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreateAppointmentDto } from '../../application/dto/create-appointment.dto.js';
 import { AppointmentDashboardFilterDto } from '../../application/dto/appointment-dashboard-filter.dto.js';
@@ -54,7 +54,8 @@ export class AppointmentController {
   ) {}
 
   @Get('my')
-  @Auth(UserRole.PATIENT)
+  @Auth()
+  @RequirePermissions('READ', 'APPOINTMENTS')
   @ApiOperation({ summary: 'Mis citas (paciente autenticado)' })
   @ApiResponse({ status: 200, type: PaginatedAppointmentResponseDto })
   @ApiResponse({ status: 404, description: 'Perfil de paciente no encontrado' })
@@ -73,7 +74,8 @@ export class AppointmentController {
   }
 
   @Post('patient')
-  @Auth(UserRole.PATIENT)
+  @Auth()
+  @RequirePermissions('CREATE', 'APPOINTMENTS')
   @Throttle({ long: { ttl: 60000, limit: 5 } })
   @ApiOperation({
     summary: 'Reservar cita como paciente (auto-asigna patientId)',
@@ -94,7 +96,8 @@ export class AppointmentController {
   }
 
   @Post()
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST)
+  @Auth()
+  @RequirePermissions('CREATE', 'APPOINTMENTS')
   @Throttle({ long: { ttl: 60000, limit: 10 } })
   @ApiOperation({ summary: 'Crear cita médica' })
   @ApiResponse({
@@ -112,7 +115,8 @@ export class AppointmentController {
   }
 
   @Post('overbook')
-  @Auth(UserRole.ADMIN, UserRole.DOCTOR)
+  @Auth()
+  @RequirePermissions('CREATE', 'APPOINTMENTS')
   @Throttle({ long: { ttl: 60000, limit: 5 } })
   @ApiOperation({
     summary: 'Crear cita de sobrecupo (al final del último slot del día)',
@@ -135,7 +139,8 @@ export class AppointmentController {
   }
 
   @Get('doctor/today')
-  @Auth(UserRole.DOCTOR)
+  @Auth()
+  @RequirePermissions('READ', 'APPOINTMENTS')
   @ApiOperation({ summary: 'Citas del doctor autenticado para hoy' })
   @ApiResponse({ status: 200, type: [AppointmentResponseDto] })
   async getDoctorDaily(
@@ -145,12 +150,13 @@ export class AppointmentController {
   }
 
   @Get()
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.DOCTOR)
+  @Auth()
+  @RequirePermissions('READ', 'APPOINTMENTS')
   @ApiOperation({ summary: 'Dashboard de citas con filtros' })
   @ApiResponse({ status: 200, type: PaginatedAppointmentResponseDto })
   async findAll(
     @CurrentUser('id') userId: number,
-    @CurrentUser('role') role: string,
+    @CurrentUser('roleName') role: string,
     @CurrentClinic() clinicId: number | null,
     @Query() filterDto: AppointmentDashboardFilterDto,
   ): Promise<PaginatedAppointmentResponseDto> {
@@ -171,7 +177,8 @@ export class AppointmentController {
   }
 
   @Patch(':id/check-in')
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.DOCTOR)
+  @Auth()
+  @RequirePermissions('UPDATE', 'APPOINTMENTS')
   @ApiOperation({
     summary: 'Check-in de paciente (PENDING/CONFIRMED → IN_PROGRESS)',
   })
@@ -185,7 +192,8 @@ export class AppointmentController {
   }
 
   @Patch(':id/cancel')
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.PATIENT)
+  @Auth()
+  @RequirePermissions('UPDATE', 'APPOINTMENTS')
   @ApiOperation({
     summary:
       'Cancelar cita (pacientes pueden cancelar con política de penalización)',
@@ -196,13 +204,14 @@ export class AppointmentController {
   async cancel(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CancelAppointmentDto,
-    @CurrentUser('role') userRole: string,
+    @CurrentUser('roleName') userRole: string,
   ): Promise<AppointmentResponseDto> {
-    return this.cancelAppointmentUseCase.execute(id, dto, toUserRole(userRole));
+    return this.cancelAppointmentUseCase.execute(id, dto, userRole);
   }
 
   @Patch(':id/confirm')
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.PATIENT)
+  @Auth()
+  @RequirePermissions('UPDATE', 'APPOINTMENTS')
   @ApiOperation({ summary: 'Confirmar cita (PENDING → CONFIRMED)' })
   @ApiResponse({ status: 200, type: AppointmentResponseDto })
   @ApiResponse({ status: 400, description: 'Estado no permite confirmación' })
@@ -214,7 +223,8 @@ export class AppointmentController {
   }
 
   @Patch(':id/reschedule')
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.DOCTOR)
+  @Auth()
+  @RequirePermissions('UPDATE', 'APPOINTMENTS')
   @ApiOperation({ summary: 'Reagendar cita a otro horario' })
   @ApiResponse({ status: 200, type: AppointmentResponseDto })
   @ApiResponse({ status: 400, description: 'Estado no permite reagendar' })
@@ -228,7 +238,8 @@ export class AppointmentController {
   }
 
   @Patch(':id/complete')
-  @Auth(UserRole.ADMIN, UserRole.DOCTOR)
+  @Auth()
+  @RequirePermissions('UPDATE', 'APPOINTMENTS')
   @ApiOperation({ summary: 'Completar cita (IN_PROGRESS → COMPLETED)' })
   @ApiResponse({ status: 200, type: AppointmentResponseDto })
   @ApiResponse({ status: 400, description: 'Estado no permite completar' })

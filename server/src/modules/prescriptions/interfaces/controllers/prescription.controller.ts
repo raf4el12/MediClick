@@ -14,8 +14,8 @@ import {
   ApiProduces,
 } from '@nestjs/swagger';
 import type { Response } from 'express';
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth } from '../../../../shared/decorators/index.js';
+import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator.js';
 import { CreatePrescriptionDto } from '../../application/dto/create-prescription.dto.js';
 import { PrescriptionResponseDto } from '../../application/dto/prescription-response.dto.js';
@@ -37,7 +37,8 @@ export class PrescriptionController {
   ) {}
 
   @Post()
-  @Auth(UserRole.DOCTOR)
+  @Auth()
+  @RequirePermissions('CREATE', 'PRESCRIPTIONS')
   @ApiOperation({ summary: 'Crear receta médica (auto-completa la cita)' })
   @ApiResponse({
     status: 201,
@@ -55,7 +56,8 @@ export class PrescriptionController {
   }
 
   @Get('appointment/:appointmentId/pdf')
-  @Auth(UserRole.ADMIN, UserRole.DOCTOR)
+  @Auth()
+  @RequirePermissions('READ', 'PRESCRIPTIONS')
   @ApiOperation({ summary: 'Descargar receta en PDF (doctor/admin)' })
   @ApiProduces('application/pdf')
   @ApiResponse({ status: 200, description: 'PDF de la receta' })
@@ -63,7 +65,7 @@ export class PrescriptionController {
   @ApiResponse({ status: 404, description: 'Receta no encontrada' })
   async downloadPdf(
     @CurrentUser('id') userId: number,
-    @CurrentUser('role') role: string,
+    @CurrentUser('roleName') role: string,
     @Param('appointmentId', ParseIntPipe) appointmentId: number,
     @Res() res: Response,
   ): Promise<void> {
@@ -77,7 +79,8 @@ export class PrescriptionController {
   }
 
   @Get('my/appointment/:appointmentId/pdf')
-  @Auth(UserRole.PATIENT)
+  @Auth()
+  @RequirePermissions('READ', 'PRESCRIPTIONS')
   @ApiOperation({ summary: 'Descargar mi receta en PDF (paciente)' })
   @ApiProduces('application/pdf')
   @ApiResponse({ status: 200, description: 'PDF de la receta' })
@@ -101,7 +104,8 @@ export class PrescriptionController {
   }
 
   @Get('my/appointment/:appointmentId')
-  @Auth(UserRole.PATIENT)
+  @Auth()
+  @RequirePermissions('READ', 'PRESCRIPTIONS')
   @ApiOperation({ summary: 'Obtener mi receta de una cita (paciente)' })
   @ApiResponse({ status: 200, type: PrescriptionResponseDto })
   @ApiResponse({ status: 403, description: 'No es el paciente de esta cita' })
@@ -114,14 +118,15 @@ export class PrescriptionController {
   }
 
   @Get('appointment/:appointmentId')
-  @Auth(UserRole.ADMIN, UserRole.DOCTOR)
+  @Auth()
+  @RequirePermissions('READ', 'PRESCRIPTIONS')
   @ApiOperation({ summary: 'Obtener receta de una cita' })
   @ApiResponse({ status: 200, type: PrescriptionResponseDto })
   @ApiResponse({ status: 403, description: 'No es el doctor de esta cita' })
   @ApiResponse({ status: 404, description: 'Receta no encontrada' })
   async findByAppointment(
     @CurrentUser('id') userId: number,
-    @CurrentUser('role') role: string,
+    @CurrentUser('roleName') role: string,
     @Param('appointmentId', ParseIntPipe) appointmentId: number,
   ): Promise<PrescriptionResponseDto> {
     return this.findByAppointmentUseCase.execute(userId, appointmentId, role);

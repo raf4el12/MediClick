@@ -1,12 +1,11 @@
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
-
 export class UserEntity {
   id: number;
   name: string;
   email: string;
   password: string;
   photo: string | null;
-  role: UserRole;
+  roleId: number | null;
+  roleName: string | null;
   isActive: boolean;
   validateEmail: boolean;
   clinicId: number | null;

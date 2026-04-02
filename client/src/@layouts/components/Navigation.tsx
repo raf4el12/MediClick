@@ -14,19 +14,27 @@ import ListItemText from '@mui/material/ListItemText';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
-import { useAppSelector } from '@/redux-store/hooks';
-import { selectUser } from '@/redux-store/slices/auth';
-import { UserRole } from '@/types/auth.types';
+import { usePermissions } from '@/hooks/usePermissions';
 import { useSettings } from '@/@core/hooks/useSettings';
 
 const DRAWER_WIDTH = 260;
 const KEEP_MOUNTED = { keepMounted: true };
 
+interface NavPermission {
+  action: string;
+  subject: string;
+}
+
 interface NavItem {
   title: string;
   path: string;
   icon: string;
-  roles?: UserRole[];
+  /** Si se especifica, el usuario necesita al menos uno de estos permisos */
+  permissions?: NavPermission[];
+  /** Si true, solo visible para pacientes (rol PATIENT) */
+  patientOnly?: boolean;
+  /** Si true, visible para cualquier staff (no paciente) */
+  staffOnly?: boolean;
 }
 
 interface NavSection {
@@ -43,29 +51,29 @@ const navigationItems: NavSection[] = [
         title: 'Inicio',
         path: '/patient',
         icon: 'ri-home-4-line',
-        roles: [UserRole.PATIENT],
+        patientOnly: true,
       },
       {
         title: 'Mis Citas',
         path: '/patient/appointments',
         icon: 'ri-calendar-check-line',
-        roles: [UserRole.PATIENT],
+        patientOnly: true,
       },
       {
         title: 'Reservar Cita',
         path: '/patient/book',
         icon: 'ri-add-circle-line',
-        roles: [UserRole.PATIENT],
+        patientOnly: true,
       },
       {
         title: 'Mi Perfil',
         path: '/patient/profile',
         icon: 'ri-user-line',
-        roles: [UserRole.PATIENT],
+        patientOnly: true,
       },
     ],
   },
-  // ── Secciones para staff (ADMIN, DOCTOR, RECEPTIONIST) ──
+  // ── Secciones para staff ──
   {
     section: 'General',
     items: [
@@ -73,7 +81,7 @@ const navigationItems: NavSection[] = [
         title: 'Dashboard',
         path: '/dashboard',
         icon: 'ri-dashboard-line',
-        roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.RECEPTIONIST],
+        staffOnly: true,
       },
     ],
   },
@@ -84,43 +92,45 @@ const navigationItems: NavSection[] = [
         title: 'Mis Citas Hoy',
         path: '/doctor/appointments',
         icon: 'ri-calendar-todo-line',
-        roles: [UserRole.DOCTOR],
+        permissions: [{ action: 'READ', subject: 'APPOINTMENTS' }],
+        staffOnly: true,
       },
       {
         title: 'Citas',
         path: '/appointments',
         icon: 'ri-calendar-check-line',
-        roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.RECEPTIONIST],
+        permissions: [{ action: 'READ', subject: 'APPOINTMENTS' }],
+        staffOnly: true,
       },
       {
         title: 'Pacientes',
         path: '/patients',
         icon: 'ri-user-heart-line',
-        roles: [UserRole.ADMIN, UserRole.DOCTOR, UserRole.RECEPTIONIST],
+        permissions: [{ action: 'READ', subject: 'PATIENTS' }],
       },
       {
         title: 'Doctores',
         path: '/doctors',
         icon: 'ri-stethoscope-line',
-        roles: [UserRole.ADMIN, UserRole.RECEPTIONIST],
+        permissions: [{ action: 'READ', subject: 'DOCTORS' }],
       },
       {
         title: 'Notas Clínicas',
         path: '/clinical-notes',
         icon: 'ri-file-text-line',
-        roles: [UserRole.ADMIN, UserRole.DOCTOR],
+        permissions: [{ action: 'READ', subject: 'CLINICAL_NOTES' }],
       },
       {
         title: 'Recetas',
         path: '/prescriptions',
         icon: 'ri-medicine-bottle-line',
-        roles: [UserRole.ADMIN, UserRole.DOCTOR],
+        permissions: [{ action: 'READ', subject: 'PRESCRIPTIONS' }],
       },
       {
         title: 'Historial Médico',
         path: '/medical-history',
         icon: 'ri-file-list-3-line',
-        roles: [UserRole.ADMIN, UserRole.DOCTOR],
+        permissions: [{ action: 'READ', subject: 'MEDICAL_HISTORY' }],
       },
     ],
   },
@@ -131,25 +141,27 @@ const navigationItems: NavSection[] = [
         title: 'Horarios',
         path: '/schedules',
         icon: 'ri-time-line',
-        roles: [UserRole.ADMIN, UserRole.DOCTOR],
+        permissions: [{ action: 'READ', subject: 'SCHEDULES' }],
+        staffOnly: true,
       },
       {
         title: 'Disponibilidad',
         path: '/availability',
         icon: 'ri-calendar-event-line',
-        roles: [UserRole.ADMIN, UserRole.DOCTOR],
+        permissions: [{ action: 'READ', subject: 'AVAILABILITY' }],
+        staffOnly: true,
       },
       {
         title: 'Bloqueos',
         path: '/schedule-blocks',
         icon: 'ri-calendar-close-line',
-        roles: [UserRole.ADMIN, UserRole.RECEPTIONIST],
+        permissions: [{ action: 'READ', subject: 'SCHEDULE_BLOCKS' }],
       },
       {
         title: 'Feriados',
         path: '/holidays',
         icon: 'ri-calendar-2-line',
-        roles: [UserRole.ADMIN],
+        permissions: [{ action: 'READ', subject: 'HOLIDAYS' }],
       },
     ],
   },
@@ -160,31 +172,31 @@ const navigationItems: NavSection[] = [
         title: 'Sedes',
         path: '/clinics',
         icon: 'ri-building-line',
-        roles: [UserRole.ADMIN],
+        permissions: [{ action: 'MANAGE', subject: 'CLINICS' }],
       },
       {
         title: 'Especialidades',
         path: '/specialties',
         icon: 'ri-heart-pulse-line',
-        roles: [UserRole.ADMIN],
+        permissions: [{ action: 'MANAGE', subject: 'SPECIALTIES' }],
       },
       {
         title: 'Categorías',
         path: '/categories',
         icon: 'ri-folder-line',
-        roles: [UserRole.ADMIN],
+        permissions: [{ action: 'MANAGE', subject: 'CATEGORIES' }],
       },
       {
         title: 'Usuarios',
         path: '/users',
         icon: 'ri-group-line',
-        roles: [UserRole.ADMIN],
+        permissions: [{ action: 'READ', subject: 'USERS' }],
       },
       {
         title: 'Reportes',
         path: '/reports',
         icon: 'ri-bar-chart-box-line',
-        roles: [UserRole.ADMIN],
+        permissions: [{ action: 'READ', subject: 'REPORTS' }],
       },
     ],
   },
@@ -197,9 +209,8 @@ interface NavigationProps {
 
 export default function Navigation({ mobileOpen = false, onMobileClose }: NavigationProps) {
   const pathname = usePathname();
-  const user = useAppSelector(selectUser);
+  const { hasAnyPermission, roleName } = usePermissions();
   const { settings, updateSettings } = useSettings();
-  const userRole = user?.role;
 
   const [isHovered, setIsHovered] = useState(false);
   const isCollapsed = settings.layout === 'collapsed';
@@ -207,6 +218,7 @@ export default function Navigation({ mobileOpen = false, onMobileClose }: Naviga
   const currentWidth = isCollapsed && !isHovered ? 80 : DRAWER_WIDTH;
 
   const isDark = true; // Mantenemos el estado 'dark' para las sombras y contrastes
+  const isPatient = roleName === 'PATIENT';
 
   const bgColor = '#001849';
   const textColor = '#FFFFFF';
@@ -217,9 +229,14 @@ export default function Navigation({ mobileOpen = false, onMobileClose }: Naviga
   const filteredSections = navigationItems
     .map((section) => ({
       ...section,
-      items: section.items.filter(
-        (item) => !item.roles || (userRole && item.roles.includes(userRole)),
-      ),
+      items: section.items.filter((item) => {
+        // Filtrar por patientOnly / staffOnly
+        if (item.patientOnly && !isPatient) return false;
+        if (item.staffOnly && isPatient) return false;
+        // Filtrar por permisos
+        if (item.permissions) return hasAnyPermission(item.permissions);
+        return true;
+      }),
     }))
     .filter((section) => section.items.length > 0);
 

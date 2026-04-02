@@ -1,4 +1,6 @@
+/** @deprecated Usar permissions en lugar de comparar roles directamente */
 export enum UserRole {
+  SUPER_ADMIN = 'SUPER_ADMIN',
   ADMIN = 'ADMIN',
   DOCTOR = 'DOCTOR',
   RECEPTIONIST = 'RECEPTIONIST',
@@ -9,7 +11,8 @@ export interface AuthUser {
   id: number;
   name: string;
   email: string;
-  role: UserRole;
+  role: string;
+  permissions: string[];
   avatarUrl?: string;
   clinicName?: string | null;
   clinicTimezone?: string | null;

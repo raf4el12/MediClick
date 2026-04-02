@@ -12,8 +12,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth, CurrentClinic } from '../../../../shared/decorators/index.js';
+import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreateScheduleBlockDto } from '../../application/dto/create-schedule-block.dto.js';
 import { UpdateScheduleBlockDto } from '../../application/dto/update-schedule-block.dto.js';
@@ -36,7 +36,8 @@ export class ScheduleBlockController {
   ) {}
 
   @Post()
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST)
+  @Auth()
+  @RequirePermissions('CREATE', 'SCHEDULE_BLOCKS')
   @ApiOperation({ summary: 'Crear un bloqueo de horario para un doctor' })
   @ApiResponse({
     status: 201,
@@ -53,7 +54,8 @@ export class ScheduleBlockController {
   }
 
   @Get()
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST)
+  @Auth()
+  @RequirePermissions('READ', 'SCHEDULE_BLOCKS')
   @ApiOperation({ summary: 'Listar bloqueos de horario con paginación' })
   @ApiResponse({
     status: 200,
@@ -79,7 +81,8 @@ export class ScheduleBlockController {
   }
 
   @Patch(':id')
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST)
+  @Auth()
+  @RequirePermissions('UPDATE', 'SCHEDULE_BLOCKS')
   @ApiOperation({ summary: 'Actualizar un bloqueo de horario' })
   @ApiResponse({
     status: 200,
@@ -97,7 +100,8 @@ export class ScheduleBlockController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST)
+  @Auth()
+  @RequirePermissions('DELETE', 'SCHEDULE_BLOCKS')
   @ApiOperation({ summary: 'Eliminar un bloqueo de horario (soft delete)' })
   @ApiResponse({ status: 204, description: 'Bloqueo de horario eliminado' })
   @ApiResponse({ status: 404, description: 'Bloqueo de horario no encontrado' })

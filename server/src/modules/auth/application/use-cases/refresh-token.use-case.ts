@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { AuthResponseDto } from '../dto/auth-response.dto.js';
+import { PrismaService } from '../../../../prisma/prisma.service.js';
 import type { ITokenService } from '../../domain/contracts/token-service.interface.js';
 import type { IRefreshTokenRepository } from '../../domain/contracts/refresh-token-repository.interface.js';
 import type { IUserRepository } from '../../../users/domain/repositories/user.repository.js';
@@ -22,6 +23,7 @@ export class RefreshTokenUseCase {
     private readonly tokenService: ITokenService,
     @Inject('IRefreshTokenRepository')
     private readonly refreshTokenRepository: IRefreshTokenRepository,
+    private readonly prisma: PrismaService,
   ) {}
 
   async execute(
@@ -70,7 +72,8 @@ export class RefreshTokenUseCase {
     const accessToken = await this.tokenService.generateAccessToken({
       sub: user.id,
       email: user.email,
-      role: user.role,
+      roleId: user.roleId!,
+      roleName: user.roleName!,
       clinicId: user.clinicId,
     });
 
@@ -90,6 +93,16 @@ export class RefreshTokenUseCase {
       ttl,
     );
 
+    const rolePermissions = user.roleId
+      ? await this.prisma.rolePermissions.findMany({
+          where: { roleId: user.roleId },
+          include: { permission: { select: { action: true, subject: true } } },
+        })
+      : [];
+    const permissions = rolePermissions.map(
+      (rp) => `${rp.permission.action}:${rp.permission.subject}`,
+    );
+
     return {
       accessToken,
       refreshToken: newRawRefreshToken,
@@ -97,7 +110,8 @@ export class RefreshTokenUseCase {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role,
+        role: user.roleName!,
+        permissions,
         clinicName: user.clinicName,
         clinicTimezone: user.clinicTimezone,
       },

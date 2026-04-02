@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth, CurrentClinic } from '../../../../shared/decorators/index.js';
+import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
 import { FindAllSchedulesQueryDto } from '../../application/dto/find-all-schedules-query.dto.js';
 import { GetTimeSlotsQueryDto } from '../../application/dto/get-time-slots-query.dto.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
@@ -23,7 +23,8 @@ export class ScheduleController {
   ) {}
 
   @Post('generate')
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST)
+  @Auth()
+  @RequirePermissions('CREATE', 'SCHEDULES')
   @ApiOperation({
     summary: 'Generar horarios concretos basados en disponibilidad',
     description:
@@ -48,12 +49,8 @@ export class ScheduleController {
   }
 
   @Get()
-  @Auth(
-    UserRole.ADMIN,
-    UserRole.RECEPTIONIST,
-    UserRole.DOCTOR,
-    UserRole.PATIENT,
-  )
+  @Auth()
+  @RequirePermissions('READ', 'SCHEDULES')
   @ApiOperation({ summary: 'Listar horarios con paginación y filtros' })
   @ApiQuery({ name: 'doctorId', required: false, type: Number })
   @ApiQuery({ name: 'specialtyId', required: false, type: Number })
@@ -101,12 +98,8 @@ export class ScheduleController {
   }
 
   @Get('time-slots')
-  @Auth(
-    UserRole.ADMIN,
-    UserRole.RECEPTIONIST,
-    UserRole.DOCTOR,
-    UserRole.PATIENT,
-  )
+  @Auth()
+  @RequirePermissions('READ', 'SCHEDULES')
   @ApiOperation({
     summary: 'Obtener time slots disponibles para un doctor en una fecha',
     description:

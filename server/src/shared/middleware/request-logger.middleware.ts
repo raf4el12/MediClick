@@ -24,7 +24,7 @@ export class RequestLoggerMiddleware implements NestMiddleware {
 
       if (user) {
         logData.userId = user.id;
-        logData.role = user.role;
+        logData.role = user.roleName;
         if (user.clinicId) logData.clinicId = user.clinicId;
       }
 

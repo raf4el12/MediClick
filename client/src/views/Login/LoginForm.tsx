@@ -23,7 +23,6 @@ import {
   resetAuth,
 } from '@/redux-store/slices/auth';
 import { loginThunk } from '@/redux-store/thunks/auth.thunks';
-import { UserRole } from '@/types/auth.types';
 
 const loginSchema = z.object({
   email: z
@@ -67,7 +66,7 @@ export function LoginForm() {
   useEffect(() => {
     if (loginDispatched.current && isAuthenticated && user) {
       const from = searchParams.get('from');
-      const defaultTarget = user.role === UserRole.PATIENT ? '/patient' : '/dashboard';
+      const defaultTarget = user.role === 'PATIENT' ? '/patient' : '/dashboard';
       router.push(from || defaultTarget);
     }
   }, [isAuthenticated, user, router, searchParams]);

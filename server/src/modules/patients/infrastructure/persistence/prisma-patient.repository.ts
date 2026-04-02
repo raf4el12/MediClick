@@ -10,8 +10,6 @@ import {
 } from '../../domain/interfaces/patient-data.interface.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
-
 const patientInclude = {
   profile: {
     select: {
@@ -35,12 +33,16 @@ export class PrismaPatientRepository implements IPatientRepository {
 
   async create(data: CreatePatientData): Promise<PatientWithRelations> {
     return this.prisma.$transaction(async (tx) => {
+      const patientRole = await tx.roles.findFirst({
+        where: { name: 'PATIENT', isSystem: true },
+      });
+
       const user = await tx.users.create({
         data: {
           name: data.user.name,
           email: data.user.email,
           password: data.user.password,
-          role: UserRole.PATIENT as any,
+          roleId: patientRole?.id ?? null,
         },
       });
 

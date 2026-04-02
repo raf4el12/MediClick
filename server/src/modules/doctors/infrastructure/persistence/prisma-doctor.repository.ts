@@ -37,12 +37,16 @@ export class PrismaDoctorRepository implements IDoctorRepository {
 
   async onboard(data: OnboardDoctorData): Promise<DoctorWithRelations> {
     return this.prisma.$transaction(async (tx) => {
+      const doctorRole = await tx.roles.findFirst({
+        where: { name: 'DOCTOR', isSystem: true },
+      });
+
       const user = await tx.users.create({
         data: {
           name: data.user.name,
           email: data.user.email,
           password: data.user.password,
-          role: 'DOCTOR',
+          roleId: doctorRole?.id ?? null,
           isActive: true,
           clinicId: data.doctor.clinicId,
         },

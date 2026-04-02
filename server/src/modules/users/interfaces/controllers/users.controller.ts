@@ -12,7 +12,7 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
+import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
 import { CreateInternalUserDto } from '../../application/dto/create-internal-user.dto.js';
 import { UpdateUserDto } from '../../application/dto/update-user.dto.js';
 import { FindAllUsersDto } from '../../application/dto/find-all-users.dto.js';
@@ -42,7 +42,8 @@ export class UsersController {
 
   @Post('internal')
   @HttpCode(HttpStatus.CREATED)
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('MANAGE', 'USERS')
   @ApiOperation({ summary: 'Crear usuario interno (solo ADMIN)' })
   @ApiResponse({
     status: 201,
@@ -64,7 +65,8 @@ export class UsersController {
   }
 
   @Get()
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('READ', 'USERS')
   @ApiOperation({ summary: 'Listar usuarios con paginación' })
   @ApiResponse({
     status: 200,
@@ -86,7 +88,8 @@ export class UsersController {
   }
 
   @Get(':id')
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('READ', 'USERS')
   @ApiOperation({ summary: 'Obtener usuario por ID' })
   @ApiResponse({
     status: 200,
@@ -102,7 +105,8 @@ export class UsersController {
   }
 
   @Patch(':id')
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('UPDATE', 'USERS')
   @ApiOperation({ summary: 'Actualizar usuario (rol, estado, perfil)' })
   @ApiResponse({
     status: 200,
@@ -120,7 +124,8 @@ export class UsersController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('DELETE', 'USERS')
   @ApiOperation({ summary: 'Eliminar usuario (soft delete)' })
   @ApiResponse({ status: 204, description: 'Usuario eliminado exitosamente' })
   @ApiResponse({ status: 404, description: 'Usuario no encontrado' })

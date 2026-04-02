@@ -12,8 +12,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth } from '../../../../shared/decorators/index.js';
+import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator.js';
 import { CurrentClinic } from '../../../../shared/decorators/current-clinic.decorator.js';
 import { FindAllPatientsQueryDto } from '../../application/dto/find-all-patients-query.dto.js';
@@ -41,7 +41,8 @@ export class PatientController {
   ) {}
 
   @Post()
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST)
+  @Auth()
+  @RequirePermissions('CREATE', 'PATIENTS')
   @ApiOperation({ summary: 'Crear paciente con perfil y usuario' })
   @ApiResponse({
     status: 201,
@@ -54,12 +55,13 @@ export class PatientController {
   }
 
   @Get()
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.DOCTOR)
+  @Auth()
+  @RequirePermissions('READ', 'PATIENTS')
   @ApiOperation({ summary: 'Listar pacientes con paginación' })
   @ApiResponse({ status: 200, type: PaginatedPatientResponseDto })
   async findAll(
     @CurrentUser('id') userId: number,
-    @CurrentUser('role') role: string,
+    @CurrentUser('roleName') role: string,
     @CurrentClinic() clinicId: number | null,
     @Query() query: FindAllPatientsQueryDto,
   ): Promise<PaginatedPatientResponseDto> {
@@ -86,7 +88,8 @@ export class PatientController {
   }
 
   @Get(':id/history')
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST, UserRole.DOCTOR)
+  @Auth()
+  @RequirePermissions('READ', 'PATIENTS')
   @ApiOperation({ summary: 'Obtener paciente con historial de citas' })
   @ApiResponse({ status: 200, type: PatientHistoryResponseDto })
   @ApiResponse({ status: 404, description: 'Paciente no encontrado' })
@@ -97,7 +100,8 @@ export class PatientController {
   }
 
   @Patch(':id')
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST)
+  @Auth()
+  @RequirePermissions('UPDATE', 'PATIENTS')
   @ApiOperation({ summary: 'Actualizar datos del paciente' })
   @ApiResponse({ status: 200, type: PatientResponseDto })
   @ApiResponse({ status: 404, description: 'Paciente no encontrado' })
@@ -110,7 +114,8 @@ export class PatientController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('DELETE', 'PATIENTS')
   @ApiOperation({ summary: 'Eliminar paciente (soft delete)' })
   @ApiResponse({ status: 204, description: 'Paciente eliminado' })
   @ApiResponse({ status: 404, description: 'No encontrado' })

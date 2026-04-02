@@ -12,8 +12,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth, CurrentClinic } from '../../../../shared/decorators/index.js';
+import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
 import { PaginationDto } from '../../../../shared/utils/dtos/pagination-dto.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreateCategoryDto } from '../../application/dto/create-category.dto.js';
@@ -36,7 +36,8 @@ export class CategoryController {
   ) {}
 
   @Post()
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('CREATE', 'CATEGORIES')
   @ApiOperation({ summary: 'Crear categoría' })
   @ApiResponse({
     status: 201,
@@ -76,7 +77,8 @@ export class CategoryController {
   }
 
   @Patch(':id')
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('UPDATE', 'CATEGORIES')
   @ApiOperation({ summary: 'Actualizar categoría' })
   @ApiResponse({
     status: 200,
@@ -95,7 +97,8 @@ export class CategoryController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('DELETE', 'CATEGORIES')
   @ApiOperation({ summary: 'Eliminar categoría (soft delete)' })
   @ApiResponse({ status: 204, description: 'Categoría eliminada' })
   @ApiResponse({ status: 404, description: 'No encontrada' })
