@@ -2,8 +2,9 @@ import { Injectable, Inject, ConflictException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { RegisterPatientDto } from '../dto/register-patient.dto.js';
 import { AuthResponseDto } from '../dto/auth-response.dto.js';
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
+import { PrismaService } from '../../../../prisma/prisma.service.js';
 import type { IPatientRepository } from '../../../patients/domain/repositories/patient.repository.js';
+import type { IUserRepository } from '../../../users/domain/repositories/user.repository.js';
 import type { IPasswordService } from '../../../../shared/domain/contracts/password-service.interface.js';
 import type { ITokenService } from '../../domain/contracts/token-service.interface.js';
 import type { IRefreshTokenRepository } from '../../domain/contracts/refresh-token-repository.interface.js';
@@ -13,12 +14,15 @@ export class RegisterPatientUseCase {
   constructor(
     @Inject('IPatientRepository')
     private readonly patientRepository: IPatientRepository,
+    @Inject('IUserRepository')
+    private readonly userRepository: IUserRepository,
     @Inject('IPasswordService')
     private readonly passwordService: IPasswordService,
     @Inject('ITokenService')
     private readonly tokenService: ITokenService,
     @Inject('IRefreshTokenRepository')
     private readonly refreshTokenRepository: IRefreshTokenRepository,
+    private readonly prisma: PrismaService,
   ) {}
 
   async execute(
@@ -66,13 +70,14 @@ export class RegisterPatientUseCase {
       },
     });
 
-    // Auto-login: generar tokens
     const userId = patient.profile.userId!;
+    const user = await this.userRepository.findById(userId);
 
     const accessToken = await this.tokenService.generateAccessToken({
       sub: userId,
       email: dto.email,
-      role: UserRole.PATIENT,
+      roleId: user!.roleId!,
+      roleName: user!.roleName!,
       clinicId: null,
     });
 
@@ -92,6 +97,16 @@ export class RegisterPatientUseCase {
       ttl,
     );
 
+    const rolePermissions = user!.roleId
+      ? await this.prisma.rolePermissions.findMany({
+          where: { roleId: user!.roleId },
+          include: { permission: { select: { action: true, subject: true } } },
+        })
+      : [];
+    const permissions = rolePermissions.map(
+      (rp) => `${rp.permission.action}:${rp.permission.subject}`,
+    );
+
     return {
       accessToken,
       refreshToken: rawRefreshToken,
@@ -99,7 +114,8 @@ export class RegisterPatientUseCase {
         id: userId,
         name: dto.name,
         email: dto.email,
-        role: UserRole.PATIENT,
+        role: user!.roleName!,
+        permissions,
       },
     };
   }

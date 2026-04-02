@@ -7,14 +7,6 @@ datasource db {
 }
 
 // --- ENUMS ---
-enum UserRole {
-  ADMIN
-  DOCTOR
-  PATIENT
-  RECEPTIONIST
-  USER
-}
-
 enum AvailabilityType {
   REGULAR
   EXCEPTION
@@ -93,18 +85,19 @@ model Users {
   email         String          @unique
   password      String
   photo         String?
-  role          UserRole        @default(PATIENT)
+  roleId        Int?
   isActive      Boolean         @default(true)
   validateEmail Boolean         @default(false)
   clinicId      Int?
   deleted       Boolean         @default(false)
   createdAt     DateTime        @default(now())
   updatedAt     DateTime?
+  role          Roles?          @relation(fields: [roleId], references: [id], onDelete: SetNull)
   clinic        Clinics?        @relation(fields: [clinicId], references: [id], onDelete: SetNull)
   profiles      Profiles[]
   notifications Notifications[]
 
-  @@index([role, deleted])
+  @@index([roleId, deleted])
   @@index([clinicId])
 }
 
@@ -496,5 +489,50 @@ model Clinics {
   availability Availability[]
   appointments Appointments[]
 
+  roles        Roles[]
+
   @@index([isActive, deleted])
+}
+
+// --- PBAC (Permission-Based Access Control) ---
+
+model Roles {
+  id          Int               @id @default(autoincrement())
+  name        String
+  description String?
+  isSystem    Boolean           @default(false)
+  clinicId    Int?
+  deleted     Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime?
+  clinic      Clinics?          @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+  users       Users[]
+  permissions RolePermissions[]
+
+  @@unique([name, clinicId])
+  @@index([clinicId])
+  @@index([isSystem])
+}
+
+model Permissions {
+  id          Int               @id @default(autoincrement())
+  action      String
+  subject     String
+  description String?
+  roles       RolePermissions[]
+
+  @@unique([action, subject])
+  @@index([subject])
+}
+
+model RolePermissions {
+  roleId       Int
+  permissionId Int
+  createdAt    DateTime    @default(now())
+  role         Roles       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permissions @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
 }

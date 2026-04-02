@@ -12,8 +12,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth, CurrentClinic } from '../../../../shared/decorators/index.js';
+import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreateHolidayDto } from '../../application/dto/create-holiday.dto.js';
 import { UpdateHolidayDto } from '../../application/dto/update-holiday.dto.js';
@@ -42,7 +42,8 @@ export class HolidayController {
   ) {}
 
   @Post()
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('CREATE', 'HOLIDAYS')
   @ApiOperation({ summary: 'Crear feriado' })
   @ApiResponse({
     status: 201,
@@ -57,7 +58,8 @@ export class HolidayController {
   }
 
   @Post('seed')
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('CREATE', 'HOLIDAYS')
   @ApiOperation({ summary: 'Sembrar feriados del Perú para un año' })
   @ApiResponse({
     status: 201,
@@ -72,7 +74,8 @@ export class HolidayController {
   }
 
   @Get()
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('READ', 'HOLIDAYS')
   @ApiOperation({ summary: 'Listar feriados con paginación' })
   @ApiResponse({
     status: 200,
@@ -98,7 +101,8 @@ export class HolidayController {
   }
 
   @Patch(':id')
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('UPDATE', 'HOLIDAYS')
   @ApiOperation({ summary: 'Actualizar feriado' })
   @ApiResponse({
     status: 200,
@@ -116,7 +120,8 @@ export class HolidayController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('DELETE', 'HOLIDAYS')
   @ApiOperation({ summary: 'Eliminar feriado' })
   @ApiResponse({ status: 204, description: 'Feriado eliminado' })
   @ApiResponse({ status: 404, description: 'Feriado no encontrado' })

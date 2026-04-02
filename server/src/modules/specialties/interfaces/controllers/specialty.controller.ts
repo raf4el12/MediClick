@@ -12,8 +12,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth, CurrentClinic } from '../../../../shared/decorators/index.js';
+import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
 import { FindAllSpecialtiesQueryDto } from '../../application/dto/find-all-specialties-query.dto.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreateSpecialtyDto } from '../../application/dto/create-specialty.dto.js';
@@ -36,7 +36,8 @@ export class SpecialtyController {
   ) {}
 
   @Post()
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('CREATE', 'SPECIALTIES')
   @ApiOperation({ summary: 'Crear especialidad' })
   @ApiResponse({
     status: 201,
@@ -82,7 +83,8 @@ export class SpecialtyController {
   }
 
   @Patch(':id')
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('UPDATE', 'SPECIALTIES')
   @ApiOperation({ summary: 'Actualizar especialidad' })
   @ApiResponse({
     status: 200,
@@ -100,7 +102,8 @@ export class SpecialtyController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('DELETE', 'SPECIALTIES')
   @ApiOperation({ summary: 'Eliminar especialidad (soft delete)' })
   @ApiResponse({ status: 204, description: 'Especialidad eliminada' })
   @ApiResponse({ status: 404, description: 'No encontrada' })

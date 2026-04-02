@@ -12,8 +12,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth } from '../../../../shared/decorators/index.js';
+import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator.js';
 import { CreateMedicalHistoryDto } from '../../application/dto/create-medical-history.dto.js';
 import { UpdateMedicalHistoryDto } from '../../application/dto/update-medical-history.dto.js';
@@ -41,7 +41,8 @@ export class MedicalHistoryController {
   ) {}
 
   @Post()
-  @Auth(UserRole.ADMIN, UserRole.DOCTOR)
+  @Auth()
+  @RequirePermissions('CREATE', 'MEDICAL_HISTORY')
   @ApiOperation({ summary: 'Crear entrada de historial médico' })
   @ApiResponse({
     status: 201,
@@ -55,7 +56,8 @@ export class MedicalHistoryController {
   }
 
   @Get('patient/:patientId')
-  @Auth(UserRole.DOCTOR, UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('READ', 'MEDICAL_HISTORY')
   @ApiOperation({ summary: 'Listar historial médico de un paciente' })
   @ApiResponse({
     status: 200,
@@ -63,7 +65,7 @@ export class MedicalHistoryController {
   })
   async findByPatient(
     @CurrentUser('id') userId: number,
-    @CurrentUser('role') role: string,
+    @CurrentUser('roleName') role: string,
     @Param('patientId', ParseIntPipe) patientId: number,
     @Query() query: MedicalHistoryQueryDto,
   ): Promise<PaginatedMedicalHistoryResponseDto> {
@@ -71,7 +73,8 @@ export class MedicalHistoryController {
   }
 
   @Patch(':id')
-  @Auth(UserRole.ADMIN, UserRole.DOCTOR)
+  @Auth()
+  @RequirePermissions('UPDATE', 'MEDICAL_HISTORY')
   @ApiOperation({ summary: 'Actualizar entrada de historial médico' })
   @ApiResponse({ status: 200, type: MedicalHistoryResponseDto })
   @ApiResponse({ status: 404, description: 'Entrada no encontrada' })
@@ -83,7 +86,8 @@ export class MedicalHistoryController {
   }
 
   @Patch(':id/status')
-  @Auth(UserRole.ADMIN, UserRole.DOCTOR)
+  @Auth()
+  @RequirePermissions('UPDATE', 'MEDICAL_HISTORY')
   @ApiOperation({ summary: 'Cambiar estado de una condición' })
   @ApiResponse({ status: 200, type: MedicalHistoryResponseDto })
   @ApiResponse({ status: 404, description: 'Entrada no encontrada' })
@@ -95,7 +99,8 @@ export class MedicalHistoryController {
   }
 
   @Delete(':id')
-  @Auth(UserRole.DOCTOR, UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('DELETE', 'MEDICAL_HISTORY')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Eliminar entrada de historial médico' })
   @ApiResponse({ status: 204, description: 'Entrada eliminada' })

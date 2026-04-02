@@ -6,7 +6,6 @@ import {
 } from '../interfaces/user-data.interface.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 
 export interface IUserRepository {
   findByEmail(email: string): Promise<UserEntity | null>;
@@ -16,7 +15,7 @@ export interface IUserRepository {
   createInternalUser(data: CreateInternalUserData): Promise<UserEntity>;
   findAllPaginated(
     params: PaginationParams,
-    role?: UserRole,
+    roleId?: number,
     clinicId?: number | null,
   ): Promise<PaginatedResult<UserWithProfile>>;
   findByIdWithProfile(id: number): Promise<UserWithProfile | null>;

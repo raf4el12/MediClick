@@ -7,7 +7,6 @@ import {
   UserWithProfile,
 } from '../../domain/interfaces/user-data.interface.js';
 import { UserEntity } from '../../domain/entities/user.entity.js';
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
 
@@ -34,7 +33,8 @@ function mapToUserEntity(prismaUser: any): UserEntity {
   const entity = new UserEntity();
   Object.assign(entity, {
     ...prismaUser,
-    role: prismaUser.role as UserRole,
+    roleId: prismaUser.roleId ?? null,
+    roleName: prismaUser.role?.name ?? null,
     clinicName: prismaUser.clinic?.name ?? null,
     clinicTimezone: prismaUser.clinic?.timezone ?? null,
   });
@@ -47,7 +47,8 @@ function mapToUserWithProfile(raw: any): UserWithProfile {
     id: raw.id,
     name: raw.name,
     email: raw.email,
-    role: raw.role as UserRole,
+    roleId: raw.roleId ?? null,
+    roleName: raw.role?.name ?? null,
     isActive: raw.isActive,
     clinicId: raw.clinicId ?? null,
     deleted: raw.deleted,
@@ -57,6 +58,11 @@ function mapToUserWithProfile(raw: any): UserWithProfile {
   };
 }
 
+const includeRoleAndClinic = {
+  role: { select: { id: true, name: true } },
+  clinic: { select: { name: true, timezone: true } },
+} as const;
+
 @Injectable()
 export class PrismaUserRepository implements IUserRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -64,7 +70,7 @@ export class PrismaUserRepository implements IUserRepository {
   async findByEmail(email: string): Promise<UserEntity | null> {
     const user = await this.prisma.users.findUnique({
       where: { email },
-      include: { clinic: { select: { name: true, timezone: true } } },
+      include: includeRoleAndClinic,
     });
     return user ? mapToUserEntity(user) : null;
   }
@@ -72,7 +78,7 @@ export class PrismaUserRepository implements IUserRepository {
   async findById(id: number): Promise<UserEntity | null> {
     const user = await this.prisma.users.findUnique({
       where: { id },
-      include: { clinic: { select: { name: true, timezone: true } } },
+      include: includeRoleAndClinic,
     });
     return user ? mapToUserEntity(user) : null;
   }
@@ -99,10 +105,11 @@ export class PrismaUserRepository implements IUserRepository {
           name: data.name,
           email: data.email,
           password: data.password,
-          role: data.role,
+          roleId: data.roleId,
           clinicId: data.clinicId,
           isActive: true,
         },
+        include: includeRoleAndClinic,
       });
 
       await tx.profiles.create({
@@ -123,7 +130,7 @@ export class PrismaUserRepository implements IUserRepository {
 
   async findAllPaginated(
     params: PaginationParams,
-    role?: UserRole,
+    roleId?: number,
     clinicId?: number | null,
   ): Promise<PaginatedResult<UserWithProfile>> {
     const { limit, offset, searchValue, orderBy, orderByMode } = params;
@@ -131,7 +138,7 @@ export class PrismaUserRepository implements IUserRepository {
     const where: any = {
       deleted: false,
       ...(clinicId && { clinicId }),
-      ...(role && { role }),
+      ...(roleId && { roleId }),
       ...(searchValue && {
         OR: [
           { name: { contains: searchValue, mode: 'insensitive' as const } },
@@ -163,7 +170,10 @@ export class PrismaUserRepository implements IUserRepository {
     const [rows, count] = await Promise.all([
       this.prisma.users.findMany({
         where,
-        include: userWithProfileInclude,
+        include: {
+          ...userWithProfileInclude,
+          role: { select: { id: true, name: true } },
+        },
         skip: offset,
         take: limit,
         orderBy: { [orderBy || 'createdAt']: orderByMode || 'desc' },
@@ -182,7 +192,10 @@ export class PrismaUserRepository implements IUserRepository {
   async findByIdWithProfile(id: number): Promise<UserWithProfile | null> {
     const user = await this.prisma.users.findFirst({
       where: { id, deleted: false },
-      include: userWithProfileInclude,
+      include: {
+        ...userWithProfileInclude,
+        role: { select: { id: true, name: true } },
+      },
     });
     return user ? mapToUserWithProfile(user) : null;
   }
@@ -190,7 +203,7 @@ export class PrismaUserRepository implements IUserRepository {
   async updateUser(id: number, data: UpdateUserData): Promise<UserWithProfile> {
     return this.prisma.$transaction(async (tx) => {
       const userUpdateData: any = {};
-      if (data.role !== undefined) userUpdateData.role = data.role;
+      if (data.roleId !== undefined) userUpdateData.roleId = data.roleId;
       if (data.isActive !== undefined) userUpdateData.isActive = data.isActive;
       if (Object.keys(userUpdateData).length > 0) {
         userUpdateData.updatedAt = new Date();
@@ -231,7 +244,6 @@ export class PrismaUserRepository implements IUserRepository {
               data: profileData,
             });
           } else {
-            // Create profile if it doesn't exist (e.g. seeded users without profile)
             const user = await tx.users.findUniqueOrThrow({ where: { id } });
             await tx.profiles.create({
               data: {
@@ -248,7 +260,10 @@ export class PrismaUserRepository implements IUserRepository {
 
       const updated = await tx.users.findUniqueOrThrow({
         where: { id },
-        include: userWithProfileInclude,
+        include: {
+          ...userWithProfileInclude,
+          role: { select: { id: true, name: true } },
+        },
       });
       return mapToUserWithProfile(updated);
     });

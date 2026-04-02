@@ -12,8 +12,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth, CurrentClinic } from '../../../../shared/decorators/index.js';
+import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
 import { FindAllAvailabilityQueryDto } from '../../application/dto/find-all-availability-query.dto.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreateAvailabilityDto } from '../../application/dto/create-availability.dto.js';
@@ -36,7 +36,8 @@ export class AvailabilityController {
   ) {}
 
   @Post()
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST)
+  @Auth()
+  @RequirePermissions('CREATE', 'AVAILABILITY')
   @ApiOperation({ summary: 'Crear regla de disponibilidad para un doctor' })
   @ApiResponse({
     status: 201,
@@ -53,7 +54,8 @@ export class AvailabilityController {
   }
 
   @Get()
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST)
+  @Auth()
+  @RequirePermissions('READ', 'AVAILABILITY')
   @ApiOperation({ summary: 'Listar disponibilidades con paginación' })
   @ApiQuery({
     name: 'doctorId',
@@ -85,7 +87,8 @@ export class AvailabilityController {
   }
 
   @Patch(':id')
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST)
+  @Auth()
+  @RequirePermissions('UPDATE', 'AVAILABILITY')
   @ApiOperation({ summary: 'Actualizar disponibilidad' })
   @ApiResponse({
     status: 200,
@@ -104,7 +107,8 @@ export class AvailabilityController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Auth(UserRole.ADMIN, UserRole.RECEPTIONIST)
+  @Auth()
+  @RequirePermissions('DELETE', 'AVAILABILITY')
   @ApiOperation({ summary: 'Desactivar disponibilidad (soft delete)' })
   @ApiResponse({ status: 204, description: 'Disponibilidad desactivada' })
   @ApiResponse({ status: 404, description: 'No encontrada' })

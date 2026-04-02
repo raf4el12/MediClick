@@ -40,7 +40,7 @@ export class CancelAppointmentUseCase {
   async execute(
     id: number,
     dto: CancelAppointmentDto,
-    userRole: UserRole,
+    userRole: string,
   ): Promise<AppointmentResponseDto> {
     const appointment = await this.appointmentRepository.findById(id);
     if (!appointment) {

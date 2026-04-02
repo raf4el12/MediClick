@@ -2,6 +2,7 @@ import { Injectable, Inject, UnauthorizedException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { LoginDto } from '../dto/login.dto.js';
 import { AuthResponseDto } from '../dto/auth-response.dto.js';
+import { PrismaService } from '../../../../prisma/prisma.service.js';
 import type { IPasswordService } from '../../../../shared/domain/contracts/password-service.interface.js';
 import type { ITokenService } from '../../domain/contracts/token-service.interface.js';
 import type { IRefreshTokenRepository } from '../../domain/contracts/refresh-token-repository.interface.js';
@@ -18,6 +19,7 @@ export class LoginUseCase {
     private readonly tokenService: ITokenService,
     @Inject('IRefreshTokenRepository')
     private readonly refreshTokenRepository: IRefreshTokenRepository,
+    private readonly prisma: PrismaService,
   ) {}
 
   async execute(dto: LoginDto, deviceId: string): Promise<AuthResponseDto> {
@@ -49,7 +51,8 @@ export class LoginUseCase {
       this.tokenService.generateAccessToken({
         sub: user.id,
         email: user.email,
-        role: user.role,
+        roleId: user.roleId!,
+        roleName: user.roleName!,
         clinicId: user.clinicId,
       }),
       this.refreshTokenRepository.save(
@@ -64,6 +67,16 @@ export class LoginUseCase {
       ),
     ]);
 
+    const rolePermissions = user.roleId
+      ? await this.prisma.rolePermissions.findMany({
+          where: { roleId: user.roleId },
+          include: { permission: { select: { action: true, subject: true } } },
+        })
+      : [];
+    const permissions = rolePermissions.map(
+      (rp) => `${rp.permission.action}:${rp.permission.subject}`,
+    );
+
     return {
       accessToken,
       refreshToken: rawRefreshToken,
@@ -71,7 +84,8 @@ export class LoginUseCase {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role,
+        role: user.roleName!,
+        permissions,
         clinicName: user.clinicName,
         clinicTimezone: user.clinicTimezone,
       },

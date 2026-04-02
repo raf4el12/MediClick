@@ -1,7 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import { Auth, CurrentClinic } from '../../../../shared/decorators/index.js';
+import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
 import {
   WeeklyAppointmentReportDto,
   RevenueReportDto,
@@ -28,7 +28,8 @@ export class ReportController {
   ) {}
 
   @Get('appointments-weekly')
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('READ', 'REPORTS')
   @ApiOperation({ summary: 'Citas agrupadas por día de la semana actual' })
   @ApiResponse({ status: 200, type: [WeeklyAppointmentReportDto] })
   async getWeeklyAppointments(
@@ -38,7 +39,8 @@ export class ReportController {
   }
 
   @Get('revenue')
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('READ', 'REPORTS')
   @ApiOperation({ summary: 'Reporte de ingresos (proyectados vs reales)' })
   @ApiResponse({ status: 200, type: RevenueReportDto })
   async getRevenue(
@@ -49,7 +51,8 @@ export class ReportController {
   }
 
   @Get('top-doctors')
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('READ', 'REPORTS')
   @ApiOperation({
     summary: 'Ranking de doctores con más citas completadas en el mes',
   })
@@ -67,7 +70,8 @@ export class ReportController {
   }
 
   @Get('appointments-summary')
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('READ', 'REPORTS')
   @ApiOperation({ summary: 'Resumen de citas del mes (por estado y por día)' })
   @ApiResponse({ status: 200, type: AppointmentsSummaryReportDto })
   async getAppointmentsSummary(
@@ -82,7 +86,8 @@ export class ReportController {
   }
 
   @Get('schedule-occupancy')
-  @Auth(UserRole.ADMIN)
+  @Auth()
+  @RequirePermissions('READ', 'REPORTS')
   @ApiOperation({ summary: 'Ocupación de horarios del mes' })
   @ApiResponse({ status: 200, type: ScheduleOccupancyReportDto })
   async getScheduleOccupancy(

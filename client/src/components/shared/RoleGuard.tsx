@@ -2,29 +2,37 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAppSelector } from '@/redux-store/hooks';
-import { selectUser } from '@/redux-store/slices/auth';
-import { UserRole } from '@/types/auth.types';
+import { usePermissions } from '@/hooks/usePermissions';
+
+interface PermissionCheck {
+  action: string;
+  subject: string;
+}
 
 interface RoleGuardProps {
-  roles: UserRole[];
+  /** Permisos requeridos: el usuario necesita AL MENOS uno para acceder */
+  permissions: PermissionCheck[];
   children: React.ReactNode;
 }
 
-export function RoleGuard({ roles, children }: RoleGuardProps) {
+/**
+ * Guarda de acceso basado en permisos.
+ * Redirige al usuario si no tiene al menos uno de los permisos requeridos.
+ */
+export function RoleGuard({ permissions: required, children }: RoleGuardProps) {
   const router = useRouter();
-  const user = useAppSelector(selectUser);
+  const { hasAnyPermission, roleName } = usePermissions();
 
-  const hasAccess = user?.role ? roles.includes(user.role as UserRole) : false;
+  const hasAccess = hasAnyPermission(required);
 
   useEffect(() => {
-    if (user && !hasAccess) {
-      const target = user.role === UserRole.PATIENT ? '/patient' : '/dashboard';
+    if (roleName && !hasAccess) {
+      const target = roleName === 'PATIENT' ? '/patient' : '/dashboard';
       router.replace(target);
     }
-  }, [user, hasAccess, router]);
+  }, [roleName, hasAccess, router]);
 
-  if (!user || !hasAccess) return null;
+  if (!roleName || !hasAccess) return null;
 
   return <>{children}</>;
 }

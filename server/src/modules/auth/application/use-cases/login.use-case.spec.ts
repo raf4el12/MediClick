@@ -1,6 +1,5 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { LoginUseCase } from './login.use-case.js';
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import type { IUserRepository } from '../../../users/domain/repositories/user.repository.js';
 import type { IPasswordService } from '../../../../shared/domain/contracts/password-service.interface.js';
 import type { ITokenService } from '../../domain/contracts/token-service.interface.js';
@@ -13,6 +12,7 @@ describe('LoginUseCase', () => {
   let passwordService: jest.Mocked<IPasswordService>;
   let tokenService: jest.Mocked<ITokenService>;
   let refreshTokenRepository: jest.Mocked<IRefreshTokenRepository>;
+  let prisma: any;
 
   const mockUser: UserEntity = {
     id: 1,
@@ -20,7 +20,8 @@ describe('LoginUseCase', () => {
     email: 'test@mediclick.com',
     password: 'hashed_password',
     photo: null,
-    role: UserRole.DOCTOR,
+    roleId: 1,
+    roleName: 'DOCTOR',
     isActive: true,
     validateEmail: true,
     clinicId: 1,
@@ -66,11 +67,20 @@ describe('LoginUseCase', () => {
       deleteAllByUser: jest.fn(),
     };
 
+    prisma = {
+      rolePermissions: {
+        findMany: jest.fn().mockResolvedValue([
+          { permission: { action: 'READ', subject: 'APPOINTMENTS' } },
+        ]),
+      },
+    };
+
     useCase = new LoginUseCase(
       userRepository,
       passwordService,
       tokenService,
       refreshTokenRepository,
+      prisma,
     );
   });
 
@@ -91,7 +101,7 @@ describe('LoginUseCase', () => {
     expect(result.accessToken).toBe('access-token');
     expect(result.refreshToken).toBe('raw-refresh');
     expect(result.user.id).toBe(1);
-    expect(result.user.role).toBe(UserRole.DOCTOR);
+    expect(result.user.role).toBe('DOCTOR');
     expect(refreshTokenRepository.save).toHaveBeenCalledTimes(1);
   });
 

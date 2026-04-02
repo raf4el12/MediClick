@@ -3,6 +3,7 @@ export interface ProfileResponse {
   name: string;
   email: string;
   role: string;
+  permissions: string[];
   isActive: boolean;
   deleted: boolean;
   createdAt: string;

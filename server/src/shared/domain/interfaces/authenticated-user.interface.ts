@@ -1,9 +1,8 @@
-import { UserRole } from '../enums/user-role.enum.js';
-
 export interface AuthenticatedUser {
   id: number;
   email: string;
-  role: UserRole;
+  roleId: number;
+  roleName: string;
   clinicId: number | null;
 }
 

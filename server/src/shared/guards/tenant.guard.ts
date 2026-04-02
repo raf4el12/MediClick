@@ -4,13 +4,13 @@ import {
   ExecutionContext,
   ForbiddenException,
 } from '@nestjs/common';
-import { UserRole } from '../domain/enums/user-role.enum.js';
+import { SystemRole } from '../domain/enums/permission.enum.js';
 import type { AuthenticatedRequest } from '../domain/interfaces/authenticated-user.interface.js';
 
 @Injectable()
 export class TenantGuard implements CanActivate {
-  private static readonly CROSS_TENANT_ROLES = new Set<UserRole>([
-    UserRole.PATIENT,
+  private static readonly CROSS_TENANT_ROLES = new Set<string>([
+    SystemRole.PATIENT,
   ]);
 
   canActivate(context: ExecutionContext): boolean {
@@ -21,13 +21,16 @@ export class TenantGuard implements CanActivate {
       throw new ForbiddenException('Usuario no autenticado');
     }
 
-    // Pacientes y usuarios básicos son cross-tenant
-    if (TenantGuard.CROSS_TENANT_ROLES.has(user.role)) {
+    // Pacientes son cross-tenant
+    if (TenantGuard.CROSS_TENANT_ROLES.has(user.roleName)) {
       return true;
     }
 
-    // Super-admin (ADMIN sin clínica) tiene acceso global
-    if (user.role === UserRole.ADMIN && !user.clinicId) {
+    // Super-admin (SUPER_ADMIN o ADMIN sin clínica) tiene acceso global
+    if (
+      user.roleName === SystemRole.SUPER_ADMIN ||
+      (user.roleName === SystemRole.ADMIN && !user.clinicId)
+    ) {
       return true;
     }
 

@@ -9,7 +9,7 @@ function getRoleFromToken(token: string): string | null {
     const parts = token.split('.');
     if (parts.length < 2) return null;
     const payload = JSON.parse(atob(parts[1] as string));
-    return (payload.role as string) ?? null;
+    return (payload.roleName as string) ?? null;
   } catch {
     return null;
   }

@@ -27,14 +27,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   validate(payload: JwtPayload) {
-    if (!payload.sub || !payload.role) {
+    if (!payload.sub || !payload.roleId) {
       throw new UnauthorizedException('Token inválido');
     }
 
     return {
       id: payload.sub,
       email: payload.email,
-      role: payload.role,
+      roleId: payload.roleId,
+      roleName: payload.roleName,
       clinicId: payload.clinicId ?? null,
     };
   }

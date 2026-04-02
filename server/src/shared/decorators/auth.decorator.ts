@@ -1,15 +1,19 @@
 import { applyDecorators, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth } from '@nestjs/swagger';
-import { UserRole } from '../domain/enums/user-role.enum.js';
-import { RolesGuard } from '../guards/roles.guard.js';
 import { TenantGuard } from '../guards/tenant.guard.js';
-import { Roles } from './roles.decorator.js';
+import { PermissionsGuard } from '../guards/permissions.guard.js';
 
-export function Auth(...roles: UserRole[]) {
+/**
+ * Decorador combinado de autenticación.
+ * Aplica: JWT → TenantGuard → PermissionsGuard
+ *
+ * Para proteger por permisos, combinar con @RequirePermissions('ACTION', 'SUBJECT').
+ * Si no se usa @RequirePermissions, solo autentica y verifica tenant.
+ */
+export function Auth() {
   return applyDecorators(
-    Roles(...roles),
-    UseGuards(AuthGuard('jwt'), RolesGuard, TenantGuard),
+    UseGuards(AuthGuard('jwt'), TenantGuard, PermissionsGuard),
     ApiBearerAuth(),
   );
 }

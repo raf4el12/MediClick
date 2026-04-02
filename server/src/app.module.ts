@@ -28,6 +28,8 @@ import { MedicalHistoryModule } from './modules/medical-history/application/medi
 import { HolidaysModule } from './modules/holidays/application/holidays.module.js';
 import { ScheduleBlocksModule } from './modules/schedule-blocks/application/schedule-blocks.module.js';
 import { SchedulerModule } from './modules/scheduler/application/scheduler.module.js';
+import { RolesModule } from './modules/roles/application/roles.module.js';
+import { PermissionsModule } from './modules/permissions/application/permissions.module.js';
 
 @Module({
   imports: [
@@ -64,6 +66,8 @@ import { SchedulerModule } from './modules/scheduler/application/scheduler.modul
     HolidaysModule,
     ScheduleBlocksModule,
     SchedulerModule,
+    RolesModule,
+    PermissionsModule,
   ],
   controllers: [],
   providers: [

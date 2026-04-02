@@ -30,7 +30,6 @@ import {
   clearError,
 } from '@/redux-store/slices/auth';
 import { registerThunk } from '@/redux-store/thunks/auth.thunks';
-import { UserRole } from '@/types/auth.types';
 
 const DOCUMENT_TYPES = [
   { value: 'DNI', label: 'DNI' },
@@ -144,7 +143,7 @@ export function RegisterForm() {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      const target = user.role === UserRole.PATIENT ? '/patient' : '/dashboard';
+      const target = user.role === 'PATIENT' ? '/patient' : '/dashboard';
       router.push(target);
     }
   }, [isAuthenticated, user, router]);

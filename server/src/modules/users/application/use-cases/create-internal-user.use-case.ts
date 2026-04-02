@@ -5,6 +5,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
+import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { CreateInternalUserDto } from '../dto/create-internal-user.dto.js';
 import { UserResponseDto } from '../dto/user-response.dto.js';
 import type { IUserRepository } from '../../domain/repositories/user.repository.js';
@@ -23,6 +24,7 @@ export class CreateInternalUserUseCase {
     private readonly userRepository: IUserRepository,
     @Inject('IPasswordService')
     private readonly passwordService: IPasswordService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async execute(
@@ -52,13 +54,20 @@ export class CreateInternalUserUseCase {
       }
     }
 
+    const roleRecord = await this.prisma.roles.findFirst({
+      where: { name: dto.role, isSystem: true },
+    });
+    if (!roleRecord) {
+      throw new BadRequestException(`El rol '${dto.role}' no existe`);
+    }
+
     const hashedPassword = await this.passwordService.hash(dto.password);
 
     const user = await this.userRepository.createInternalUser({
       name: dto.name,
       email: dto.email,
       password: hashedPassword,
-      role: dto.role,
+      roleId: roleRecord.id,
       ...(clinicId && { clinicId }),
       profile: dto.profile,
     });
@@ -67,7 +76,7 @@ export class CreateInternalUserUseCase {
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role,
+      role: user.roleName as UserRole,
       isActive: user.isActive,
       createdAt: user.createdAt,
     };

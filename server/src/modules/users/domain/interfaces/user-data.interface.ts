@@ -1,10 +1,8 @@
-import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
-
 export interface CreateInternalUserData {
   name: string;
   email: string;
   password: string;
-  role: UserRole;
+  roleId: number;
   clinicId?: number;
   profile: {
     name: string;
@@ -17,7 +15,7 @@ export interface CreateInternalUserData {
 }
 
 export interface UpdateUserData {
-  role?: UserRole;
+  roleId?: number;
   isActive?: boolean;
   profile?: {
     name?: string;
@@ -35,7 +33,8 @@ export interface UserWithProfile {
   id: number;
   name: string;
   email: string;
-  role: UserRole;
+  roleId: number | null;
+  roleName: string | null;
   isActive: boolean;
   clinicId: number | null;
   deleted: boolean;
