@@ -1,6 +1,6 @@
 import { applyDecorators, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard.js';
 import { TenantGuard } from '../guards/tenant.guard.js';
 import { PermissionsGuard } from '../guards/permissions.guard.js';
 
@@ -13,7 +13,7 @@ import { PermissionsGuard } from '../guards/permissions.guard.js';
  */
 export function Auth() {
   return applyDecorators(
-    UseGuards(AuthGuard('jwt'), TenantGuard, PermissionsGuard),
+    UseGuards(JwtAuthGuard, TenantGuard, PermissionsGuard),
     ApiBearerAuth(),
   );
 }

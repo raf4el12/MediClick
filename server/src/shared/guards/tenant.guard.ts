@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { SystemRole } from '../domain/enums/permission.enum.js';
-import type { AuthenticatedRequest } from '../domain/interfaces/authenticated-user.interface.js';
+import { getRequestFromContext } from '../utils/get-request-from-context.js';
 
 @Injectable()
 export class TenantGuard implements CanActivate {
@@ -14,7 +14,7 @@ export class TenantGuard implements CanActivate {
   ]);
 
   canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    const request = getRequestFromContext(context);
     const user = request.user;
 
     if (!user) {
