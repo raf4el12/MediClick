@@ -68,6 +68,12 @@ const navigationItems: NavSection[] = [
         patientOnly: true,
       },
       {
+        title: 'Mi Expediente',
+        path: '/patient/expediente',
+        icon: 'ri-file-chart-line',
+        patientOnly: true,
+      },
+      {
         title: 'Mi Perfil',
         path: '/patient/profile',
         icon: 'ri-user-line',
