@@ -1,4 +1,7 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { GraphQLModule } from '@nestjs/graphql';
+import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
+import { join } from 'path';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -30,6 +33,7 @@ import { ScheduleBlocksModule } from './modules/schedule-blocks/application/sche
 import { SchedulerModule } from './modules/scheduler/application/scheduler.module.js';
 import { RolesModule } from './modules/roles/application/roles.module.js';
 import { PermissionsModule } from './modules/permissions/application/permissions.module.js';
+import { PatientRecordsGraphqlModule } from './modules/patient-records-graphql/application/patient-records-graphql.module.js';
 
 @Module({
   imports: [
@@ -42,6 +46,12 @@ import { PermissionsModule } from './modules/permissions/application/permissions
         { name: 'medium', ttl: 10000, limit: 20 },
         { name: 'long', ttl: 60000, limit: 100 },
       ],
+    }),
+    GraphQLModule.forRoot<ApolloDriverConfig>({
+      driver: ApolloDriver,
+      autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
+      sortSchema: true,
+      playground: process.env.NODE_ENV !== 'production',
     }),
     PrismaModule,
     RedisModule,
@@ -68,6 +78,7 @@ import { PermissionsModule } from './modules/permissions/application/permissions
     SchedulerModule,
     RolesModule,
     PermissionsModule,
+    PatientRecordsGraphqlModule,
   ],
   controllers: [],
   providers: [

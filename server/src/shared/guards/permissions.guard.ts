@@ -14,7 +14,7 @@ import {
   ROLE_PERMISSIONS_CACHE_TTL,
 } from '../constants/permissions.constant.js';
 import type { RequiredPermission } from '../decorators/require-permissions.decorator.js';
-import type { AuthenticatedRequest } from '../domain/interfaces/authenticated-user.interface.js';
+import { getRequestFromContext } from '../utils/get-request-from-context.js';
 
 interface CachedPermission {
   action: string;
@@ -42,7 +42,7 @@ export class PermissionsGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    const request = getRequestFromContext(context);
     const user = request.user;
 
     if (!user || !user.roleId) {
