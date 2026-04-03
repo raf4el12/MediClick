@@ -35,6 +35,8 @@ interface NavItem {
   patientOnly?: boolean;
   /** Si true, visible para cualquier staff (no paciente) */
   staffOnly?: boolean;
+  /** Si true, solo visible para doctores */
+  doctorOnly?: boolean;
 }
 
 interface NavSection {
@@ -92,8 +94,7 @@ const navigationItems: NavSection[] = [
         title: 'Mis Citas Hoy',
         path: '/doctor/appointments',
         icon: 'ri-calendar-todo-line',
-        permissions: [{ action: 'READ', subject: 'APPOINTMENTS' }],
-        staffOnly: true,
+        doctorOnly: true,
       },
       {
         title: 'Citas',
@@ -193,6 +194,12 @@ const navigationItems: NavSection[] = [
         permissions: [{ action: 'READ', subject: 'USERS' }],
       },
       {
+        title: 'Roles y Permisos',
+        path: '/roles',
+        icon: 'ri-shield-keyhole-line',
+        permissions: [{ action: 'MANAGE', subject: 'ROLES' }],
+      },
+      {
         title: 'Reportes',
         path: '/reports',
         icon: 'ri-bar-chart-box-line',
@@ -230,9 +237,10 @@ export default function Navigation({ mobileOpen = false, onMobileClose }: Naviga
     .map((section) => ({
       ...section,
       items: section.items.filter((item) => {
-        // Filtrar por patientOnly / staffOnly
+        // Filtrar por patientOnly / staffOnly / doctorOnly
         if (item.patientOnly && !isPatient) return false;
         if (item.staffOnly && isPatient) return false;
+        if (item.doctorOnly && roleName !== 'DOCTOR') return false;
         // Filtrar por permisos
         if (item.permissions) return hasAnyPermission(item.permissions);
         return true;

@@ -68,9 +68,6 @@ export default function PatientAppointmentsView() {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelling, setCancelling] = useState(false);
 
-  // Confirm action
-  const [confirming, setConfirming] = useState(false);
-
   // Prescription dialog
   const [prescriptionOpen, setPrescriptionOpen] = useState(false);
   const [prescription, setPrescription] = useState<Prescription | null>(null);
@@ -129,23 +126,6 @@ export default function PatientAppointmentsView() {
     }
   };
 
-  const handleConfirm = async (apt: Appointment) => {
-    setConfirming(true);
-    setActionError(null);
-    try {
-      await appointmentsService.confirm(apt.id);
-      fetchAppointments();
-      showSnackbar('Cita confirmada exitosamente', 'success');
-      if (detailOpen && selectedApt?.id === apt.id) {
-        setSelectedApt({ ...apt, status: AppointmentStatus.CONFIRMED });
-      }
-    } catch {
-      setActionError('No se pudo confirmar la cita. Intenta de nuevo.');
-    } finally {
-      setConfirming(false);
-    }
-  };
-
   const openDetail = (apt: Appointment) => {
     setSelectedApt(apt);
     setDetailOpen(true);
@@ -187,9 +167,6 @@ export default function PatientAppointmentsView() {
 
   const canCancel = (status: AppointmentStatus) =>
     status === AppointmentStatus.PENDING || status === AppointmentStatus.CONFIRMED;
-
-  const canConfirm = (status: AppointmentStatus) =>
-    status === AppointmentStatus.PENDING;
 
   const isCompleted = (status: AppointmentStatus) =>
     status === AppointmentStatus.COMPLETED;
@@ -317,18 +294,6 @@ export default function PatientAppointmentsView() {
                           <i className="ri-file-list-3-line" style={{ fontSize: 18 }} />
                         </IconButton>
                       )}
-                      {canConfirm(apt.status) && (
-                        <IconButton
-                          size="small"
-                          color="success"
-                          title="Confirmar"
-                          aria-label="Confirmar cita"
-                          onClick={(e) => { e.stopPropagation(); handleConfirm(apt); }}
-                          disabled={confirming}
-                        >
-                          <i className="ri-check-line" style={{ fontSize: 18 }} />
-                        </IconButton>
-                      )}
                       {canCancel(apt.status) && (
                         <IconButton
                           size="small"
@@ -452,16 +417,6 @@ export default function PatientAppointmentsView() {
                     }}
                   >
                     Ver Receta
-                  </Button>
-                )}
-                {canConfirm(apt.status) && (
-                  <Button
-                    variant="contained"
-                    color="success"
-                    onClick={() => handleConfirm(apt)}
-                    disabled={confirming}
-                  >
-                    Confirmar Cita
                   </Button>
                 )}
                 {canCancel(apt.status) && (
