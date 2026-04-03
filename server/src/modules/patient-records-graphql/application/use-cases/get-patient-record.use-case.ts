@@ -31,6 +31,18 @@ export class GetPatientRecordUseCase {
     return record;
   }
 
+  async executeForCurrentUser(
+    currentUser: AuthenticatedUser,
+  ): Promise<PatientRecord> {
+    const patientId = await this.queryPort.getPatientIdByUserId(currentUser.id);
+    if (!patientId) {
+      throw new NotFoundException(
+        'No se encontró expediente clínico para tu cuenta',
+      );
+    }
+    return this.execute(patientId, currentUser);
+  }
+
   private async assertAccess(
     patientId: number,
     user: AuthenticatedUser,

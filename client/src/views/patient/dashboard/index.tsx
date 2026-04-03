@@ -124,6 +124,15 @@ export default function PatientDashboardView() {
       bgColor: alpha('#4f46e5', 0.1),
       hoverBorder: '#4f46e5',
     },
+    {
+      label: 'Mi Expediente',
+      description: 'Historial clínico completo',
+      icon: 'ri-file-chart-line',
+      href: '/patient/expediente',
+      color: '#e11d48',
+      bgColor: alpha('#e11d48', 0.1),
+      hoverBorder: '#e11d48',
+    },
   ];
 
   return (
@@ -141,7 +150,7 @@ export default function PatientDashboardView() {
       {/* ── Quick Actions ── */}
       <Grid container spacing={3} sx={{ mb: 5 }}>
         {quickActions.map((action) => (
-          <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={action.label}>
+          <Grid size={{ xs: 12, sm: 6, lg: 3 }} key={action.label}>
             <Card
               sx={{
                 borderRadius: '24px',

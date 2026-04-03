@@ -21,4 +21,13 @@ export class PatientRecordsResolver {
   ): Promise<PatientRecordGql> {
     return this.getPatientRecordUseCase.execute(id, user);
   }
+
+  @Auth()
+  @RequirePermissions('READ', 'PATIENTS')
+  @Query(() => PatientRecordGql, { name: 'myPatientRecord' })
+  async getMyPatientRecord(
+    @CurrentUser() user: AuthenticatedUser,
+  ): Promise<PatientRecordGql> {
+    return this.getPatientRecordUseCase.executeForCurrentUser(user);
+  }
 }
