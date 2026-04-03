@@ -4,7 +4,8 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { GqlThrottlerGuard } from './shared/guards/gql-throttler.guard.js';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { RequestLoggerMiddleware } from './shared/middleware/request-logger.middleware.js';
@@ -52,6 +53,7 @@ import { PatientRecordsGraphqlModule } from './modules/patient-records-graphql/a
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       sortSchema: true,
       playground: process.env.NODE_ENV !== 'production',
+      context: ({ req, res }: { req: unknown; res: unknown }) => ({ req, res }),
     }),
     PrismaModule,
     RedisModule,
@@ -84,7 +86,7 @@ import { PatientRecordsGraphqlModule } from './modules/patient-records-graphql/a
   providers: [
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: GqlThrottlerGuard,
     },
   ],
 })

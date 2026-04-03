@@ -100,36 +100,113 @@ const LandingView = () => {
             left: 0,
             right: 0,
             zIndex: 1100,
-            bgcolor: alpha(theme.palette.background.default, 0.8),
-            backdropFilter: 'blur(12px)',
-            borderBottom: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+            bgcolor: alpha(theme.palette.background.default, 0.7),
+            backdropFilter: 'blur(20px)',
+            borderBottom: `1px solid ${alpha(theme.palette.divider, 0.06)}`,
           }}
         >
-          <Container maxWidth="lg">
+          <Box sx={{ px: { xs: 2, sm: 3, md: 5 } }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 1.5 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              {/* Logo */}
+              <Box
+                component={Link}
+                href="/"
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.5,
+                  textDecoration: 'none',
+                  color: 'inherit',
+                }}
+              >
                 <Box
                   sx={{
-                    width: 36,
-                    height: 36,
-                    borderRadius: '10px',
-                    bgcolor: theme.palette.primary.main,
+                    width: 38,
+                    height: 38,
+                    borderRadius: '12px',
+                    background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.3)}`,
                   }}
                 >
                   <i className="ri-heart-pulse-line" style={{ fontSize: 22, color: '#fff' }} />
                 </Box>
-                <Typography variant="h6" fontWeight={700} sx={{ letterSpacing: '-0.3px' }}>
+                <Typography variant="h6" fontWeight={800} sx={{ letterSpacing: '-0.5px', fontSize: '1.15rem' }}>
                   MediClick
                 </Typography>
               </Box>
-              <Button component={Link} href="/login" variant="contained" size="small" sx={{ px: 3, borderRadius: 2 }}>
-                Iniciar Sesión
-              </Button>
+
+              {/* Nav Links (desktop) */}
+              <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1 }}>
+                {[
+                  { label: 'Funcionalidades', href: '#features' },
+                  { label: 'Nosotros', href: '#about' },
+                ].map((link) => (
+                  <Button
+                    key={link.label}
+                    href={link.href}
+                    size="small"
+                    sx={{
+                      color: 'text.secondary',
+                      fontWeight: 500,
+                      fontSize: '0.875rem',
+                      px: 2,
+                      borderRadius: 2,
+                      '&:hover': {
+                        color: 'text.primary',
+                        bgcolor: alpha(theme.palette.primary.main, 0.04),
+                      },
+                    }}
+                  >
+                    {link.label}
+                  </Button>
+                ))}
+              </Box>
+
+              {/* Actions */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Button
+                  component={Link}
+                  href="/register"
+                  size="small"
+                  sx={{
+                    color: 'text.primary',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                    px: 2.5,
+                    borderRadius: 2,
+                    '&:hover': {
+                      bgcolor: alpha(theme.palette.primary.main, 0.06),
+                    },
+                  }}
+                >
+                  Registrarse
+                </Button>
+                <Button
+                  component={Link}
+                  href="/login"
+                  variant="contained"
+                  size="small"
+                  sx={{
+                    px: 3,
+                    py: 0.8,
+                    borderRadius: '10px',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                    background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                    boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.3)}`,
+                    '&:hover': {
+                      boxShadow: `0 4px 14px ${alpha(theme.palette.primary.main, 0.4)}`,
+                    },
+                  }}
+                >
+                  Iniciar Sesión
+                </Button>
+              </Box>
             </Box>
-          </Container>
+          </Box>
         </Box>
       </motion.div>
 

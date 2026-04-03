@@ -23,7 +23,6 @@ export class PatientRecordsResolver {
   }
 
   @Auth()
-  @RequirePermissions('READ', 'PATIENTS')
   @Query(() => PatientRecordGql, { name: 'myPatientRecord' })
   async getMyPatientRecord(
     @CurrentUser() user: AuthenticatedUser,
