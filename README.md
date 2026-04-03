@@ -58,6 +58,10 @@ modules/{modulo}/
 - Transacciones en la capa de infraestructura (Prisma `$transaction`)
 - Imports ESM con extensiones `.js` (`moduleResolution: "nodenext"`)
 
+**Patrón Híbrido REST + GraphQL (CQRS):**
+- **REST**: Maneja todas las operaciones transaccionales estándar (CRUD, reservas, horarios).
+- **GraphQL**: Impulsa un motor de consulta exclusivo para agregados masivos (como el Expediente Clínico del paciente), resolviendo profundamente las relaciones en base de datos en un solo request y eliminando el problema de *Overfetching/Underfetching*.
+
 ### Frontend — Next.js 16 (App Router)
 
 Patron **Controller-Hook** en cada vista:
@@ -114,9 +118,10 @@ Protegido por `TenantGuard` en la cadena de Guards de NestJS.
 - Descarga de recetas en PDF
 - Perfil y datos medicos editables
 
-### Historial Medico
+### Historial Medico y Expediente (GraphQL)
 
 - Registro de condiciones con estados: `ACTIVE`, `RESOLVED`, `CHRONIC`
+- Expediente Clínico consolidado impulsado por **GraphQL** para recuperación profunda de datos (Citas pasadas, notas, estatus médicos) sin penalizar el rendimiento del Frontend.
 - KPIs y resumen visual
 
 ### Notificaciones por Email
@@ -174,8 +179,8 @@ Dispatch event-driven via `@nestjs/event-emitter`.
 
 | Capa | Tecnologias |
 |------|-------------|
-| **Backend** | NestJS 11, TypeScript (strict), Express, Swagger/OpenAPI |
-| **Frontend** | Next.js 16 (App Router), React 19, MUI 7, Framer Motion |
+| **Backend** | NestJS 11, TypeScript (strict), Express, Swagger/OpenAPI, **GraphQL (Apollo Server)** |
+| **Frontend** | Next.js 16 (App Router), React 19, MUI 7, Framer Motion, **GraphQL Client** |
 | **Base de Datos** | PostgreSQL 17, Prisma 7 ORM (driver adapter) |
 | **Cache y Sesiones** | Redis 7 (ioredis) |
 | **Estado Cliente** | Redux Toolkit + Persist, TanStack React Query + Table |

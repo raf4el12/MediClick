@@ -1,0 +1,61 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type AppointmentDoctorGql {
+  lastName: String!
+  name: String!
+}
+
+type AppointmentGql {
+  clinicalNotes: [ClinicalNoteGql!]
+  id: Int!
+  reason: String
+  schedule: AppointmentScheduleGql
+  startTime: DateTime!
+  status: String!
+}
+
+type AppointmentScheduleGql {
+  doctor: AppointmentDoctorGql
+}
+
+type ClinicalNoteGql {
+  diagnosis: String
+  plan: String
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type MedicalHistoryGql {
+  condition: String!
+  notes: String
+  status: String
+}
+
+type PatientRecordGql {
+  allergies: String
+  appointments: [AppointmentGql!]
+  bloodType: String
+  chronicConditions: String
+  id: Int!
+  medicalHistory: [MedicalHistoryGql!]
+  profile: ProfileGql
+}
+
+type ProfileGql {
+  email: String!
+  lastName: String!
+  name: String!
+  numberDocument: String
+  phone: String
+  typeDocument: String
+}
+
+type Query {
+  myPatientRecord: PatientRecordGql!
+  patientRecord(id: Int!): PatientRecordGql!
+}
