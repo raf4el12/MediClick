@@ -69,6 +69,9 @@ async function clean() {
   await prisma.patients.deleteMany();
   await prisma.profiles.deleteMany();
   await prisma.users.deleteMany();
+  await prisma.rolePermissions.deleteMany();
+  await prisma.permissions.deleteMany();
+  await prisma.roles.deleteMany();
   await prisma.specialties.deleteMany();
   await prisma.categories.deleteMany();
   await prisma.holidays.deleteMany();
@@ -257,19 +260,117 @@ async function main() {
   });
 
   // ════════════════════════════════════════════════════
+  // 3.5  ROLES & PERMISSIONS (PBAC)
+  // ════════════════════════════════════════════════════
+  console.log('🔐 Creando roles y permisos...');
+
+  // ── All subjects in the system ──
+  const subjects = [
+    'APPOINTMENTS', 'AVAILABILITY', 'CLINICS', 'USERS', 'CATEGORIES',
+    'CLINICAL_NOTES', 'REPORTS', 'NOTIFICATIONS', 'MEDICAL_HISTORY',
+    'PRESCRIPTIONS', 'DOCTORS', 'PATIENTS', 'SPECIALTIES',
+    'SCHEDULE_BLOCKS', 'SCHEDULES', 'ROLES', 'HOLIDAYS',
+  ] as const;
+  const actions = ['CREATE', 'READ', 'UPDATE', 'DELETE', 'MANAGE'] as const;
+
+  // Create all permission combinations + MANAGE:ALL wildcard
+  const permissionData: { action: string; subject: string; description: string }[] = [];
+  for (const subject of subjects) {
+    for (const action of actions) {
+      permissionData.push({
+        action,
+        subject,
+        description: `${action} ${subject}`,
+      });
+    }
+  }
+  permissionData.push({
+    action: 'MANAGE',
+    subject: 'ALL',
+    description: 'Super-admin wildcard — grants every permission',
+  });
+
+  await prisma.permissions.createMany({ data: permissionData });
+
+  const allPerms = await prisma.permissions.findMany();
+  const permMap: Record<string, number> = {};
+  for (const p of allPerms) {
+    permMap[`${p.action}:${p.subject}`] = p.id;
+  }
+
+  // ── System roles ──
+  const adminRole = await prisma.roles.create({
+    data: { name: 'ADMIN', description: 'Administrador del sistema', isSystem: true },
+  });
+  const doctorRole = await prisma.roles.create({
+    data: { name: 'DOCTOR', description: 'Médico', isSystem: true },
+  });
+  const receptionistRole = await prisma.roles.create({
+    data: { name: 'RECEPTIONIST', description: 'Recepcionista', isSystem: true },
+  });
+  const patientRole = await prisma.roles.create({
+    data: { name: 'PATIENT', description: 'Paciente', isSystem: true },
+  });
+
+  // ── Role → Permission mappings ──
+  const rolePermMap: Record<string, string[]> = {
+    ADMIN: ['MANAGE:ALL'],
+    DOCTOR: [
+      'READ:APPOINTMENTS', 'CREATE:APPOINTMENTS', 'UPDATE:APPOINTMENTS',
+      'READ:PATIENTS',
+      'CREATE:CLINICAL_NOTES', 'READ:CLINICAL_NOTES',
+      'CREATE:PRESCRIPTIONS', 'READ:PRESCRIPTIONS',
+      'READ:MEDICAL_HISTORY', 'CREATE:MEDICAL_HISTORY', 'UPDATE:MEDICAL_HISTORY',
+      'READ:SCHEDULES',
+      'READ:AVAILABILITY',
+      'READ:SCHEDULE_BLOCKS',
+      'READ:NOTIFICATIONS', 'UPDATE:NOTIFICATIONS',
+    ],
+    RECEPTIONIST: [
+      'READ:APPOINTMENTS', 'CREATE:APPOINTMENTS', 'UPDATE:APPOINTMENTS',
+      'READ:PATIENTS', 'CREATE:PATIENTS', 'UPDATE:PATIENTS',
+      'READ:DOCTORS',
+      'READ:SCHEDULES', 'CREATE:SCHEDULES',
+      'READ:AVAILABILITY', 'CREATE:AVAILABILITY', 'UPDATE:AVAILABILITY', 'DELETE:AVAILABILITY',
+      'READ:SCHEDULE_BLOCKS', 'CREATE:SCHEDULE_BLOCKS', 'UPDATE:SCHEDULE_BLOCKS', 'DELETE:SCHEDULE_BLOCKS',
+      'READ:HOLIDAYS', 'CREATE:HOLIDAYS', 'UPDATE:HOLIDAYS', 'DELETE:HOLIDAYS',
+      'READ:NOTIFICATIONS', 'CREATE:NOTIFICATIONS', 'UPDATE:NOTIFICATIONS',
+      'READ:REPORTS',
+    ],
+    PATIENT: [
+      'CREATE:APPOINTMENTS',
+      'READ:NOTIFICATIONS', 'UPDATE:NOTIFICATIONS',
+    ],
+  };
+
+  const roleIdMap: Record<string, number> = {
+    ADMIN: adminRole.id,
+    DOCTOR: doctorRole.id,
+    RECEPTIONIST: receptionistRole.id,
+    PATIENT: patientRole.id,
+  };
+
+  const rpData: { roleId: number; permissionId: number }[] = [];
+  for (const [roleName, perms] of Object.entries(rolePermMap)) {
+    for (const perm of perms) {
+      const permId = permMap[perm];
+      if (permId) {
+        rpData.push({ roleId: roleIdMap[roleName]!, permissionId: permId });
+      }
+    }
+  }
+  await prisma.rolePermissions.createMany({ data: rpData });
+
+  console.log(
+    `✅ ${Object.keys(roleIdMap).length} roles, ${allPerms.length} permisos, ${rpData.length} asignaciones creadas.`,
+  );
+
+  // ════════════════════════════════════════════════════
   // 4. USERS, PROFILES, DOCTORS, PATIENTS
   // ════════════════════════════════════════════════════
   console.log('👤 Creando usuarios...');
 
-  // Look up system role IDs
-  const systemRoles = await prisma.roles.findMany({
-    where: { isSystem: true },
-    select: { id: true, name: true },
-  });
-  const roleIds: Record<string, number> = {};
-  for (const r of systemRoles) {
-    roleIds[r.name] = r.id;
-  }
+  const roleIds: Record<string, number> = roleIdMap;
 
   // --- Super Admin (no clinicId) ---
   const adminUser = await prisma.users.create({
