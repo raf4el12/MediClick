@@ -100,37 +100,33 @@ export default function PatientDashboardView() {
     {
       label: 'Agendar Cita',
       description: 'Presencial o a domicilio',
-      icon: 'ri-calendar-check-line',
+      image: '/images/dashboard/book-appointment.svg',
       href: '/patient/book',
       color: theme.palette.primary.main,
-      bgColor: alpha(theme.palette.primary.main, 0.1),
       hoverBorder: theme.palette.primary.main,
     },
     {
       label: 'Mis Citas',
       description: 'Gestiona tus consultas',
-      icon: 'ri-stethoscope-line',
+      image: '/images/dashboard/my-appointments.svg',
       href: '/patient/appointments',
       color: '#0d9488',
-      bgColor: alpha('#0d9488', 0.1),
       hoverBorder: '#0d9488',
     },
     {
       label: 'Mi Perfil',
       description: 'Datos personales',
-      icon: 'ri-user-heart-line',
+      image: '/images/dashboard/my-profile.svg',
       href: '/patient/profile',
       color: '#4f46e5',
-      bgColor: alpha('#4f46e5', 0.1),
       hoverBorder: '#4f46e5',
     },
     {
       label: 'Mi Expediente',
       description: 'Historial clínico completo',
-      icon: 'ri-file-chart-line',
+      image: '/images/dashboard/my-record.svg',
       href: '/patient/expediente',
       color: '#e11d48',
-      bgColor: alpha('#e11d48', 0.1),
       hoverBorder: '#e11d48',
     },
   ];
@@ -173,20 +169,16 @@ export default function PatientDashboardView() {
                 }}
               >
                 <Box
+                  component="img"
+                  src={action.image}
+                  alt={action.label}
                   sx={{
-                    width: 64,
-                    height: 64,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: '16px',
-                    bgcolor: action.bgColor,
-                    color: action.color,
+                    width: 72,
+                    height: 72,
                     mb: 2,
+                    objectFit: 'contain',
                   }}
-                >
-                  <i className={action.icon} style={{ fontSize: 32 }} />
-                </Box>
+                />
                 <Typography variant="h6" fontWeight={700}>
                   {action.label}
                 </Typography>

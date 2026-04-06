@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- Card background -->
+  <rect x="16" y="24" width="88" height="76" rx="14" fill="#EDE7F6"/>
+  <!-- Avatar circle -->
+  <circle cx="60" cy="52" r="18" fill="#D1C4E9"/>
+  <!-- Person silhouette -->
+  <circle cx="60" cy="47" r="7" fill="#5C6BC0"/>
+  <path d="M46 63a14 14 0 0128 0" fill="#5C6BC0"/>
+  <!-- Info lines -->
+  <rect x="34" y="78" width="52" height="4" rx="2" fill="#D1C4E9"/>
+  <rect x="42" y="87" width="36" height="3" rx="1.5" fill="#D1C4E9"/>
+  <!-- Heart badge -->
+  <circle cx="88" cy="34" r="13" fill="#7C4DFF"/>
+  <path d="M88 30c-2-3-6-3-7 0s1 6 7 10c6-4 8-7 7-10s-5-3-7 0z" fill="#fff"/>
+</svg>
