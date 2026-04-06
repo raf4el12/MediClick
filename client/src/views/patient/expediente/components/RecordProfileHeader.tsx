@@ -6,109 +6,215 @@ import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
 import Avatar from '@mui/material/Avatar';
 import Chip from '@mui/material/Chip';
-import Grid from '@mui/material/Grid';
+import Button from '@mui/material/Button';
 import { alpha, useTheme } from '@mui/material/styles';
+import { useRouter } from 'next/navigation';
+import { useAppSelector } from '@/redux-store/hooks';
+import { selectUser } from '@/redux-store/slices/auth';
 import type { PatientRecord } from '../types';
 
 interface Props {
   record: PatientRecord;
 }
 
+function calculateAge(birthday: string): number {
+  const birth = new Date(birthday);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+}
+
+function formatBirthday(birthday: string): string {
+  const date = new Date(birthday);
+  return date.toLocaleDateString('es-PE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
+const genderMap: Record<string, string> = {
+  M: 'Masculino',
+  F: 'Femenino',
+  MALE: 'Masculino',
+  FEMALE: 'Femenino',
+  male: 'Masculino',
+  female: 'Femenino',
+};
+
+const allergyColors = ['#dc2626', '#ea580c', '#d97706', '#e11d48', '#be185d'];
+
 export default function RecordProfileHeader({ record }: Props) {
   const theme = useTheme();
+  const router = useRouter();
+  const user = useAppSelector(selectUser);
+  const avatarSrc = user?.avatarUrl || '/images/avatarSidebar.jpg';
   const profile = record.profile;
   const initials = profile
     ? `${profile.name[0]}${profile.lastName[0]}`.toUpperCase()
     : '?';
 
-  const infoItems = [
-    { icon: 'ri-mail-line', label: 'Email', value: profile?.email },
-    { icon: 'ri-phone-line', label: 'Teléfono', value: profile?.phone },
-    { icon: 'ri-id-card-line', label: 'Documento', value: profile?.typeDocument && profile?.numberDocument ? `${profile.typeDocument} ${profile.numberDocument}` : undefined },
-    { icon: 'ri-drop-line', label: 'Tipo de Sangre', value: record.bloodType },
-  ];
+  const fullName = profile ? `${profile.name} ${profile.lastName}` : 'Paciente';
+  const gender = profile?.gender ? (genderMap[profile.gender] ?? profile.gender) : null;
+  const age = profile?.birthday ? calculateAge(profile.birthday) : null;
+  const birthdayFormatted = profile?.birthday ? formatBirthday(profile.birthday) : null;
+
+  const allergiesList = record.allergies
+    ? record.allergies.split(',').map((a) => a.trim()).filter(Boolean)
+    : [];
 
   return (
-    <Card sx={{ borderRadius: '24px' }}>
-      <CardContent sx={{ p: 4 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, mb: 3 }}>
+    <Card
+      sx={{
+        borderRadius: '16px',
+        border: `1px solid ${alpha(theme.palette.divider, 0.6)}`,
+        overflow: 'visible',
+      }}
+    >
+      <CardContent sx={{ p: { xs: 2.5, md: 4 } }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: { xs: 'flex-start', md: 'center' },
+            flexDirection: { xs: 'column', md: 'row' },
+            gap: { xs: 2, md: 3 },
+          }}
+        >
+          {/* Avatar */}
           <Avatar
+            alt={fullName}
+            src={avatarSrc}
             sx={{
-              width: 72,
-              height: 72,
-              fontSize: '1.5rem',
+              width: 80,
+              height: 80,
+              fontSize: '1.75rem',
               fontWeight: 700,
-              bgcolor: alpha(theme.palette.primary.main, 0.15),
-              color: theme.palette.primary.main,
+              bgcolor: theme.palette.primary.main,
+              color: '#fff',
+              boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.35)}`,
+              flexShrink: 0,
             }}
           >
             {initials}
           </Avatar>
-          <Box>
-            <Typography variant="h5" fontWeight={700}>
-              {profile ? `${profile.name} ${profile.lastName}` : 'Paciente'}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Expediente Clínico #{record.id}
-            </Typography>
+
+          {/* Info */}
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            {/* Row 1: Name + Status */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', mb: 0.8 }}>
+              <Typography variant="h5" fontWeight={700} sx={{ lineHeight: 1.2 }}>
+                {fullName}
+              </Typography>
+              <Chip
+                label={record.isActive ? 'Activo' : 'Inactivo'}
+                size="small"
+                sx={{
+                  bgcolor: record.isActive ? alpha('#10b981', 0.15) : alpha('#94a3b8', 0.15),
+                  color: record.isActive ? '#059669' : '#64748b',
+                  fontWeight: 700,
+                  fontSize: '0.72rem',
+                  height: 24,
+                  borderRadius: '12px',
+                }}
+              />
+            </Box>
+
+            {/* Row 2: DOB/Age/Gender · Phone · Email */}
+            <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: { xs: 1.5, md: 2.5 }, mb: 0.5 }}>
+              {birthdayFormatted && (
+                <InfoItem icon="ri-calendar-line">
+                  {birthdayFormatted}{age !== null && ` (${age} años)`}
+                  {gender && ` · ${gender}`}
+                </InfoItem>
+              )}
+              {profile?.phone && <InfoItem icon="ri-phone-line">{profile.phone}</InfoItem>}
+              {profile?.email && <InfoItem icon="ri-mail-line">{profile.email}</InfoItem>}
+            </Box>
+
+            {/* Row 3: Address · Blood Type · Document */}
+            <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: { xs: 1.5, md: 2.5 }, mb: allergiesList.length > 0 ? 1.5 : 0 }}>
+              {profile?.address && <InfoItem icon="ri-map-pin-line">{profile.address}</InfoItem>}
+              {record.bloodType && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Tipo de Sangre:
+                  </Typography>
+                  <Chip
+                    label={record.bloodType}
+                    size="small"
+                    variant="outlined"
+                    sx={{
+                      height: 24,
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      borderRadius: '8px',
+                    }}
+                  />
+                </Box>
+              )}
+              {profile?.typeDocument && profile?.numberDocument && (
+                <InfoItem icon="ri-id-card-line">
+                  {profile.typeDocument}: {profile.numberDocument}
+                </InfoItem>
+              )}
+            </Box>
+
+            {/* Row 4: Allergies */}
+            {allergiesList.length > 0 && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                <Typography variant="body2" fontWeight={600} color="text.secondary" sx={{ mr: 0.3 }}>
+                  Alergias:
+                </Typography>
+                {allergiesList.map((allergy, idx) => (
+                  <Chip
+                    key={allergy}
+                    label={allergy}
+                    size="small"
+                    sx={{
+                      bgcolor: allergyColors[idx % allergyColors.length],
+                      color: '#fff',
+                      fontWeight: 600,
+                      fontSize: '0.75rem',
+                      height: 26,
+                      borderRadius: '13px',
+                    }}
+                  />
+                ))}
+              </Box>
+            )}
+          </Box>
+
+          {/* Action Button */}
+          <Box sx={{ flexShrink: 0, alignSelf: { xs: 'stretch', md: 'flex-start' } }}>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={() => router.push('/patient/book')}
+              startIcon={<i className="ri-calendar-todo-line" style={{ fontSize: 16 }} />}
+              sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 600, width: { xs: '100%', md: 'auto' } }}
+            >
+              Nueva Cita
+            </Button>
           </Box>
         </Box>
-
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          {infoItems.map((item) =>
-            item.value ? (
-              <Grid size={{ xs: 12, sm: 6 }} key={item.label}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <Box
-                    sx={{
-                      width: 36,
-                      height: 36,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      borderRadius: '10px',
-                      bgcolor: alpha(theme.palette.primary.main, 0.08),
-                    }}
-                  >
-                    <i className={item.icon} style={{ fontSize: 18, color: theme.palette.primary.main }} />
-                  </Box>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary">
-                      {item.label}
-                    </Typography>
-                    <Typography variant="body2" fontWeight={600}>
-                      {item.value}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Grid>
-            ) : null,
-          )}
-        </Grid>
-
-        {(record.allergies || record.chronicConditions) && (
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            {record.allergies && (
-              <Chip
-                icon={<i className="ri-alert-line" style={{ fontSize: 16 }} />}
-                label={`Alergias: ${record.allergies}`}
-                color="warning"
-                variant="outlined"
-                size="small"
-              />
-            )}
-            {record.chronicConditions && (
-              <Chip
-                icon={<i className="ri-heart-pulse-line" style={{ fontSize: 16 }} />}
-                label={`Condiciones crónicas: ${record.chronicConditions}`}
-                color="info"
-                variant="outlined"
-                size="small"
-              />
-            )}
-          </Box>
-        )}
       </CardContent>
     </Card>
+  );
+}
+
+function InfoItem({ icon, children }: { icon: string; children: React.ReactNode }) {
+  const theme = useTheme();
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+      <i className={icon} style={{ fontSize: 15, color: theme.palette.text.secondary }} />
+      <Typography variant="body2" color="text.secondary">
+        {children}
+      </Typography>
+    </Box>
   );
 }
