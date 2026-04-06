@@ -1,6 +1,7 @@
 'use client';
 
 import Grid from '@mui/material/Grid';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { useUsers } from './hooks/useUsers';
 import { UsersTable } from './components/UsersTable';
 import dynamic from 'next/dynamic';
@@ -23,6 +24,7 @@ export default function UsersView() {
   return (
     <Grid container spacing={3}>
       <Grid size={12}>
+        <PageHeader title="Usuarios" subtitle="Gestiona los usuarios y sus accesos al sistema" />
         <UsersTable {...controller} refreshData={handleSuccess} />
       </Grid>
 

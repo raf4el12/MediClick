@@ -1,8 +1,7 @@
 'use client';
 
 import Grid from '@mui/material/Grid';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
+import { PageHeader } from '@/components/shared/PageHeader';
 import Collapse from '@mui/material/Collapse';
 import { usePrescriptions } from './hooks/usePrescriptions';
 import { PrescriptionsTable } from './components/PrescriptionsTable';
@@ -18,14 +17,7 @@ export default function PrescriptionsView() {
 
   return (
     <>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-          Recetas Médicas
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Gestión de recetas médicas por cita
-        </Typography>
-      </Box>
+      <PageHeader title="Recetas Médicas" subtitle="Gestión de recetas médicas por cita" />
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: hasDetail ? 8 : 12 }} sx={{ transition: 'all 0.3s ease' }}>

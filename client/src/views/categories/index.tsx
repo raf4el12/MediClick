@@ -1,6 +1,7 @@
 'use client';
 
 import Grid from '@mui/material/Grid';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { useCategories } from './hooks/useCategories';
 import { CategoriesTable } from './components/CategoriesTable';
 import { useSnackbar } from '@/hooks/useSnackbar';
@@ -18,6 +19,7 @@ export default function CategoriesView() {
   return (
     <Grid container spacing={3}>
       <Grid size={12}>
+        <PageHeader title="Categorías" subtitle="Organiza las especialidades por categorías médicas" />
         <CategoriesTable {...controller} refreshData={handleSuccess} />
       </Grid>
       <SuccessSnackbar snackbar={snackbar} onClose={closeSnackbar} />

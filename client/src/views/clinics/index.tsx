@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react';
 import Grid from '@mui/material/Grid';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { useClinics } from './hooks/useClinics';
 import { ClinicsTable } from './components/ClinicsTable';
 import { useSnackbar } from '@/hooks/useSnackbar';
@@ -19,6 +20,7 @@ export default function ClinicsView() {
   return (
     <Grid container spacing={3}>
       <Grid size={12}>
+        <PageHeader title="Clínicas" subtitle="Administra las sedes y sucursales" />
         <ClinicsTable {...controller} refreshData={handleSuccess} />
       </Grid>
       <SuccessSnackbar snackbar={snackbar} onClose={closeSnackbar} />

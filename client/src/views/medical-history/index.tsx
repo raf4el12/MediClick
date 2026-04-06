@@ -1,7 +1,7 @@
 'use client';
 
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
+import { PageHeader } from '@/components/shared/PageHeader';
 import Button from '@mui/material/Button';
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
@@ -56,24 +56,7 @@ export default function MedicalHistoryView() {
   return (
     <>
       {/* Header */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: { xs: 'flex-start', sm: 'center' },
-          flexDirection: { xs: 'column', sm: 'row' },
-          gap: 2,
-          mb: 3,
-        }}
-      >
-        <Box>
-          <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5 }}>
-            Historial Médico
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Gestión del historial médico de los pacientes
-          </Typography>
-        </Box>
+      <PageHeader title="Historial Médico" subtitle="Gestión del historial médico de los pacientes">
         <Button
           variant="contained"
           startIcon={<i className="ri-add-line" />}
@@ -83,7 +66,7 @@ export default function MedicalHistoryView() {
         >
           Nueva Entrada
         </Button>
-      </Box>
+      </PageHeader>
 
       {/* Filtros */}
       <Card sx={{ p: 2.5, mb: 3 }}>

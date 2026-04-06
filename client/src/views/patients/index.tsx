@@ -9,6 +9,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog/ConfirmDialog';
 import dynamic from 'next/dynamic';
 import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
 
@@ -51,6 +52,7 @@ export default function PatientsView() {
   return (
     <Grid container spacing={3}>
       <Grid size={{ xs: 12, md: hasDetail ? 8 : 12 }} sx={{ transition: 'all 0.3s ease' }}>
+        <PageHeader title="Pacientes" subtitle="Visualiza y administra todos los pacientes registrados" />
         <PatientsTable
           {...controller}
           refreshData={handleCreateSuccess}
