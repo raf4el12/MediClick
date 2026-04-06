@@ -6,16 +6,23 @@ const PATIENT_RECORD_FIELDS = `
   bloodType
   allergies
   chronicConditions
+  emergencyContact
+  isActive
   profile {
     name
     lastName
     email
     phone
+    birthday
+    gender
+    address
     typeDocument
     numberDocument
   }
   medicalHistory {
     condition
+    description
+    diagnosedDate
     status
     notes
   }

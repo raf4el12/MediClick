@@ -39,18 +39,25 @@ export class PrismaPatientRecordQuery implements IPatientRecordQueryPort {
       bloodType: patient.bloodType,
       allergies: patient.allergies ?? undefined,
       chronicConditions: patient.chronicConditions ?? undefined,
+      emergencyContact: patient.emergencyContact ?? undefined,
+      isActive: patient.isActive,
       profile: patient.profile
         ? {
             name: patient.profile.name,
             lastName: patient.profile.lastName,
             email: patient.profile.email,
             phone: patient.profile.phone ?? undefined,
+            birthday: patient.profile.birthday ?? undefined,
+            gender: patient.profile.gender ?? undefined,
+            address: patient.profile.address ?? undefined,
             typeDocument: patient.profile.typeDocument ?? undefined,
             numberDocument: patient.profile.numberDocument ?? undefined,
           }
         : undefined,
       medicalHistory: patient.medicalHistory.map((mh) => ({
         condition: mh.condition,
+        description: mh.description ?? undefined,
+        diagnosedDate: mh.diagnosedDate ?? undefined,
         status: mh.status,
         notes: mh.notes ?? undefined,
       })),

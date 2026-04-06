@@ -7,6 +7,7 @@ import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { useAppointments } from './hooks/useAppointments';
 import { AppointmentsTable } from './components/AppointmentsTable';
 import { useSnackbar } from '@/hooks/useSnackbar';
@@ -47,6 +48,7 @@ export default function AppointmentsView() {
 
   return (
     <>
+      <PageHeader title="Citas" subtitle="Administra y gestiona todas las citas médicas" />
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: hasDetail ? 8 : 12 }} sx={{ transition: 'all 0.3s ease' }}>
           <AppointmentsTable

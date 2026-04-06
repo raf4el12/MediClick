@@ -9,6 +9,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog/ConfirmDialog';
 import dynamic from 'next/dynamic';
 import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { useSnackbar } from '@/hooks/useSnackbar';
 import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
 
@@ -50,6 +51,7 @@ export default function DoctorsView() {
   return (
     <Grid container spacing={3}>
       <Grid size={12}>
+        <PageHeader title="Doctores" subtitle="Administra el equipo médico de la clínica" />
         <DoctorsTable
           {...controller}
           refreshData={handleCreateSuccess}

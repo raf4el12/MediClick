@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
+import { PageHeader } from '@/components/shared/PageHeader';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Divider from '@mui/material/Divider';
@@ -51,22 +51,7 @@ export default function ReportsView() {
   return (
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       {/* Encabezado y filtros */}
-      <Box
-        display="flex"
-        alignItems={{ xs: 'flex-start', sm: 'center' }}
-        flexDirection={{ xs: 'column', sm: 'row' }}
-        justifyContent="space-between"
-        gap={2}
-        mb={3}
-      >
-        <Box>
-          <Typography variant="h5" fontWeight={700}>
-            Reportes
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Análisis y estadísticas del sistema
-          </Typography>
-        </Box>
+      <PageHeader title="Reportes" subtitle="Análisis y estadísticas del sistema">
         <Box display="flex" gap={2} flexWrap="wrap" sx={{ width: { xs: '100%', sm: 'auto' } }}>
           <TextField
             select
@@ -101,7 +86,7 @@ export default function ReportsView() {
             ))}
           </TextField>
         </Box>
-      </Box>
+      </PageHeader>
 
       <Divider sx={{ mb: 3 }} />
 

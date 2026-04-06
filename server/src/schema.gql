@@ -32,6 +32,8 @@ scalar DateTime
 
 type MedicalHistoryGql {
   condition: String!
+  description: String
+  diagnosedDate: DateTime
   notes: String
   status: String
 }
@@ -41,13 +43,18 @@ type PatientRecordGql {
   appointments: [AppointmentGql!]
   bloodType: String
   chronicConditions: String
+  emergencyContact: String
   id: Int!
+  isActive: Boolean!
   medicalHistory: [MedicalHistoryGql!]
   profile: ProfileGql
 }
 
 type ProfileGql {
+  address: String
+  birthday: DateTime
   email: String!
+  gender: String
   lastName: String!
   name: String!
   numberDocument: String

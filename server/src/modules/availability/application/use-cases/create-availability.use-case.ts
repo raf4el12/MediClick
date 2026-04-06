@@ -72,6 +72,9 @@ export class CreateAvailabilityUseCase {
       dto.dayOfWeek,
       timeFrom,
       timeTo,
+      undefined,
+      startDate,
+      endDate,
     );
 
     if (overlapping.length > 0) {

@@ -1,8 +1,8 @@
 'use client';
 
 import Grid from '@mui/material/Grid';
-import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
+import { PageHeader } from '@/components/shared/PageHeader';
 import Collapse from '@mui/material/Collapse';
 import { useDoctorDashboard } from '../hooks/useDoctorDashboard';
 import { DoctorStatCards } from '../components/DoctorStatCards';
@@ -15,14 +15,10 @@ export default function DoctorAppointmentsView() {
 
   return (
     <>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-          Mis Citas de Hoy
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Gestiona las consultas del día — notas clínicas, recetas y completar citas
-        </Typography>
-      </Box>
+      <PageHeader
+        title="Mis Citas de Hoy"
+        subtitle="Gestiona las consultas del día — notas clínicas, recetas y completar citas"
+      />
 
       <Box sx={{ mb: 3 }}>
         <DoctorStatCards stats={controller.stats} loading={controller.loadingAppointments} />

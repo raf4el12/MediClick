@@ -5,6 +5,7 @@ import { useSnackbar } from '@/hooks/useSnackbar';
 import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import { PageHeader } from '@/components/shared/PageHeader';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Card from '@mui/material/Card';
@@ -173,10 +174,7 @@ export default function PatientAppointmentsView() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-        <Typography variant="h6" fontWeight={700}>
-          Mis Citas
-        </Typography>
+      <PageHeader title="Mis Citas" subtitle="Consulta y gestiona tus citas médicas">
         <Button
           variant="contained"
           size="small"
@@ -185,7 +183,7 @@ export default function PatientAppointmentsView() {
         >
           Nueva Cita
         </Button>
-      </Box>
+      </PageHeader>
 
       {/* Tabs */}
       <ToggleButtonGroup

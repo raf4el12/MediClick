@@ -11,8 +11,7 @@ import {
 import {
   fetchAvailabilityThunk,
   fetchAvailabilityDoctorsThunk,
-  createBulkAvailabilityThunk,
-  deleteAvailabilityThunk,
+  bulkSaveAvailabilityThunk,
 } from '@/redux-store/thunks/availability.thunks';
 import {
   type DayOfWeek,
@@ -56,9 +55,15 @@ export function useAvailability() {
 
   // Build weekly schedule from existing availability data
   useEffect(() => {
-    const newSchedule = createDefaultSchedule();
-
     if (selectedDoctorId && data.rows.length > 0) {
+      // Build schedule from server data — start with all days disabled/empty
+      const newSchedule = createDefaultSchedule();
+
+      for (const day of ORDERED_DAYS) {
+        newSchedule[day].enabled = false;
+        newSchedule[day].slots = [];
+      }
+
       for (const avail of data.rows) {
         if (!avail.isAvailable) continue;
         const day = avail.dayOfWeek as DayOfWeek;
@@ -78,9 +83,12 @@ export function useAvailability() {
           });
         }
       }
-    }
 
-    setSchedule(newSchedule);
+      setSchedule(newSchedule);
+    } else {
+      // No server data — use defaults (Mon-Fri 08:00-14:00)
+      setSchedule(createDefaultSchedule());
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps -- Only rebuild schedule when source data or selected doctor changes; other deps are stable callbacks
   }, [data.rows, selectedDoctorId]);
 
@@ -178,30 +186,28 @@ export function useAvailability() {
     }));
   };
 
-  // Save all
+  // Save all — single bulk request: deletes old + creates new on the server
   const handleSave = useCallback(async () => {
     if (!selectedDoctorId || !selectedSpecialtyId || !dateRange.startDate || !dateRange.endDate) return;
 
     setSaving(true);
     setSaveSuccess(false);
 
-    // Delete existing availability for this doctor
-    if (data.rows.length > 0) {
-      await Promise.all(
-        data.rows.map((a) => dispatch(deleteAvailabilityThunk(a.id))),
-      );
-    }
-
-    // Build payloads from schedule
-    const payloads: Parameters<typeof createBulkAvailabilityThunk>[0] = [];
+    // Build entries from schedule
+    const entries: Array<{
+      startDate: string;
+      endDate: string;
+      dayOfWeek: string;
+      timeFrom: string;
+      timeTo: string;
+      type: string;
+    }> = [];
 
     for (const day of ORDERED_DAYS) {
       if (!schedule[day].enabled) continue;
 
       for (const slot of schedule[day].slots) {
-        payloads.push({
-          doctorId: selectedDoctorId as number,
-          specialtyId: selectedSpecialtyId as number,
+        entries.push({
           startDate: dateRange.startDate,
           endDate: dateRange.endDate,
           dayOfWeek: day,
@@ -212,17 +218,23 @@ export function useAvailability() {
       }
     }
 
-    if (payloads.length > 0) {
-      const result = await dispatch(createBulkAvailabilityThunk(payloads));
+    if (entries.length > 0) {
+      const result = await dispatch(
+        bulkSaveAvailabilityThunk({
+          doctorId: selectedDoctorId as number,
+          specialtyId: selectedSpecialtyId as number,
+          entries,
+        }),
+      );
 
-      if (createBulkAvailabilityThunk.fulfilled.match(result)) {
+      if (bulkSaveAvailabilityThunk.fulfilled.match(result)) {
         setSaveSuccess(true);
       }
     } else {
       setSaveSuccess(true);
     }
 
-    // Reload availability in parallel with success state
+    // Reload availability
     void dispatch(
       fetchAvailabilityThunk({
         pagination: { pageSize: 100, currentPage: 1 },
@@ -231,7 +243,7 @@ export function useAvailability() {
     );
 
     setSaving(false);
-  }, [dispatch, selectedDoctorId, selectedSpecialtyId, dateRange, schedule, data.rows]);
+  }, [dispatch, selectedDoctorId, selectedSpecialtyId, dateRange, schedule]);
 
   return {
     doctors,

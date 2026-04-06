@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- Stethoscope body -->
+  <path d="M40 30c0 0-12 8-12 24s12 24 12 24" stroke="#0D9488" stroke-width="5" stroke-linecap="round"/>
+  <path d="M60 30c0 0 12 8 12 24s-12 24-12 24" stroke="#0D9488" stroke-width="5" stroke-linecap="round"/>
+  <path d="M40 78v6a10 10 0 0020 0v-6" stroke="#0D9488" stroke-width="5" stroke-linecap="round"/>
+  <!-- Ear pieces -->
+  <circle cx="40" cy="28" r="5" fill="#0D9488"/>
+  <circle cx="60" cy="28" r="5" fill="#0D9488"/>
+  <!-- Chest piece -->
+  <circle cx="50" cy="94" r="10" fill="#B2DFDB"/>
+  <circle cx="50" cy="94" r="6" fill="#0D9488"/>
+  <!-- Clipboard -->
+  <rect x="68" y="50" width="34" height="44" rx="6" fill="#E0F2F1"/>
+  <rect x="76" y="46" width="18" height="8" rx="4" fill="#0D9488"/>
+  <!-- List lines -->
+  <rect x="74" y="64" width="22" height="3" rx="1.5" fill="#B2DFDB"/>
+  <rect x="74" y="72" width="16" height="3" rx="1.5" fill="#B2DFDB"/>
+  <rect x="74" y="80" width="19" height="3" rx="1.5" fill="#B2DFDB"/>
+</svg>

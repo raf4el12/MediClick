@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
+import { PageHeader } from '@/components/shared/PageHeader';
 import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
 import Alert from '@mui/material/Alert';
@@ -52,24 +52,10 @@ export default function SchedulesView() {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {/* Page Header */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: { xs: 'flex-start', sm: 'center' },
-          flexDirection: { xs: 'column', sm: 'row' },
-          gap: 1.5,
-        }}
+      <PageHeader
+        title="Horarios"
+        subtitle="Vista semanal de los bloques horarios generados por la disponibilidad de cada doctor"
       >
-        <Box>
-          <Typography variant="h5" fontWeight={700} letterSpacing="-0.3px">
-            Horarios
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            Vista semanal de los bloques horarios generados por la disponibilidad de cada doctor.
-          </Typography>
-        </Box>
-
         <Button
           variant="contained"
           size="small"
@@ -79,7 +65,7 @@ export default function SchedulesView() {
         >
           Generar Horarios
         </Button>
-      </Box>
+      </PageHeader>
 
       {/* Weekly Calendar (includes toolbar, filters, KPI chips, and time grid) */}
       <ScheduleCalendar

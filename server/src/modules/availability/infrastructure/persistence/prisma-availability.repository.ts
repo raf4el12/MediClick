@@ -91,16 +91,29 @@ export class PrismaAvailabilityRepository implements IAvailabilityRepository {
     timeFrom: Date,
     timeTo: Date,
     excludeId?: number,
+    startDate?: Date | null,
+    endDate?: Date | null,
   ): Promise<AvailabilityEntity[]> {
+    // Date range overlap: existing.start < new.end AND existing.end > new.start
+    // Null dates mean unbounded (always overlaps)
+    const dateOverlapFilter =
+      startDate && endDate
+        ? [
+            { OR: [{ startDate: null }, { startDate: { lt: endDate } }] },
+            { OR: [{ endDate: null }, { endDate: { gt: startDate } }] },
+          ]
+        : [];
+
     return this.prisma.availability.findMany({
       where: {
         doctorId,
         dayOfWeek,
         isAvailable: true,
         ...(excludeId && { id: { not: excludeId } }),
-        // Overlap: existente.timeFrom < nuevo.timeTo AND existente.timeTo > nuevo.timeFrom
+        // Time overlap: existente.timeFrom < nuevo.timeTo AND existente.timeTo > nuevo.timeFrom
         timeFrom: { lt: timeTo },
         timeTo: { gt: timeFrom },
+        ...(dateOverlapFilter.length > 0 && { AND: dateOverlapFilter }),
       },
     }) as any;
   }
@@ -145,6 +158,14 @@ export class PrismaAvailabilityRepository implements IAvailabilityRepository {
       where: { id },
       data: { isAvailable: false, updatedAt: new Date() },
     });
+  }
+
+  async softDeleteByDoctor(doctorId: number): Promise<number> {
+    const result = await this.prisma.availability.updateMany({
+      where: { doctorId, isAvailable: true },
+      data: { isAvailable: false, updatedAt: new Date() },
+    });
+    return result.count;
   }
 
   async existsDoctorSpecialty(

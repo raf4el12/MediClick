@@ -1,7 +1,7 @@
 'use client';
 
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
+import { PageHeader } from '@/components/shared/PageHeader';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
 import MenuItem from '@mui/material/MenuItem';
@@ -41,43 +41,24 @@ export default function HolidaysView() {
   return (
     <>
       {/* Header */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: { xs: 'flex-start', sm: 'center' },
-          flexDirection: { xs: 'column', sm: 'row' },
-          gap: 2,
-          mb: 3,
-        }}
-      >
-        <Box>
-          <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5 }}>
-            Feriados
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Gestión de feriados y días no laborables
-          </Typography>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 1.5, flexShrink: 0 }}>
-          <Button
-            variant="outlined"
-            color="secondary"
-            startIcon={<i className="ri-plant-line" />}
-            onClick={ctrl.handleSeed}
-            disabled={ctrl.seeding}
-          >
-            Sembrar Feriados
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<i className="ri-add-line" />}
-            onClick={() => ctrl.setCreateOpen(true)}
-          >
-            Nuevo Feriado
-          </Button>
-        </Box>
-      </Box>
+      <PageHeader title="Feriados" subtitle="Gestión de feriados y días no laborables">
+        <Button
+          variant="outlined"
+          color="secondary"
+          startIcon={<i className="ri-plant-line" />}
+          onClick={ctrl.handleSeed}
+          disabled={ctrl.seeding}
+        >
+          Sembrar Feriados
+        </Button>
+        <Button
+          variant="contained"
+          startIcon={<i className="ri-add-line" />}
+          onClick={() => ctrl.setCreateOpen(true)}
+        >
+          Nuevo Feriado
+        </Button>
+      </PageHeader>
 
       {/* Filtros */}
       <Card sx={{ p: 2.5, mb: 3 }}>

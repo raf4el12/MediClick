@@ -1,7 +1,7 @@
 'use client';
 
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
+import { PageHeader } from '@/components/shared/PageHeader';
 import Button from '@mui/material/Button';
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
@@ -48,24 +48,7 @@ export default function ScheduleBlocksView() {
   return (
     <>
       {/* Header */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: { xs: 'flex-start', sm: 'center' },
-          flexDirection: { xs: 'column', sm: 'row' },
-          gap: 2,
-          mb: 3,
-        }}
-      >
-        <Box>
-          <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5 }}>
-            Bloqueos de Horario
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Gestión de bloqueos de horario para doctores
-          </Typography>
-        </Box>
+      <PageHeader title="Bloqueos de Horario" subtitle="Gestión de bloqueos de horario para doctores">
         <Button
           variant="contained"
           startIcon={<i className="ri-add-line" />}
@@ -74,7 +57,7 @@ export default function ScheduleBlocksView() {
         >
           Nuevo Bloqueo
         </Button>
-      </Box>
+      </PageHeader>
 
       {/* Filtros */}
       <Card sx={{ p: 2.5, mb: 3 }}>

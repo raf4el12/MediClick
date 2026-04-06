@@ -2,8 +2,7 @@
 
 import { useMemo } from 'react';
 import Grid from '@mui/material/Grid';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
+import { PageHeader } from '@/components/shared/PageHeader';
 import Collapse from '@mui/material/Collapse';
 import { useClinicalNotes } from './hooks/useClinicalNotes';
 import { ClinicalNotesTable } from './components/ClinicalNotesTable';
@@ -28,14 +27,7 @@ export default function ClinicalNotesView() {
 
   return (
     <>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-          Notas Clínicas
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Registro de notas clínicas por cita médica
-        </Typography>
-      </Box>
+      <PageHeader title="Notas Clínicas" subtitle="Registro de notas clínicas por cita médica" />
 
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, md: hasDetail ? 8 : 12 }} sx={{ transition: 'all 0.3s ease' }}>

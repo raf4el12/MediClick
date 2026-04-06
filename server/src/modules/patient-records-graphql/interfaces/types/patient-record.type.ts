@@ -11,6 +11,12 @@ export class ProfileGql {
   @Field({ nullable: true })
   phone?: string;
   @Field({ nullable: true })
+  birthday?: Date;
+  @Field({ nullable: true })
+  gender?: string;
+  @Field({ nullable: true })
+  address?: string;
+  @Field({ nullable: true })
   typeDocument?: string;
   @Field({ nullable: true })
   numberDocument?: string;
@@ -20,6 +26,10 @@ export class ProfileGql {
 export class MedicalHistoryGql {
   @Field()
   condition: string;
+  @Field({ nullable: true })
+  description?: string;
+  @Field({ nullable: true })
+  diagnosedDate?: Date;
   @Field({ nullable: true })
   status?: string;
   @Field({ nullable: true })
@@ -76,6 +86,10 @@ export class PatientRecordGql {
   allergies?: string;
   @Field({ nullable: true })
   chronicConditions?: string;
+  @Field({ nullable: true })
+  emergencyContact?: string;
+  @Field()
+  isActive: boolean;
 
   @Field(() => ProfileGql, { nullable: true })
   profile?: ProfileGql;

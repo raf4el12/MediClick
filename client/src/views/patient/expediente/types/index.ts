@@ -3,12 +3,17 @@ export interface PatientRecordProfile {
   lastName: string;
   email: string;
   phone?: string;
+  birthday?: string;
+  gender?: string;
+  address?: string;
   typeDocument?: string;
   numberDocument?: string;
 }
 
 export interface PatientRecordMedicalHistory {
   condition: string;
+  description?: string;
+  diagnosedDate?: string;
   status?: string;
   notes?: string;
 }
@@ -41,6 +46,8 @@ export interface PatientRecord {
   bloodType?: string;
   allergies?: string;
   chronicConditions?: string;
+  emergencyContact?: string;
+  isActive: boolean;
   profile?: PatientRecordProfile;
   medicalHistory?: PatientRecordMedicalHistory[];
   appointments?: PatientRecordAppointment[];

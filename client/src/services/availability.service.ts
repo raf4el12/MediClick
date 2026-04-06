@@ -46,6 +46,26 @@ export const availabilityService = {
     return response.data;
   },
 
+  bulkSave: async (payload: {
+    doctorId: number;
+    specialtyId: number;
+    entries: Array<{
+      startDate: string;
+      endDate: string;
+      dayOfWeek: string;
+      timeFrom: string;
+      timeTo: string;
+      type: string;
+      reason?: string;
+    }>;
+  }): Promise<Availability[]> => {
+    const response = await api.post<Availability[]>(
+      '/availability/bulk-save',
+      payload,
+    );
+    return response.data;
+  },
+
   delete: async (id: number): Promise<void> => {
     await api.delete(`/availability/${id}`);
   },

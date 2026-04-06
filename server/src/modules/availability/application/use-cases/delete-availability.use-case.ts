@@ -28,11 +28,17 @@ export class DeleteAvailabilityUseCase {
     await this.availabilityRepository.softDelete(id);
 
     // Regenerar schedules: al eliminar una availability, los schedules
-    // generados a partir de ella (sin citas) deben eliminarse
+    // generados a partir de ella (sin citas) deben eliminarse.
+    // startDate/endDate pueden ser null (REGULAR sin límite),
+    // se usa hoy como inicio y 3 meses adelante como fin por defecto.
+    const now = new Date();
+    const dateFrom = existing.startDate ?? new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const dateTo = existing.endDate ?? new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 3, 0));
+
     await this.scheduleRegenerationService.regenerateForDoctor(
       existing.doctorId,
-      existing.startDate,
-      existing.endDate,
+      dateFrom,
+      dateTo,
     );
   }
 }
