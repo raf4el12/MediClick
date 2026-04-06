@@ -58,12 +58,17 @@ export class UpdateAvailabilityUseCase {
     }
 
     if (dto.timeFrom || dto.timeTo) {
+      const newStartDate = updateData.startDate ?? existing.startDate;
+      const newEndDate = updateData.endDate ?? existing.endDate;
+
       const overlapping = await this.availabilityRepository.findOverlapping(
         existing.doctorId,
         existing.dayOfWeek,
         newTimeFrom,
         newTimeTo,
         id,
+        newStartDate,
+        newEndDate,
       );
 
       if (overlapping.length > 0) {
@@ -75,11 +80,17 @@ export class UpdateAvailabilityUseCase {
 
     const updated = await this.availabilityRepository.update(id, updateData);
 
-    // Regenerar schedules afectados por el cambio de disponibilidad
-    const oldStart = existing.startDate;
-    const oldEnd = existing.endDate;
-    const newStart = updated.startDate;
-    const newEnd = updated.endDate;
+    // Regenerar schedules afectados por el cambio de disponibilidad.
+    // startDate/endDate pueden ser null (REGULAR sin límite),
+    // se usa hoy como inicio y 3 meses adelante como fin por defecto.
+    const now = new Date();
+    const fallbackStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const fallbackEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 3, 0));
+
+    const oldStart = existing.startDate ?? fallbackStart;
+    const oldEnd = existing.endDate ?? fallbackEnd;
+    const newStart = updated.startDate ?? fallbackStart;
+    const newEnd = updated.endDate ?? fallbackEnd;
 
     const regenStart = oldStart < newStart ? oldStart : newStart;
     const regenEnd = oldEnd > newEnd ? oldEnd : newEnd;

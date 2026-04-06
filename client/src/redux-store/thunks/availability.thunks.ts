@@ -55,16 +55,27 @@ export const createAvailabilityThunk = createAsyncThunk<
   }
 });
 
-export const createBulkAvailabilityThunk = createAsyncThunk<
+interface BulkSaveAvailabilityParams {
+  doctorId: number;
+  specialtyId: number;
+  entries: Array<{
+    startDate: string;
+    endDate: string;
+    dayOfWeek: string;
+    timeFrom: string;
+    timeTo: string;
+    type: string;
+    reason?: string;
+  }>;
+}
+
+export const bulkSaveAvailabilityThunk = createAsyncThunk<
   Availability[],
-  CreateAvailabilityPayload[],
+  BulkSaveAvailabilityParams,
   { rejectValue: string }
->('availability/createBulk', async (payloads, { rejectWithValue }) => {
+>('availability/bulkSave', async (payload, { rejectWithValue }) => {
   try {
-    const results = await Promise.all(
-      payloads.map((p) => availabilityService.create(p)),
-    );
-    return results;
+    return await availabilityService.bulkSave(payload);
   } catch (err) {
     return rejectWithValue(extractThunkError(err, 'Error al guardar disponibilidad'));
   }

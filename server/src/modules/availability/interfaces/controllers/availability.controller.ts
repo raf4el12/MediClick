@@ -17,10 +17,12 @@ import { RequirePermissions } from '../../../../shared/decorators/require-permis
 import { FindAllAvailabilityQueryDto } from '../../application/dto/find-all-availability-query.dto.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreateAvailabilityDto } from '../../application/dto/create-availability.dto.js';
+import { BulkSaveAvailabilityDto } from '../../application/dto/bulk-save-availability.dto.js';
 import { UpdateAvailabilityDto } from '../../application/dto/update-availability.dto.js';
 import { AvailabilityResponseDto } from '../../application/dto/availability-response.dto.js';
 import { PaginatedAvailabilityResponseDto } from '../../application/dto/paginated-availability-response.dto.js';
 import { CreateAvailabilityUseCase } from '../../application/use-cases/create-availability.use-case.js';
+import { BulkSaveAvailabilityUseCase } from '../../application/use-cases/bulk-save-availability.use-case.js';
 import { FindAllAvailabilityUseCase } from '../../application/use-cases/find-all-availability.use-case.js';
 import { UpdateAvailabilityUseCase } from '../../application/use-cases/update-availability.use-case.js';
 import { DeleteAvailabilityUseCase } from '../../application/use-cases/delete-availability.use-case.js';
@@ -30,10 +32,27 @@ import { DeleteAvailabilityUseCase } from '../../application/use-cases/delete-av
 export class AvailabilityController {
   constructor(
     private readonly createAvailabilityUseCase: CreateAvailabilityUseCase,
+    private readonly bulkSaveAvailabilityUseCase: BulkSaveAvailabilityUseCase,
     private readonly findAllAvailabilityUseCase: FindAllAvailabilityUseCase,
     private readonly updateAvailabilityUseCase: UpdateAvailabilityUseCase,
     private readonly deleteAvailabilityUseCase: DeleteAvailabilityUseCase,
   ) {}
+
+  @Post('bulk-save')
+  @Auth()
+  @RequirePermissions('CREATE', 'AVAILABILITY')
+  @ApiOperation({ summary: 'Reemplazar toda la disponibilidad de un doctor' })
+  @ApiResponse({
+    status: 201,
+    description: 'Disponibilidad guardada',
+    type: [AvailabilityResponseDto],
+  })
+  async bulkSave(
+    @Body() dto: BulkSaveAvailabilityDto,
+    @CurrentClinic() clinicId: number | null,
+  ): Promise<AvailabilityResponseDto[]> {
+    return this.bulkSaveAvailabilityUseCase.execute(dto, clinicId);
+  }
 
   @Post()
   @Auth()

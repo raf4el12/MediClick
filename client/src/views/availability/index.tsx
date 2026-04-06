@@ -1,7 +1,7 @@
 'use client';
 
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
+import { PageHeader } from '@/components/shared/PageHeader';
 import { useAvailability } from './hooks/useAvailability';
 import { DoctorSelector } from './components/DoctorSelector';
 import { AvailabilitySummary } from './components/AvailabilitySummary';
@@ -35,14 +35,10 @@ export default function AvailabilityView() {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       {/* Page Header */}
-      <Box>
-        <Typography variant="h5" fontWeight={700} letterSpacing="-0.3px">
-          Disponibilidad
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          Configura el horario base semanal de cada doctor.
-        </Typography>
-      </Box>
+      <PageHeader
+        title="Disponibilidad"
+        subtitle="Configura el horario base semanal de cada doctor"
+      />
 
       {/* Doctor Selection */}
       <DoctorSelector

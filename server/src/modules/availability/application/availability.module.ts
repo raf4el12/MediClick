@@ -3,6 +3,7 @@ import { DoctorsModule } from '../../doctors/application/doctors.module.js';
 import { SchedulesModule } from '../../schedules/application/schedules.module.js';
 import { PrismaAvailabilityRepository } from '../infrastructure/persistence/prisma-availability.repository.js';
 import { CreateAvailabilityUseCase } from './use-cases/create-availability.use-case.js';
+import { BulkSaveAvailabilityUseCase } from './use-cases/bulk-save-availability.use-case.js';
 import { FindAllAvailabilityUseCase } from './use-cases/find-all-availability.use-case.js';
 import { UpdateAvailabilityUseCase } from './use-cases/update-availability.use-case.js';
 import { DeleteAvailabilityUseCase } from './use-cases/delete-availability.use-case.js';
@@ -17,6 +18,7 @@ import { AvailabilityController } from '../interfaces/controllers/availability.c
       useClass: PrismaAvailabilityRepository,
     },
     CreateAvailabilityUseCase,
+    BulkSaveAvailabilityUseCase,
     FindAllAvailabilityUseCase,
     UpdateAvailabilityUseCase,
     DeleteAvailabilityUseCase,

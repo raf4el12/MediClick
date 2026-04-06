@@ -22,6 +22,8 @@ export interface IAvailabilityRepository {
     timeFrom: Date,
     timeTo: Date,
     excludeId?: number,
+    startDate?: Date | null,
+    endDate?: Date | null,
   ): Promise<AvailabilityEntity[]>;
   findByDoctorAndDay(
     doctorId: number,
@@ -33,6 +35,7 @@ export interface IAvailabilityRepository {
     data: UpdateAvailabilityData,
   ): Promise<AvailabilityWithRelations>;
   softDelete(id: number): Promise<void>;
+  softDeleteByDoctor(doctorId: number): Promise<number>;
   existsDoctorSpecialty(
     doctorId: number,
     specialtyId: number,
