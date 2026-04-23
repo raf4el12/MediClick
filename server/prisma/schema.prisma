@@ -293,6 +293,7 @@ model Appointments {
   cancellationFee Decimal?          @db.Decimal(10, 2)
   isOverbook      Boolean           @default(false) // Cita de sobrecupo
   reminderSent    Boolean           @default(false)
+  pendingUntil    DateTime? // Deadline de pago; si status=PENDING y ahora > pendingUntil, la cita expira
   clinicId        Int?
   deleted         Boolean           @default(false)
   createdAt     DateTime          @default(now())
@@ -311,6 +312,7 @@ model Appointments {
   @@index([scheduleId, startTime, endTime])
   @@index([createdAt])
   @@index([status, paymentStatus])
+  @@index([status, pendingUntil])
   @@index([clinicId])
 }
 
@@ -357,21 +359,28 @@ model PrescriptionItems {
 
 // MODELO NUEVO: Transacciones Financieras (Output para el negocio)
 model Transactions {
-  id            Int           @id @default(autoincrement())
+  id            Int            @id @default(autoincrement())
   appointmentId Int
-  amount        Decimal       @db.Decimal(10, 2)
-  currency      String        @default("PEN")
-  paymentMethod PaymentMethod
+  amount        Decimal        @db.Decimal(10, 2)
+  currency      String         @default("PEN")
+  paymentMethod PaymentMethod? // null al crear la preference; se setea cuando el webhook confirma
   status        PaymentStatus
-  gatewayId     String? // ID de Stripe, MercadoPago, etc.
-  metadata      Json? // Para guardar respuesta cruda del gateway
-  createdAt     DateTime      @default(now())
+  gatewayId     String? // ID del pago en el gateway (Mercado Pago payment.id)
+  preferenceId  String? // MP preference ID (el "intent" creado al iniciar el checkout)
+  externalRef   String? // external_reference enviado a MP (= appointmentId)
+  payerEmail    String?
+  failureReason String?
+  paidAt        DateTime?
+  metadata      Json? // Respuesta cruda del gateway
+  createdAt     DateTime       @default(now())
   updatedAt     DateTime?
 
   appointment Appointments @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
 
   @@index([appointmentId])
   @@index([gatewayId])
+  @@index([preferenceId])
+  @@index([externalRef])
 }
 
 // MODELO NUEVO: Reseñas (Reputación)
