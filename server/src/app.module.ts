@@ -28,6 +28,7 @@ import { ClinicalNotesModule } from './modules/clinical-notes/application/clinic
 import { PrescriptionsModule } from './modules/prescriptions/application/prescriptions.module.js';
 import { ReportsModule } from './modules/reports/application/reports.module.js';
 import { NotificationsModule } from './modules/notifications/application/notifications.module.js';
+import { PaymentsModule } from './modules/payments/application/payments.module.js';
 import { MedicalHistoryModule } from './modules/medical-history/application/medical-history.module.js';
 import { HolidaysModule } from './modules/holidays/application/holidays.module.js';
 import { ScheduleBlocksModule } from './modules/schedule-blocks/application/schedule-blocks.module.js';
@@ -74,6 +75,7 @@ import { PatientRecordsGraphqlModule } from './modules/patient-records-graphql/a
     PrescriptionsModule,
     ReportsModule,
     NotificationsModule,
+    PaymentsModule,
     MedicalHistoryModule,
     HolidaysModule,
     ScheduleBlocksModule,

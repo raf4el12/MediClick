@@ -5,6 +5,7 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
+import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { CreatePatientAppointmentDto } from '../dto/create-patient-appointment.dto.js';
 import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
@@ -37,10 +38,19 @@ export class CreatePatientAppointmentUseCase {
     @Inject('IScheduleBlockRepository')
     private readonly scheduleBlockRepository: IScheduleBlockRepository,
     private readonly timezoneResolver: TimezoneResolverService,
+    private readonly prisma: PrismaService,
   ) {}
 
   /** Buffer mínimo en milisegundos (2 horas) */
   private static readonly MIN_BUFFER_MS = 2 * 60 * 60 * 1000;
+
+  /** Ventana para completar el pago antes de que la cita expire */
+  private getPaymentTimeoutMs(): number {
+    const minutes = Number(
+      process.env.APPOINTMENT_PAYMENT_TIMEOUT_MINUTES ?? '15',
+    );
+    return (Number.isFinite(minutes) && minutes > 0 ? minutes : 15) * 60 * 1000;
+  }
 
   async execute(
     userId: number,
@@ -57,6 +67,14 @@ export class CreatePatientAppointmentUseCase {
     const schedule = await this.scheduleRepository.findById(dto.scheduleId);
     if (!schedule) {
       throw new BadRequestException('El horario especificado no existe');
+    }
+
+    // Pre-pago obligatorio: la especialidad debe tener precio configurado
+    const specialtyPrice = schedule.specialty.price;
+    if (!specialtyPrice || specialtyPrice <= 0) {
+      throw new BadRequestException(
+        'La especialidad seleccionada no tiene precio configurado; no puede reservarse online',
+      );
     }
 
     // ── Parsear horas del slot ──
@@ -163,6 +181,16 @@ export class CreatePatientAppointmentUseCase {
       reason: dto.reason,
       clinicId: clinicId ?? null,
     });
+
+    // Setea monto + deadline de pago. Se hace aparte del create() del repo
+    // para no invadir la interface compartida con otros flujos (admin/staff)
+    // que podrían no requerir pre-pago.
+    const pendingUntil = new Date(Date.now() + this.getPaymentTimeoutMs());
+    await this.prisma.appointments.update({
+      where: { id: appointment.id },
+      data: { amount: specialtyPrice, pendingUntil },
+    });
+    appointment.amount = specialtyPrice;
 
     return {
       id: appointment.id,
