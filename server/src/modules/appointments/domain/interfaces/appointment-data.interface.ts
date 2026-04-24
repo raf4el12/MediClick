@@ -35,6 +35,7 @@ export interface AppointmentWithRelations {
   cancelReason: string | null;
   cancellationFee: number | null;
   isOverbook: boolean;
+  pendingUntil: Date | null;
   deleted: boolean;
   createdAt: Date;
   updatedAt: Date | null;

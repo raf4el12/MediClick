@@ -48,6 +48,7 @@ export class GetDoctorDailyAppointmentsUseCase {
       cancelReason: a.cancelReason,
       cancellationFee: a.cancellationFee,
       isOverbook: a.isOverbook,
+      pendingUntil: a.pendingUntil ?? null,
       patient: {
         id: a.patient.id,
         name: a.patient.profile.name,

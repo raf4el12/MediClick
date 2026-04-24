@@ -23,7 +23,7 @@ const scheduleInclude = {
       clinic: { select: { timezone: true } },
     },
   },
-  specialty: { select: { id: true, name: true } },
+  specialty: { select: { id: true, name: true, price: true } },
 } as const;
 
 @Injectable()
@@ -113,7 +113,14 @@ export class PrismaScheduleRepository implements IScheduleRepository {
       where: { id },
       include: scheduleInclude,
     });
-    return result as any;
+    if (!result) return null;
+    return {
+      ...result,
+      specialty: {
+        ...result.specialty,
+        price: result.specialty.price ? Number(result.specialty.price) : null,
+      },
+    } as ScheduleWithRelations;
   }
 
   async existsSchedule(

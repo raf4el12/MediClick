@@ -35,6 +35,7 @@ import { appointmentsService } from '@/services/appointments.service';
 import { prescriptionsService } from '@/services/prescriptions.service';
 import { AppointmentStatus } from '@/views/appointments/types';
 import type { Appointment, PatientAppointmentFilters } from '@/views/appointments/types';
+import { PaymentStatusBadge } from '@/views/payment/components/PaymentStatusBadge';
 import type { Prescription } from '@/views/prescriptions/types';
 import type { PaginatedResponse } from '@/types/pagination.types';
 
@@ -277,6 +278,14 @@ export default function PatientAppointmentsView() {
                       <Typography variant="caption" color="text.secondary">
                         {apt.startTime} - {apt.endTime}
                       </Typography>
+                      <Box sx={{ mt: 0.5 }}>
+                        <PaymentStatusBadge
+                          paymentStatus={apt.paymentStatus}
+                          pendingUntil={apt.pendingUntil}
+                          appointmentId={apt.id}
+                          showActions
+                        />
+                      </Box>
                     </Box>
 
                     {/* Actions */}
@@ -356,6 +365,29 @@ export default function PatientAppointmentsView() {
                     </Typography>
                     <StatusBadge label={cfg.label} color={cfg.color} />
                   </Box>
+
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Estado de pago
+                    </Typography>
+                    <PaymentStatusBadge
+                      paymentStatus={apt.paymentStatus}
+                      pendingUntil={apt.pendingUntil}
+                      appointmentId={apt.id}
+                      showActions
+                    />
+                  </Box>
+
+                  {apt.amount != null && (
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="caption" color="text.secondary">
+                        Monto
+                      </Typography>
+                      <Typography variant="body1" fontWeight={600}>
+                        S/ {apt.amount.toFixed(2)}
+                      </Typography>
+                    </Box>
+                  )}
 
                   <Divider />
 
