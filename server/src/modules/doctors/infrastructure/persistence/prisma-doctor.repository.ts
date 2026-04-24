@@ -97,7 +97,6 @@ export class PrismaDoctorRepository implements IDoctorRepository {
 
     const where = {
       deleted: false,
-      ...(clinicId && { clinicId }),
       ...(specialtyId && {
         specialties: {
           some: { specialtyId, deleted: false },
@@ -130,14 +129,14 @@ export class PrismaDoctorRepository implements IDoctorRepository {
     };
 
     const [rows, count] = await Promise.all([
-      this.prisma.doctors.findMany({
+      this.prisma.tenant.doctors.findMany({
         where,
         include: doctorInclude,
         skip: offset,
         take: limit,
         orderBy: { [orderBy || 'createdAt']: orderByMode || 'desc' },
       }),
-      this.prisma.doctors.count({ where }),
+      this.prisma.tenant.doctors.count({ where }),
     ]);
 
     return {
@@ -149,7 +148,7 @@ export class PrismaDoctorRepository implements IDoctorRepository {
   }
 
   async findById(id: number): Promise<DoctorWithRelations | null> {
-    return this.prisma.doctors.findFirst({
+    return this.prisma.tenant.doctors.findFirst({
       where: { id, deleted: false },
       include: doctorInclude,
     });

@@ -75,7 +75,6 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     const where: any = {
       deleted: false,
       ...(filters.status && { status: filters.status }),
-      ...(filters.clinicId && { clinicId: filters.clinicId }),
       ...(filters.doctorId && {
         schedule: { doctorId: filters.doctorId },
       }),
@@ -117,14 +116,14 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     };
 
     const [rows, count] = await Promise.all([
-      this.prisma.appointments.findMany({
+      this.prisma.tenant.appointments.findMany({
         where,
         include: appointmentInclude,
         skip: offset,
         take: limit,
         orderBy: { [orderBy || 'createdAt']: orderByMode || 'desc' },
       }),
-      this.prisma.appointments.count({ where }),
+      this.prisma.tenant.appointments.count({ where }),
     ]);
 
     return {
@@ -153,14 +152,14 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     };
 
     const [rows, count] = await Promise.all([
-      this.prisma.appointments.findMany({
+      this.prisma.tenant.appointments.findMany({
         where,
         include: appointmentInclude,
         skip: offset,
         take: limit,
         orderBy: { [orderBy || 'createdAt']: orderByMode || 'desc' },
       }),
-      this.prisma.appointments.count({ where }),
+      this.prisma.tenant.appointments.count({ where }),
     ]);
 
     return {
@@ -172,7 +171,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
   }
 
   async findById(id: number): Promise<AppointmentWithRelations | null> {
-    const result = await this.prisma.appointments.findFirst({
+    const result = await this.prisma.tenant.appointments.findFirst({
       where: { id, deleted: false },
       include: appointmentInclude,
     });
@@ -252,7 +251,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
   ): Promise<AppointmentWithRelations[]> {
     const { start: startOfDay, end: endOfDay } = utcDayRange(date);
 
-    const rows = await this.prisma.appointments.findMany({
+    const rows = await this.prisma.tenant.appointments.findMany({
       where: {
         deleted: false,
         schedule: {
@@ -273,7 +272,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
   ): Promise<number> {
     const { start: startOfDay, end: endOfDay } = utcDayRange(date);
 
-    return this.prisma.appointments.count({
+    return this.prisma.tenant.appointments.count({
       where: {
         deleted: false,
         isOverbook: true,

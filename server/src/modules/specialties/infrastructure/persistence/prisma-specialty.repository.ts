@@ -34,7 +34,6 @@ export class PrismaSpecialtyRepository implements ISpecialtyRepository {
     const where = {
       deleted: false,
       ...(categoryId && { categoryId }),
-      ...(clinicId ? { OR: [{ clinicId: null }, { clinicId }] } : {}),
       ...(searchValue && {
         AND: [
           {
@@ -58,14 +57,14 @@ export class PrismaSpecialtyRepository implements ISpecialtyRepository {
     };
 
     const [rows, count] = await Promise.all([
-      this.prisma.specialties.findMany({
+      this.prisma.tenant.specialties.findMany({
         where,
         include: { category: categorySelect },
         skip: offset,
         take: limit,
         orderBy: { [orderBy || 'name']: orderByMode || 'desc' },
       }),
-      this.prisma.specialties.count({ where }),
+      this.prisma.tenant.specialties.count({ where }),
     ]);
 
     return {
@@ -81,7 +80,7 @@ export class PrismaSpecialtyRepository implements ISpecialtyRepository {
   }
 
   async findById(id: number): Promise<SpecialtyWithCategory | null> {
-    const result = await this.prisma.specialties.findFirst({
+    const result = await this.prisma.tenant.specialties.findFirst({
       where: { id, deleted: false },
       include: { category: categorySelect },
     });
@@ -90,7 +89,7 @@ export class PrismaSpecialtyRepository implements ISpecialtyRepository {
   }
 
   async findByIds(ids: number[]): Promise<SpecialtyEntity[]> {
-    const results = await this.prisma.specialties.findMany({
+    const results = await this.prisma.tenant.specialties.findMany({
       where: { id: { in: ids }, deleted: false },
     });
     return results.map((r) => ({
