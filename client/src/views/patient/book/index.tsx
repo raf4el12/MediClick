@@ -25,6 +25,7 @@ import { appointmentsService } from '@/services/appointments.service';
 import { paymentsService } from '@/services/payments.service';
 import { filterAvailableSlots } from '@/views/appointments/functions/filterAvailableSlots';
 import { getTodayInTimezone } from '@/utils/timezone';
+import { extractApiError } from '@/utils/extractApiError';
 import type { TimeSlot } from '@/views/schedules/types';
 
 const steps = ['Sede', 'Especialidad', 'Doctor', 'Fecha y Hora', 'Confirmar'];
@@ -206,13 +207,11 @@ export default function PatientBookView() {
         reason: reason || undefined,
       });
 
-      // Pre-pago obligatorio: generar preference MP y redirigir al checkout.
-      // Si esto falla, la cita queda PENDING y expira sola por el cron del backend.
       setRedirecting(true);
       const preference = await paymentsService.createPreference(appointment.id);
       window.location.href = preference.initPoint;
     } catch (err: unknown) {
-      const { message: errorMsg, status } = (await import('@/utils/extractApiError')).extractApiError(err, 'Error al reservar la cita');
+      const { message: errorMsg, status } = extractApiError(err, 'Error al reservar la cita');
 
       if (status === 409) {
         setSelectedSlotTime(null);

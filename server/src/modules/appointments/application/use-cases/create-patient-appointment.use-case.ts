@@ -69,7 +69,6 @@ export class CreatePatientAppointmentUseCase {
       throw new BadRequestException('El horario especificado no existe');
     }
 
-    // Pre-pago obligatorio: la especialidad debe tener precio configurado
     const specialtyPrice = schedule.specialty.price;
     if (!specialtyPrice || specialtyPrice <= 0) {
       throw new BadRequestException(
@@ -133,40 +132,35 @@ export class CreatePatientAppointmentUseCase {
       }
     }
 
-    // ── Verificar si la fecha es feriado (considerando sede del doctor) ──
     const clinicId = await this.timezoneResolver.resolveClinicIdByDoctorId(
       schedule.doctorId,
     );
-    const isHoliday = await this.holidayRepository.isHoliday(
-      scheduleDate,
-      clinicId ?? undefined,
-    );
+
+    const [isHoliday, isBlocked, hasOverlap] = await Promise.all([
+      this.holidayRepository.isHoliday(scheduleDate, clinicId ?? undefined),
+      this.scheduleBlockRepository.isBlocked(
+        schedule.doctorId,
+        scheduleDate,
+        slotStart,
+        slotEnd,
+      ),
+      this.appointmentRepository.hasOverlappingAppointment(
+        dto.scheduleId,
+        slotStart,
+        slotEnd,
+      ),
+    ]);
+
     if (isHoliday) {
       throw new BadRequestException(
         'No se puede agendar una cita en un día feriado',
       );
     }
-
-    // ── Verificar bloqueos de horario del doctor ──
-    const isBlocked = await this.scheduleBlockRepository.isBlocked(
-      schedule.doctorId,
-      scheduleDate,
-      slotStart,
-      slotEnd,
-    );
     if (isBlocked) {
       throw new ConflictException(
         'El doctor tiene un bloqueo de horario que cubre la fecha/hora seleccionada',
       );
     }
-
-    // ── Verificar colisión con citas existentes ──
-    const hasOverlap =
-      await this.appointmentRepository.hasOverlappingAppointment(
-        dto.scheduleId,
-        slotStart,
-        slotEnd,
-      );
     if (hasOverlap) {
       throw new ConflictException(
         'Ya existe una cita que se superpone con el horario seleccionado',

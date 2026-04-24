@@ -8,10 +8,6 @@ export class ExpirePendingAppointmentsUseCase {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * Corre cada minuto. Cancela citas PENDING cuyo plazo de pago expiró.
-   * Indexado por (status, pendingUntil) para ser barato.
-   */
   @Cron(CronExpression.EVERY_MINUTE)
   async execute(): Promise<void> {
     const now = new Date();

@@ -34,7 +34,7 @@
 
 ### Backend — DDD con NestJS 11
 
-Cada uno de los **18 modulos** del servidor sigue una estructura estricta de 4 capas:
+Cada uno de los **22 modulos** del servidor sigue una estructura estricta de 4 capas:
 
 ```
 modules/{modulo}/
@@ -102,6 +102,17 @@ Protegido por `TenantGuard` en la cadena de Guards de NestJS.
 - Generacion automatica de horarios desde reglas de disponibilidad
 - Respeto de feriados y bloqueos de agenda
 - Filtrado inteligente de slots disponibles
+
+### Pagos con Mercado Pago (Checkout Pro)
+
+- **Pre-pago obligatorio** al reservar: la cita queda `PENDING` con un `pendingUntil` de 15 minutos (configurable)
+- Redireccion a `mercadopago.com` (PCI-compliant sin manejar datos de tarjeta)
+- Webhook publico en `/payments/webhook`: re-consulta el pago a MP, nunca confia en el body, **idempotente** por `gatewayId`
+- Manejo de **race condition**: si el pago se aprueba despues de expirar la cita, marca la transaccion para revision manual (log `[REVIEW]`)
+- Cron `EVERY_MINUTE` cancela automaticamente citas `PENDING` vencidas
+- Cancelar una cita con pago `PAID` marca la transaccion como `needsRefund` en metadata (refund manual por admin, no automatico en esta fase)
+- Paginas de resultado: `/payment/success`, `/payment/failure`, `/payment/pending` (la ultima con polling cada 5s)
+- Componente `PaymentStatusBadge` con botones *Pagar ahora* / *Reintentar* embebidos en las listas de citas del paciente y una columna *Pago* read-only en la tabla admin
 
 ### Panel de Doctor
 
@@ -187,6 +198,7 @@ Dispatch event-driven via `@nestjs/event-emitter`.
 | **Formularios** | React Hook Form + Zod 4 |
 | **Email** | Nodemailer + Handlebars |
 | **PDF** | pdfmake |
+| **Pagos** | Mercado Pago SDK v2 (Checkout Pro) + webhook HMAC-SHA256 |
 | **Seguridad** | Helmet, bcrypt, JWT, cookie-parser, Throttler |
 | **CI/CD** | GitHub Actions (lint, type-check, test, build) |
 | **Infraestructura** | Docker multi-stage, Docker Compose |
@@ -273,6 +285,14 @@ pnpm run dev             # http://localhost:3000
 | `MAIL_USER` | Usuario SMTP | — |
 | `MAIL_PASS` | Contrasena SMTP | — |
 | `MAIL_FROM` | Remitente | `MediClick <noreply@mediclick.com>` |
+| `MP_ACCESS_TOKEN` | Access Token del dashboard de Mercado Pago | — |
+| `MP_PUBLIC_KEY` | Public Key del dashboard de Mercado Pago | — |
+| `MP_WEBHOOK_SECRET` | Secret para validar firma HMAC del webhook (opcional) | — |
+| `MP_SUCCESS_URL` | URL de retorno post-pago exitoso | `http://localhost:3000/payment/success` |
+| `MP_FAILURE_URL` | URL de retorno post-pago rechazado | `http://localhost:3000/payment/failure` |
+| `MP_PENDING_URL` | URL de retorno post-pago pendiente | `http://localhost:3000/payment/pending` |
+| `MP_NOTIFICATION_URL` | URL **publica** del webhook (en dev usar `ngrok http 5100`) | — |
+| `APPOINTMENT_PAYMENT_TIMEOUT_MINUTES` | Minutos para completar el pago antes de expirar la cita | `15` |
 
 ### Client (`client/.env.local`)
 
@@ -296,9 +316,11 @@ MediClick/
 │   │   ├── schema.prisma         # 20 modelos, 10 enums
 │   │   └── seed.ts               # Seeder con datos de prueba
 │   └── src/
-│       ├── modules/              # 18 modulos DDD
+│       ├── modules/              # 22 modulos DDD
 │       │   ├── auth/             #   Autenticacion y sesiones
 │       │   ├── users/            #   Gestion de usuarios
+│       │   ├── roles/            #   PBAC — roles del sistema y por clinica
+│       │   ├── permissions/      #   PBAC — permisos granulares
 │       │   ├── clinics/          #   Clinicas multi-tenant
 │       │   ├── categories/       #   Categorias medicas
 │       │   ├── specialties/      #   Especialidades
@@ -314,7 +336,9 @@ MediClick/
 │       │   ├── medical-history/  #   Historial medico
 │       │   ├── holidays/         #   Feriados
 │       │   ├── schedule-blocks/  #   Bloqueos de agenda
-│       │   └── scheduler/        #   Cron jobs (recordatorios)
+│       │   ├── scheduler/        #   Cron jobs (recordatorios, expiracion de pagos)
+│       │   ├── patient-records-graphql/ # Resolver GraphQL del expediente
+│       │   └── payments/         #   Mercado Pago Checkout Pro + webhook
 │       └── shared/               # Servicios globales
 │           ├── guards/           #   Auth, Roles, Tenant
 │           ├── mail/             #   Nodemailer + Handlebars
@@ -356,6 +380,8 @@ MediClick/
 | Generar horarios | Si | — | — | — |
 | Gestionar feriados/bloqueos | Si | — | — | — |
 | Reservar cita (booking) | — | — | — | Si |
+| Pagar cita (MP Checkout) | — | — | — | Si (propias) |
+| Ver estado de pago | Si | Si | Si | Si (propias) |
 
 ---
 
@@ -395,6 +421,8 @@ Tests unitarios implementados:
 - Auth: login, cambio de contrasena, sesiones
 - Prescriptions: busqueda por cita
 - Guards: RolesGuard (6 tests), TenantGuard (8 tests)
+- Payments (21 tests): create-preference (validacion, ownership, expiracion, sin precio), handle-webhook (idempotencia, race CANCELLED, mapeo de estados), get-by-appointment (ownership por rol), expire-pending (cron)
+- Appointments: cancel-appointment refund flagging (4 tests)
 
 ---
 
@@ -425,9 +453,9 @@ El pipeline de GitHub Actions (`.github/workflows/ci.yml`) ejecuta en cada push/
 
 ## Modelos de Base de Datos
 
-20 modelos en Prisma con 10 enums:
+23 modelos en Prisma:
 
-`Users` · `Profiles` · `Clinics` · `Categories` · `Specialties` · `Doctors` · `DoctorsSpecialties` · `Availability` · `Schedules` · `Patients` · `Appointments` · `ClinicalNotes` · `Prescriptions` · `PrescriptionItems` · `Transactions` · `Reviews` · `Notifications` · `MedicalHistory` · `ScheduleBlocks` · `Holidays`
+`Users` · `Profiles` · `Clinics` · `Categories` · `Specialties` · `Doctors` · `DoctorsSpecialties` · `Availability` · `Schedules` · `Patients` · `Appointments` · `ClinicalNotes` · `Prescriptions` · `PrescriptionItems` · `Transactions` · `Reviews` · `Notifications` · `MedicalHistory` · `ScheduleBlocks` · `Holidays` · `Roles` · `Permissions` · `RolePermissions`
 
 ---
 
