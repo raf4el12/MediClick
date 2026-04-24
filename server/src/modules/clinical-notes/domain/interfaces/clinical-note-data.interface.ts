@@ -3,6 +3,7 @@ export interface CreateClinicalNoteData {
   summary?: string;
   diagnosis?: string;
   plan?: string;
+  clinicId?: number | null;
 }
 
 export interface ClinicalNoteWithAppointment {

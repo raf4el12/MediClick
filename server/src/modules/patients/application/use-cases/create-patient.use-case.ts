@@ -42,7 +42,6 @@ export class CreatePatientUseCase {
       profile: {
         name: dto.name,
         lastName: dto.lastName,
-        email: dto.email,
         phone: dto.phone,
         birthday: dto.birthday ? new Date(dto.birthday) : undefined,
         gender: dto.gender,

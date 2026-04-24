@@ -17,7 +17,6 @@ const userWithProfileInclude = {
       id: true,
       name: true,
       lastName: true,
-      email: true,
       phone: true,
       typeDocument: true,
       numberDocument: true,
@@ -116,7 +115,6 @@ export class PrismaUserRepository implements IUserRepository {
         data: {
           name: data.profile.name,
           lastName: data.profile.lastName,
-          email: data.profile.email,
           phone: data.profile.phone,
           typeDocument: data.profile.typeDocument,
           numberDocument: data.profile.numberDocument,
@@ -249,7 +247,6 @@ export class PrismaUserRepository implements IUserRepository {
               data: {
                 name: profileData.name ?? user.name,
                 lastName: profileData.lastName ?? '',
-                email: user.email,
                 userId: id,
                 ...profileData,
               },

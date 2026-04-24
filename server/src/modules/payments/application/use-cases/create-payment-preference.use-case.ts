@@ -34,7 +34,7 @@ export class CreatePaymentPreferenceUseCase {
         patient: {
           select: {
             id: true,
-            profile: { select: { userId: true, email: true } },
+            profile: { select: { userId: true, user: { select: { email: true } } } },
           },
         },
         schedule: {
@@ -96,6 +96,8 @@ export class CreatePaymentPreferenceUseCase {
       );
     }
 
+    const payerEmail = appointment.patient.profile.user?.email ?? null;
+
     const expiresInMs = appointment.pendingUntil
       ? Math.max(60_000, appointment.pendingUntil.getTime() - now.getTime())
       : undefined;
@@ -112,7 +114,7 @@ export class CreatePaymentPreferenceUseCase {
           currencyId: 'PEN',
         },
       ],
-      payerEmail: appointment.patient.profile.email ?? undefined,
+      payerEmail: payerEmail ?? undefined,
       backUrls: {
         success: successUrl,
         failure: failureUrl,
@@ -129,7 +131,8 @@ export class CreatePaymentPreferenceUseCase {
       status: 'PENDING',
       preferenceId: preference.preferenceId,
       externalRef: String(appointment.id),
-      payerEmail: appointment.patient.profile.email ?? null,
+      payerEmail: payerEmail ?? null,
+      clinicId: appointment.clinicId ?? null,
     });
 
     this.logger.log(

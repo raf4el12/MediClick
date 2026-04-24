@@ -9,6 +9,9 @@ const STRICT_TENANT_MODELS = new Set([
   'Appointments',
   'Doctors',
   'Availability',
+  'ClinicalNotes',
+  'Prescriptions',
+  'MedicalHistory',
 ]);
 
 // Catalog data: global records (clinicId null) are visible to all tenants,

@@ -19,12 +19,8 @@ export class DeleteHolidayUseCase {
       throw new NotFoundException('Feriado no encontrado');
     }
 
-    // Staff can only delete holidays of their own clinic (or global holidays clinicId=null)
-    if (
-      clinicId &&
-      existing.clinicId !== null &&
-      existing.clinicId !== clinicId
-    ) {
+    // Clinic-scoped staff cannot delete global holidays (clinicId=null — owned by super-admin)
+    if (clinicId && existing.clinicId !== clinicId) {
       throw new ForbiddenException('No tiene acceso a este feriado');
     }
 

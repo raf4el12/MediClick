@@ -5,6 +5,7 @@ export interface CreateMedicalHistoryData {
   diagnosedDate?: Date;
   status?: string;
   notes?: string;
+  clinicId?: number | null;
 }
 
 export interface UpdateMedicalHistoryData {

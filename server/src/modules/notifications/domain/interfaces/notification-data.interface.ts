@@ -5,6 +5,7 @@ export interface CreateNotificationData {
   title: string;
   message: string;
   metadata?: any;
+  clinicId?: number | null;
 }
 
 export interface NotificationFilters {

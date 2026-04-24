@@ -26,12 +26,8 @@ export class UpdateHolidayUseCase {
       throw new NotFoundException('Feriado no encontrado');
     }
 
-    // Staff can only edit holidays of their own clinic (or global holidays clinicId=null)
-    if (
-      clinicId &&
-      existing.clinicId !== null &&
-      existing.clinicId !== clinicId
-    ) {
+    // Clinic-scoped staff cannot modify global holidays (clinicId=null — owned by super-admin)
+    if (clinicId && existing.clinicId !== clinicId) {
       throw new ForbiddenException('No tiene acceso a este feriado');
     }
 

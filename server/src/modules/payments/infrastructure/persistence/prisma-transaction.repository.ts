@@ -28,6 +28,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
         externalRef: data.externalRef ?? null,
         payerEmail: data.payerEmail ?? null,
         metadata: (data.metadata ?? null) as never,
+        clinicId: data.clinicId ?? null,
       },
     });
     return this.toEntity(row);
@@ -114,6 +115,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
     failureReason: string | null;
     paidAt: Date | null;
     metadata: unknown;
+    clinicId: number | null;
     createdAt: Date;
     updatedAt: Date | null;
   }): TransactionEntity {
@@ -131,6 +133,7 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       failureReason: row.failureReason,
       paidAt: row.paidAt,
       metadata: row.metadata,
+      clinicId: row.clinicId,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };

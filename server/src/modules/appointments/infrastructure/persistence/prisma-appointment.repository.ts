@@ -22,7 +22,12 @@ const appointmentInclude = {
     select: {
       id: true,
       profile: {
-        select: { name: true, lastName: true, email: true, userId: true },
+        select: {
+          name: true,
+          lastName: true,
+          userId: true,
+          user: { select: { email: true } },
+        },
       },
     },
   },
@@ -437,7 +442,13 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       deleted: raw.deleted,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,
-      patient: raw.patient,
+      patient: {
+        ...raw.patient,
+        profile: {
+          ...raw.patient.profile,
+          email: raw.patient.profile.user?.email ?? null,
+        },
+      },
       schedule: raw.schedule,
       hasPrescription:
         raw.prescription !== null && raw.prescription !== undefined,

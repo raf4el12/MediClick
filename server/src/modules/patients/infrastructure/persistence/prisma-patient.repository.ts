@@ -16,13 +16,13 @@ const patientInclude = {
       id: true,
       name: true,
       lastName: true,
-      email: true,
       phone: true,
       birthday: true,
       gender: true,
       typeDocument: true,
       numberDocument: true,
       userId: true,
+      user: { select: { email: true } },
     },
   },
 } as const;
@@ -50,7 +50,6 @@ export class PrismaPatientRepository implements IPatientRepository {
         data: {
           name: data.profile.name,
           lastName: data.profile.lastName,
-          email: data.profile.email,
           phone: data.profile.phone,
           birthday: data.profile.birthday,
           gender: data.profile.gender,
@@ -122,7 +121,7 @@ export class PrismaPatientRepository implements IPatientRepository {
           },
           {
             profile: {
-              email: { contains: searchValue, mode: 'insensitive' as const },
+              user: { email: { contains: searchValue, mode: 'insensitive' as const } },
             },
           },
           {
@@ -154,7 +153,7 @@ export class PrismaPatientRepository implements IPatientRepository {
           },
           {
             profile: {
-              email: { contains: searchValue, mode: 'insensitive' as const },
+              user: { email: { contains: searchValue, mode: 'insensitive' as const } },
             },
           },
           {
@@ -298,8 +297,8 @@ export class PrismaPatientRepository implements IPatientRepository {
   }
 
   async existsByEmail(email: string): Promise<boolean> {
-    const count = await this.prisma.profiles.count({
-      where: { email, deleted: false },
+    const count = await this.prisma.users.count({
+      where: { email },
     });
     return count > 0;
   }
@@ -330,6 +329,7 @@ export class PrismaPatientRepository implements IPatientRepository {
   }
 
   private mapToRelations(raw: any): PatientWithRelations {
+    const { user, ...profileRest } = raw.profile;
     return {
       id: raw.id,
       profileId: raw.profileId,
@@ -341,7 +341,7 @@ export class PrismaPatientRepository implements IPatientRepository {
       deleted: raw.deleted,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,
-      profile: raw.profile,
+      profile: { ...profileRest, email: user?.email ?? null },
     };
   }
 }

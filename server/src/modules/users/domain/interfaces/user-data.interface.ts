@@ -7,7 +7,6 @@ export interface CreateInternalUserData {
   profile: {
     name: string;
     lastName: string;
-    email: string;
     phone?: string;
     typeDocument?: string;
     numberDocument?: string;
@@ -44,7 +43,6 @@ export interface UserWithProfile {
     id: number;
     name: string;
     lastName: string;
-    email: string;
     phone: string | null;
     typeDocument: string | null;
     numberDocument: string | null;

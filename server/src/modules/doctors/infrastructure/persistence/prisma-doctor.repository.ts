@@ -14,7 +14,6 @@ const doctorInclude = {
       id: true,
       name: true,
       lastName: true,
-      email: true,
       phone: true,
       gender: true,
       user: { select: { id: true, name: true, email: true } },
@@ -30,6 +29,11 @@ const doctorInclude = {
     },
   },
 } as const;
+
+function mapDoctorRelations(raw: any): DoctorWithRelations {
+  const { user, ...profileRest } = raw.profile;
+  return { ...raw, profile: { ...profileRest, email: user?.email ?? null } };
+}
 
 @Injectable()
 export class PrismaDoctorRepository implements IDoctorRepository {
@@ -56,7 +60,6 @@ export class PrismaDoctorRepository implements IDoctorRepository {
         data: {
           name: data.profile.name,
           lastName: data.profile.lastName,
-          email: data.profile.email,
           phone: data.profile.phone,
           gender: data.profile.gender,
           userId: user.id,
@@ -81,10 +84,12 @@ export class PrismaDoctorRepository implements IDoctorRepository {
         });
       }
 
-      return tx.doctors.findUniqueOrThrow({
-        where: { id: doctor.id },
-        include: doctorInclude,
-      });
+      return mapDoctorRelations(
+        await tx.doctors.findUniqueOrThrow({
+          where: { id: doctor.id },
+          include: doctorInclude,
+        }),
+      );
     });
   }
 
@@ -118,9 +123,11 @@ export class PrismaDoctorRepository implements IDoctorRepository {
               },
             },
             {
-              email: {
-                contains: searchValue,
-                mode: 'insensitive' as const,
+              user: {
+                email: {
+                  contains: searchValue,
+                  mode: 'insensitive' as const,
+                },
               },
             },
           ],
@@ -141,17 +148,18 @@ export class PrismaDoctorRepository implements IDoctorRepository {
 
     return {
       totalRows: count,
-      rows,
+      rows: rows.map(mapDoctorRelations),
       totalPages: Math.ceil(count / limit),
       currentPage: Math.floor(offset / limit) + 1,
     };
   }
 
   async findById(id: number): Promise<DoctorWithRelations | null> {
-    return this.prisma.tenant.doctors.findFirst({
+    const result = await this.prisma.tenant.doctors.findFirst({
       where: { id, deleted: false },
       include: doctorInclude,
     });
+    return result ? mapDoctorRelations(result) : null;
   }
 
   async existsByLicenseNumber(licenseNumber: string): Promise<boolean> {
@@ -235,10 +243,12 @@ export class PrismaDoctorRepository implements IDoctorRepository {
         }
       }
 
-      return tx.doctors.findUniqueOrThrow({
-        where: { id },
-        include: doctorInclude,
-      });
+      return mapDoctorRelations(
+        await tx.doctors.findUniqueOrThrow({
+          where: { id },
+          include: doctorInclude,
+        }),
+      );
     });
   }
 

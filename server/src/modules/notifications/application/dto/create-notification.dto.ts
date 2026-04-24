@@ -63,4 +63,10 @@ export class CreateNotificationDto {
   @IsObject()
   @IsOptional()
   metadata?: any;
+
+  @ApiPropertyOptional({ example: 1, description: 'ID de la sede (opcional)' })
+  @Type(() => Number)
+  @IsInt()
+  @IsOptional()
+  clinicId?: number | null;
 }

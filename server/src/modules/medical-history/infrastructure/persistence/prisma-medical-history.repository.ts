@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
+import { tenantStorage } from '../../../../prisma/tenant-context.js';
 import { IMedicalHistoryRepository } from '../../domain/repositories/medical-history.repository.js';
 import {
   CreateMedicalHistoryData,
@@ -31,6 +32,7 @@ export class PrismaMedicalHistoryRepository implements IMedicalHistoryRepository
         diagnosedDate: data.diagnosedDate,
         status: (data.status as any) ?? 'ACTIVE',
         notes: data.notes,
+        clinicId: data.clinicId ?? tenantStorage.getStore() ?? null,
       },
       include: medicalHistoryInclude,
     }) as any;
@@ -50,14 +52,14 @@ export class PrismaMedicalHistoryRepository implements IMedicalHistoryRepository
     }
 
     const [data, total] = await Promise.all([
-      this.prisma.medicalHistory.findMany({
+      this.prisma.tenant.medicalHistory.findMany({
         where,
         include: medicalHistoryInclude,
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
       }),
-      this.prisma.medicalHistory.count({ where }),
+      this.prisma.tenant.medicalHistory.count({ where }),
     ]);
 
     return {
@@ -70,7 +72,7 @@ export class PrismaMedicalHistoryRepository implements IMedicalHistoryRepository
   }
 
   async findById(id: number): Promise<MedicalHistoryResult | null> {
-    const result = await this.prisma.medicalHistory.findFirst({
+    const result = await this.prisma.tenant.medicalHistory.findFirst({
       where: { id, deleted: false },
       include: medicalHistoryInclude,
     });

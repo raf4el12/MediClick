@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
+import { tenantStorage } from '../../../../prisma/tenant-context.js';
 import { IPrescriptionRepository } from '../../domain/repositories/prescription.repository.js';
 import {
   CreatePrescriptionData,
@@ -91,6 +92,7 @@ export class PrismaPrescriptionRepository implements IPrescriptionRepository {
           appointmentId: data.appointmentId,
           instructions: data.instructions,
           validUntil: data.validUntil,
+          clinicId: data.clinicId ?? tenantStorage.getStore() ?? null,
           items: {
             create: data.items.map((item) => ({
               medication: item.medication,
@@ -126,7 +128,7 @@ export class PrismaPrescriptionRepository implements IPrescriptionRepository {
   async findByAppointmentId(
     appointmentId: number,
   ): Promise<PrescriptionWithItems | null> {
-    const result = await this.prisma.prescriptions.findUnique({
+    const result = await this.prisma.tenant.prescriptions.findFirst({
       where: { appointmentId },
       include: prescriptionInclude,
     });
@@ -136,7 +138,7 @@ export class PrismaPrescriptionRepository implements IPrescriptionRepository {
   async findByAppointmentIdForPdf(
     appointmentId: number,
   ): Promise<PrescriptionForPdf | null> {
-    const result = await this.prisma.prescriptions.findUnique({
+    const result = await this.prisma.tenant.prescriptions.findFirst({
       where: { appointmentId },
       select: {
         id: true,
