@@ -11,9 +11,6 @@ export class UserProfileResponseDto {
   @ApiProperty()
   lastName: string;
 
-  @ApiProperty()
-  email: string;
-
   @ApiPropertyOptional()
   phone: string | null;
 

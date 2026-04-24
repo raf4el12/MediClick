@@ -24,7 +24,7 @@ describe('CreatePaymentPreferenceUseCase', () => {
     pendingUntil: futureDate,
     patient: {
       id: 1,
-      profile: { userId: 42, email: 'paciente@example.com' },
+      profile: { userId: 42, user: { email: 'paciente@example.com' } },
     },
     schedule: {
       scheduleDate: new Date('2026-05-01'),
@@ -106,7 +106,7 @@ describe('CreatePaymentPreferenceUseCase', () => {
   it('throws ForbiddenException when appointment belongs to another user', async () => {
     prisma.appointments.findUnique.mockResolvedValue(
       buildAppointment({
-        patient: { id: 1, profile: { userId: 7, email: 'otro@example.com' } },
+        patient: { id: 1, profile: { userId: 7, user: { email: 'otro@example.com' } } },
       }),
     );
 

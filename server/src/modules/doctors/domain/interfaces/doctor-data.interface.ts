@@ -9,7 +9,6 @@ export interface OnboardDoctorData {
   profile: {
     name: string;
     lastName: string;
-    email: string;
     phone?: string;
     gender?: string;
   };

@@ -20,6 +20,7 @@ export class CreateNotificationUseCase {
       title: dto.title,
       message: dto.message,
       metadata: dto.metadata,
+      clinicId: dto.clinicId ?? null,
     });
 
     this.logger.log(

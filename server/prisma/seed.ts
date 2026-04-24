@@ -388,7 +388,6 @@ async function main() {
     data: {
       name: 'Carlos',
       lastName: 'Mendoza',
-      email: 'admin@mediclick.com',
       userId: adminUser.id,
       phone: '+51999000001',
       typeDocument: 'DNI',
@@ -415,7 +414,6 @@ async function main() {
     data: {
       name: 'María',
       lastName: 'Torres',
-      email: 'adminlima@mediclick.com',
       userId: clinicAdminUser.id,
       phone: '+51999000002',
       typeDocument: 'DNI',
@@ -442,7 +440,6 @@ async function main() {
     data: {
       name: 'Ana',
       lastName: 'García',
-      email: 'recepcion@mediclick.com',
       userId: receptionistUser.id,
       phone: '+51999000003',
       typeDocument: 'DNI',
@@ -469,7 +466,6 @@ async function main() {
     data: {
       name: 'Roberto',
       lastName: 'Ramírez',
-      email: 'ramirez@mediclick.com',
       userId: doctor1User.id,
       phone: '+51987654321',
       gender: 'M',
@@ -514,7 +510,6 @@ async function main() {
     data: {
       name: 'Lucía',
       lastName: 'Flores',
-      email: 'flores@mediclick.com',
       userId: doctor2User.id,
       phone: '+51987654322',
       gender: 'F',
@@ -559,7 +554,6 @@ async function main() {
     data: {
       name: 'Fernando',
       lastName: 'Chávez',
-      email: 'chavez@mediclick.com',
       userId: doctor3User.id,
       phone: '+51987654323',
       gender: 'M',
@@ -599,7 +593,6 @@ async function main() {
     data: {
       name: 'Juan',
       lastName: 'Pérez',
-      email: 'juan@gmail.com',
       userId: patient1User.id,
       phone: '+51912345678',
       gender: 'M',
@@ -638,7 +631,6 @@ async function main() {
     data: {
       name: 'María',
       lastName: 'López',
-      email: 'maria@gmail.com',
       userId: patient2User.id,
       phone: '+51998877665',
       gender: 'F',
@@ -677,7 +669,6 @@ async function main() {
     data: {
       name: 'Pedro',
       lastName: 'Quispe',
-      email: 'pedro@gmail.com',
       userId: patient3User.id,
       phone: '+51955667788',
       gender: 'M',

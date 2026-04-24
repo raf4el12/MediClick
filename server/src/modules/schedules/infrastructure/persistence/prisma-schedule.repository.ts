@@ -71,9 +71,6 @@ export class PrismaScheduleRepository implements IScheduleRepository {
     const where: Record<string, any> = {
       ...(filters.doctorId && { doctorId: filters.doctorId }),
       ...(filters.specialtyId && { specialtyId: filters.specialtyId }),
-      ...(filters.clinicId
-        ? { OR: [{ clinicId: null }, { clinicId: filters.clinicId }] }
-        : {}),
       scheduleDate: {
         gte: effectiveDateFrom,
         ...(filters.dateTo && { lte: filters.dateTo }),
@@ -90,14 +87,14 @@ export class PrismaScheduleRepository implements IScheduleRepository {
     };
 
     const [rows, count] = await Promise.all([
-      this.prisma.schedules.findMany({
+      this.prisma.tenant.schedules.findMany({
         where,
         include: scheduleInclude,
         skip: offset,
         take: limit,
         orderBy: { [orderBy || 'scheduleDate']: orderByMode || 'asc' },
       }),
-      this.prisma.schedules.count({ where }),
+      this.prisma.tenant.schedules.count({ where }),
     ]);
 
     return {
@@ -181,7 +178,7 @@ export class PrismaScheduleRepository implements IScheduleRepository {
   ): Promise<ScheduleWithAvailability[]> {
     const { start: startOfDay, end: endOfDay } = utcDayRange(date);
 
-    const rows = await this.prisma.schedules.findMany({
+    const rows = await this.prisma.tenant.schedules.findMany({
       where: {
         doctorId,
         ...(specialtyId && { specialtyId }),

@@ -128,6 +128,7 @@ export class HandlePaymentWebhookUseCase {
           externalRef,
           payerEmail: gatewayStatus.payerEmail,
           metadata: gatewayStatus.raw,
+          clinicId: appointment.clinicId ?? null,
         });
       }
     }
@@ -149,6 +150,7 @@ export class HandlePaymentWebhookUseCase {
           title: 'Pago confirmado',
           message: `Tu cita #${appointmentId} fue pagada y confirmada exitosamente.`,
           metadata: { appointmentId, paymentId: gatewayStatus.gatewayPaymentId },
+          clinicId: appointment.clinicId ?? null,
         });
       }
     }

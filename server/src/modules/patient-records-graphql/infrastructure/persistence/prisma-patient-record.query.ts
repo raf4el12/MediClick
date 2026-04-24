@@ -11,7 +11,7 @@ export class PrismaPatientRecordQuery implements IPatientRecordQueryPort {
     const patient = await this.prisma.patients.findUnique({
       where: { id: patientId, deleted: false },
       include: {
-        profile: true,
+        profile: { include: { user: { select: { email: true } } } },
         medicalHistory: {
           where: { deleted: false },
         },
@@ -45,7 +45,7 @@ export class PrismaPatientRecordQuery implements IPatientRecordQueryPort {
         ? {
             name: patient.profile.name,
             lastName: patient.profile.lastName,
-            email: patient.profile.email,
+            email: patient.profile.user?.email ?? undefined,
             phone: patient.profile.phone ?? undefined,
             birthday: patient.profile.birthday ?? undefined,
             gender: patient.profile.gender ?? undefined,

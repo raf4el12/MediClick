@@ -6,8 +6,8 @@ export class ProfileGql {
   name: string;
   @Field()
   lastName: string;
-  @Field()
-  email: string;
+  @Field({ nullable: true })
+  email?: string;
   @Field({ nullable: true })
   phone?: string;
   @Field({ nullable: true })

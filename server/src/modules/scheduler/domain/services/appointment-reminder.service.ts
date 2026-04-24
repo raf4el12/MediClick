@@ -75,8 +75,8 @@ export class AppointmentReminderService {
               select: {
                 name: true,
                 lastName: true,
-                email: true,
                 userId: true,
+                user: { select: { email: true } },
               },
             },
           },
@@ -114,7 +114,7 @@ export class AppointmentReminderService {
         const patientUserId = appt.patient.profile.userId;
 
         await this.mailService.send({
-          to: appt.patient.profile.email,
+          to: (appt.patient.profile as any).user?.email ?? '',
           subject: 'Recordatorio: Tu cita es mañana — MediClick',
           template: 'appointment-reminder',
           context: {
@@ -136,6 +136,7 @@ export class AppointmentReminderService {
             title: 'Recordatorio de cita',
             message: `Tu cita con el Dr(a). ${doctorName} es mañana.`,
             metadata: { appointmentId: appt.id },
+            clinicId: appt.clinicId ?? null,
           });
         }
 

@@ -45,6 +45,7 @@ describe('GetPaymentByAppointmentUseCase', () => {
       failureReason: null,
       paidAt: new Date(),
       metadata: null,
+      clinicId: null,
       createdAt: new Date(),
       updatedAt: null,
     });
@@ -87,6 +88,7 @@ describe('GetPaymentByAppointmentUseCase', () => {
       failureReason: null,
       paidAt: null,
       metadata: null,
+      clinicId: null,
       createdAt: new Date(),
       updatedAt: null,
     });

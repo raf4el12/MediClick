@@ -3,8 +3,9 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { join } from 'path';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { TenantInterceptor } from './shared/interceptors/tenant.interceptor.js';
 import { GqlThrottlerGuard } from './shared/guards/gql-throttler.guard.js';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -89,6 +90,10 @@ import { PatientRecordsGraphqlModule } from './modules/patient-records-graphql/a
     {
       provide: APP_GUARD,
       useClass: GqlThrottlerGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TenantInterceptor,
     },
   ],
 })

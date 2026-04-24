@@ -14,6 +14,7 @@ export interface CreateTransactionData {
   externalRef?: string | null;
   payerEmail?: string | null;
   metadata?: unknown;
+  clinicId?: number | null;
 }
 
 export interface UpdateTransactionData {

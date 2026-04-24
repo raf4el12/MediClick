@@ -3,6 +3,7 @@ export interface CreatePrescriptionData {
   instructions?: string;
   validUntil?: Date;
   items: CreatePrescriptionItemData[];
+  clinicId?: number | null;
 }
 
 export interface CreatePrescriptionItemData {

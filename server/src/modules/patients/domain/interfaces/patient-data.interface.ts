@@ -7,7 +7,6 @@ export interface CreatePatientData {
   profile: {
     name: string;
     lastName: string;
-    email: string;
     phone?: string;
     birthday?: Date;
     gender?: string;

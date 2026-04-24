@@ -101,14 +101,10 @@ model Users {
   @@index([clinicId])
 }
 
-// NOTA: Profiles.email duplica Users.email intencionalmente.
-// Users.email se usa para autenticación; Profiles.email es el email de contacto visible.
-// Ambos se sincronizan en el registro. Cambio futuro: evaluar eliminar la duplicación.
 model Profiles {
   id             Int       @id @default(autoincrement())
   name           String
   lastName       String
-  email          String    @unique
   birthday       DateTime?
   gender         String?
   national       String?
@@ -129,7 +125,6 @@ model Profiles {
   doctor         Doctors?
 
   @@index([userId])
-  @@index([email])
 }
 
 model Patients {
@@ -322,12 +317,15 @@ model ClinicalNotes {
   summary       String?      @db.Text
   plan          String?      @db.Text
   diagnosis     String?
+  clinicId      Int?
   deleted       Boolean      @default(false)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime?
   appointment   Appointments @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  clinic        Clinics?     @relation(fields: [clinicId], references: [id], onDelete: SetNull)
 
   @@index([appointmentId])
+  @@index([clinicId])
 }
 
 model Prescriptions {
@@ -335,13 +333,16 @@ model Prescriptions {
   appointmentId Int       @unique
   instructions  String?   @db.Text
   validUntil    DateTime?
+  clinicId      Int?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime?
 
   appointment Appointments        @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  clinic      Clinics?            @relation(fields: [clinicId], references: [id], onDelete: SetNull)
   items       PrescriptionItems[]
 
   @@index([appointmentId])
+  @@index([clinicId])
 }
 
 model PrescriptionItems {
@@ -372,15 +373,18 @@ model Transactions {
   failureReason String?
   paidAt        DateTime?
   metadata      Json? // Respuesta cruda del gateway
+  clinicId      Int?
   createdAt     DateTime       @default(now())
   updatedAt     DateTime?
 
   appointment Appointments @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  clinic      Clinics?     @relation(fields: [clinicId], references: [id], onDelete: SetNull)
 
   @@index([appointmentId])
   @@index([gatewayId])
   @@index([preferenceId])
   @@index([externalRef])
+  @@index([clinicId])
 }
 
 // MODELO NUEVO: Reseñas (Reputación)
@@ -391,13 +395,16 @@ model Reviews {
   rating    Int      @default(0) // 1 a 5
   comment   String?  @db.Text
   isVisible Boolean  @default(true) // Para moderación
+  clinicId  Int?
   createdAt DateTime @default(now())
 
   doctor  Doctors  @relation(fields: [doctorId], references: [id])
   patient Patients @relation(fields: [patientId], references: [id])
+  clinic  Clinics? @relation(fields: [clinicId], references: [id], onDelete: SetNull)
 
   @@index([doctorId])
   @@index([patientId])
+  @@index([clinicId])
 }
 
 model Notifications {
@@ -410,14 +417,17 @@ model Notifications {
   isRead    Boolean             @default(false)
   metadata  Json?
   sentAt    DateTime?
+  clinicId  Int?
   deleted   Boolean             @default(false)
   createdAt DateTime            @default(now())
 
-  user Users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clinic Clinics? @relation(fields: [clinicId], references: [id], onDelete: SetNull)
 
   @@index([userId, isRead])
   @@index([userId, createdAt])
   @@index([type])
+  @@index([clinicId])
 }
 
 model MedicalHistory {
@@ -428,14 +438,17 @@ model MedicalHistory {
   diagnosedDate DateTime?
   status        MedicalHistoryStatus @default(ACTIVE)
   notes         String?              @db.Text
+  clinicId      Int?
   deleted       Boolean              @default(false)
   createdAt     DateTime             @default(now())
   updatedAt     DateTime?
 
   patient Patients @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  clinic  Clinics? @relation(fields: [clinicId], references: [id], onDelete: SetNull)
 
   @@index([patientId, status])
   @@index([patientId, createdAt])
+  @@index([clinicId])
 }
 
 model ScheduleBlocks {
@@ -489,14 +502,20 @@ model Clinics {
   createdAt DateTime  @default(now())
   updatedAt DateTime?
 
-  users        Users[]
-  doctors      Doctors[]
-  holidays     Holidays[]
-  categories   Categories[]
-  specialties  Specialties[]
-  schedules    Schedules[]
-  availability Availability[]
-  appointments Appointments[]
+  users          Users[]
+  doctors        Doctors[]
+  holidays       Holidays[]
+  categories     Categories[]
+  specialties    Specialties[]
+  schedules      Schedules[]
+  availability   Availability[]
+  appointments   Appointments[]
+  clinicalNotes  ClinicalNotes[]
+  prescriptions  Prescriptions[]
+  medicalHistory MedicalHistory[]
+  transactions   Transactions[]
+  notifications  Notifications[]
+  reviews        Reviews[]
 
   roles        Roles[]
 

@@ -21,6 +21,7 @@ export class PrismaNotificationRepository implements INotificationRepository {
         title: data.title,
         message: data.message,
         metadata: data.metadata ?? undefined,
+        clinicId: data.clinicId ?? null,
       },
     });
   }

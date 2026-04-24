@@ -72,7 +72,6 @@ export class OnboardDoctorUseCase {
       profile: {
         name: dto.profile.name,
         lastName: dto.profile.lastName,
-        email: dto.user.email,
         phone: dto.profile.phone,
         gender: dto.profile.gender,
       },

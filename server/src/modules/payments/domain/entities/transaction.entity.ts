@@ -28,6 +28,7 @@ export class TransactionEntity {
   failureReason: string | null;
   paidAt: Date | null;
   metadata: unknown;
+  clinicId: number | null;
   createdAt: Date;
   updatedAt: Date | null;
 }

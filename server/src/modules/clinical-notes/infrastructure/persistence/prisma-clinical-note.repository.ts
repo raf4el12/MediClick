@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
+import { tenantStorage } from '../../../../prisma/tenant-context.js';
 import { IClinicalNoteRepository } from '../../domain/repositories/clinical-note.repository.js';
 import {
   CreateClinicalNoteData,
@@ -45,6 +46,7 @@ export class PrismaClinicalNoteRepository implements IClinicalNoteRepository {
         summary: data.summary,
         diagnosis: data.diagnosis,
         plan: data.plan,
+        clinicId: data.clinicId ?? tenantStorage.getStore() ?? null,
       },
       include: clinicalNoteInclude,
     }) as any;
@@ -53,7 +55,7 @@ export class PrismaClinicalNoteRepository implements IClinicalNoteRepository {
   async findByAppointmentId(
     appointmentId: number,
   ): Promise<ClinicalNoteWithAppointment[]> {
-    return this.prisma.clinicalNotes.findMany({
+    return this.prisma.tenant.clinicalNotes.findMany({
       where: { appointmentId, deleted: false },
       include: clinicalNoteInclude,
       orderBy: { createdAt: 'desc' },
