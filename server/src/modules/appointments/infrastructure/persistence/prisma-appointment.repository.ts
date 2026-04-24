@@ -434,6 +434,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       cancelReason: raw.cancelReason,
       cancellationFee: raw.cancellationFee ? Number(raw.cancellationFee) : null,
       isOverbook: raw.isOverbook,
+      pendingUntil: raw.pendingUntil ?? null,
       deleted: raw.deleted,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,

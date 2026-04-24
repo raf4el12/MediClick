@@ -31,6 +31,7 @@ import {
   type AppointmentFilters as AppointmentFiltersType,
   AppointmentStatus,
 } from '../types';
+import { PaymentStatusBadge } from '@/views/payment/components/PaymentStatusBadge';
 
 const columnHelper = createColumnHelper<Appointment>();
 
@@ -160,6 +161,16 @@ export const AppointmentsTable = memo(function AppointmentsTable({
             </Box>
           );
         },
+      }),
+      columnHelper.display({
+        id: 'payment',
+        header: 'Pago',
+        meta: { align: 'center', hiddenOnMobile: true },
+        cell: ({ row }) => (
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+            <PaymentStatusBadge paymentStatus={row.original.paymentStatus} />
+          </Box>
+        ),
       }),
       columnHelper.display({
         id: 'actions',

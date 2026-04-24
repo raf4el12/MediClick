@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -23,6 +22,7 @@ import { specialtiesService } from '@/services/specialties.service';
 import { doctorsService } from '@/services/doctors.service';
 import { schedulesService } from '@/services/schedules.service';
 import { appointmentsService } from '@/services/appointments.service';
+import { paymentsService } from '@/services/payments.service';
 import { filterAvailableSlots } from '@/views/appointments/functions/filterAvailableSlots';
 import { getTodayInTimezone } from '@/utils/timezone';
 import type { TimeSlot } from '@/views/schedules/types';
@@ -30,12 +30,11 @@ import type { TimeSlot } from '@/views/schedules/types';
 const steps = ['Sede', 'Especialidad', 'Doctor', 'Fecha y Hora', 'Confirmar'];
 
 export default function PatientBookView() {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const [activeStep, setActiveStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
 
   // Selections
   const [selectedClinicId, setSelectedClinicId] = useState<number | null>(null);
@@ -200,13 +199,18 @@ export default function PatientBookView() {
     setSubmitting(true);
     setError(null);
     try {
-      await appointmentsService.createAsPatient({
+      const appointment = await appointmentsService.createAsPatient({
         scheduleId: selectedSlotTime.scheduleId,
         startTime: selectedSlotTime.startTime,
         endTime: selectedSlotTime.endTime,
         reason: reason || undefined,
       });
-      setSuccess(true);
+
+      // Pre-pago obligatorio: generar preference MP y redirigir al checkout.
+      // Si esto falla, la cita queda PENDING y expira sola por el cron del backend.
+      setRedirecting(true);
+      const preference = await paymentsService.createPreference(appointment.id);
+      window.location.href = preference.initPoint;
     } catch (err: unknown) {
       const { message: errorMsg, status } = (await import('@/utils/extractApiError')).extractApiError(err, 'Error al reservar la cita');
 
@@ -218,44 +222,27 @@ export default function PatientBookView() {
       } else {
         setError(errorMsg);
       }
+      setRedirecting(false);
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (success) {
+  if (redirecting) {
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, py: 6 }}>
-        <Box
-          sx={{
-            width: 80,
-            height: 80,
-            borderRadius: '50%',
-            bgcolor: 'success.main',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <i className="ri-check-line" style={{ fontSize: 40, color: '#fff' }} />
-        </Box>
-        <Typography variant="h5" fontWeight={700} textAlign="center">
-          Cita Reservada
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, py: 8 }}>
+        <CircularProgress size={48} />
+        <Typography variant="h6" fontWeight={600} textAlign="center">
+          Redirigiendo a Mercado Pago…
         </Typography>
-        <Typography variant="body1" color="text.secondary" textAlign="center">
-          Tu cita ha sido registrada exitosamente. Recibirás una confirmación pronto.
+        <Typography variant="body2" color="text.secondary" textAlign="center">
+          Tu cita fue reservada. Te estamos llevando al checkout seguro para
+          completar el pago.
         </Typography>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button variant="contained" onClick={() => router.push('/patient/appointments')}>
-            Ver Mis Citas
-          </Button>
-          <Button variant="outlined" onClick={() => router.push('/patient')}>
-            Ir al Inicio
-          </Button>
-        </Box>
       </Box>
     );
   }
+
 
   return (
     <Box>
@@ -601,8 +588,33 @@ export default function PatientBookView() {
                   {selectedSlotTime?.startTime} - {selectedSlotTime?.endTime}
                 </Typography>
               </Box>
+              {selectedSpecialty?.price != null && (
+                <>
+                  <Divider />
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Typography variant="caption" color="text.secondary">
+                      Total a pagar
+                    </Typography>
+                    <Typography variant="h6" fontWeight={700} color="primary.main">
+                      S/ {selectedSpecialty.price.toFixed(2)}
+                    </Typography>
+                  </Box>
+                </>
+              )}
             </CardContent>
           </Card>
+
+          <Alert severity="info" icon={<i className="ri-shield-check-line" />} sx={{ mb: 2, borderRadius: 2 }}>
+            Al confirmar serás redirigido a <b>Mercado Pago</b> para completar el
+            pago. Si no lo completas dentro de 15 minutos, la reserva se cancela
+            automáticamente.
+          </Alert>
 
           <TextField
             fullWidth
@@ -622,9 +634,9 @@ export default function PatientBookView() {
               variant="contained"
               onClick={handleSubmit}
               disabled={submitting}
-              startIcon={submitting ? <CircularProgress size={18} /> : <i className="ri-calendar-check-line" />}
+              startIcon={submitting ? <CircularProgress size={18} /> : <i className="ri-bank-card-line" />}
             >
-              {submitting ? 'Reservando...' : 'Confirmar Reserva'}
+              {submitting ? 'Reservando…' : 'Reservar y pagar'}
             </Button>
           </Box>
         </Box>

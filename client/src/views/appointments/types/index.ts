@@ -48,6 +48,7 @@ export interface Appointment {
   cancelReason: string | null;
   cancellationFee: number | null;
   isOverbook: boolean;
+  pendingUntil: string | null;
   patient: AppointmentPatient;
   schedule: AppointmentSchedule;
   timezone: string;     // IANA timezone de la clínica del doctor

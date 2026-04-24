@@ -206,6 +206,7 @@ export class CreatePatientAppointmentUseCase {
       cancelReason: appointment.cancelReason,
       cancellationFee: appointment.cancellationFee,
       isOverbook: appointment.isOverbook,
+      pendingUntil: appointment.pendingUntil ?? pendingUntil,
       patient: {
         id: appointment.patient.id,
         name: appointment.patient.profile.name,

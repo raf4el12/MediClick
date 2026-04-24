@@ -3,12 +3,14 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CancelAppointmentDto } from '../dto/cancel-appointment.dto.js';
 import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type { ISpecialtyRepository } from '../../../specialties/domain/repositories/specialty.repository.js';
+import type { ITransactionRepository } from '../../../payments/domain/repositories/transaction.repository.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import {
@@ -28,11 +30,15 @@ import {
 
 @Injectable()
 export class CancelAppointmentUseCase {
+  private readonly logger = new Logger(CancelAppointmentUseCase.name);
+
   constructor(
     @Inject('IAppointmentRepository')
     private readonly appointmentRepository: IAppointmentRepository,
     @Inject('ISpecialtyRepository')
     private readonly specialtyRepository: ISpecialtyRepository,
+    @Inject('ITransactionRepository')
+    private readonly transactionRepository: ITransactionRepository,
     private readonly timezoneResolver: TimezoneResolverService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
@@ -99,6 +105,10 @@ export class CancelAppointmentUseCase {
       updatedAt: new Date(),
     });
 
+    // Si la cita tenía un pago PAID, se marca la transacción como "requiere refund manual".
+    // No se procesa refund automático — el admin debe revisarlo desde el dashboard.
+    await this.flagRefundPendingIfPaid(id, dto.reason, userRole);
+
     if (updated.patient.profile.userId) {
       const event: AppointmentCancelledEvent = {
         appointmentId: updated.id,
@@ -118,6 +128,40 @@ export class CancelAppointmentUseCase {
     return this.toResponse(updated);
   }
 
+  /**
+   * Si la última transacción de la cita está PAID, la marca con `needsRefund` en metadata.
+   * Un admin la procesa manualmente desde el panel de facturación
+   * (refunds automáticos vía API quedan para fase posterior).
+   */
+  private async flagRefundPendingIfPaid(
+    appointmentId: number,
+    cancelReason: string | undefined,
+    cancelledBy: string,
+  ): Promise<void> {
+    const tx =
+      await this.transactionRepository.findLatestByAppointmentId(appointmentId);
+    if (!tx || tx.status !== 'PAID') return;
+
+    const previousMetadata =
+      tx.metadata && typeof tx.metadata === 'object'
+        ? (tx.metadata as Record<string, unknown>)
+        : {};
+
+    await this.transactionRepository.update(tx.id, {
+      metadata: {
+        ...previousMetadata,
+        needsRefund: true,
+        refundRequestedAt: new Date().toISOString(),
+        refundCancelReason: cancelReason ?? null,
+        refundCancelledBy: cancelledBy,
+      },
+    });
+
+    this.logger.warn(
+      `[REVIEW] Cita ${appointmentId} cancelada con pago PAID (txId=${tx.id}). Refund manual pendiente.`,
+    );
+  }
+
   private toResponse(a: any): AppointmentResponseDto {
     return {
       id: a.id,
@@ -133,6 +177,7 @@ export class CancelAppointmentUseCase {
       cancelReason: a.cancelReason,
       cancellationFee: a.cancellationFee,
       isOverbook: a.isOverbook,
+      pendingUntil: a.pendingUntil ?? null,
       patient: {
         id: a.patient.id,
         name: a.patient.profile.name,

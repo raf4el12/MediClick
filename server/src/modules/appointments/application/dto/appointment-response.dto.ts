@@ -102,6 +102,13 @@ export class AppointmentResponseDto {
   })
   isOverbook: boolean;
 
+  @ApiPropertyOptional({
+    example: '2026-04-23T10:30:00.000Z',
+    description:
+      'Deadline de pago. Si expira sin pago, la cita se cancela automáticamente.',
+  })
+  pendingUntil: Date | null;
+
   @ApiProperty({ type: AppointmentPatientDto })
   patient: AppointmentPatientDto;
 
