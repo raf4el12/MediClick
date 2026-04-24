@@ -1,20 +1,17 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { paymentsService } from '@/services/payments.service';
+import { extractApiError } from '@/utils/extractApiError';
 import type { PaymentResponse } from '@/views/payment/types';
 
 interface UsePaymentResultOptions {
-  /** Re-fetch cada N ms. Útil en la página PENDING mientras MP procesa. */
   pollIntervalMs?: number;
 }
 
 interface UsePaymentResultState {
-  /** ID de cita deducido del query param `external_reference`. */
   appointmentId: number | null;
-  /** ID de pago de MP, solo informativo. */
-  paymentId: string | null;
   payment: PaymentResponse | null;
   loading: boolean;
   error: string | null;
@@ -24,19 +21,11 @@ interface UsePaymentResultState {
   retryPayment: () => Promise<void>;
 }
 
-/**
- * Lee los query params que Mercado Pago añade al redirect
- * (`?payment_id=...&external_reference=...&status=...`) y consulta al backend
- * por el estado real del pago. En la página PENDING hace polling.
- * En la página FAILURE expone `retryPayment()` para re-generar una preference
- * y volver a redirigir al checkout.
- */
 export function usePaymentResult(
   options: UsePaymentResultOptions = {},
 ): UsePaymentResultState {
   const searchParams = useSearchParams();
   const appointmentIdParam = searchParams.get('external_reference');
-  const paymentId = searchParams.get('payment_id');
 
   const appointmentId = appointmentIdParam
     ? Number(appointmentIdParam)
@@ -59,7 +48,6 @@ export function usePaymentResult(
       setPayment(data);
       setError(null);
     } catch (err: unknown) {
-      const { extractApiError } = await import('@/utils/extractApiError');
       const { message } = extractApiError(err, 'No se pudo consultar el pago.');
       setError(message);
     } finally {
@@ -71,16 +59,20 @@ export function usePaymentResult(
     void refetch();
   }, [refetch]);
 
+  const refetchRef = useRef(refetch);
+  refetchRef.current = refetch;
+
+  const shouldPoll =
+    options.pollIntervalMs != null &&
+    (!payment || payment.status === 'PENDING');
+
   useEffect(() => {
-    if (!options.pollIntervalMs) return;
-    if (payment && payment.status !== 'PENDING') return;
-
+    if (!shouldPoll || !options.pollIntervalMs) return;
     const id = setInterval(() => {
-      void refetch();
+      void refetchRef.current();
     }, options.pollIntervalMs);
-
     return () => clearInterval(id);
-  }, [options.pollIntervalMs, payment, refetch]);
+  }, [shouldPoll, options.pollIntervalMs]);
 
   const retryPayment = useCallback(async () => {
     if (!appointmentId) return;
@@ -90,7 +82,6 @@ export function usePaymentResult(
       const preference = await paymentsService.createPreference(appointmentId);
       window.location.href = preference.initPoint;
     } catch (err: unknown) {
-      const { extractApiError } = await import('@/utils/extractApiError');
       const { message } = extractApiError(err, 'No se pudo reintentar el pago.');
       setRetryError(message);
       setRetrying(false);
@@ -99,7 +90,6 @@ export function usePaymentResult(
 
   return {
     appointmentId,
-    paymentId,
     payment,
     loading,
     error,

@@ -7,14 +7,12 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Tooltip from '@mui/material/Tooltip';
 import { StatusBadge } from '@/@core/components/mui/StatusBadge';
 import { paymentsService } from '@/services/payments.service';
+import { extractApiError } from '@/utils/extractApiError';
 import type { PaymentStatus } from '@/views/payment/types';
 
 type ChipColor = 'warning' | 'info' | 'primary' | 'success' | 'error' | 'default';
 
-const PAYMENT_STATUS_CONFIG: Record<
-  string,
-  { label: string; color: ChipColor }
-> = {
+const PAYMENT_STATUS_CONFIG: Record<PaymentStatus, { label: string; color: ChipColor }> = {
   PENDING: { label: 'Pago pendiente', color: 'warning' },
   PAID: { label: 'Pagado', color: 'success' },
   PARTIAL: { label: 'Pago parcial', color: 'warning' },
@@ -25,20 +23,12 @@ const PAYMENT_STATUS_CONFIG: Record<
 
 interface PaymentStatusBadgeProps {
   paymentStatus: PaymentStatus | string;
-  /** ISO string del deadline. Si es null o expiró, no se muestra el botón de pago. */
   pendingUntil?: string | null;
-  /** Requerido si `showActions` es true. */
   appointmentId?: number;
-  /** Habilita los botones "Pagar ahora" / "Reintentar". Usar en la vista del paciente. */
   showActions?: boolean;
   size?: 'small' | 'medium';
 }
 
-/**
- * Badge de estado de pago de una cita.
- * Si `showActions` está activo y el estado permite pagar, muestra un botón
- * que genera una preference en Mercado Pago y redirige al checkout.
- */
 export function PaymentStatusBadge({
   paymentStatus,
   pendingUntil,
@@ -50,7 +40,7 @@ export function PaymentStatusBadge({
   const [error, setError] = useState<string | null>(null);
 
   const config =
-    PAYMENT_STATUS_CONFIG[paymentStatus] ??
+    PAYMENT_STATUS_CONFIG[paymentStatus as PaymentStatus] ??
     ({ label: paymentStatus, color: 'default' } as const);
 
   const canPayNow =
@@ -68,7 +58,6 @@ export function PaymentStatusBadge({
       const preference = await paymentsService.createPreference(appointmentId);
       window.location.href = preference.initPoint;
     } catch (err: unknown) {
-      const { extractApiError } = await import('@/utils/extractApiError');
       const { message } = extractApiError(err, 'No se pudo iniciar el pago.');
       setError(message);
       setLoading(false);

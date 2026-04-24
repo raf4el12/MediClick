@@ -32,7 +32,6 @@ export class HandlePaymentWebhookUseCase {
       return;
     }
 
-    // Solo nos interesan eventos de tipo payment
     if (payload.type && payload.type !== 'payment') {
       this.logger.debug(
         `Webhook tipo=${payload.type} ignorado (solo procesamos type=payment)`,
@@ -91,7 +90,6 @@ export class HandlePaymentWebhookUseCase {
     );
 
     if (existing) {
-      // Idempotencia: solo actualizamos.
       await this.transactionRepository.update(existing.id, {
         status,
         paymentMethod,
@@ -102,8 +100,8 @@ export class HandlePaymentWebhookUseCase {
         metadata: gatewayStatus.raw,
       });
     } else {
-      // Puede pasar si el webhook llega antes que el callback de creación local
-      // o si la Transaction PENDING existe pero sin gatewayId todavía.
+      // El webhook puede llegar antes que el callback que crea la Transaction local,
+      // o la Transaction PENDING puede existir sin gatewayId todavía.
       const pending =
         await this.transactionRepository.findLatestByAppointmentId(
           appointmentId,
@@ -134,7 +132,6 @@ export class HandlePaymentWebhookUseCase {
       }
     }
 
-    // Actualizar la cita según el estado del pago
     await this.syncAppointmentState(
       appointmentId,
       status,
@@ -142,7 +139,6 @@ export class HandlePaymentWebhookUseCase {
       gatewayStatus.amount,
     );
 
-    // Notificar al paciente si el pago fue aprobado y la cita sigue viva
     if (status === 'PAID' && appointment.status !== 'CANCELLED') {
       const userId = appointment.patient.profile.userId;
       if (userId) {
@@ -168,9 +164,8 @@ export class HandlePaymentWebhookUseCase {
     currentApptStatus: string,
     gatewayAmount: number,
   ): Promise<void> {
-    // Race condition: si la cita fue cancelada (por expiración u otro motivo)
-    // pero el pago llegó aprobado, marcamos el pago pero NO re-confirmamos la cita.
-    // Un admin debe revisarlo manualmente (refund/reprogramación).
+    // Race: pago aprobado pero la cita ya fue cancelada (p. ej. por expiración).
+    // Se marca la Transaction como PAID pero NO se re-confirma la cita — revisión manual.
     if (paymentStatus === 'PAID' && currentApptStatus === 'CANCELLED') {
       this.logger.warn(
         `[REVIEW] Pago aprobado para cita ${appointmentId} que ya estaba CANCELLED. Revisar manualmente.`,
@@ -182,29 +177,27 @@ export class HandlePaymentWebhookUseCase {
       return;
     }
 
-    if (paymentStatus === 'PAID') {
-      await this.prisma.appointments.update({
-        where: { id: appointmentId },
-        data: {
-          paymentStatus: 'PAID',
-          status: 'CONFIRMED',
-          amount: gatewayAmount,
-          pendingUntil: null,
-          updatedAt: new Date(),
-        },
-      });
-    } else if (paymentStatus === 'FAILED') {
-      await this.prisma.appointments.update({
-        where: { id: appointmentId },
-        data: { paymentStatus: 'FAILED', updatedAt: new Date() },
-      });
-    } else if (paymentStatus === 'REFUNDED') {
-      await this.prisma.appointments.update({
-        where: { id: appointmentId },
-        data: { paymentStatus: 'REFUNDED', updatedAt: new Date() },
-      });
-    }
-    // 'PENDING' / 'CANCELLED' del gateway no mueven el estado de la cita aquí.
+    const dataByStatus: Partial<
+      Record<PaymentStatusValue, Record<string, unknown>>
+    > = {
+      PAID: {
+        paymentStatus: 'PAID',
+        status: 'CONFIRMED',
+        amount: gatewayAmount,
+        pendingUntil: null,
+        updatedAt: new Date(),
+      },
+      FAILED: { paymentStatus: 'FAILED', updatedAt: new Date() },
+      REFUNDED: { paymentStatus: 'REFUNDED', updatedAt: new Date() },
+    };
+
+    const data = dataByStatus[paymentStatus];
+    if (!data) return;
+
+    await this.prisma.appointments.update({
+      where: { id: appointmentId },
+      data,
+    });
   }
 
   private mapStatus(
