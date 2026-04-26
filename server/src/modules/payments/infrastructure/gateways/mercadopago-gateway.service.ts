@@ -37,31 +37,34 @@ export class MercadoPagoGatewayService implements IPaymentGatewayService {
       : undefined;
 
     try {
-      const response = await preference.create({
-        body: {
-          items: input.items.map((item) => ({
-            id: item.id,
-            title: item.title,
-            description: item.description,
-            quantity: item.quantity,
-            unit_price: item.unitPrice,
-            currency_id: item.currencyId,
-          })),
-          external_reference: input.externalReference,
-          back_urls: {
-            success: input.backUrls.success,
-            failure: input.backUrls.failure,
-            pending: input.backUrls.pending,
-          },
-          auto_return: 'approved',
-          notification_url: input.notificationUrl,
-          ...(input.payerEmail && { payer: { email: input.payerEmail } }),
-          ...(expirationTo && {
-            expires: true,
-            expiration_date_from: expirationFrom.toISOString(),
-            expiration_date_to: expirationTo.toISOString(),
-          }),
+      const bodyPayload = {
+        items: input.items.map((item) => ({
+          id: item.id,
+          title: item.title,
+          description: item.description,
+          quantity: item.quantity,
+          unit_price: item.unitPrice,
+          currency_id: item.currencyId,
+        })),
+        external_reference: input.externalReference,
+        back_urls: {
+          success: input.backUrls.success,
+          failure: input.backUrls.failure,
+          pending: input.backUrls.pending,
         },
+        notification_url: input.notificationUrl,
+        ...(input.payerEmail && { payer: { email: input.payerEmail } }),
+        ...(expirationTo && {
+          expires: true,
+          expiration_date_from: expirationFrom.toISOString(),
+          expiration_date_to: expirationTo.toISOString(),
+        }),
+      };
+      
+      this.logger.debug(`Payload sent to MP: ${JSON.stringify(bodyPayload)}`);
+
+      const response = await preference.create({
+        body: bodyPayload,
       });
 
       if (!response.id || !response.init_point) {

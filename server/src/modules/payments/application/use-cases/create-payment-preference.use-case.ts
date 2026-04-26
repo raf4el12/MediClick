@@ -84,11 +84,11 @@ export class CreatePaymentPreferenceUseCase {
       : specialtyPrice;
 
     const successUrl =
-      process.env.MP_SUCCESS_URL ?? 'http://localhost:3000/payment/success';
+      process.env.MP_SUCCESS_URL || 'http://localhost:3000/payment/success';
     const failureUrl =
-      process.env.MP_FAILURE_URL ?? 'http://localhost:3000/payment/failure';
+      process.env.MP_FAILURE_URL || 'http://localhost:3000/payment/failure';
     const pendingUrl =
-      process.env.MP_PENDING_URL ?? 'http://localhost:3000/payment/pending';
+      process.env.MP_PENDING_URL || 'http://localhost:3000/payment/pending';
     const notificationUrl = process.env.MP_NOTIFICATION_URL;
     if (!notificationUrl) {
       throw new BadRequestException(

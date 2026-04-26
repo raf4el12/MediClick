@@ -75,6 +75,15 @@ export default function PatientBookView() {
     () => clinics.find((c) => c.id === selectedClinicId) ?? null,
     [clinics, selectedClinicId],
   );
+
+  const filteredSpecialties = useMemo(
+    () =>
+      specialties.filter(
+        (s) => s.isActive && (s.clinicId === selectedClinicId || s.clinicId === null),
+      ),
+    [specialties, selectedClinicId],
+  );
+
   const selectedSpecialty = useMemo(
     () => specialties.find((s) => s.id === selectedSpecialtyId) ?? null,
     [specialties, selectedSpecialtyId],
@@ -97,7 +106,6 @@ export default function PatientBookView() {
             doctorId: selectedDoctorId!,
             specialtyId: selectedSpecialtyId!,
             dateFrom: today,
-            onlyAvailable: true,
           },
         )
         .then((r) => filterAvailableSlots(r.rows, doctorTimezone)),
@@ -332,7 +340,7 @@ export default function PatientBookView() {
             </Box>
           ) : (
             <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
-              {specialties.filter((s) => s.isActive).map((spec) => (
+              {filteredSpecialties.map((spec) => (
                 <Card
                   key={spec.id}
                   variant="outlined"

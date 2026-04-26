@@ -1,19 +1,33 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
+import LinearProgress from '@mui/material/LinearProgress';
 import Typography from '@mui/material/Typography';
 import { useRouter } from 'next/navigation';
 import { PaymentResultShell } from '@/views/payment/components/PaymentResultShell';
 import { usePaymentResult } from '@/views/payment/hooks/usePaymentResult';
 
+const REDIRECT_SECONDS = 5;
+
 export default function PaymentSuccessView() {
   const router = useRouter();
   const { payment, loading, error } = usePaymentResult();
+  const [countdown, setCountdown] = useState(REDIRECT_SECONDS);
+
+  useEffect(() => {
+    if (countdown <= 0) {
+      router.push('/patient/appointments');
+      return;
+    }
+    const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [countdown, router]);
 
   return (
     <PaymentResultShell
@@ -46,6 +60,18 @@ export default function PaymentSuccessView() {
               {error}
             </Typography>
           )}
+
+          <Box sx={{ width: '100%', mt: 1 }}>
+            <Typography variant="caption" color="text.secondary" textAlign="center" display="block" mb={0.5}>
+              Redirigiendo a tus citas en {countdown}s…
+            </Typography>
+            <LinearProgress
+              variant="determinate"
+              value={((REDIRECT_SECONDS - countdown) / REDIRECT_SECONDS) * 100}
+              color="success"
+              sx={{ borderRadius: 1 }}
+            />
+          </Box>
         </>
       }
       actions={
