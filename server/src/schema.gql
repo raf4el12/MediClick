@@ -53,7 +53,7 @@ type PatientRecordGql {
 type ProfileGql {
   address: String
   birthday: DateTime
-  email: String!
+  email: String
   gender: String
   lastName: String!
   name: String!
