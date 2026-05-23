@@ -1,0 +1,6 @@
+# Local Claude Code / MCP configs (personal per-developer)
+.mcp.json
+CLAUDE.md
+
+# Legacy pnpm settings file (replaced by pnpm-workspace.yaml in pnpm 11)
+pnpm.yaml
