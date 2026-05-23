@@ -17,6 +17,7 @@ function getRoleFromToken(token: string): string | null {
 
 function getDefaultRoute(role: string | null): string {
   if (role === 'PATIENT') return '/patient';
+  if (role === 'DOCTOR') return '/doctor';
   return '/dashboard';
 }
 

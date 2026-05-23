@@ -97,6 +97,13 @@ const navigationItems: NavSection[] = [
         path: '/dashboard',
         icon: 'ri-dashboard-line',
         staffOnly: true,
+        permissions: [{ action: 'MANAGE', subject: 'CLINICS' }],
+      },
+      {
+        title: 'Inicio',
+        path: '/doctor',
+        icon: 'ri-home-4-line',
+        doctorOnly: true,
       },
       {
         title: 'Notificaciones',
