@@ -460,6 +460,7 @@ export default function Navigation({ mobileOpen = false, onMobileClose }: Naviga
         open={mobileOpen}
         onClose={onMobileClose}
         ModalProps={KEEP_MOUNTED}
+        PaperProps={{ className: 'cb-target' }}
         sx={{
           display: { xs: 'block', md: 'none' },
           '& .MuiDrawer-paper': drawerPaperStyles,
@@ -471,6 +472,7 @@ export default function Navigation({ mobileOpen = false, onMobileClose }: Naviga
       {/* Desktop Drawer (permanent) — md and up */}
       <Drawer
         variant="permanent"
+        PaperProps={{ className: 'cb-target' }}
         sx={{
           display: { xs: 'none', md: 'block' },
           width: currentWidth,

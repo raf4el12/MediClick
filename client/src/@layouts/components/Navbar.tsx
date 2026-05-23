@@ -103,6 +103,7 @@ export default function Navbar() {
     <AppBar
       position="sticky"
       elevation={0}
+      className="cb-target"
       sx={{
         bgcolor: (theme) =>
           theme.palette.mode === 'dark'

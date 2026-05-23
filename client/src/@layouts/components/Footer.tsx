@@ -16,6 +16,7 @@ export default function Footer() {
   return (
     <Box
       component="footer"
+      className="cb-target"
       sx={{
         py: 2,
         px: `${themeConfig.layoutPadding}px`,
