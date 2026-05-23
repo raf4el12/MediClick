@@ -124,12 +124,14 @@ export default function ReportsView() {
           <ScheduleOccupancyChart occupancy={occupancy} loading={loadingOccupancy} />
         </Grid>
 
-        {/* Citas por estado — ancho completo en mobile, media pantalla en desktop */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <AppointmentsByStatusChart
-            byStatus={summary?.byStatus ?? {}}
-            loading={loadingSummary}
-          />
+        {/* Citas por estado — último chart sin compañero, lo centramos */}
+        <Grid size={12}>
+          <Box sx={{ maxWidth: { xs: '100%', md: 560 }, mx: 'auto' }}>
+            <AppointmentsByStatusChart
+              byStatus={summary?.byStatus ?? {}}
+              loading={loadingSummary}
+            />
+          </Box>
         </Grid>
       </Grid>
     </Box>
