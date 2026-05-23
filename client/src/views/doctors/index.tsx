@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react';
 import Grid from '@mui/material/Grid';
+import Button from '@mui/material/Button';
 import { useDoctors } from './hooks/useDoctors';
 import { DoctorsTable } from './components/DoctorsTable';
 import { EditDoctorDrawer } from './components/EditDoctorDrawer';
@@ -51,7 +52,18 @@ export default function DoctorsView() {
   return (
     <Grid container spacing={3}>
       <Grid size={12}>
-        <PageHeader title="Doctores" subtitle="Administra el equipo médico de la clínica" />
+        <PageHeader
+          title="Doctores"
+          subtitle="Administra el equipo médico de la clínica"
+        >
+          <Button
+            variant="contained"
+            startIcon={<i className="ri-add-line" />}
+            onClick={controller.openCreateDrawer}
+          >
+            Nuevo Doctor
+          </Button>
+        </PageHeader>
         <DoctorsTable
           {...controller}
           refreshData={handleCreateSuccess}

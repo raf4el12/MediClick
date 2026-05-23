@@ -189,10 +189,7 @@ export const CategoriesTable = memo(function CategoriesTable({
     <>
       <Card>
         <Box sx={{ p: 3, pt: 4 }}>
-          <CategoryFilters
-            onSearch={debouncedSearch}
-            onAddClick={openCreateDrawer}
-          />
+          <CategoryFilters onSearch={debouncedSearch} />
 
           {error && (
             <Alert

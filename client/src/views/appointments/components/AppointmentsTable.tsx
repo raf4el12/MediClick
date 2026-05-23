@@ -258,7 +258,6 @@ export const AppointmentsTable = memo(function AppointmentsTable({
     <>
       <AppointmentFilters
         onSearch={debouncedSearch}
-        onAddClick={openCreateDialog}
         totalAppointments={data.totalRows}
         filters={filters}
         onFilterChange={updateFilters}

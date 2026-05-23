@@ -1,7 +1,6 @@
 'use client';
 
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
@@ -15,7 +14,6 @@ import { AppointmentStatus } from '../types';
 
 interface AppointmentFiltersProps {
   onSearch: (value: string) => void;
-  onAddClick: () => void;
   totalAppointments: number;
   filters: {
     dateFrom?: string;
@@ -37,7 +35,6 @@ const statusOptions: { value: string; label: string }[] = [
 
 export function AppointmentFilters({
   onSearch,
-  onAddClick,
   totalAppointments,
   filters,
   onFilterChange,
@@ -56,35 +53,6 @@ export function AppointmentFilters({
 
   return (
     <Box sx={{ mb: 4 }}>
-      {/* Header */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: { xs: 'flex-start', sm: 'center' },
-          flexDirection: { xs: 'column', sm: 'row' },
-          gap: 2,
-          mb: 3,
-        }}
-      >
-        <Box>
-          <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-            Citas Médicas
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Gestión y seguimiento de citas médicas
-          </Typography>
-        </Box>
-
-        <Button
-          variant="contained"
-          startIcon={<i className="ri-add-line" />}
-          onClick={onAddClick}
-        >
-          Nueva Cita
-        </Button>
-      </Box>
-
       {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {stats.map((stat) => (

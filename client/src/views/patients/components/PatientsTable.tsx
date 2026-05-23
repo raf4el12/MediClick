@@ -254,7 +254,6 @@ export const PatientsTable = memo(function PatientsTable({
     <>
       <PatientFilters
         onSearch={debouncedSearch}
-        onAddClick={openCreateDrawer}
         statusFilter={pagination.statusFilter}
         onStatusFilterChange={setStatusFilter}
         totalPatients={totalPatients}

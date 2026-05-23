@@ -1,7 +1,6 @@
 'use client';
 
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
@@ -13,7 +12,6 @@ import { DebouncedInput } from '@/components/shared/DebouncedInput';
 
 interface PatientFiltersProps {
   onSearch: (value: string) => void;
-  onAddClick: () => void;
   statusFilter: 'all' | 'active' | 'inactive';
   onStatusFilterChange: (value: 'all' | 'active' | 'inactive') => void;
   totalPatients: number;
@@ -23,7 +21,6 @@ interface PatientFiltersProps {
 
 export function PatientFilters({
   onSearch,
-  onAddClick,
   statusFilter,
   onStatusFilterChange,
   totalPatients,
@@ -58,35 +55,6 @@ export function PatientFilters({
 
   return (
     <Box sx={{ mb: 4 }}>
-      {/* Header */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: { xs: 'flex-start', sm: 'center' },
-          flexDirection: { xs: 'column', sm: 'row' },
-          gap: 2,
-          mb: 3,
-        }}
-      >
-        <Box>
-          <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-            Pacientes
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Registro y gestión de pacientes
-          </Typography>
-        </Box>
-
-        <Button
-          variant="contained"
-          startIcon={<i className="ri-add-line" />}
-          onClick={onAddClick}
-        >
-          Registrar Paciente
-        </Button>
-      </Box>
-
       {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {stats.map((stat) => (

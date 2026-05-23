@@ -215,7 +215,6 @@ export const DoctorsTable = memo(function DoctorsTable({
             selectedSpecialty={pagination.specialtyId}
             onSpecialtyChange={handleSpecialtyFilter}
             onSearch={debouncedSearch}
-            onAddClick={openCreateDrawer}
           />
 
           {error && (

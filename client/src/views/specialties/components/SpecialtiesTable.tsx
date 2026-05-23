@@ -213,7 +213,6 @@ export const SpecialtiesTable = memo(function SpecialtiesTable({
             selectedCategory={pagination.categoryId}
             onCategoryChange={handleCategoryFilter}
             onSearch={debouncedSearch}
-            onAddClick={openCreateDrawer}
           />
 
           {error && (

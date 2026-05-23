@@ -2,6 +2,7 @@
 
 import Grid from '@mui/material/Grid';
 import Fade from '@mui/material/Fade';
+import Button from '@mui/material/Button';
 import { usePatients } from './hooks/usePatients';
 import { PatientsTable } from './components/PatientsTable';
 import { EditPatientDrawer } from './components/EditPatientDrawer';
@@ -52,7 +53,18 @@ export default function PatientsView() {
   return (
     <Grid container spacing={3}>
       <Grid size={{ xs: 12, md: hasDetail ? 8 : 12 }} sx={{ transition: 'all 0.3s ease' }}>
-        <PageHeader title="Pacientes" subtitle="Visualiza y administra todos los pacientes registrados" />
+        <PageHeader
+          title="Pacientes"
+          subtitle="Visualiza y administra todos los pacientes registrados"
+        >
+          <Button
+            variant="contained"
+            startIcon={<i className="ri-add-line" />}
+            onClick={controller.openCreateDrawer}
+          >
+            Registrar Paciente
+          </Button>
+        </PageHeader>
         <PatientsTable
           {...controller}
           refreshData={handleCreateSuccess}

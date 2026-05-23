@@ -217,7 +217,6 @@ export const UsersTable = memo(function UsersTable({
             selectedRole={pagination.role}
             onRoleChange={handleRoleFilter}
             onSearch={debouncedSearch}
-            onAddClick={openCreateDrawer}
           />
 
           {error && (

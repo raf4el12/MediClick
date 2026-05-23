@@ -1,6 +1,7 @@
 'use client';
 
 import Grid from '@mui/material/Grid';
+import Button from '@mui/material/Button';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { useUsers } from './hooks/useUsers';
 import { UsersTable } from './components/UsersTable';
@@ -24,7 +25,18 @@ export default function UsersView() {
   return (
     <Grid container spacing={3}>
       <Grid size={12}>
-        <PageHeader title="Usuarios" subtitle="Gestiona los usuarios y sus accesos al sistema" />
+        <PageHeader
+          title="Usuarios"
+          subtitle="Gestiona los usuarios y sus accesos al sistema"
+        >
+          <Button
+            variant="contained"
+            startIcon={<i className="ri-add-line" />}
+            onClick={controller.openCreateDrawer}
+          >
+            Nuevo Usuario
+          </Button>
+        </PageHeader>
         <UsersTable {...controller} refreshData={handleSuccess} />
       </Grid>
 
