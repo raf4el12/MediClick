@@ -133,14 +133,16 @@ html[data-high-contrast='true'] .MuiTypography-h6 {
 }
 
 /* Filtros de daltonismo — discapacidad visual al color
-   El SVG con <defs> está portalado como hijo directo del body con
-   [data-cb-filters]. Aplicamos el filter a TODOS los hijos directos de
-   body EXCEPTO ese SVG, para que el propio defs no se filtre a sí mismo
-   (eso rompía Recharts y rompía el re-render del gauge chart). */
-html[data-color-blind='protanopia'] body > *:not([data-cb-filters]) { filter: url(#cb-protanopia); }
-html[data-color-blind='deuteranopia'] body > *:not([data-cb-filters]) { filter: url(#cb-deuteranopia); }
-html[data-color-blind='tritanopia'] body > *:not([data-cb-filters]) { filter: url(#cb-tritanopia); }
-html[data-color-blind='achromatopsia'] body > *:not([data-cb-filters]) { filter: url(#cb-achromatopsia); }
+   El filtro se aplica SOLO a <main class="cb-target"> (el contenido), no
+   al body ni a ancestros del sidebar/navbar/customizer. Razón: CSS spec
+   dice que un elemento con `filter` crea un nuevo containing block para
+   descendientes position:fixed — eso rompía el sidebar (dejaba de quedarse
+   pegado al viewport y scrolleaba con el contenido).
+   El SVG con los <defs> sigue portalado al body como hijo aparte. */
+html[data-color-blind='protanopia'] .cb-target { filter: url(#cb-protanopia); }
+html[data-color-blind='deuteranopia'] .cb-target { filter: url(#cb-deuteranopia); }
+html[data-color-blind='tritanopia'] .cb-target { filter: url(#cb-tritanopia); }
+html[data-color-blind='achromatopsia'] .cb-target { filter: url(#cb-achromatopsia); }
 
 /* Foco visible reforzado — siempre, no opcional (WCAG 2.4.7) */
 *:focus-visible {
