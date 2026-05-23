@@ -1,22 +1,33 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
+
 /**
- * Filtros SVG para corrección/simulación de daltonismo.
+ * Filtros SVG para corrección de daltonismo.
  *
- * Las matrices son las recomendadas por la investigación de Brettel, Viénot
- * y Mollon (1997) para simular cómo perciben los colores las personas con
- * cada tipo de dicromatismo. Aquí se usan en modo "daltonización" — se
- * exageran los canales que el usuario no percibe bien para hacer la UI
- * distinguible (más útil que simular).
+ * Las matrices son las de Brettel/Viénot/Mollon (1997).
  *
- * Se aplican al <html> vía CSS: `filter: url(#cb-deuteranopia)`.
+ * Se renderizan vía Portal directamente al <html>, FUERA del wrapper
+ * .accessibility-root que recibe `filter: url(#cb-X)`. Así el propio SVG
+ * de defs no queda dentro del filtro (lo cual rompe Recharts y crea
+ * problemas de renderizado en cadena).
  */
 export default function ColorBlindFilters() {
-  return (
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
+  return createPortal(
     <svg
       aria-hidden="true"
       focusable="false"
-      style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}
+      data-cb-filters
+      style={{ position: 'fixed', top: 0, left: 0, width: 0, height: 0, overflow: 'hidden', pointerEvents: 'none' }}
     >
       <defs>
         {/* Protanopia — refuerza el rojo perdido */}
@@ -52,7 +63,7 @@ export default function ColorBlindFilters() {
           />
         </filter>
 
-        {/* Acromatopsia — escala de grises, para baja visión severa al color */}
+        {/* Acromatopsia — escala de grises */}
         <filter id="cb-achromatopsia">
           <feColorMatrix
             type="matrix"
@@ -63,6 +74,7 @@ export default function ColorBlindFilters() {
           />
         </filter>
       </defs>
-    </svg>
+    </svg>,
+    document.body,
   );
 }

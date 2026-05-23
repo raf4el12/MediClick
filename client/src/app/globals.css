@@ -133,11 +133,14 @@ html[data-high-contrast='true'] .MuiTypography-h6 {
 }
 
 /* Filtros de daltonismo — discapacidad visual al color
-   Aplican un feColorMatrix sobre toda la app para compensar el canal débil */
-html[data-color-blind='protanopia'] body { filter: url(#cb-protanopia); }
-html[data-color-blind='deuteranopia'] body { filter: url(#cb-deuteranopia); }
-html[data-color-blind='tritanopia'] body { filter: url(#cb-tritanopia); }
-html[data-color-blind='achromatopsia'] body { filter: url(#cb-achromatopsia); }
+   El SVG con <defs> está portalado como hijo directo del body con
+   [data-cb-filters]. Aplicamos el filter a TODOS los hijos directos de
+   body EXCEPTO ese SVG, para que el propio defs no se filtre a sí mismo
+   (eso rompía Recharts y rompía el re-render del gauge chart). */
+html[data-color-blind='protanopia'] body > *:not([data-cb-filters]) { filter: url(#cb-protanopia); }
+html[data-color-blind='deuteranopia'] body > *:not([data-cb-filters]) { filter: url(#cb-deuteranopia); }
+html[data-color-blind='tritanopia'] body > *:not([data-cb-filters]) { filter: url(#cb-tritanopia); }
+html[data-color-blind='achromatopsia'] body > *:not([data-cb-filters]) { filter: url(#cb-achromatopsia); }
 
 /* Foco visible reforzado — siempre, no opcional (WCAG 2.4.7) */
 *:focus-visible {
