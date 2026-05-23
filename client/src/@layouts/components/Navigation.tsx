@@ -79,6 +79,13 @@ const navigationItems: NavSection[] = [
         icon: 'ri-user-line',
         patientOnly: true,
       },
+      {
+        title: 'Notificaciones',
+        path: '/notifications',
+        icon: 'ri-notification-4-line',
+        patientOnly: true,
+        permissions: [{ action: 'READ', subject: 'NOTIFICATIONS' }],
+      },
     ],
   },
   // ── Secciones para staff ──
@@ -90,6 +97,13 @@ const navigationItems: NavSection[] = [
         path: '/dashboard',
         icon: 'ri-dashboard-line',
         staffOnly: true,
+      },
+      {
+        title: 'Notificaciones',
+        path: '/notifications',
+        icon: 'ri-notification-4-line',
+        staffOnly: true,
+        permissions: [{ action: 'READ', subject: 'NOTIFICATIONS' }],
       },
     ],
   },
