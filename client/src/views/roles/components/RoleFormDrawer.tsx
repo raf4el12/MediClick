@@ -38,6 +38,7 @@ const SUBJECT_LABELS: Record<string, string> = {
   SCHEDULE_BLOCKS: 'Bloqueos',
   SPECIALTIES: 'Especialidades',
   USERS: 'Usuarios',
+  PAYMENTS: 'Pagos',
 };
 
 const ACTION_LABELS: Record<string, string> = {
