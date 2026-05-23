@@ -43,6 +43,7 @@ describe('CreatePaymentPreferenceUseCase', () => {
       findByPreferenceId: jest.fn(),
       findLatestByAppointmentId: jest.fn(),
       findByAppointmentId: jest.fn(),
+      findAll: jest.fn(),
     };
     gateway = {
       createPreference: jest.fn(),

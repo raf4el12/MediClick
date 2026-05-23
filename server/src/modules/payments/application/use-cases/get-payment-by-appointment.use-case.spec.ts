@@ -17,6 +17,7 @@ describe('GetPaymentByAppointmentUseCase', () => {
       findByPreferenceId: jest.fn(),
       findLatestByAppointmentId: jest.fn(),
       findByAppointmentId: jest.fn(),
+      findAll: jest.fn(),
     };
 
     useCase = new GetPaymentByAppointmentUseCase(

@@ -61,6 +61,7 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
       findByPreferenceId: jest.fn(),
       findLatestByAppointmentId: jest.fn(),
       findByAppointmentId: jest.fn(),
+      findAll: jest.fn(),
     };
     timezoneResolver = {
       resolveByDoctorId: jest.fn().mockResolvedValue('America/Lima'),
