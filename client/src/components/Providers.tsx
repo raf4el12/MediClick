@@ -65,6 +65,15 @@ function ThemeWrapper({ children }: { children: React.ReactNode }) {
     settings.colorBlindMode,
   ]);
 
+  // Recharts mide con ResizeObserver y no se entera cuando se aplica/quita
+  // un CSS filter en un ancestro (crea nuevo containing block). Forzamos un
+  // resize event para que los charts se re-midan después del cambio.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const t = setTimeout(() => window.dispatchEvent(new Event('resize')), 50);
+    return () => clearTimeout(t);
+  }, [settings.colorBlindMode, settings.fontSize, settings.largeTargets]);
+
   return (
     <MuiThemeProvider theme={theme}>
       <CssBaseline />
