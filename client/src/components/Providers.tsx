@@ -9,6 +9,7 @@ import { QueryProvider } from '@/components/QueryProvider';
 import { SettingsProvider } from '@/@core/contexts/settingsContext';
 import { useSettings } from '@/@core/hooks/useSettings';
 import SessionValidator from '@/components/SessionValidator';
+import ColorBlindFilters from '@/@core/components/accessibility/ColorBlindFilters';
 interface ProvidersProps {
   children: React.ReactNode;
 }
@@ -26,11 +27,12 @@ function ThemeWrapper({ children }: { children: React.ReactNode }) {
             mode: settings.mode,
             skin: settings.skin,
             primaryColor: settings.primaryColor,
+            highContrast: settings.highContrast,
           },
           fontFamily,
         ),
       ),
-    [settings.mode, settings.skin, settings.primaryColor],
+    [settings.mode, settings.skin, settings.primaryColor, settings.highContrast],
   );
 
   // Sync CSS custom properties with current theme
@@ -50,15 +52,23 @@ function ThemeWrapper({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const root = document.documentElement;
     const fontSizeMap = { normal: '16px', large: '18px', xlarge: '20px' };
-    root.style.fontSize = fontSizeMap[settings.fontSize];
+    root.style.fontSize = fontSizeMap[settings.fontSize ?? 'normal'];
     root.dataset.highContrast = settings.highContrast ? 'true' : 'false';
     root.dataset.largeTargets = settings.largeTargets ? 'true' : 'false';
     root.dataset.reduceMotion = settings.reduceMotion ? 'true' : 'false';
-  }, [settings.fontSize, settings.highContrast, settings.largeTargets, settings.reduceMotion]);
+    root.dataset.colorBlind = settings.colorBlindMode ?? 'none';
+  }, [
+    settings.fontSize,
+    settings.highContrast,
+    settings.largeTargets,
+    settings.reduceMotion,
+    settings.colorBlindMode,
+  ]);
 
   return (
     <MuiThemeProvider theme={theme}>
       <CssBaseline />
+      <ColorBlindFilters />
       {children}
     </MuiThemeProvider>
   );

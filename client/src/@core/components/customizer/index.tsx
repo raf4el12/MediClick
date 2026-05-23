@@ -338,6 +338,47 @@ const Customizer = () => {
                 inputProps={{ 'aria-label': 'Reducir animaciones' }}
               />
             </div>
+
+            {/* Modo daltonismo */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <p className={styles.sectionTitle}>Daltonismo</p>
+              <p style={{ fontSize: '0.72rem', opacity: 0.7, margin: 0, lineHeight: 1.4 }}>
+                Ajusta los colores de la aplicación para personas con dificultad para distinguir ciertos tonos.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {([
+                  { value: 'none', label: 'Ninguno', desc: 'Sin ajuste' },
+                  { value: 'deuteranopia', label: 'Deuteranopía', desc: 'Ciego al verde (~6% hombres)' },
+                  { value: 'protanopia', label: 'Protanopía', desc: 'Ciego al rojo' },
+                  { value: 'tritanopia', label: 'Tritanopía', desc: 'Ciego al azul' },
+                  { value: 'achromatopsia', label: 'Escala de grises', desc: 'Sin color' },
+                ] as const).map((opt) => {
+                  const isActive = (settings.colorBlindMode ?? 'none') === opt.value;
+                  return (
+                    <div
+                      key={opt.value}
+                      onClick={() => handleChange('colorBlindMode', opt.value)}
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={isActive}
+                      style={{
+                        padding: '8px 10px',
+                        borderRadius: 6,
+                        border: `1px solid ${isActive ? 'var(--primary-color)' : 'var(--border-color)'}`,
+                        background: isActive ? 'rgba(37, 99, 235, 0.08)' : 'transparent',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 2,
+                      }}
+                    >
+                      <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>{opt.label}</span>
+                      <span style={{ fontSize: '0.7rem', opacity: 0.65 }}>{opt.desc}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       </div>

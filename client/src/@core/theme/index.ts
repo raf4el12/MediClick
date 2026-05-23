@@ -11,6 +11,7 @@ interface ThemeSettings {
   mode: Settings['mode'];
   skin: Settings['skin'];
   primaryColor: string;
+  highContrast?: boolean;
 }
 
 const coreTheme = (
@@ -25,13 +26,43 @@ const coreTheme = (
   // Override primary color from settings
   const paletteObj = basePalette as Record<string, unknown>;
   const basePrimary = (paletteObj.primary ?? {}) as Record<string, string>;
-  const palette = {
+  let palette: Record<string, unknown> = {
     ...paletteObj,
     primary: {
       ...basePrimary,
       main: settings.primaryColor,
     },
   };
+
+  // Alto contraste — override palette para cumplir WCAG 1.4.6 (AAA contrast)
+  if (settings.highContrast) {
+    const isDark = resolvedMode === 'dark';
+    const pureText = isDark ? '#ffffff' : '#000000';
+    const pureBg = isDark ? '#000000' : '#ffffff';
+    const paperBg = isDark ? '#0a0a0a' : '#ffffff';
+    const strongBorder = isDark ? '#ffffff' : '#000000';
+
+    palette = {
+      ...palette,
+      text: {
+        primary: pureText,
+        secondary: pureText,
+        disabled: isDark ? '#9ca3af' : '#525252',
+      },
+      background: {
+        default: pureBg,
+        paper: paperBg,
+      },
+      divider: strongBorder,
+      action: {
+        ...(palette.action as Record<string, unknown> ?? {}),
+        active: pureText,
+        hover: isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.12)',
+        selected: isDark ? 'rgba(255,255,255,0.24)' : 'rgba(0,0,0,0.16)',
+        disabled: isDark ? '#6b7280' : '#525252',
+      },
+    };
+  }
 
   return {
     palette: palette as ThemeOptions['palette'],

@@ -1,4 +1,10 @@
 export type FontSize = 'normal' | 'large' | 'xlarge';
+export type ColorBlindMode =
+  | 'none'
+  | 'protanopia'      // ciego al rojo
+  | 'deuteranopia'    // ciego al verde (el más común, ~6% hombres)
+  | 'tritanopia'      // ciego al azul
+  | 'achromatopsia';  // sin percepción de color
 
 export interface Settings {
   mode: 'light' | 'dark' | 'system';
@@ -14,6 +20,7 @@ export interface Settings {
   highContrast: boolean;
   largeTargets: boolean;
   reduceMotion: boolean;
+  colorBlindMode: ColorBlindMode;
 }
 
 export interface SettingsContextValue {

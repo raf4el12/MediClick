@@ -48,6 +48,7 @@ export const SettingsProvider = ({ children, mode }: SettingsProviderProps) => {
     highContrast: false,
     largeTargets: false,
     reduceMotion: false,
+    colorBlindMode: 'none',
   };
 
   // Always initialize with default settings to match SSR output and avoid hydration mismatch

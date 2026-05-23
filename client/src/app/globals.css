@@ -95,46 +95,49 @@ html[data-large-targets='true'] .MuiInputBase-input {
 }
 
 /* Alto contraste — baja visión / cataratas / glaucoma
-   Aplica overrides puntuales sin reescribir el tema completo */
-html[data-high-contrast='true'] {
-  --text-primary: #000000;
-  --text-secondary: #1a1a1a;
-  --border-color: #000000;
-}
-
-html[data-high-contrast='true'][data-mui-color-scheme='dark'],
-html[data-high-contrast='true'] body[data-mui-color-scheme='dark'] {
-  --text-primary: #ffffff;
-  --text-secondary: #f5f5f5;
-  --border-color: #ffffff;
-}
-
-html[data-high-contrast='true'] body {
-  color: var(--text-primary);
-}
-
+   El tema MUI ya inyecta los colores (text.primary, divider, background).
+   Aquí solo refuerzo bordes y peso de fuente para WCAG 1.4.11 (Non-text contrast). */
 html[data-high-contrast='true'] .MuiPaper-root,
 html[data-high-contrast='true'] .MuiCard-root,
-html[data-high-contrast='true'] .MuiAppBar-root {
-  border: 1px solid var(--border-color);
+html[data-high-contrast='true'] .MuiAppBar-root,
+html[data-high-contrast='true'] .MuiTableCell-root {
+  border-color: currentColor;
 }
 
-html[data-high-contrast='true'] .MuiTypography-root,
-html[data-high-contrast='true'] .MuiListItemText-primary,
-html[data-high-contrast='true'] .MuiListItemText-secondary,
-html[data-high-contrast='true'] .MuiInputBase-input,
-html[data-high-contrast='true'] .MuiFormLabel-root {
-  color: var(--text-primary) !important;
+html[data-high-contrast='true'] .MuiOutlinedInput-notchedOutline,
+html[data-high-contrast='true'] .MuiButton-outlined {
+  border-width: 2px !important;
 }
 
 html[data-high-contrast='true'] .MuiButton-contained {
-  border: 2px solid var(--text-primary);
+  border: 2px solid currentColor;
 }
 
-html[data-high-contrast='true'] .MuiButton-outlined,
-html[data-high-contrast='true'] .MuiOutlinedInput-notchedOutline {
-  border-width: 2px !important;
+html[data-high-contrast='true'] .MuiChip-root {
+  border: 1px solid currentColor;
+  font-weight: 700;
 }
+
+html[data-high-contrast='true'] body,
+html[data-high-contrast='true'] .MuiTypography-root {
+  font-weight: 500;
+}
+
+html[data-high-contrast='true'] .MuiTypography-h1,
+html[data-high-contrast='true'] .MuiTypography-h2,
+html[data-high-contrast='true'] .MuiTypography-h3,
+html[data-high-contrast='true'] .MuiTypography-h4,
+html[data-high-contrast='true'] .MuiTypography-h5,
+html[data-high-contrast='true'] .MuiTypography-h6 {
+  font-weight: 800;
+}
+
+/* Filtros de daltonismo — discapacidad visual al color
+   Aplican un feColorMatrix sobre toda la app para compensar el canal débil */
+html[data-color-blind='protanopia'] body { filter: url(#cb-protanopia); }
+html[data-color-blind='deuteranopia'] body { filter: url(#cb-deuteranopia); }
+html[data-color-blind='tritanopia'] body { filter: url(#cb-tritanopia); }
+html[data-color-blind='achromatopsia'] body { filter: url(#cb-achromatopsia); }
 
 /* Foco visible reforzado — siempre, no opcional (WCAG 2.4.7) */
 *:focus-visible {
