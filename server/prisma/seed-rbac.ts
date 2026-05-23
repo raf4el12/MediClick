@@ -33,6 +33,7 @@ const SUBJECTS = [
   'HOLIDAYS',
   'SCHEDULE_BLOCKS',
   'ROLES',
+  'PAYMENTS',
 ] as const;
 
 const ACTIONS = ['CREATE', 'READ', 'UPDATE', 'DELETE'] as const;
@@ -55,6 +56,7 @@ const SUBJECT_LABELS: Record<string, string> = {
   HOLIDAYS: 'feriados',
   SCHEDULE_BLOCKS: 'bloqueos de horario',
   ROLES: 'roles',
+  PAYMENTS: 'pagos',
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -131,6 +133,7 @@ const SYSTEM_ROLES: SystemRoleDef[] = [
       'MANAGE:HOLIDAYS',
       'MANAGE:SCHEDULE_BLOCKS',
       'MANAGE:ROLES',
+      'READ:PAYMENTS',
     ],
   },
   {
@@ -154,6 +157,7 @@ const SYSTEM_ROLES: SystemRoleDef[] = [
       'READ:NOTIFICATIONS',
       'UPDATE:NOTIFICATIONS',
       'DELETE:NOTIFICATIONS',
+      'READ:PAYMENTS',
     ],
   },
   {

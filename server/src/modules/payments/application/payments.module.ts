@@ -6,6 +6,7 @@ import { CreatePaymentPreferenceUseCase } from './use-cases/create-payment-prefe
 import { HandlePaymentWebhookUseCase } from './use-cases/handle-payment-webhook.use-case.js';
 import { GetPaymentByAppointmentUseCase } from './use-cases/get-payment-by-appointment.use-case.js';
 import { ExpirePendingAppointmentsUseCase } from './use-cases/expire-pending-appointments.use-case.js';
+import { ListPaymentsUseCase } from './use-cases/list-payments.use-case.js';
 import { PaymentController } from '../interfaces/controllers/payment.controller.js';
 import { PaymentWebhookController } from '../interfaces/controllers/payment-webhook.controller.js';
 
@@ -25,6 +26,7 @@ import { PaymentWebhookController } from '../interfaces/controllers/payment-webh
     HandlePaymentWebhookUseCase,
     GetPaymentByAppointmentUseCase,
     ExpirePendingAppointmentsUseCase,
+    ListPaymentsUseCase,
   ],
   exports: ['ITransactionRepository'],
 })

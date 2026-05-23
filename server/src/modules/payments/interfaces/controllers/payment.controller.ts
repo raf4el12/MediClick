@@ -5,6 +5,7 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Query,
 } from '@nestjs/common';
 import {
   ApiOperation,
@@ -13,12 +14,15 @@ import {
 } from '@nestjs/swagger';
 import { Auth } from '../../../../shared/decorators/auth.decorator.js';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator.js';
+import { CurrentClinic } from '../../../../shared/decorators/current-clinic.decorator.js';
 import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
 import { CreatePreferenceDto } from '../../application/dto/create-preference.dto.js';
 import { PreferenceResponseDto } from '../../application/dto/preference-response.dto.js';
 import { PaymentResponseDto } from '../../application/dto/payment-response.dto.js';
+import { ListPaymentsQueryDto } from '../../application/dto/list-payments-query.dto.js';
 import { CreatePaymentPreferenceUseCase } from '../../application/use-cases/create-payment-preference.use-case.js';
 import { GetPaymentByAppointmentUseCase } from '../../application/use-cases/get-payment-by-appointment.use-case.js';
+import { ListPaymentsUseCase } from '../../application/use-cases/list-payments.use-case.js';
 
 @ApiTags('Payments')
 @Controller('payments')
@@ -26,6 +30,7 @@ export class PaymentController {
   constructor(
     private readonly createPaymentPreferenceUseCase: CreatePaymentPreferenceUseCase,
     private readonly getPaymentByAppointmentUseCase: GetPaymentByAppointmentUseCase,
+    private readonly listPaymentsUseCase: ListPaymentsUseCase,
   ) {}
 
   @Post('preferences')
@@ -50,6 +55,18 @@ export class PaymentController {
     @Body() dto: CreatePreferenceDto,
   ): Promise<PreferenceResponseDto> {
     return this.createPaymentPreferenceUseCase.execute(userId, dto);
+  }
+
+  @Get()
+  @Auth()
+  @RequirePermissions('READ', 'PAYMENTS')
+  @ApiOperation({ summary: 'Listar transacciones de la clínica con paginación y filtros' })
+  @ApiResponse({ status: 200 })
+  async listPayments(
+    @CurrentClinic() clinicId: number | null,
+    @Query() query: ListPaymentsQueryDto,
+  ) {
+    return this.listPaymentsUseCase.execute(clinicId, query);
   }
 
   @Get('appointment/:id')

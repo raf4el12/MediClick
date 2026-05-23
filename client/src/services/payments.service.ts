@@ -3,6 +3,7 @@ import type {
   PreferenceResponse,
   PaymentResponse,
 } from '@/views/payment/types';
+import type { PaginatedPayments, PaymentQueryParams } from '@/views/payments/types';
 
 export const paymentsService = {
   createPreference: async (appointmentId: number): Promise<PreferenceResponse> => {
@@ -19,6 +20,11 @@ export const paymentsService = {
       `/payments/appointment/${appointmentId}`,
     );
 
+    return response.data;
+  },
+
+  listPayments: async (params?: PaymentQueryParams): Promise<PaginatedPayments> => {
+    const response = await api.get<PaginatedPayments>('/payments', { params });
     return response.data;
   },
 };

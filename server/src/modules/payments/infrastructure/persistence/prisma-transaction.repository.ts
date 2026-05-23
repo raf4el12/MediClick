@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
-import type { ITransactionRepository } from '../../domain/repositories/transaction.repository.js';
+import type { ITransactionRepository, TransactionFilters, PaginatedTransactions } from '../../domain/repositories/transaction.repository.js';
 import type {
   PaymentMethodValue,
   PaymentStatusValue,
@@ -99,6 +99,40 @@ export class PrismaTransactionRepository implements ITransactionRepository {
       orderBy: { createdAt: 'desc' },
     });
     return rows.map((r) => this.toEntity(r));
+  }
+
+  async findAll(filters: TransactionFilters): Promise<PaginatedTransactions> {
+    const where = {
+      ...(filters.clinicId !== undefined && { clinicId: filters.clinicId }),
+      ...(filters.status && { status: filters.status }),
+      ...(filters.dateFrom || filters.dateTo
+        ? {
+            createdAt: {
+              ...(filters.dateFrom && { gte: filters.dateFrom }),
+              ...(filters.dateTo && { lte: filters.dateTo }),
+            },
+          }
+        : {}),
+    };
+
+    const skip = (filters.page - 1) * filters.limit;
+
+    const [rows, total] = await Promise.all([
+      this.prisma.transactions.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: filters.limit,
+      }),
+      this.prisma.transactions.count({ where }),
+    ]);
+
+    return {
+      data: rows.map((r) => this.toEntity(r)),
+      total,
+      page: filters.page,
+      totalPages: Math.ceil(total / filters.limit),
+    };
   }
 
   private toEntity(row: {

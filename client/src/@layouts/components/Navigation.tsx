@@ -234,6 +234,13 @@ const navigationItems: NavSection[] = [
         permissions: [{ action: 'MANAGE', subject: 'ROLES' }],
       },
       {
+        title: 'Pagos',
+        path: '/payments',
+        icon: 'ri-bank-card-line',
+        permissions: [{ action: 'READ', subject: 'PAYMENTS' }],
+        staffOnly: true,
+      },
+      {
         title: 'Reportes',
         path: '/reports',
         icon: 'ri-bar-chart-box-line',
