@@ -44,6 +44,10 @@ export const SettingsProvider = ({ children, mode }: SettingsProviderProps) => {
     contentWidth: themeConfig.contentWidth,
     footerContentWidth: themeConfig.footer.contentWidth,
     primaryColor: primaryColorConfig[0]?.main ?? '#2563EB',
+    fontSize: 'normal',
+    highContrast: false,
+    largeTargets: false,
+    reduceMotion: false,
   };
 
   // Always initialize with default settings to match SSR output and avoid hydration mismatch

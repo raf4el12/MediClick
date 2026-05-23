@@ -1,3 +1,5 @@
+export type FontSize = 'normal' | 'large' | 'xlarge';
+
 export interface Settings {
   mode: 'light' | 'dark' | 'system';
   skin: 'default' | 'shadow';
@@ -7,6 +9,11 @@ export interface Settings {
   contentWidth: 'compact' | 'wide';
   footerContentWidth: 'compact' | 'wide';
   primaryColor: string;
+  // Accesibilidad (WCAG 2.1 AA / NTP-ISO/IEC 40500:2012)
+  fontSize: FontSize;
+  highContrast: boolean;
+  largeTargets: boolean;
+  reduceMotion: boolean;
 }
 
 export interface SettingsContextValue {

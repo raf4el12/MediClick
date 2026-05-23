@@ -243,6 +243,102 @@ const Customizer = () => {
               </div>
             </div>
           </div>
+
+          <hr className={styles.hr} />
+
+          {/* ── Accesibilidad Section (WCAG 2.1 AA) ── */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+            <Chip
+              label="Accesibilidad"
+              size="small"
+              color="primary"
+              variant="outlined"
+              icon={<i className="ri-accessibility-line" style={{ fontSize: 14 }} />}
+              sx={{ alignSelf: 'flex-start', fontWeight: 600, fontSize: '0.75rem' }}
+            />
+
+            {/* Tamaño de texto */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <p className={styles.sectionTitle}>Tamaño de Texto</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                {([
+                  { value: 'normal', label: 'Normal', size: 14 },
+                  { value: 'large', label: 'Grande', size: 18 },
+                  { value: 'xlarge', label: 'Muy Grande', size: 22 },
+                ] as const).map((opt) => (
+                  <div
+                    key={opt.value}
+                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}
+                  >
+                    <div
+                      className={`${styles.itemWrapper} ${styles.modeWrapper} ${settings.fontSize === opt.value ? styles.active : ''}`}
+                      onClick={() => handleChange('fontSize', opt.value)}
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={settings.fontSize === opt.value}
+                      aria-label={`Tamaño de texto ${opt.label}`}
+                    >
+                      <span style={{ fontSize: opt.size, fontWeight: 700 }}>Aa</span>
+                    </div>
+                    <p className={styles.itemLabel} onClick={() => handleChange('fontSize', opt.value)}>
+                      {opt.label}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Alto contraste */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <label
+                htmlFor="customizer-high-contrast"
+                className={styles.sectionTitle}
+                style={{ cursor: 'pointer' }}
+              >
+                Alto Contraste
+              </label>
+              <Switch
+                id="customizer-high-contrast"
+                checked={settings.highContrast}
+                onChange={() => handleChange('highContrast', !settings.highContrast)}
+                inputProps={{ 'aria-label': 'Activar alto contraste' }}
+              />
+            </div>
+
+            {/* Áreas táctiles grandes */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <label
+                htmlFor="customizer-large-targets"
+                className={styles.sectionTitle}
+                style={{ cursor: 'pointer' }}
+              >
+                Botones Grandes
+              </label>
+              <Switch
+                id="customizer-large-targets"
+                checked={settings.largeTargets}
+                onChange={() => handleChange('largeTargets', !settings.largeTargets)}
+                inputProps={{ 'aria-label': 'Activar áreas táctiles grandes' }}
+              />
+            </div>
+
+            {/* Reducir animaciones */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <label
+                htmlFor="customizer-reduce-motion"
+                className={styles.sectionTitle}
+                style={{ cursor: 'pointer' }}
+              >
+                Reducir Animaciones
+              </label>
+              <Switch
+                id="customizer-reduce-motion"
+                checked={settings.reduceMotion}
+                onChange={() => handleChange('reduceMotion', !settings.reduceMotion)}
+                inputProps={{ 'aria-label': 'Reducir animaciones' }}
+              />
+            </div>
+          </div>
         </div>
       </div>
     </>

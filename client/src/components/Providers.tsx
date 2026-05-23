@@ -46,6 +46,16 @@ function ThemeWrapper({ children }: { children: React.ReactNode }) {
     root.style.setProperty('--action-active', theme.palette.action.active);
   }, [theme]);
 
+  // Apply accessibility settings as attributes/CSS vars on <html>
+  useEffect(() => {
+    const root = document.documentElement;
+    const fontSizeMap = { normal: '16px', large: '18px', xlarge: '20px' };
+    root.style.fontSize = fontSizeMap[settings.fontSize];
+    root.dataset.highContrast = settings.highContrast ? 'true' : 'false';
+    root.dataset.largeTargets = settings.largeTargets ? 'true' : 'false';
+    root.dataset.reduceMotion = settings.reduceMotion ? 'true' : 'false';
+  }, [settings.fontSize, settings.highContrast, settings.largeTargets, settings.reduceMotion]);
+
   return (
     <MuiThemeProvider theme={theme}>
       <CssBaseline />
