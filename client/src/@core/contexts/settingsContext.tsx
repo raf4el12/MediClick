@@ -57,7 +57,17 @@ export const SettingsProvider = ({ children, mode }: SettingsProviderProps) => {
   useEffect(() => {
     const cookieSettings = readCookie();
     if (cookieSettings) {
-      setSettingsState((prev) => ({ ...prev, ...cookieSettings }));
+      setSettingsState((prev) => {
+        // Strip undefined/null from cookie so they never overwrite defaults
+        // (handles cookies persisted before new fields were added)
+        const sanitized: Partial<Settings> = {};
+        for (const [k, v] of Object.entries(cookieSettings)) {
+          if (v !== undefined && v !== null) {
+            (sanitized as Record<string, unknown>)[k] = v;
+          }
+        }
+        return { ...prev, ...sanitized };
+      });
     }
   }, []);
 

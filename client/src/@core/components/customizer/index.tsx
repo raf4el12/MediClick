@@ -271,11 +271,11 @@ const Customizer = () => {
                     style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}
                   >
                     <div
-                      className={`${styles.itemWrapper} ${styles.modeWrapper} ${settings.fontSize === opt.value ? styles.active : ''}`}
+                      className={`${styles.itemWrapper} ${styles.modeWrapper} ${(settings.fontSize ?? 'normal') === opt.value ? styles.active : ''}`}
                       onClick={() => handleChange('fontSize', opt.value)}
                       role="button"
                       tabIndex={0}
-                      aria-pressed={settings.fontSize === opt.value}
+                      aria-pressed={(settings.fontSize ?? 'normal') === opt.value}
                       aria-label={`Tamaño de texto ${opt.label}`}
                     >
                       <span style={{ fontSize: opt.size, fontWeight: 700 }}>Aa</span>
@@ -299,8 +299,8 @@ const Customizer = () => {
               </label>
               <Switch
                 id="customizer-high-contrast"
-                checked={settings.highContrast}
-                onChange={() => handleChange('highContrast', !settings.highContrast)}
+                checked={settings.highContrast ?? false}
+                onChange={() => handleChange('highContrast', !(settings.highContrast ?? false))}
                 inputProps={{ 'aria-label': 'Activar alto contraste' }}
               />
             </div>
@@ -316,8 +316,8 @@ const Customizer = () => {
               </label>
               <Switch
                 id="customizer-large-targets"
-                checked={settings.largeTargets}
-                onChange={() => handleChange('largeTargets', !settings.largeTargets)}
+                checked={settings.largeTargets ?? false}
+                onChange={() => handleChange('largeTargets', !(settings.largeTargets ?? false))}
                 inputProps={{ 'aria-label': 'Activar áreas táctiles grandes' }}
               />
             </div>
@@ -333,8 +333,8 @@ const Customizer = () => {
               </label>
               <Switch
                 id="customizer-reduce-motion"
-                checked={settings.reduceMotion}
-                onChange={() => handleChange('reduceMotion', !settings.reduceMotion)}
+                checked={settings.reduceMotion ?? false}
+                onChange={() => handleChange('reduceMotion', !(settings.reduceMotion ?? false))}
                 inputProps={{ 'aria-label': 'Reducir animaciones' }}
               />
             </div>
