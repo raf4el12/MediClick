@@ -4,9 +4,14 @@ import { UserRole } from '../domain/enums/user-role.enum.js';
 
 function createMockContext(user: any): ExecutionContext {
   return {
+    getType: () => 'http',
+    getHandler: () => ({}),
+    getClass: () => ({}),
     switchToHttp: () => ({
       getRequest: () => ({ user }),
     }),
+    switchToRpc: () => ({ getData: () => ({}) }),
+    switchToWs: () => ({ getData: () => ({}) }),
   } as unknown as ExecutionContext;
 }
 
