@@ -1,0 +1,31 @@
+{{#> base subject="Se liberó un cupo"}}
+<h2>Hola, {{patientName}}</h2>
+<p>¡Buenas noticias! Se <strong>liberó un cupo</strong> que coincide con tu lista de espera. Eres el primero en la fila.</p>
+
+<div class="info-card">
+  <div class="row">
+    <span class="label">Doctor:</span>
+    <span class="value">Dr(a). {{doctorName}}</span>
+  </div>
+  <div class="row">
+    <span class="label">Especialidad:</span>
+    <span class="value">{{specialtyName}}</span>
+  </div>
+  <div class="row">
+    <span class="label">Fecha:</span>
+    <span class="value">{{formatDate scheduleDate clinicTimezone}}</span>
+  </div>
+  <div class="row">
+    <span class="label">Horario:</span>
+    <span class="value">{{formatTime startTime clinicTimezone}} - {{formatTime endTime clinicTimezone}}</span>
+  </div>
+</div>
+
+<p style="font-size: 14px; color: #b91c1c;">
+  <strong>El cupo se reserva por tiempo limitado.</strong> Tienes hasta {{formatTime expiresAt clinicTimezone}} para aceptarlo antes de que pase al siguiente paciente.
+</p>
+
+<p style="text-align: center; margin: 24px 0;">
+  <a href="{{clientUrl}}/waitlist/offers" style="background:#2563eb;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;display:inline-block;">Aceptar cupo</a>
+</p>
+{{/base}}
