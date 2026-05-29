@@ -79,6 +79,27 @@ enum ScheduleBlockType {
   TIME_RANGE
 }
 
+enum WaitlistTimePreference {
+  ANY
+  MORNING // 06:00–12:00
+  AFTERNOON // 12:00–18:00
+  EVENING // 18:00–22:00
+}
+
+enum WaitlistEntryStatus {
+  ACTIVE
+  FULFILLED // consiguió cita
+  CANCELLED // el paciente se salió
+  EXPIRED // pasó waitUntil
+}
+
+enum WaitlistOfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
 model Users {
   id            Int             @id @default(autoincrement())
   name          String
@@ -128,42 +149,44 @@ model Profiles {
 }
 
 model Patients {
-  id                 Int              @id @default(autoincrement())
-  profileId          Int              @unique
-  emergencyContact   String
-  bloodType          String
-  allergies          String?
-  chronicConditions  String?              @map("chronic_conditions")
-  isActive           Boolean          @default(true)
-  deleted            Boolean          @default(false)
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime?
-  profile            Profiles         @relation(fields: [profileId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  appointments       Appointments[]
-  reviews            Reviews[]
-  medicalHistory     MedicalHistory[]
+  id                Int               @id @default(autoincrement())
+  profileId         Int               @unique
+  emergencyContact  String
+  bloodType         String
+  allergies         String?
+  chronicConditions String?           @map("chronic_conditions")
+  isActive          Boolean           @default(true)
+  deleted           Boolean           @default(false)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime?
+  profile           Profiles          @relation(fields: [profileId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  appointments      Appointments[]
+  reviews           Reviews[]
+  medicalHistory    MedicalHistory[]
+  waitlistEntries   WaitlistEntries[]
 
   @@index([profileId])
 }
 
 model Doctors {
-  id            Int                  @id @default(autoincrement())
-  profileId     Int                  @unique
-  licenseNumber String               @unique
-  resume        String?
-  isActive      Boolean              @default(true)
-  maxOverbookPerDay Int              @default(2) // Máximo de sobrecupos por día
-  clinicId      Int?
-  deleted       Boolean              @default(false)
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime?
-  profile       Profiles             @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  clinic        Clinics?             @relation(fields: [clinicId], references: [id], onDelete: SetNull)
-  specialties   DoctorsSpecialties[]
-  availability  Availability[]
-  schedules     Schedules[]
-  reviews        Reviews[]
-  scheduleBlocks ScheduleBlocks[]
+  id                Int                  @id @default(autoincrement())
+  profileId         Int                  @unique
+  licenseNumber     String               @unique
+  resume            String?
+  isActive          Boolean              @default(true)
+  maxOverbookPerDay Int                  @default(2) // Máximo de sobrecupos por día
+  clinicId          Int?
+  deleted           Boolean              @default(false)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime?
+  profile           Profiles             @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  clinic            Clinics?             @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+  specialties       DoctorsSpecialties[]
+  availability      Availability[]
+  schedules         Schedules[]
+  reviews           Reviews[]
+  scheduleBlocks    ScheduleBlocks[]
+  waitlistEntries   WaitlistEntries[]
 
   @@index([profileId])
   @@index([isActive, deleted])
@@ -171,25 +194,26 @@ model Doctors {
 }
 
 model Specialties {
-  id           Int                  @id @default(autoincrement())
-  categoryId   Int
-  name         String
-  description  String?
-  duration      Int                  @default(30)
-  bufferMinutes Int?                 @default(0) // Minutos de descanso entre citas consecutivas
-  price         Decimal?             @db.Decimal(10, 2)
-  requirements String?
-  icon         String?
-  isActive     Boolean              @default(true)
-  deleted      Boolean              @default(false)
-  clinicId     Int?
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime?
-  category     Categories           @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  clinic       Clinics?             @relation(fields: [clinicId], references: [id], onDelete: SetNull)
-  doctorLinks  DoctorsSpecialties[]
-  availability Availability[]
-  schedules    Schedules[]
+  id              Int                  @id @default(autoincrement())
+  categoryId      Int
+  name            String
+  description     String?
+  duration        Int                  @default(30)
+  bufferMinutes   Int?                 @default(0) // Minutos de descanso entre citas consecutivas
+  price           Decimal?             @db.Decimal(10, 2)
+  requirements    String?
+  icon            String?
+  isActive        Boolean              @default(true)
+  deleted         Boolean              @default(false)
+  clinicId        Int?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime?
+  category        Categories           @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  clinic          Clinics?             @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+  doctorLinks     DoctorsSpecialties[]
+  availability    Availability[]
+  schedules       Schedules[]
+  waitlistEntries WaitlistEntries[]
 
   @@index([categoryId, isActive])
   @@index([clinicId])
@@ -254,19 +278,20 @@ model Availability {
 }
 
 model Schedules {
-  id           Int            @id @default(autoincrement())
-  doctorId     Int
-  specialtyId  Int
-  scheduleDate DateTime
-  timeFrom     DateTime
-  timeTo       DateTime
-  clinicId     Int?
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime?
-  doctor       Doctors        @relation(fields: [doctorId], references: [id], onDelete: Cascade)
-  specialty    Specialties    @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
-  clinic       Clinics?       @relation(fields: [clinicId], references: [id], onDelete: SetNull)
-  appointments Appointments[]
+  id             Int              @id @default(autoincrement())
+  doctorId       Int
+  specialtyId    Int
+  scheduleDate   DateTime
+  timeFrom       DateTime
+  timeTo         DateTime
+  clinicId       Int?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime?
+  doctor         Doctors          @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  specialty      Specialties      @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+  clinic         Clinics?         @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+  appointments   Appointments[]
+  waitlistOffers WaitlistOffers[]
 
   @@index([doctorId, scheduleDate])
   @@index([specialtyId])
@@ -274,16 +299,16 @@ model Schedules {
 }
 
 model Appointments {
-  id            Int               @id @default(autoincrement())
-  patientId     Int
-  scheduleId    Int
-  startTime     DateTime // Hora inicio exacta del slot de la cita
-  endTime       DateTime // Hora fin exacta del slot de la cita
-  reason        String?
-  notes         String?
-  status        AppointmentStatus @default(PENDING)
-  paymentStatus PaymentStatus     @default(PENDING)
-  amount        Decimal?          @db.Decimal(10, 2)
+  id              Int               @id @default(autoincrement())
+  patientId       Int
+  scheduleId      Int
+  startTime       DateTime // Hora inicio exacta del slot de la cita
+  endTime         DateTime // Hora fin exacta del slot de la cita
+  reason          String?
+  notes           String?
+  status          AppointmentStatus @default(PENDING)
+  paymentStatus   PaymentStatus     @default(PENDING)
+  amount          Decimal?          @db.Decimal(10, 2)
   cancelReason    String?
   cancellationFee Decimal?          @db.Decimal(10, 2)
   isOverbook      Boolean           @default(false) // Cita de sobrecupo
@@ -291,17 +316,18 @@ model Appointments {
   pendingUntil    DateTime? // Deadline de pago; si status=PENDING y ahora > pendingUntil, la cita expira
   clinicId        Int?
   deleted         Boolean           @default(false)
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime?
 
   patient  Patients  @relation(fields: [patientId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   schedule Schedules @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
   clinic   Clinics?  @relation(fields: [clinicId], references: [id], onDelete: SetNull)
 
   // Relaciones Core
-  clinicalNotes ClinicalNotes[]
-  prescription  Prescriptions?
-  transactions  Transactions[]
+  clinicalNotes  ClinicalNotes[]
+  prescription   Prescriptions?
+  transactions   Transactions[]
+  waitlistOffers WaitlistOffers[]
 
   @@index([patientId, status])
   @@index([scheduleId, startTime, endTime])
@@ -471,14 +497,14 @@ model ScheduleBlocks {
 }
 
 model Holidays {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   name        String
   date        DateTime
   year        Int
-  isRecurring Boolean  @default(false) // Feriados fijos que se repiten cada año
-  isActive    Boolean  @default(true)
+  isRecurring Boolean   @default(false) // Feriados fijos que se repiten cada año
+  isActive    Boolean   @default(true)
   clinicId    Int?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
   updatedAt   DateTime?
 
   clinic Clinics? @relation(fields: [clinicId], references: [id], onDelete: SetNull)
@@ -502,22 +528,24 @@ model Clinics {
   createdAt DateTime  @default(now())
   updatedAt DateTime?
 
-  users          Users[]
-  doctors        Doctors[]
-  holidays       Holidays[]
-  categories     Categories[]
-  specialties    Specialties[]
-  schedules      Schedules[]
-  availability   Availability[]
-  appointments   Appointments[]
-  clinicalNotes  ClinicalNotes[]
-  prescriptions  Prescriptions[]
-  medicalHistory MedicalHistory[]
-  transactions   Transactions[]
-  notifications  Notifications[]
-  reviews        Reviews[]
+  users           Users[]
+  doctors         Doctors[]
+  holidays        Holidays[]
+  categories      Categories[]
+  specialties     Specialties[]
+  schedules       Schedules[]
+  availability    Availability[]
+  appointments    Appointments[]
+  clinicalNotes   ClinicalNotes[]
+  prescriptions   Prescriptions[]
+  medicalHistory  MedicalHistory[]
+  transactions    Transactions[]
+  notifications   Notifications[]
+  reviews         Reviews[]
+  waitlistEntries WaitlistEntries[]
+  waitlistOffers  WaitlistOffers[]
 
-  roles        Roles[]
+  roles Roles[]
 
   @@index([isActive, deleted])
 }
@@ -563,4 +591,60 @@ model RolePermissions {
   @@id([roleId, permissionId])
   @@index([roleId])
   @@index([permissionId])
+}
+
+// --- WAITLIST (auto-fill de slots liberados) ---
+
+model WaitlistEntries {
+  id             Int                    @id @default(autoincrement())
+  patientId      Int
+  specialtyId    Int
+  doctorId       Int? // null = cualquier doctor de la especialidad
+  clinicId       Int?
+  dateFrom       DateTime // ventana de búsqueda (inicio)
+  dateTo         DateTime // ventana de búsqueda (fin)
+  timePreference WaitlistTimePreference @default(ANY)
+  priority       Int                    @default(0) // boost para VIP / cancelados por la clínica
+  status         WaitlistEntryStatus    @default(ACTIVE)
+  waitUntil      DateTime? // si pasa, expira automáticamente
+  notes          String?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime?
+  fulfilledAt    DateTime?
+
+  patient   Patients         @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  specialty Specialties      @relation(fields: [specialtyId], references: [id], onDelete: Cascade)
+  doctor    Doctors?         @relation(fields: [doctorId], references: [id], onDelete: SetNull)
+  clinic    Clinics?         @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+  offers    WaitlistOffers[]
+
+  @@index([clinicId, specialtyId, status])
+  @@index([clinicId, doctorId, status])
+  @@index([status, priority, createdAt]) // orden de matching
+  @@index([status, waitUntil]) // cron de expiración de entries
+  @@index([patientId, status])
+}
+
+model WaitlistOffers {
+  id                   Int                 @id @default(autoincrement())
+  waitlistEntryId      Int
+  scheduleId           Int // slot ofrecido
+  startTime            DateTime
+  endTime              DateTime
+  expiresAt            DateTime // ahora + OFFER_TTL_MINUTES
+  status               WaitlistOfferStatus @default(PENDING)
+  acceptedAt           DateTime?
+  rejectedAt           DateTime?
+  createdAppointmentId Int? // si fue aceptada
+  clinicId             Int?
+  createdAt            DateTime            @default(now())
+
+  entry       WaitlistEntries @relation(fields: [waitlistEntryId], references: [id], onDelete: Cascade)
+  schedule    Schedules       @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  appointment Appointments?   @relation(fields: [createdAppointmentId], references: [id], onDelete: SetNull)
+  clinic      Clinics?        @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+
+  @@index([waitlistEntryId, status])
+  @@index([status, expiresAt]) // cron de expiración de ofertas
+  @@index([scheduleId, startTime, endTime])
 }
