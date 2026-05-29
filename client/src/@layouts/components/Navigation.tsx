@@ -68,6 +68,12 @@ const navigationItems: NavSection[] = [
         patientOnly: true,
       },
       {
+        title: 'Lista de Espera',
+        path: '/patient/waitlist',
+        icon: 'ri-time-line',
+        patientOnly: true,
+      },
+      {
         title: 'Mi Expediente',
         path: '/patient/expediente',
         icon: 'ri-file-chart-line',
@@ -127,6 +133,13 @@ const navigationItems: NavSection[] = [
         title: 'Citas',
         path: '/appointments',
         icon: 'ri-calendar-check-line',
+        permissions: [{ action: 'READ', subject: 'APPOINTMENTS' }],
+        staffOnly: true,
+      },
+      {
+        title: 'Lista de Espera',
+        path: '/waitlist',
+        icon: 'ri-time-line',
         permissions: [{ action: 'READ', subject: 'APPOINTMENTS' }],
         staffOnly: true,
       },
