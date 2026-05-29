@@ -22,6 +22,11 @@ export interface AppointmentCancelledEvent {
   clinicTimezone: string;
   scheduleDate: Date;
   cancelReason: string | null;
+  // Datos del slot liberado, consumidos por el auto-fill de la lista de espera.
+  scheduleId: number;
+  startTime: Date;
+  endTime: Date;
+  clinicId: number | null;
 }
 
 export interface PrescriptionCreatedEvent {

@@ -13,7 +13,10 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
   let specialtyRepository: jest.Mocked<Pick<ISpecialtyRepository, 'findById'>>;
   let transactionRepository: jest.Mocked<ITransactionRepository>;
   let timezoneResolver: jest.Mocked<
-    Pick<TimezoneResolverService, 'resolveByDoctorId'>
+    Pick<
+      TimezoneResolverService,
+      'resolveByDoctorId' | 'resolveClinicIdByDoctorId'
+    >
   >;
   let eventEmitter: jest.Mocked<Pick<EventEmitter2, 'emit'>>;
 
@@ -65,6 +68,7 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
     };
     timezoneResolver = {
       resolveByDoctorId: jest.fn().mockResolvedValue('America/Lima'),
+      resolveClinicIdByDoctorId: jest.fn().mockResolvedValue(1),
     };
     eventEmitter = { emit: jest.fn() };
 

@@ -110,6 +110,9 @@ export class CancelAppointmentUseCase {
     await this.flagRefundPendingIfPaid(id, dto.reason, userRole);
 
     if (updated.patient.profile.userId) {
+      const clinicId = await this.timezoneResolver.resolveClinicIdByDoctorId(
+        updated.schedule.doctor.id,
+      );
       const event: AppointmentCancelledEvent = {
         appointmentId: updated.id,
         patientEmail: updated.patient.profile.email,
@@ -121,6 +124,10 @@ export class CancelAppointmentUseCase {
           updated.schedule.doctor.clinic?.timezone ?? DEFAULT_TIMEZONE,
         scheduleDate: updated.schedule.scheduleDate,
         cancelReason: dto.reason ?? null,
+        scheduleId: updated.scheduleId,
+        startTime: updated.startTime,
+        endTime: updated.endTime,
+        clinicId,
       };
       this.eventEmitter.emit('appointment.cancelled', event);
     }
