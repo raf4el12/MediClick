@@ -34,6 +34,7 @@ import { MedicalHistoryModule } from './modules/medical-history/application/medi
 import { HolidaysModule } from './modules/holidays/application/holidays.module.js';
 import { ScheduleBlocksModule } from './modules/schedule-blocks/application/schedule-blocks.module.js';
 import { SchedulerModule } from './modules/scheduler/application/scheduler.module.js';
+import { WaitlistModule } from './modules/waitlist/application/waitlist.module.js';
 import { RolesModule } from './modules/roles/application/roles.module.js';
 import { PermissionsModule } from './modules/permissions/application/permissions.module.js';
 import { PatientRecordsGraphqlModule } from './modules/patient-records-graphql/application/patient-records-graphql.module.js';
@@ -81,6 +82,7 @@ import { PatientRecordsGraphqlModule } from './modules/patient-records-graphql/a
     HolidaysModule,
     ScheduleBlocksModule,
     SchedulerModule,
+    WaitlistModule,
     RolesModule,
     PermissionsModule,
     PatientRecordsGraphqlModule,
