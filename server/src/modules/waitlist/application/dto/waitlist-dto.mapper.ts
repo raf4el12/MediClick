@@ -13,6 +13,8 @@ export function toEntryDto(
 ): WaitlistEntryResponseDto {
   return {
     id: entry.id,
+    patientId: entry.patientId,
+    patientName: `${entry.patient.profile.name} ${entry.patient.profile.lastName}`,
     specialtyId: entry.specialtyId,
     specialtyName: entry.specialty.name,
     doctorId: entry.doctorId,

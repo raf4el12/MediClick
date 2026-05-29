@@ -5,6 +5,8 @@ import { WaitlistOfferStatus } from '../../domain/enums/waitlist-offer-status.en
 
 export class WaitlistEntryResponseDto {
   @ApiProperty() id: number;
+  @ApiProperty() patientId: number;
+  @ApiProperty() patientName: string;
   @ApiProperty() specialtyId: number;
   @ApiProperty() specialtyName: string;
   @ApiPropertyOptional({ nullable: true }) doctorId: number | null;
