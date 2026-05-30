@@ -813,86 +813,71 @@ async function main() {
   });
 
   // ════════════════════════════════════════════════════
-  // 7. SCHEDULES
+  // 7. SCHEDULES — generados dinámicamente para los próximos 30 días
   // ════════════════════════════════════════════════════
-  console.log('🗓️ Creando horarios (schedules)...');
+  console.log('🗓️ Creando horarios (schedules) — próximos 30 días...');
 
-  const todayDate = today();
-  const tomorrow = daysFromNow(1);
-  const dayAfter = daysFromNow(2);
+  // Configuración de disponibilidad por doctor (espejo de section 5)
+  // days: días JS (0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb)
+  const scheduleConfigs = [
+    { doctor: doctor1, specialty: specCardioGeneral,   clinic: clinicLima,     days: [1,2,3,4,5], hFrom: 9,  hTo: 13 },
+    { doctor: doctor1, specialty: specEcocardiografia, clinic: clinicLima,     days: [2,4],       hFrom: 15, hTo: 18 },
+    { doctor: doctor2, specialty: specDermaClinica,    clinic: clinicLima,     days: [1,3,5],     hFrom: 8,  hTo: 12 },
+    { doctor: doctor2, specialty: specConsultaGeneral, clinic: clinicLima,     days: [4],         hFrom: 8,  hTo: 14 },
+    { doctor: doctor3, specialty: specConsultaAQP,     clinic: clinicArequipa, days: [1,2,3,4,5], hFrom: 8,  hTo: 16 },
+  ];
 
-  // Doctor1 — Cardiología hoy
-  const schedule1 = await prisma.schedules.create({
-    data: {
-      doctorId: doctor1.id,
-      specialtyId: specCardioGeneral.id,
-      scheduleDate: todayDate,
-      timeFrom: dateAtHour(todayDate, 9, 0),
-      timeTo: dateAtHour(todayDate, 13, 0),
-      clinicId: clinicLima.id,
-    },
-  });
+  // key: `${doctorId}-${specialtyId}-${offset}` → schedule row + date
+  const schedMap = new Map<string, { id: number; date: Date }>();
 
-  // Doctor1 — Cardiología mañana
-  const schedule1Tomorrow = await prisma.schedules.create({
-    data: {
-      doctorId: doctor1.id,
-      specialtyId: specCardioGeneral.id,
-      scheduleDate: tomorrow,
-      timeFrom: dateAtHour(tomorrow, 9, 0),
-      timeTo: dateAtHour(tomorrow, 13, 0),
-      clinicId: clinicLima.id,
-    },
-  });
+  for (let offset = 0; offset <= 30; offset++) {
+    const date = daysFromNow(offset);
+    const jsDay = date.getDay();
+    for (const cfg of scheduleConfigs) {
+      if (!cfg.days.includes(jsDay)) continue;
+      const sched = await prisma.schedules.create({
+        data: {
+          doctorId: cfg.doctor.id,
+          specialtyId: cfg.specialty.id,
+          scheduleDate: date,
+          timeFrom: dateAtHour(date, cfg.hFrom, 0),
+          timeTo: dateAtHour(date, cfg.hTo, 0),
+          clinicId: cfg.clinic.id,
+        },
+      });
+      schedMap.set(`${cfg.doctor.id}-${cfg.specialty.id}-${offset}`, { id: sched.id, date });
+    }
+  }
 
-  // Doctor2 — Dermatología hoy
-  const schedule2 = await prisma.schedules.create({
-    data: {
-      doctorId: doctor2.id,
-      specialtyId: specDermaClinica.id,
-      scheduleDate: todayDate,
-      timeFrom: dateAtHour(todayDate, 8, 0),
-      timeTo: dateAtHour(todayDate, 12, 0),
-      clinicId: clinicLima.id,
-    },
-  });
+  // Helper: obtiene el schedule de un doctor/especialidad en un offset dado,
+  // o el primer día disponible desde ese offset si cae en fin de semana.
+  function pickSchedule(doctorId: number, specialtyId: number, startOffset: number) {
+    for (let o = startOffset; o <= 30; o++) {
+      const s = schedMap.get(`${doctorId}-${specialtyId}-${o}`);
+      if (s) return s;
+    }
+    throw new Error(`No hay schedule para doctor ${doctorId} / specialty ${specialtyId} desde offset ${startOffset}`);
+  }
 
-  // Doctor2 — Consulta General pasado mañana
-  const schedule2DayAfter = await prisma.schedules.create({
-    data: {
-      doctorId: doctor2.id,
-      specialtyId: specConsultaGeneral.id,
-      scheduleDate: dayAfter,
-      timeFrom: dateAtHour(dayAfter, 8, 0),
-      timeTo: dateAtHour(dayAfter, 14, 0),
-      clinicId: clinicLima.id,
-    },
-  });
-
-  // Doctor3 — Consulta General mañana (Arequipa)
-  const schedule3 = await prisma.schedules.create({
-    data: {
-      doctorId: doctor3.id,
-      specialtyId: specConsultaAQP.id,
-      scheduleDate: tomorrow,
-      timeFrom: dateAtHour(tomorrow, 8, 0),
-      timeTo: dateAtHour(tomorrow, 16, 0),
-      clinicId: clinicArequipa.id,
-    },
-  });
+  // Referencias para las citas demo (section 8)
+  const schedule1         = pickSchedule(doctor1.id, specCardioGeneral.id,   0);
+  const schedule1Tomorrow = pickSchedule(doctor1.id, specCardioGeneral.id,   1);
+  const schedule2         = pickSchedule(doctor2.id, specDermaClinica.id,    0);
+  const schedule2DayAfter = pickSchedule(doctor2.id, specConsultaGeneral.id, 2);
+  const schedule3         = pickSchedule(doctor3.id, specConsultaAQP.id,     1);
 
   // ════════════════════════════════════════════════════
   // 8. APPOINTMENTS
   // ════════════════════════════════════════════════════
   console.log('📋 Creando citas...');
 
-  // Appt 1: Juan con Dr. Ramírez — COMPLETED (hoy, pasada)
+  // Appt 1: Juan con Dr. Ramírez — COMPLETED
   const appt1 = await prisma.appointments.create({
     data: {
       patientId: patient1.id,
       scheduleId: schedule1.id,
-      startTime: dateAtHour(todayDate, 9, 0),
-      endTime: dateAtHour(todayDate, 9, 30),
+      startTime: dateAtHour(schedule1.date, 9, 0),
+      endTime: dateAtHour(schedule1.date, 9, 30),
       reason: 'Control de hipertensión arterial',
       notes: 'Paciente refiere mareos leves por las mañanas.',
       status: AppointmentStatus.COMPLETED,
@@ -902,13 +887,13 @@ async function main() {
     },
   });
 
-  // Appt 2: María con Dra. Flores (derma) — CONFIRMED (hoy, próxima)
+  // Appt 2: María con Dra. Flores (derma) — CONFIRMED
   const appt2 = await prisma.appointments.create({
     data: {
       patientId: patient2.id,
       scheduleId: schedule2.id,
-      startTime: dateAtHour(todayDate, 10, 0),
-      endTime: dateAtHour(todayDate, 10, 20),
+      startTime: dateAtHour(schedule2.date, 10, 0),
+      endTime: dateAtHour(schedule2.date, 10, 20),
       reason: 'Revisión de lunar sospechoso en espalda',
       status: AppointmentStatus.CONFIRMED,
       paymentStatus: PaymentStatus.PENDING,
@@ -917,13 +902,13 @@ async function main() {
     },
   });
 
-  // Appt 3: Juan con Dr. Ramírez — CONFIRMED (mañana, recordatorio pendiente)
+  // Appt 3: Juan con Dr. Ramírez — CONFIRMED (siguiente día disponible)
   const appt3 = await prisma.appointments.create({
     data: {
       patientId: patient1.id,
       scheduleId: schedule1Tomorrow.id,
-      startTime: dateAtHour(tomorrow, 9, 0),
-      endTime: dateAtHour(tomorrow, 9, 30),
+      startTime: dateAtHour(schedule1Tomorrow.date, 9, 0),
+      endTime: dateAtHour(schedule1Tomorrow.date, 9, 30),
       reason: 'Seguimiento post-tratamiento',
       status: AppointmentStatus.CONFIRMED,
       paymentStatus: PaymentStatus.PENDING,
@@ -933,13 +918,13 @@ async function main() {
     },
   });
 
-  // Appt 4: María con Dra. Flores (general) — PENDING (pasado mañana)
+  // Appt 4: María con Dra. Flores (general) — PENDING
   const appt4 = await prisma.appointments.create({
     data: {
       patientId: patient2.id,
       scheduleId: schedule2DayAfter.id,
-      startTime: dateAtHour(dayAfter, 8, 0),
-      endTime: dateAtHour(dayAfter, 8, 20),
+      startTime: dateAtHour(schedule2DayAfter.date, 8, 0),
+      endTime: dateAtHour(schedule2DayAfter.date, 8, 20),
       reason: 'Chequeo general anual',
       status: AppointmentStatus.PENDING,
       paymentStatus: PaymentStatus.PENDING,
@@ -948,13 +933,13 @@ async function main() {
     },
   });
 
-  // Appt 5: Pedro con Dr. Chávez (Arequipa) — CONFIRMED (mañana)
+  // Appt 5: Pedro con Dr. Chávez (Arequipa) — CONFIRMED
   const appt5 = await prisma.appointments.create({
     data: {
       patientId: patient3.id,
       scheduleId: schedule3.id,
-      startTime: dateAtHour(tomorrow, 10, 0),
-      endTime: dateAtHour(tomorrow, 10, 20),
+      startTime: dateAtHour(schedule3.date, 10, 0),
+      endTime: dateAtHour(schedule3.date, 10, 20),
       reason: 'Control de diabetes',
       status: AppointmentStatus.CONFIRMED,
       paymentStatus: PaymentStatus.PENDING,
@@ -969,8 +954,8 @@ async function main() {
     data: {
       patientId: patient1.id,
       scheduleId: schedule2.id,
-      startTime: dateAtHour(todayDate, 11, 0),
-      endTime: dateAtHour(todayDate, 11, 20),
+      startTime: dateAtHour(schedule2.date, 11, 0),
+      endTime: dateAtHour(schedule2.date, 11, 20),
       reason: 'Consulta dermatológica',
       status: AppointmentStatus.CANCELLED,
       cancelReason: 'Paciente solicitó reprogramación por motivos laborales',
