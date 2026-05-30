@@ -1039,6 +1039,7 @@ async function main() {
 
   await prisma.reviews.create({
     data: {
+      appointmentId: appt1.id,
       doctorId: doctor1.id,
       patientId: patient1.id,
       rating: 5,
@@ -1048,11 +1049,23 @@ async function main() {
 
   await prisma.reviews.create({
     data: {
+      appointmentId: appt2.id,
       doctorId: doctor2.id,
       patientId: patient2.id,
       rating: 4,
       comment: 'Muy buena doctora. La consulta fue rápida pero completa.',
     },
+  });
+
+  // El rating denormalizado lo mantiene el repositorio en runtime; aquí
+  // (creación directa) lo seteamos a mano para dejar el seed consistente.
+  await prisma.doctors.update({
+    where: { id: doctor1.id },
+    data: { ratingAvg: 5, ratingCount: 1 },
+  });
+  await prisma.doctors.update({
+    where: { id: doctor2.id },
+    data: { ratingAvg: 4, ratingCount: 1 },
   });
 
   // ════════════════════════════════════════════════════
