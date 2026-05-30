@@ -374,7 +374,10 @@ export function CreateAppointmentDialog({
 
                 <Grid container spacing={1}>
                   {form.timeSlots.map((slot) => {
-                    const isSelected = form.selectedScheduleId === slot.scheduleId;
+                    const isSelected =
+                      form.selectedScheduleId === slot.scheduleId &&
+                      form.selectedSlotTime?.startTime === slot.startTime &&
+                      form.selectedSlotTime?.endTime === slot.endTime;
                     const isOccupied = !slot.available;
 
                     return (
