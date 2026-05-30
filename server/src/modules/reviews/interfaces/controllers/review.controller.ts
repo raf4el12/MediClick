@@ -74,6 +74,19 @@ export class ReviewController {
     return this.getDoctorReviewsUseCase.execute(doctorId);
   }
 
+  @Get('doctor/:doctorId/all')
+  @Auth()
+  @RequirePermissions('UPDATE', 'REVIEWS')
+  @ApiOperation({
+    summary: 'Todas las reseñas de un doctor, incluidas las ocultas (moderación)',
+  })
+  @ApiResponse({ status: 200, type: DoctorReviewsResponseDto })
+  async doctorReviewsForModeration(
+    @Param('doctorId', ParseIntPipe) doctorId: number,
+  ): Promise<DoctorReviewsResponseDto> {
+    return this.getDoctorReviewsUseCase.execute(doctorId, true);
+  }
+
   @Patch(':id/visibility')
   @Auth()
   @RequirePermissions('UPDATE', 'REVIEWS')

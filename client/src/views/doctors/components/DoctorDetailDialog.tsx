@@ -10,6 +10,7 @@ import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 import { DoctorRatingBadge } from '@/views/reviews/components/DoctorRatingBadge';
 import { DoctorReviewsList } from '@/views/reviews/components/DoctorReviewsList';
+import { usePermissions } from '@/hooks/usePermissions';
 import type { Doctor } from '../types';
 
 interface DoctorDetailDialogProps {
@@ -18,7 +19,11 @@ interface DoctorDetailDialogProps {
 }
 
 export function DoctorDetailDialog({ doctor, onClose }: DoctorDetailDialogProps) {
+  const { hasPermission } = usePermissions();
+
   if (!doctor) return null;
+
+  const canModerate = hasPermission('UPDATE', 'REVIEWS');
 
   return (
     <Dialog open={!!doctor} onClose={onClose} maxWidth="sm" fullWidth>
@@ -152,7 +157,7 @@ export function DoctorDetailDialog({ doctor, onClose }: DoctorDetailDialogProps)
                 ratingCount={doctor.ratingCount}
               />
             </Box>
-            <DoctorReviewsList doctorId={doctor.id} />
+            <DoctorReviewsList doctorId={doctor.id} moderatable={canModerate} />
           </Box>
         </Box>
       </DialogContent>

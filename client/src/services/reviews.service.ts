@@ -24,6 +24,15 @@ export const reviewsService = {
     return response.data;
   },
 
+  // Moderación: incluye reseñas ocultas (requiere UPDATE:REVIEWS)
+  getDoctorReviewsAll: async (doctorId: number): Promise<DoctorReviews> => {
+    const response = await api.get<DoctorReviews>(
+      `/reviews/doctor/${doctorId}/all`,
+    );
+
+    return response.data;
+  },
+
   // Moderación (admin)
   setVisibility: async (id: number, isVisible: boolean): Promise<Review> => {
     const response = await api.patch<Review>(`/reviews/${id}/visibility`, {
