@@ -8,6 +8,8 @@ import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
+import { DoctorRatingBadge } from '@/views/reviews/components/DoctorRatingBadge';
+import { DoctorReviewsList } from '@/views/reviews/components/DoctorReviewsList';
 import type { Doctor } from '../types';
 
 interface DoctorDetailDialogProps {
@@ -137,6 +139,20 @@ export function DoctorDetailDialog({ doctor, onClose }: DoctorDetailDialogProps)
                 />
               ))}
             </Box>
+          </Box>
+
+          {/* Reseñas */}
+          <Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+              <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                Reseñas
+              </Typography>
+              <DoctorRatingBadge
+                ratingAvg={doctor.ratingAvg}
+                ratingCount={doctor.ratingCount}
+              />
+            </Box>
+            <DoctorReviewsList doctorId={doctor.id} />
           </Box>
         </Box>
       </DialogContent>
