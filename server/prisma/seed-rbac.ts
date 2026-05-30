@@ -34,6 +34,7 @@ const SUBJECTS = [
   'SCHEDULE_BLOCKS',
   'ROLES',
   'PAYMENTS',
+  'REVIEWS',
 ] as const;
 
 const ACTIONS = ['CREATE', 'READ', 'UPDATE', 'DELETE'] as const;
@@ -57,6 +58,7 @@ const SUBJECT_LABELS: Record<string, string> = {
   SCHEDULE_BLOCKS: 'bloqueos de horario',
   ROLES: 'roles',
   PAYMENTS: 'pagos',
+  REVIEWS: 'reseñas',
 };
 
 const ACTION_LABELS: Record<string, string> = {
@@ -134,6 +136,7 @@ const SYSTEM_ROLES: SystemRoleDef[] = [
       'MANAGE:SCHEDULE_BLOCKS',
       'MANAGE:ROLES',
       'READ:PAYMENTS',
+      'MANAGE:REVIEWS',
     ],
   },
   {
@@ -158,6 +161,7 @@ const SYSTEM_ROLES: SystemRoleDef[] = [
       'UPDATE:NOTIFICATIONS',
       'DELETE:NOTIFICATIONS',
       'READ:PAYMENTS',
+      'READ:REVIEWS',
     ],
   },
   {
@@ -197,6 +201,8 @@ const SYSTEM_ROLES: SystemRoleDef[] = [
       'READ:NOTIFICATIONS',
       'UPDATE:NOTIFICATIONS',
       'DELETE:NOTIFICATIONS',
+      'CREATE:REVIEWS',
+      'READ:REVIEWS',
     ],
   },
 ];

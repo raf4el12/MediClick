@@ -40,6 +40,7 @@ import { WaitlistModule } from './modules/waitlist/application/waitlist.module.j
 import { RolesModule } from './modules/roles/application/roles.module.js';
 import { PermissionsModule } from './modules/permissions/application/permissions.module.js';
 import { PatientRecordsGraphqlModule } from './modules/patient-records-graphql/application/patient-records-graphql.module.js';
+import { ReviewsModule } from './modules/reviews/application/reviews.module.js';
 
 @Module({
   imports: [
@@ -101,6 +102,7 @@ import { PatientRecordsGraphqlModule } from './modules/patient-records-graphql/a
     RolesModule,
     PermissionsModule,
     PatientRecordsGraphqlModule,
+    ReviewsModule,
   ],
   controllers: [],
   providers: [
