@@ -1,5 +1,6 @@
 import { ForgotPasswordUseCase } from './forgot-password.use-case.js';
 import type { IUserRepository } from '../../../users/domain/repositories/user.repository.js';
+import type { UserEntity } from '../../../users/domain/entities/user.entity.js';
 
 // ─── OWASP A01 + A07: User Enumeration Prevention ────────────────────────────
 // La respuesta debe ser idéntica ya sea que el email exista o no.
@@ -11,12 +12,22 @@ describe('ForgotPasswordUseCase — OWASP A01/A07: User Enumeration Prevention',
   let redisService: { get: jest.Mock; set: jest.Mock };
   let mailService: { send: jest.Mock };
 
-  const mockUser = {
+  const mockUser: UserEntity = {
     id: 42,
     name: 'Ana',
     email: 'ana@mediclick.com',
+    password: 'hashed_password',
+    photo: null,
+    roleId: 4,
+    roleName: 'PATIENT',
     isActive: true,
+    validateEmail: true,
+    clinicId: null,
+    clinicName: null,
+    clinicTimezone: null,
     deleted: false,
+    createdAt: new Date(),
+    updatedAt: null,
   };
 
   beforeEach(() => {

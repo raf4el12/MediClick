@@ -27,10 +27,8 @@ describe('RegisterPatientUseCase — TDD', () => {
     gender: 'F' as const,
     typeDocument: 'DNI' as const,
     numberDocument: '12345678',
-    emergencyContact: null,
-    bloodType: null,
-    allergies: null,
-    chronicConditions: null,
+    emergencyContact: '+51999000111',
+    bloodType: 'O+',
   };
 
   const buildPatient = () => ({

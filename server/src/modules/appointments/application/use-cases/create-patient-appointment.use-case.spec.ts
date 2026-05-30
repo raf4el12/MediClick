@@ -10,6 +10,7 @@ import type { IScheduleRepository } from '../../../schedules/domain/repositories
 import type { IHolidayRepository } from '../../../holidays/domain/repositories/holiday.repository.js';
 import type { IScheduleBlockRepository } from '../../../schedule-blocks/domain/repositories/schedule-block.repository.js';
 import type { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
+import type { ScheduleWithRelations } from '../../../schedules/domain/interfaces/schedule-data.interface.js';
 
 describe('CreatePatientAppointmentUseCase — TDD', () => {
   let useCase: CreatePatientAppointmentUseCase;
@@ -35,12 +36,17 @@ describe('CreatePatientAppointmentUseCase — TDD', () => {
 
   const buildPatient = () => ({ id: 5 });
 
-  const buildSchedule = (overrides: Partial<any> = {}) => ({
+  const buildSchedule = (
+    overrides: Partial<ScheduleWithRelations> = {},
+  ): ScheduleWithRelations => ({
     id: 20,
+    doctorId: 3,
+    specialtyId: 2,
     scheduleDate: FUTURE_DATE,
     timeFrom: new Date('1970-01-01T08:00:00.000Z'),
     timeTo: new Date('1970-01-01T17:00:00.000Z'),
-    doctorId: 3,
+    createdAt: new Date(),
+    updatedAt: null,
     doctor: {
       id: 3,
       profile: { name: 'Dr', lastName: 'House' },

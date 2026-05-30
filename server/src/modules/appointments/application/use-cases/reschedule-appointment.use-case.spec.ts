@@ -3,6 +3,8 @@ import { RescheduleAppointmentUseCase } from './reschedule-appointment.use-case.
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type { IScheduleRepository } from '../../../schedules/domain/repositories/schedule.repository.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
+import type { AppointmentWithRelations } from '../../domain/interfaces/appointment-data.interface.js';
+import type { ScheduleWithRelations } from '../../../schedules/domain/interfaces/schedule-data.interface.js';
 
 describe('RescheduleAppointmentUseCase — TDD', () => {
   let useCase: RescheduleAppointmentUseCase;
@@ -11,7 +13,9 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
   >;
   let scheduleRepository: jest.Mocked<Pick<IScheduleRepository, 'findById'>>;
 
-  const buildAppointment = (overrides: Partial<any> = {}) => ({
+  const buildAppointment = (
+    overrides: Partial<AppointmentWithRelations> = {},
+  ): AppointmentWithRelations => ({
     id: 10,
     patientId: 1,
     scheduleId: 5,
@@ -26,12 +30,14 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
     cancellationFee: null,
     isOverbook: false,
     pendingUntil: null,
+    deleted: false,
+    createdAt: new Date(),
+    updatedAt: null,
     hasPrescription: false,
     notesCount: 0,
-    createdAt: new Date(),
     patient: {
       id: 1,
-      profile: { name: 'Ana', lastName: 'Gómez', email: 'ana@x.com' },
+      profile: { name: 'Ana', lastName: 'Gómez', email: 'ana@x.com', userId: 1 },
     },
     schedule: {
       id: 5,
@@ -41,19 +47,24 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
       doctor: {
         id: 3,
         profile: { name: 'Dr', lastName: 'House' },
-        clinic: { timezone: 'America/Lima' },
+        clinic: { name: 'Clínica', timezone: 'America/Lima' },
       },
-      specialty: { id: 2, name: 'Medicina', price: 120 },
+      specialty: { id: 2, name: 'Medicina' },
     },
     ...overrides,
   });
 
-  const buildSchedule = (overrides: Partial<any> = {}) => ({
+  const buildSchedule = (
+    overrides: Partial<ScheduleWithRelations> = {},
+  ): ScheduleWithRelations => ({
     id: 99,
+    doctorId: 3,
+    specialtyId: 2,
     scheduleDate: new Date('2030-06-01T00:00:00.000Z'),
     timeFrom: new Date('1970-01-01T08:00:00.000Z'),
     timeTo: new Date('1970-01-01T17:00:00.000Z'),
-    doctorId: 3,
+    createdAt: new Date(),
+    updatedAt: null,
     doctor: {
       id: 3,
       profile: { name: 'Dr', lastName: 'House' },
