@@ -9,6 +9,11 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
   const isProduction = process.env.NODE_ENV === 'production';
 
+  // Detrás del proxy (Docker/nginx) confiar en el primer hop para que req.ip
+  // sea la IP real del cliente y no la del proxy. Sin esto el rate-limit por
+  // IP (login/registro) colapsa a todos los clientes en un solo bucket.
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+
   app.use(
     helmet({
       contentSecurityPolicy: isProduction,

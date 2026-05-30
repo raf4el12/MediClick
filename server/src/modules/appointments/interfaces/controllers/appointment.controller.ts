@@ -8,7 +8,7 @@ import {
   Query,
   ParseIntPipe,
 } from '@nestjs/common';
-import { Throttle, SkipThrottle } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Auth } from '../../../../shared/decorators/index.js';
 import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
@@ -54,7 +54,6 @@ export class AppointmentController {
   ) {}
 
   @Get('my')
-  @SkipThrottle()
   @Auth()
   @RequirePermissions('READ', 'APPOINTMENTS')
   @ApiOperation({ summary: 'Mis citas (paciente autenticado)' })

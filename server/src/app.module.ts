@@ -5,7 +5,9 @@ import { join } from 'path';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
 import { TenantInterceptor } from './shared/interceptors/tenant.interceptor.js';
+import { RedisService } from './shared/redis/redis.service.js';
 import { GqlThrottlerGuard } from './shared/guards/gql-throttler.guard.js';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -44,12 +46,25 @@ import { PatientRecordsGraphqlModule } from './modules/patient-records-graphql/a
     ConfigModule.forRoot({ isGlobal: true }),
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
-    ThrottlerModule.forRoot({
-      throttlers: [
-        { name: 'short', ttl: 1000, limit: 3 },
-        { name: 'medium', ttl: 10000, limit: 20 },
-        { name: 'long', ttl: 60000, limit: 100 },
-      ],
+    // Límites por usuario (ver GqlThrottlerGuard.getTracker). Toda la app
+    // pasa por un único POST /graphql y React Query dispara ráfagas de
+    // queries al montar una vista, por eso 'short' tolera el burst inicial.
+    // Las rutas REST sensibles (login, registro, recuperación) endurecen
+    // estos valores con @Throttle por-ruta.
+    //
+    // Storage en Redis (reutiliza el cliente de RedisService) para que los
+    // contadores se compartan entre instancias al escalar; en memoria cada
+    // réplica tendría su propio bucket y el límite efectivo se multiplicaría.
+    ThrottlerModule.forRootAsync({
+      inject: [RedisService],
+      useFactory: (redisService: RedisService) => ({
+        throttlers: [
+          { name: 'short', ttl: 1000, limit: 20 },
+          { name: 'medium', ttl: 10000, limit: 100 },
+          { name: 'long', ttl: 60000, limit: 300 },
+        ],
+        storage: new ThrottlerStorageRedisService(redisService.getClient()),
+      }),
     }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
