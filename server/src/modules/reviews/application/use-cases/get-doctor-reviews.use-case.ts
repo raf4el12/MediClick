@@ -10,15 +10,23 @@ export class GetDoctorReviewsUseCase {
     private readonly reviewRepository: IReviewRepository,
   ) {}
 
-  async execute(doctorId: number): Promise<DoctorReviewsResponseDto> {
-    // Solo reseñas visibles: el promedio se deriva de las mismas que se muestran.
-    const reviews = await this.reviewRepository.findByDoctorId(doctorId, true);
+  // includeHidden = vista de moderación (admin); el promedio/conteo siempre
+  // se calcula solo sobre las visibles, aunque se devuelvan también las ocultas.
+  async execute(
+    doctorId: number,
+    includeHidden = false,
+  ): Promise<DoctorReviewsResponseDto> {
+    const reviews = await this.reviewRepository.findByDoctorId(
+      doctorId,
+      !includeHidden,
+    );
 
-    const ratingCount = reviews.length;
+    const visible = reviews.filter((r) => r.isVisible);
+    const ratingCount = visible.length;
     const ratingAvg =
       ratingCount === 0
         ? null
-        : reviews.reduce((sum, r) => sum + r.rating, 0) / ratingCount;
+        : visible.reduce((sum, r) => sum + r.rating, 0) / ratingCount;
 
     return {
       doctorId,

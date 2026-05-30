@@ -8,6 +8,8 @@ import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
+import { DoctorReviewsList } from '@/views/reviews/components/DoctorReviewsList';
+import { usePermissions } from '@/hooks/usePermissions';
 import type { Doctor } from '../types';
 
 interface DoctorDetailDialogProps {
@@ -16,7 +18,11 @@ interface DoctorDetailDialogProps {
 }
 
 export function DoctorDetailDialog({ doctor, onClose }: DoctorDetailDialogProps) {
+  const { hasPermission } = usePermissions();
+
   if (!doctor) return null;
+
+  const canModerate = hasPermission('UPDATE', 'REVIEWS');
 
   return (
     <Dialog open={!!doctor} onClose={onClose} maxWidth="sm" fullWidth>
@@ -138,6 +144,10 @@ export function DoctorDetailDialog({ doctor, onClose }: DoctorDetailDialogProps)
               ))}
             </Box>
           </Box>
+
+          {/* Reseñas (el badge agregado lo renderiza la lista desde su propio
+              query, para que se mantenga en sync al moderar) */}
+          <DoctorReviewsList doctorId={doctor.id} moderatable={canModerate} />
         </Box>
       </DialogContent>
     </Dialog>
