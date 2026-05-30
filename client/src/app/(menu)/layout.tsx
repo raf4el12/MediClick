@@ -13,17 +13,19 @@ export default function MenuLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <LayoutWrapper
-      verticalLayout={
-        <VerticalLayout
-          navigation={<Navigation />}
-          navbar={<Navbar />}
-          footer={<Footer />}
-        >
-          <Customizer />
-          {children}
-        </VerticalLayout>
-      }
-    />
+    <>
+      <LayoutWrapper
+        verticalLayout={
+          <VerticalLayout
+            navigation={<Navigation />}
+            navbar={<Navbar />}
+            footer={<Footer />}
+          >
+            {children}
+          </VerticalLayout>
+        }
+      />
+      <Customizer />
+    </>
   );
 }
