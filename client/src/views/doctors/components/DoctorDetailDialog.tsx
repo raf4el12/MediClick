@@ -8,7 +8,6 @@ import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
-import { DoctorRatingBadge } from '@/views/reviews/components/DoctorRatingBadge';
 import { DoctorReviewsList } from '@/views/reviews/components/DoctorReviewsList';
 import { usePermissions } from '@/hooks/usePermissions';
 import type { Doctor } from '../types';
@@ -146,19 +145,9 @@ export function DoctorDetailDialog({ doctor, onClose }: DoctorDetailDialogProps)
             </Box>
           </Box>
 
-          {/* Reseñas */}
-          <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-              <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                Reseñas
-              </Typography>
-              <DoctorRatingBadge
-                ratingAvg={doctor.ratingAvg}
-                ratingCount={doctor.ratingCount}
-              />
-            </Box>
-            <DoctorReviewsList doctorId={doctor.id} moderatable={canModerate} />
-          </Box>
+          {/* Reseñas (el badge agregado lo renderiza la lista desde su propio
+              query, para que se mantenga en sync al moderar) */}
+          <DoctorReviewsList doctorId={doctor.id} moderatable={canModerate} />
         </Box>
       </DialogContent>
     </Dialog>
