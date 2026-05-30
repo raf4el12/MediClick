@@ -32,6 +32,8 @@ export class FindDoctorByIdUseCase {
       licenseNumber: d.licenseNumber,
       resume: d.resume,
       maxOverbookPerDay: d.maxOverbookPerDay,
+      ratingAvg: d.ratingAvg,
+      ratingCount: d.ratingCount,
       clinicId: d.clinicId,
       clinic: d.clinic,
       isActive: d.isActive,

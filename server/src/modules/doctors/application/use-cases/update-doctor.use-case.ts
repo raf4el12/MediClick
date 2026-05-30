@@ -76,6 +76,8 @@ export class UpdateDoctorUseCase {
       licenseNumber: updated.licenseNumber,
       resume: updated.resume,
       maxOverbookPerDay: updated.maxOverbookPerDay,
+      ratingAvg: updated.ratingAvg,
+      ratingCount: updated.ratingCount,
       clinicId: updated.clinicId,
       clinic: updated.clinic,
       isActive: updated.isActive,
