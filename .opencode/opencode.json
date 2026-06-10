@@ -19,6 +19,11 @@
       "description": "Read-only agent that analyzes ROADMAP-citas.md and the existing codebase to plan feature implementation. Reviews what exists and generates detailed implementation plans with module boundaries, risks, dependencies, and ordering. Use ONLY when planning a new feature from the roadmap.",
       "mode": "subagent",
       "permission": { "edit": "deny", "bash": "deny", "read": "allow", "glob": "allow", "grep": "allow" }
+    },
+    "code-reviewer": {
+      "description": "Read-only agent that reviews code after every fix/feature. Verifies Clean Architecture layering, SOLID principles, test coverage, type safety, and the AUDITORIA's Convención de cierre por hueco. Use before committing any fix.",
+      "mode": "subagent",
+      "permission": { "edit": "deny", "bash": "allow", "read": "allow", "glob": "allow", "grep": "allow" }
     }
   }
 }

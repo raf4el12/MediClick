@@ -14,7 +14,10 @@ export class ExpirePendingAppointmentsUseCase {
     const result = await this.prisma.appointments.updateMany({
       where: {
         status: 'PENDING',
-        paymentStatus: 'PENDING',
+        // Incluye FAILED: un pago rechazado deja la cita en PENDING/FAILED y, si el
+        // paciente no reintenta antes de pendingUntil, debe expirar igual que un
+        // PENDING/PENDING. Sin esto la cita ocupaba el slot indefinidamente.
+        paymentStatus: { in: ['PENDING', 'FAILED'] },
         pendingUntil: { lt: now },
         deleted: false,
       },

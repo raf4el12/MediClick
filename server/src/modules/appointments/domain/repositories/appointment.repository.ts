@@ -30,8 +30,9 @@ export interface IAppointmentRepository {
     excludeId?: number,
   ): Promise<boolean>;
   /**
-   * Verifica si existe una cita activa que se superponga con el rango dado
-   * dentro del mismo schedule. Usa lógica de overlap: A.start < B.end AND A.end > B.start.
+   * Verifica si existe una cita activa del MISMO doctor en la MISMA fecha que se
+   * superponga con el rango horario dado (a través de cualquier schedule, no solo
+   * el indicado). Usa lógica de overlap: A.start < B.end AND A.end > B.start.
    */
   hasOverlappingAppointment(
     scheduleId: number,

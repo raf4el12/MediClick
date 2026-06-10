@@ -5,7 +5,6 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { CreatePatientAppointmentDto } from '../dto/create-patient-appointment.dto.js';
 import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
@@ -38,7 +37,6 @@ export class CreatePatientAppointmentUseCase {
     @Inject('IScheduleBlockRepository')
     private readonly scheduleBlockRepository: IScheduleBlockRepository,
     private readonly timezoneResolver: TimezoneResolverService,
-    private readonly prisma: PrismaService,
   ) {}
 
   /** Buffer mínimo en milisegundos (2 horas) */
@@ -136,16 +134,11 @@ export class CreatePatientAppointmentUseCase {
       schedule.doctorId,
     );
 
-    const [isHoliday, isBlocked, hasOverlap] = await Promise.all([
+    const [isHoliday, isBlocked] = await Promise.all([
       this.holidayRepository.isHoliday(scheduleDate, clinicId ?? undefined),
       this.scheduleBlockRepository.isBlocked(
         schedule.doctorId,
         scheduleDate,
-        slotStart,
-        slotEnd,
-      ),
-      this.appointmentRepository.hasOverlappingAppointment(
-        dto.scheduleId,
         slotStart,
         slotEnd,
       ),
@@ -161,30 +154,26 @@ export class CreatePatientAppointmentUseCase {
         'El doctor tiene un bloqueo de horario que cubre la fecha/hora seleccionada',
       );
     }
-    if (hasOverlap) {
-      throw new ConflictException(
-        'Ya existe una cita que se superpone con el horario seleccionado',
-      );
-    }
 
-    const appointment = await this.appointmentRepository.create({
-      patientId: patient.id,
-      scheduleId: dto.scheduleId,
-      startTime: slotStart,
-      endTime: slotEnd,
-      reason: dto.reason,
-      clinicId: clinicId ?? null,
-    });
-
-    // Setea monto + deadline de pago. Se hace aparte del create() del repo
-    // para no invadir la interface compartida con otros flujos (admin/staff)
-    // que podrían no requerir pre-pago.
+    // Verifica overlap y crea la cita en una sola transacción serializable.
+    // El monto y el deadline de pago se escriben dentro de la misma transacción
+    // para que la reserva sea atómica y no exista ventana de carrera (TOCTOU)
+    // entre el chequeo de superposición y el create.
     const pendingUntil = new Date(Date.now() + this.getPaymentTimeoutMs());
-    await this.prisma.appointments.update({
-      where: { id: appointment.id },
-      data: { amount: specialtyPrice, pendingUntil },
-    });
-    appointment.amount = specialtyPrice;
+    const appointment = await this.appointmentRepository.createWithOverlapCheck(
+      {
+        patientId: patient.id,
+        scheduleId: dto.scheduleId,
+        startTime: slotStart,
+        endTime: slotEnd,
+        reason: dto.reason,
+        clinicId: clinicId ?? null,
+        amount: specialtyPrice,
+        pendingUntil,
+      },
+      slotStart,
+      slotEnd,
+    );
 
     return {
       id: appointment.id,

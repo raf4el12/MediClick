@@ -18,7 +18,6 @@ describe('ExpirePendingAppointmentsUseCase', () => {
       expect.objectContaining({
         where: expect.objectContaining({
           status: 'PENDING',
-          paymentStatus: 'PENDING',
           deleted: false,
           pendingUntil: expect.objectContaining({ lt: expect.any(Date) }),
         }),
@@ -28,6 +27,15 @@ describe('ExpirePendingAppointmentsUseCase', () => {
         }),
       }),
     );
+  });
+
+  it('expires both PENDING and FAILED payment statuses (slot zombi por pago rechazado)', async () => {
+    prisma.appointments.updateMany.mockResolvedValue({ count: 1 });
+
+    await useCase.execute();
+
+    const { where } = prisma.appointments.updateMany.mock.calls[0][0];
+    expect(where.paymentStatus).toEqual({ in: ['PENDING', 'FAILED'] });
   });
 
   it('is a no-op when there are no expired appointments', async () => {

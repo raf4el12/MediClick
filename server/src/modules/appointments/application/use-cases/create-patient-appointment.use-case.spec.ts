@@ -15,7 +15,7 @@ import type { ScheduleWithRelations } from '../../../schedules/domain/interfaces
 describe('CreatePatientAppointmentUseCase — TDD', () => {
   let useCase: CreatePatientAppointmentUseCase;
   let appointmentRepository: jest.Mocked<
-    Pick<IAppointmentRepository, 'create' | 'hasOverlappingAppointment'>
+    Pick<IAppointmentRepository, 'createWithOverlapCheck'>
   >;
   let patientRepository: jest.Mocked<Pick<IPatientRepository, 'findByUserId'>>;
   let scheduleRepository: jest.Mocked<Pick<IScheduleRepository, 'findById'>>;
@@ -29,7 +29,6 @@ describe('CreatePatientAppointmentUseCase — TDD', () => {
       'resolveByDoctorId' | 'resolveClinicIdByDoctorId'
     >
   >;
-  let prisma: any;
 
   // Fecha futura garantizada — nunca será "pasada" en los tests
   const FUTURE_DATE = new Date('2030-12-01T00:00:00.000Z');
@@ -109,8 +108,7 @@ describe('CreatePatientAppointmentUseCase — TDD', () => {
     };
 
     appointmentRepository = {
-      create: jest.fn().mockResolvedValue(buildAppointment()),
-      hasOverlappingAppointment: jest.fn().mockResolvedValue(false),
+      createWithOverlapCheck: jest.fn().mockResolvedValue(buildAppointment()),
     };
 
     holidayRepository = {
@@ -126,12 +124,6 @@ describe('CreatePatientAppointmentUseCase — TDD', () => {
       resolveClinicIdByDoctorId: jest.fn().mockResolvedValue(1),
     };
 
-    prisma = {
-      appointments: {
-        update: jest.fn().mockResolvedValue({}),
-      },
-    };
-
     useCase = new CreatePatientAppointmentUseCase(
       appointmentRepository as any,
       patientRepository as any,
@@ -139,7 +131,6 @@ describe('CreatePatientAppointmentUseCase — TDD', () => {
       holidayRepository as any,
       scheduleBlockRepository as any,
       timezoneResolver as any,
-      prisma,
     );
   });
 
@@ -154,17 +145,18 @@ describe('CreatePatientAppointmentUseCase — TDD', () => {
     expect(result.paymentStatus).toBe('PENDING');
   });
 
-  it('establece pendingUntil en la cita recién creada', async () => {
+  it('crea la cita atómicamente con monto y pendingUntil en la misma transacción', async () => {
     await useCase.execute(42, dto);
 
-    expect(prisma.appointments.update).toHaveBeenCalledWith(
+    expect(appointmentRepository.createWithOverlapCheck).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: 100 },
-        data: expect.objectContaining({
-          amount: 120,
-          pendingUntil: expect.any(Date),
-        }),
+        patientId: 5,
+        scheduleId: 20,
+        amount: 120,
+        pendingUntil: expect.any(Date),
       }),
+      expect.any(Date),
+      expect.any(Date),
     );
   });
 
@@ -265,19 +257,23 @@ describe('CreatePatientAppointmentUseCase — TDD', () => {
     await expect(useCase.execute(42, dto)).rejects.toThrow(ConflictException);
   });
 
-  it('RED→GREEN: lanza ConflictException si ya existe una cita superpuesta', async () => {
-    appointmentRepository.hasOverlappingAppointment.mockResolvedValue(true);
+  it('RED→GREEN: propaga ConflictException si la creación atómica detecta superposición', async () => {
+    appointmentRepository.createWithOverlapCheck.mockRejectedValue(
+      new ConflictException(
+        'Ya existe una cita que se superpone con el horario seleccionado',
+      ),
+    );
 
     await expect(useCase.execute(42, dto)).rejects.toThrow(ConflictException);
   });
 
-  // ── Iteración TDD 9: Verificaciones en paralelo ───────────────────────────
+  // ── Iteración TDD 9: Verificaciones previas + creación atómica ─────────────
 
-  it('consulta feriados, bloqueos y superposiciones en la misma llamada', async () => {
+  it('consulta feriados y bloqueos antes de crear la cita atómicamente', async () => {
     await useCase.execute(42, dto);
 
     expect(holidayRepository.isHoliday).toHaveBeenCalledTimes(1);
     expect(scheduleBlockRepository.isBlocked).toHaveBeenCalledTimes(1);
-    expect(appointmentRepository.hasOverlappingAppointment).toHaveBeenCalledTimes(1);
+    expect(appointmentRepository.createWithOverlapCheck).toHaveBeenCalledTimes(1);
   });
 });
