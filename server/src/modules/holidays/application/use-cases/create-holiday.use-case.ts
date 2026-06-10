@@ -1,13 +1,19 @@
 import { Injectable, Inject, ForbiddenException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreateHolidayDto } from '../dto/create-holiday.dto.js';
 import { HolidayResponseDto } from '../dto/holiday-response.dto.js';
 import type { IHolidayRepository } from '../../domain/repositories/holiday.repository.js';
+import {
+  HOLIDAY_CREATED_EVENT,
+  type HolidayCreatedEvent,
+} from '../../../../shared/events/availability-events.interface.js';
 
 @Injectable()
 export class CreateHolidayUseCase {
   constructor(
     @Inject('IHolidayRepository')
     private readonly holidayRepository: IHolidayRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(
@@ -52,6 +58,14 @@ export class CreateHolidayUseCase {
         await this.holidayRepository.createMany(copies);
       }
     }
+
+    // Cancelar (async) las citas ya reservadas en la fecha del feriado.
+    const holidayEvent: HolidayCreatedEvent = {
+      date: parsedDate,
+      clinicId: effectiveClinicId ?? null,
+      name: dto.name,
+    };
+    this.eventEmitter.emit(HOLIDAY_CREATED_EVENT, holidayEvent);
 
     return {
       id: holiday.id,

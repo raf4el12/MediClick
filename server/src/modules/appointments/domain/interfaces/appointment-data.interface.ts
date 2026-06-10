@@ -38,6 +38,7 @@ export interface AppointmentWithRelations {
   cancellationFee: number | null;
   isOverbook: boolean;
   pendingUntil: Date | null;
+  clinicId: number | null;
   deleted: boolean;
   createdAt: Date;
   updatedAt: Date | null;

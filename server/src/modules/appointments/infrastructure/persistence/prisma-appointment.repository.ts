@@ -306,6 +306,50 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     return rows.map((r) => this.mapToRelations(r));
   }
 
+  async findActiveByDoctorAndDateRange(
+    doctorId: number,
+    dateFrom: Date,
+    dateTo: Date,
+  ): Promise<AppointmentWithRelations[]> {
+    const { start } = utcDayRange(dateFrom);
+    const { end } = utcDayRange(dateTo);
+
+    const rows = await this.prisma.appointments.findMany({
+      where: {
+        deleted: false,
+        status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+        schedule: {
+          doctorId,
+          scheduleDate: { gte: start, lt: end },
+        },
+      },
+      include: appointmentInclude,
+    });
+
+    return rows.map((r) => this.mapToRelations(r));
+  }
+
+  async findActiveByDateAndClinic(
+    date: Date,
+    clinicId?: number | null,
+  ): Promise<AppointmentWithRelations[]> {
+    const { start, end } = utcDayRange(date);
+
+    const rows = await this.prisma.appointments.findMany({
+      where: {
+        deleted: false,
+        status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+        ...(clinicId != null && { clinicId }),
+        schedule: {
+          scheduleDate: { gte: start, lt: end },
+        },
+      },
+      include: appointmentInclude,
+    });
+
+    return rows.map((r) => this.mapToRelations(r));
+  }
+
   async countOverbooksByDoctorAndDate(
     doctorId: number,
     date: Date,
@@ -490,6 +534,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       cancellationFee: raw.cancellationFee ? Number(raw.cancellationFee) : null,
       isOverbook: raw.isOverbook,
       pendingUntil: raw.pendingUntil ?? null,
+      clinicId: raw.clinicId ?? null,
       deleted: raw.deleted,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,

@@ -20,6 +20,7 @@ import { CompleteAppointmentUseCase } from './use-cases/complete-appointment.use
 import { GetMyAppointmentsUseCase } from './use-cases/get-my-appointments.use-case.js';
 import { CreatePatientAppointmentUseCase } from './use-cases/create-patient-appointment.use-case.js';
 import { AppointmentSlotValidatorService } from './services/appointment-slot-validator.service.js';
+import { AvailabilityChangeListener } from './listeners/availability-change.listener.js';
 import { AppointmentController } from '../interfaces/controllers/appointment.controller.js';
 
 @Module({
@@ -51,6 +52,7 @@ import { AppointmentController } from '../interfaces/controllers/appointment.con
     GetMyAppointmentsUseCase,
     CreatePatientAppointmentUseCase,
     AppointmentSlotValidatorService,
+    AvailabilityChangeListener,
   ],
   exports: ['IAppointmentRepository'],
 })

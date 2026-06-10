@@ -5,6 +5,7 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreateScheduleBlockDto } from '../dto/create-schedule-block.dto.js';
 import { ScheduleBlockResponseDto } from '../dto/schedule-block-response.dto.js';
 import type { IScheduleBlockRepository } from '../../domain/repositories/schedule-block.repository.js';
@@ -14,6 +15,10 @@ import {
   timeStringToDate,
   dateToTimeString,
 } from '../../../../shared/utils/date-time.utils.js';
+import {
+  SCHEDULE_BLOCKED_EVENT,
+  type ScheduleBlockedEvent,
+} from '../../../../shared/events/availability-events.interface.js';
 
 @Injectable()
 export class CreateScheduleBlockUseCase {
@@ -23,6 +28,7 @@ export class CreateScheduleBlockUseCase {
     @Inject('IDoctorRepository')
     private readonly doctorRepository: IDoctorRepository,
     private readonly scheduleRegenerationService: ScheduleRegenerationService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(
@@ -86,6 +92,18 @@ export class CreateScheduleBlockUseCase {
       startDate,
       endDate,
     );
+
+    // Cancelar (async) las citas ya reservadas que el bloqueo invalida.
+    const blockedEvent: ScheduleBlockedEvent = {
+      doctorId: block.doctorId,
+      startDate: block.startDate,
+      endDate: block.endDate,
+      type: block.type as 'FULL_DAY' | 'TIME_RANGE',
+      timeFrom: block.timeFrom ?? null,
+      timeTo: block.timeTo ?? null,
+      reason: block.reason ?? null,
+    };
+    this.eventEmitter.emit(SCHEDULE_BLOCKED_EVENT, blockedEvent);
 
     return {
       id: block.id,

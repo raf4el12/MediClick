@@ -46,6 +46,27 @@ export interface IAppointmentRepository {
   ): Promise<AppointmentWithRelations[]>;
 
   /**
+   * Citas activas (no canceladas/no-show) de un doctor cuyo schedule cae en el
+   * rango de fechas [dateFrom, dateTo]. Usado para invalidar citas al crear un
+   * bloqueo de horario.
+   */
+  findActiveByDoctorAndDateRange(
+    doctorId: number,
+    dateFrom: Date,
+    dateTo: Date,
+  ): Promise<AppointmentWithRelations[]>;
+
+  /**
+   * Citas activas (no canceladas/no-show) en una fecha concreta. Si se pasa
+   * clinicId, se acota a esa sede; si es null/undefined, abarca todas (feriado
+   * global). Usado para invalidar citas al crear un feriado.
+   */
+  findActiveByDateAndClinic(
+    date: Date,
+    clinicId?: number | null,
+  ): Promise<AppointmentWithRelations[]>;
+
+  /**
    * Cuenta las citas de sobrecupo activas de un doctor en una fecha específica.
    */
   countOverbooksByDoctorAndDate(doctorId: number, date: Date): Promise<number>;
