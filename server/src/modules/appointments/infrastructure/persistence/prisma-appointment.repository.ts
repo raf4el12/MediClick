@@ -1,4 +1,5 @@
 import { Injectable, ConflictException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type {
@@ -230,22 +231,56 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     return count > 0;
   }
 
+  /**
+   * Construye el filtro de superposición a nivel de DOCTOR + FECHA (no de scheduleId).
+   *
+   * Como startTime/endTime se almacenan como hora-only (base 1970-01-01), el overlap
+   * de horas solo es válido si se acota al mismo doctor y al mismo día. Filtrar por
+   * scheduleId dejaba pasar el double-booking cuando un doctor tenía dos schedules
+   * solapados (p. ej. tras una regeneración parcial o entre especialidades distintas).
+   */
+  private buildDoctorOverlapWhere(
+    doctorId: number,
+    scheduleDate: Date,
+    startTime: Date,
+    endTime: Date,
+    excludeId?: number,
+  ): Prisma.AppointmentsWhereInput {
+    const { start, end } = utcDayRange(scheduleDate);
+    return {
+      deleted: false,
+      status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+      // Overlap: A.start < B.end AND A.end > B.start
+      startTime: { lt: endTime },
+      endTime: { gt: startTime },
+      schedule: {
+        doctorId,
+        scheduleDate: { gte: start, lt: end },
+      },
+      ...(excludeId && { id: { not: excludeId } }),
+    };
+  }
+
   async hasOverlappingAppointment(
     scheduleId: number,
     startTime: Date,
     endTime: Date,
     excludeId?: number,
   ): Promise<boolean> {
+    const schedule = await this.prisma.schedules.findUnique({
+      where: { id: scheduleId },
+      select: { doctorId: true, scheduleDate: true },
+    });
+    if (!schedule) return false;
+
     const count = await this.prisma.appointments.count({
-      where: {
-        scheduleId,
-        deleted: false,
-        status: { notIn: ['CANCELLED', 'NO_SHOW'] },
-        // Overlap: A.start < B.end AND A.end > B.start
-        startTime: { lt: endTime },
-        endTime: { gt: startTime },
-        ...(excludeId && { id: { not: excludeId } }),
-      },
+      where: this.buildDoctorOverlapWhere(
+        schedule.doctorId,
+        schedule.scheduleDate,
+        startTime,
+        endTime,
+        excludeId,
+      ),
     });
     return count > 0;
   }
@@ -297,14 +332,21 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
   ): Promise<AppointmentWithRelations> {
     return this.prisma.$transaction(
       async (tx) => {
+        const schedule = await tx.schedules.findUnique({
+          where: { id: data.scheduleId },
+          select: { doctorId: true, scheduleDate: true },
+        });
+        if (!schedule) {
+          throw new ConflictException('El horario especificado ya no existe');
+        }
+
         const overlap = await tx.appointments.count({
-          where: {
-            scheduleId: data.scheduleId,
-            deleted: false,
-            status: { notIn: ['CANCELLED', 'NO_SHOW'] },
-            startTime: { lt: endTime },
-            endTime: { gt: startTime },
-          },
+          where: this.buildDoctorOverlapWhere(
+            schedule.doctorId,
+            schedule.scheduleDate,
+            startTime,
+            endTime,
+          ),
         });
 
         if (overlap > 0) {
@@ -321,6 +363,8 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
             endTime: data.endTime,
             reason: data.reason,
             ...(data.isOverbook && { isOverbook: true }),
+            ...(data.amount != null && { amount: data.amount }),
+            ...(data.pendingUntil != null && { pendingUntil: data.pendingUntil }),
             clinicId: data.clinicId ?? null,
           },
           include: appointmentInclude,
@@ -341,15 +385,22 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
   ): Promise<AppointmentWithRelations> {
     return this.prisma.$transaction(
       async (tx) => {
+        const schedule = await tx.schedules.findUnique({
+          where: { id: newScheduleId },
+          select: { doctorId: true, scheduleDate: true },
+        });
+        if (!schedule) {
+          throw new ConflictException('El horario especificado ya no existe');
+        }
+
         const overlap = await tx.appointments.count({
-          where: {
-            scheduleId: newScheduleId,
-            deleted: false,
-            status: { notIn: ['CANCELLED', 'NO_SHOW'] },
-            startTime: { lt: endTime },
-            endTime: { gt: startTime },
-            id: { not: id },
-          },
+          where: this.buildDoctorOverlapWhere(
+            schedule.doctorId,
+            schedule.scheduleDate,
+            startTime,
+            endTime,
+            id,
+          ),
         });
 
         if (overlap > 0) {
