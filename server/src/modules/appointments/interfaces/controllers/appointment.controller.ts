@@ -233,8 +233,9 @@ export class AppointmentController {
   async reschedule(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: RescheduleAppointmentDto,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<AppointmentResponseDto> {
-    return this.rescheduleAppointmentUseCase.execute(id, dto);
+    return this.rescheduleAppointmentUseCase.execute(id, dto, clinicId);
   }
 
   @Patch(':id/complete')

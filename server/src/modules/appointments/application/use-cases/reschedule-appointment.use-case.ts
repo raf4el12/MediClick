@@ -8,11 +8,11 @@ import { RescheduleAppointmentDto } from '../dto/reschedule-appointment.dto.js';
 import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type { IScheduleRepository } from '../../../schedules/domain/repositories/schedule.repository.js';
+import { AppointmentSlotValidatorService } from '../services/appointment-slot-validator.service.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
 import {
   parseHHmm,
   dateToTimeString,
-  toMinutesUTC,
 } from '../../../../shared/utils/date-time.utils.js';
 import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
 
@@ -23,11 +23,13 @@ export class RescheduleAppointmentUseCase {
     private readonly appointmentRepository: IAppointmentRepository,
     @Inject('IScheduleRepository')
     private readonly scheduleRepository: IScheduleRepository,
+    private readonly slotValidator: AppointmentSlotValidatorService,
   ) {}
 
   async execute(
     id: number,
     dto: RescheduleAppointmentDto,
+    jwtClinicId?: number | null,
   ): Promise<AppointmentResponseDto> {
     const appointment = await this.appointmentRepository.findById(id);
     if (!appointment) {
@@ -52,32 +54,21 @@ export class RescheduleAppointmentUseCase {
       throw new BadRequestException('El nuevo horario especificado no existe');
     }
 
-    // Parsear y validar tiempos del nuevo slot
+    // Parsear tiempos del nuevo slot
     const newStartTime = parseHHmm(dto.startTime);
     const newEndTime = parseHHmm(dto.endTime);
 
-    if (newStartTime.getTime() >= newEndTime.getTime()) {
-      throw new BadRequestException('startTime debe ser anterior a endTime');
-    }
-
-    // Validar que el slot cabe dentro del rango del nuevo schedule
-    const schedTimeFrom = new Date(newSchedule.timeFrom);
-    const schedTimeTo = new Date(newSchedule.timeTo);
-
-    const schedFromMinutes = toMinutesUTC(schedTimeFrom);
-    const schedToMinutes = toMinutesUTC(schedTimeTo);
-    const slotStartMinutes = toMinutesUTC(newStartTime);
-    const slotEndMinutes = toMinutesUTC(newEndTime);
-
-    if (
-      slotStartMinutes < schedFromMinutes ||
-      slotEndMinutes > schedToMinutes
-    ) {
-      throw new BadRequestException(
-        `El slot ${dto.startTime}-${dto.endTime} está fuera del rango del turno ` +
-          `${dateToTimeString(schedTimeFrom)}-${dateToTimeString(schedTimeTo)}`,
-      );
-    }
+    // Mismas precondiciones que al crear: rango del turno, fecha pasada,
+    // anticipación de 2h, sede, feriado y bloqueo del doctor.
+    await this.slotValidator.validate({
+      doctorId: newSchedule.doctorId,
+      scheduleDate: new Date(newSchedule.scheduleDate),
+      schedTimeFrom: new Date(newSchedule.timeFrom),
+      schedTimeTo: new Date(newSchedule.timeTo),
+      slotStart: newStartTime,
+      slotEnd: newEndTime,
+      jwtClinicId,
+    });
 
     // Verificar superposición y reagendar atómicamente (previene double-booking)
     const updated = await this.appointmentRepository.rescheduleWithOverlapCheck(
