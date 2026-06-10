@@ -8,6 +8,8 @@ export interface CreateAppointmentData {
   reason?: string;
   isOverbook?: boolean;
   clinicId?: number | null;
+  amount?: number | null;
+  pendingUntil?: Date | null;
 }
 
 export interface UpdateAppointmentData {
