@@ -64,8 +64,9 @@ export class CreatePatientAppointmentUseCase {
     const slotStart = parseHHmm(dto.startTime);
     const slotEnd = parseHHmm(dto.endTime);
 
-    // Precondiciones del slot (rango, fecha pasada, 2h, feriado, bloqueo).
-    // Sin jwtClinicId: el paciente puede reservar en cualquier sede.
+    // Precondiciones del slot (rango, duración/grilla, fecha pasada, 2h,
+    // feriado, bloqueo). Sin jwtClinicId: el paciente puede reservar en
+    // cualquier sede.
     const clinicId = await this.slotValidator.validate({
       doctorId: schedule.doctorId,
       scheduleDate: new Date(schedule.scheduleDate),
@@ -73,6 +74,8 @@ export class CreatePatientAppointmentUseCase {
       schedTimeTo: new Date(schedule.timeTo),
       slotStart,
       slotEnd,
+      durationMinutes: schedule.specialty.duration,
+      bufferMinutes: schedule.specialty.bufferMinutes,
     });
 
     // Verifica overlap y crea la cita en una sola transacción serializable.

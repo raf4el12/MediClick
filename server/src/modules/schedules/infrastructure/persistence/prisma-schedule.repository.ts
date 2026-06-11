@@ -23,7 +23,15 @@ const scheduleInclude = {
       clinic: { select: { timezone: true } },
     },
   },
-  specialty: { select: { id: true, name: true, price: true } },
+  specialty: {
+    select: {
+      id: true,
+      name: true,
+      price: true,
+      duration: true,
+      bufferMinutes: true,
+    },
+  },
 } as const;
 
 @Injectable()

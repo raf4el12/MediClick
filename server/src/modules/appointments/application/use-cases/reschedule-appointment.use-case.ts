@@ -58,8 +58,8 @@ export class RescheduleAppointmentUseCase {
     const newStartTime = parseHHmm(dto.startTime);
     const newEndTime = parseHHmm(dto.endTime);
 
-    // Mismas precondiciones que al crear: rango del turno, fecha pasada,
-    // anticipación de 2h, sede, feriado y bloqueo del doctor.
+    // Mismas precondiciones que al crear: rango del turno, duración/grilla,
+    // fecha pasada, anticipación de 2h, sede, feriado y bloqueo del doctor.
     await this.slotValidator.validate({
       doctorId: newSchedule.doctorId,
       scheduleDate: new Date(newSchedule.scheduleDate),
@@ -67,6 +67,8 @@ export class RescheduleAppointmentUseCase {
       schedTimeTo: new Date(newSchedule.timeTo),
       slotStart: newStartTime,
       slotEnd: newEndTime,
+      durationMinutes: newSchedule.specialty.duration,
+      bufferMinutes: newSchedule.specialty.bufferMinutes,
       jwtClinicId,
     });
 

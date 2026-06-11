@@ -77,7 +77,13 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
       profile: { name: 'Dr', lastName: 'House' },
       clinic: { timezone: 'America/Lima' },
     },
-    specialty: { id: 2, name: 'Medicina', price: 120 },
+    specialty: {
+      id: 2,
+      name: 'Medicina',
+      price: 120,
+      duration: 30,
+      bufferMinutes: 0,
+    },
     ...overrides,
   });
 
@@ -193,6 +199,8 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
         scheduleDate: new Date('2030-06-01T00:00:00.000Z'),
         schedTimeFrom: new Date('1970-01-01T08:00:00.000Z'),
         schedTimeTo: new Date('1970-01-01T17:00:00.000Z'),
+        durationMinutes: 30,
+        bufferMinutes: 0,
         jwtClinicId: 7,
       }),
     );

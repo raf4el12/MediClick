@@ -16,7 +16,7 @@
 | 4 | Reagendar no valida feriados, bloqueos, fecha, sede | Citas en días inválidos | Medio | ✅ Hecho |
 | 5 | Bloqueo/feriado no cancela citas ya reservadas | Citas activas en días vetados | Medio | ✅ Hecho |
 | 6 | Slots mostrados no filtran feriados/bloqueos/anticipación | Falsa disponibilidad al paciente | Bajo | ✅ Hecho |
-| 7 | Duración del slot no se valida al reservar | Grilla desalineada, slots gigantes | Medio | 🟡 Medio |
+| 7 | Duración del slot no se valida al reservar | Grilla desalineada, slots gigantes | Medio | ✅ Hecho |
 | 8 | Reagendar no resetea `pendingUntil` ni `reminderSent` | Cita re-cancelada o sin recordatorio | Bajo | 🟡 Medio |
 | 9 | Sobrecupo pisa slots libres y omite validaciones | Turno libre robado | Medio | 🟡 Medio |
 | 10 | `overwrite` borra especialidades que no regenera | Pérdida de schedules | Bajo | 🟡 Medio |
@@ -170,15 +170,22 @@ Spec nuevo con 10 tests (feriado, bloqueo por rango, día completo, anticipació
 
 ## Fase 3 — Medio: robustez y consistencia
 
-### #7 · La duración del slot no se valida al crear ni reagendar
+### #7 · La duración del slot no se valida al crear ni reagendar — ✅ Hecho (junio 2026)
 
 **Problema:** `startTime`/`endTime` se aceptan si caben dentro del schedule, sin validar que sean múltiplos de `specialty.duration` ni que estén alineados con la grilla. Un cliente puede mandar `08:07-08:11` (desalinea la grilla) o `08:00-14:00` (bloquea el bloque completo).
 
-**Fix:** en create y reschedule, recuperar `specialty.duration` y verificar que `endTime - startTime === duration` (o al menos que sea múltiplo). Opcional: validar alineación del slot contra la grilla calculada.
+**Fix aplicado:** la validación vive en `AppointmentSlotValidatorService` (parámetros obligatorios `durationMinutes` + `bufferMinutes`), así cubre los tres flujos a la vez: create staff, create paciente y reschedule. Reglas:
+1. `endTime - startTime === specialty.duration` exacto (no múltiplo: la grilla es de slots iguales).
+2. Alineación: `(slotStart - schedule.timeFrom) % (duration + buffer) === 0` — el mismo paso que usa `TimeSlotCalculatorService` para generar la grilla.
+
+El `scheduleInclude` del repo de schedules ahora trae `specialty.duration`/`bufferMinutes` (ya traía `price`), así que no hay query extra. De paso se corrigió el test de anticipación de 2h del spec del validador, que pasaba por la razón equivocada (el slot caía fuera del rango del turno antes de llegar a la regla de anticipación).
 
 **Archivos:**
+- `server/src/modules/appointments/application/services/appointment-slot-validator.service.ts` (+spec: 4 tests nuevos)
 - `server/src/modules/appointments/application/use-cases/create-appointment.use-case.ts`
+- `server/src/modules/appointments/application/use-cases/create-patient-appointment.use-case.ts`
 - `server/src/modules/appointments/application/use-cases/reschedule-appointment.use-case.ts`
+- `server/src/modules/schedules/infrastructure/persistence/prisma-schedule.repository.ts` — include ampliado
 
 ---
 

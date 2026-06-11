@@ -34,6 +34,8 @@ describe('AppointmentSlotValidatorService', () => {
     schedTimeTo: new Date('1970-01-01T17:00:00.000Z'),
     slotStart: new Date('1970-01-01T09:00:00.000Z'),
     slotEnd: new Date('1970-01-01T09:30:00.000Z'),
+    durationMinutes: 30,
+    bufferMinutes: 0,
     ...overrides,
   });
 
@@ -78,6 +80,59 @@ describe('AppointmentSlotValidatorService', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
+  it('lanza BadRequestException si el slot no dura exactamente specialty.duration', async () => {
+    await expect(
+      validator.validate(
+        buildParams({
+          slotStart: new Date('1970-01-01T09:00:00.000Z'),
+          slotEnd: new Date('1970-01-01T10:00:00.000Z'),
+        }),
+      ),
+    ).rejects.toThrow('El slot debe durar exactamente 30 minutos');
+  });
+
+  it('lanza BadRequestException si el slot no está alineado a la grilla', async () => {
+    await expect(
+      validator.validate(
+        buildParams({
+          slotStart: new Date('1970-01-01T09:10:00.000Z'),
+          slotEnd: new Date('1970-01-01T09:40:00.000Z'),
+        }),
+      ),
+    ).rejects.toThrow('no está alineado a la grilla');
+  });
+
+  it('la grilla considera el buffer entre slots (duración + descanso)', async () => {
+    // Grilla 08:00 con paso 25 (20 + 5): 08:00, 08:25, 08:50…
+    await expect(
+      validator.validate(
+        buildParams({
+          durationMinutes: 20,
+          bufferMinutes: 5,
+          slotStart: new Date('1970-01-01T08:25:00.000Z'),
+          slotEnd: new Date('1970-01-01T08:45:00.000Z'),
+        }),
+      ),
+    ).resolves.toBe(7);
+
+    await expect(
+      validator.validate(
+        buildParams({
+          durationMinutes: 20,
+          bufferMinutes: 5,
+          slotStart: new Date('1970-01-01T08:20:00.000Z'),
+          slotEnd: new Date('1970-01-01T08:40:00.000Z'),
+        }),
+      ),
+    ).rejects.toThrow('no está alineado a la grilla');
+  });
+
+  it('lanza BadRequestException si la especialidad no tiene duración configurada', async () => {
+    await expect(
+      validator.validate(buildParams({ durationMinutes: 0 })),
+    ).rejects.toThrow('La especialidad no tiene una duración configurada');
+  });
+
   it('lanza BadRequestException si la fecha es pasada', async () => {
     await expect(
       validator.validate(
@@ -87,6 +142,8 @@ describe('AppointmentSlotValidatorService', () => {
   });
 
   it('lanza BadRequestException si el slot de hoy tiene menos de 2h de anticipación', async () => {
+    // Timezone UTC para que "hoy" del validador coincida con la fecha UTC del test
+    timezoneResolver.resolveByDoctorId.mockResolvedValue('UTC');
     const todayUTC = new Date();
     todayUTC.setUTCHours(0, 0, 0, 0);
 
@@ -94,11 +151,13 @@ describe('AppointmentSlotValidatorService', () => {
       validator.validate(
         buildParams({
           scheduleDate: todayUTC,
-          slotStart: new Date('1970-01-01T00:01:00.000Z'),
+          schedTimeFrom: new Date('1970-01-01T00:00:00.000Z'),
+          schedTimeTo: new Date('1970-01-01T23:30:00.000Z'),
+          slotStart: new Date('1970-01-01T00:00:00.000Z'),
           slotEnd: new Date('1970-01-01T00:30:00.000Z'),
         }),
       ),
-    ).rejects.toThrow(BadRequestException);
+    ).rejects.toThrow('2 horas de anticipación');
   });
 
   it('lanza ForbiddenException si el doctor es de otra sede que la del JWT', async () => {
