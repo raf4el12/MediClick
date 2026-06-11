@@ -18,7 +18,7 @@
 | 6 | Slots mostrados no filtran feriados/bloqueos/anticipación | Falsa disponibilidad al paciente | Bajo | ✅ Hecho |
 | 7 | Duración del slot no se valida al reservar | Grilla desalineada, slots gigantes | Medio | ✅ Hecho |
 | 8 | Reagendar no resetea `pendingUntil` ni `reminderSent` | Cita re-cancelada o sin recordatorio | Bajo | ✅ Hecho |
-| 9 | Sobrecupo pisa slots libres y omite validaciones | Turno libre robado | Medio | 🟡 Medio |
+| 9 | Sobrecupo pisa slots libres y omite validaciones | Turno libre robado | Medio | ✅ Hecho |
 | 10 | `overwrite` borra especialidades que no regenera | Pérdida de schedules | Bajo | 🟡 Medio |
 | 11 | Liberación de slot ciega a waitlist en 3 de 4 flujos | Cupos no reoferecidos | Medio | 🟡 Medio |
 | 12 | `NO_SHOW` inalcanzable desde la API | Reportes incorrectos | Bajo | 🟢 Bajo |
@@ -209,17 +209,17 @@ El timeout de pago se extrajo a `getAppointmentPaymentTimeoutMs()` en `shared/ut
 
 ---
 
-### #9 · El sobrecupo puede pisar slots libres y no valida feriados/bloqueos
+### #9 · El sobrecupo puede pisar slots libres y no valida feriados/bloqueos — ✅ Hecho (junio 2026)
 
-**Problema:** `create-overbook-appointment.use-case.ts:127-139` calcula `overbookStartTime` como el `endTime` de la última cita activa. Si hay slots regulares libres al final del turno, el sobrecupo los pisa. Además no valida feriados, bloqueos ni anticipación de 2 horas para citas de hoy. `createOverbookAtomic` solo verifica el contador diario, sin overlap check.
+**Problema:** `create-overbook-appointment.use-case.ts` calculaba `overbookStartTime` como el `endTime` de la última cita activa. Si había slots regulares libres al final del turno, el sobrecupo los pisaba. Además no validaba feriados, bloqueos ni anticipación de 2 horas para citas de hoy. `createOverbookAtomic` solo verificaba el contador diario, sin overlap check.
 
-**Fix:**
-1. Calcular `overbookStartTime` como `max(timeTo del schedule, maxEndTime de citas activas)` para que el sobrecupo siempre quede *después* del bloque normal.
-2. Agregar validaciones de feriado, bloqueo y anticipación (igual que en create).
-3. Dentro de `createOverbookAtomic`, agregar un overlap check igual al de `createWithOverlapCheck`.
+**Fix aplicado:**
+1. `overbookStartTime = max(timeTo del turno, maxEndTime de citas activas)` — el sobrecupo siempre queda *después* del bloque normal y encadena tras sobrecupos previos. Los tiempos se normalizan con `normalizeToTimeOnly` por las fechas base inconsistentes en BD.
+2. Validaciones nuevas: feriado (global o de la sede del doctor, BadRequest), bloqueo del doctor sobre el rango calculado (`isBlocked`, Conflict) y anticipación de 2h si es hoy (usa `MIN_BOOKING_ANTICIPATION_MS` compartida). No se usó el `AppointmentSlotValidatorService` porque el sobrecupo vive *fuera* del rango del turno por diseño — el check de rango del validador lo rechazaría.
+3. `createOverbookAtomic` agrega overlap check con `buildDoctorOverlapWhere` dentro de la misma transacción serializable, además del contador diario.
 
 **Archivos:**
-- `server/src/modules/appointments/application/use-cases/create-overbook-appointment.use-case.ts`
+- `server/src/modules/appointments/application/use-cases/create-overbook-appointment.use-case.ts` (+spec nuevo: 12 tests)
 - `server/src/modules/appointments/infrastructure/persistence/prisma-appointment.repository.ts` — `createOverbookAtomic`
 
 ---

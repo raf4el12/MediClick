@@ -505,6 +505,21 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
           );
         }
 
+        const overlap = await tx.appointments.count({
+          where: this.buildDoctorOverlapWhere(
+            doctorId,
+            date,
+            data.startTime,
+            data.endTime,
+          ),
+        });
+
+        if (overlap > 0) {
+          throw new ConflictException(
+            'Ya existe una cita que se superpone con el horario del sobrecupo',
+          );
+        }
+
         const result = await tx.appointments.create({
           data: {
             patientId: data.patientId,
