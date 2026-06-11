@@ -19,7 +19,7 @@
 | 7 | Duración del slot no se valida al reservar | Grilla desalineada, slots gigantes | Medio | ✅ Hecho |
 | 8 | Reagendar no resetea `pendingUntil` ni `reminderSent` | Cita re-cancelada o sin recordatorio | Bajo | ✅ Hecho |
 | 9 | Sobrecupo pisa slots libres y omite validaciones | Turno libre robado | Medio | ✅ Hecho |
-| 10 | `overwrite` borra especialidades que no regenera | Pérdida de schedules | Bajo | 🟡 Medio |
+| 10 | `overwrite` borra especialidades que no regenera | Pérdida de schedules | Bajo | ✅ Hecho |
 | 11 | Liberación de slot ciega a waitlist en 3 de 4 flujos | Cupos no reoferecidos | Medio | 🟡 Medio |
 | 12 | `NO_SHOW` inalcanzable desde la API | Reportes incorrectos | Bajo | 🟢 Bajo |
 | 13 | `AvailabilityType` EXCEPTION/EXTRA no aplica | Excepciones de horario no funcionan | Medio | 🟢 Bajo |
@@ -224,15 +224,16 @@ El timeout de pago se extrajo a `getAppointmentPaymentTimeoutMs()` en `shared/ut
 
 ---
 
-### #10 · `overwrite` con filtro de especialidad borra schedules de otras especialidades
+### #10 · `overwrite` con filtro de especialidad borra schedules de otras especialidades — ✅ Hecho (junio 2026)
 
-**Problema:** `generate-schedules.use-case.ts:175-181` llama `deleteUnbookedByDoctorAndDateRange` sin filtro de especialidad, pero si se pasó `dto.specialtyId`, solo se regeneran las availabilities de esa especialidad. Los schedules de las otras desaparecen.
+**Problema:** `generate-schedules.use-case.ts` llamaba `deleteUnbookedByDoctorAndDateRange` sin filtro de especialidad, pero si se pasó `dto.specialtyId`, solo se regeneran las availabilities de esa especialidad. Los schedules de las otras desaparecían.
 
-**Fix:** pasar `specialtyId` a `deleteUnbookedByDoctorAndDateRange` (o directamente al query `deleteMany`) cuando se especifique en el DTO.
+**Fix aplicado:** `deleteUnbookedByDoctorAndDateRange` acepta `specialtyId?` opcional y el use-case pasa `dto.specialtyId`: con filtro borra solo esa especialidad, sin filtro mantiene el comportamiento anterior (todas). `ScheduleRegenerationService` no cambia — borra y regenera todas las especialidades, lo cual es coherente. Spec nuevo con 4 tests (overwrite con/sin filtro, sin overwrite, generación filtrada).
 
 **Archivos:**
-- `server/src/modules/schedules/application/use-cases/generate-schedules.use-case.ts`
+- `server/src/modules/schedules/application/use-cases/generate-schedules.use-case.ts` (+spec nuevo)
 - `server/src/modules/schedules/infrastructure/persistence/prisma-schedule.repository.ts` — `deleteUnbookedByDoctorAndDateRange`
+- `server/src/modules/schedules/domain/repositories/schedule.repository.ts` — firma
 
 ---
 
