@@ -43,6 +43,7 @@ export class CreateHolidayUseCase {
     });
 
     // Si es recurrente, propagar a todos los años que ya tienen feriados sembrados
+    const holidayDates = [parsedDate];
     if (dto.isRecurring) {
       const existingYears = await this.holidayRepository.findDistinctYears();
       const otherYears = existingYears.filter((y) => y !== year);
@@ -56,16 +57,20 @@ export class CreateHolidayUseCase {
           clinicId: effectiveClinicId,
         }));
         await this.holidayRepository.createMany(copies);
+        holidayDates.push(...copies.map((c) => c.date));
       }
     }
 
-    // Cancelar (async) las citas ya reservadas en la fecha del feriado.
-    const holidayEvent: HolidayCreatedEvent = {
-      date: parsedDate,
-      clinicId: effectiveClinicId ?? null,
-      name: dto.name,
-    };
-    this.eventEmitter.emit(HOLIDAY_CREATED_EVENT, holidayEvent);
+    // Cancelar (async) las citas ya reservadas en cada fecha del feriado,
+    // incluidas las copias de otros años cuando es recurrente.
+    for (const date of holidayDates) {
+      const holidayEvent: HolidayCreatedEvent = {
+        date,
+        clinicId: effectiveClinicId ?? null,
+        name: dto.name,
+      };
+      this.eventEmitter.emit(HOLIDAY_CREATED_EVENT, holidayEvent);
+    }
 
     return {
       id: holiday.id,
