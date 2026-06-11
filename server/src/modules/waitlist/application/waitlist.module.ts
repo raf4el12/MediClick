@@ -17,7 +17,7 @@ import { LeaveWaitlistUseCase } from './use-cases/leave-waitlist.use-case.js';
 import { GetMyWaitlistUseCase } from './use-cases/get-my-waitlist.use-case.js';
 import { GetClinicWaitlistUseCase } from './use-cases/get-clinic-waitlist.use-case.js';
 import { AddWaitlistPriorityUseCase } from './use-cases/add-waitlist-priority.use-case.js';
-import { AppointmentCancelledListener } from './listeners/appointment-cancelled.listener.js';
+import { SlotReleasedListener } from './listeners/slot-released.listener.js';
 import { WaitlistNotificationListener } from './listeners/waitlist-notification.listener.js';
 import { ExpireStaleOffersUseCase } from './jobs/expire-stale-offers.use-case.js';
 import { ExpireStaleEntriesUseCase } from './jobs/expire-stale-entries.use-case.js';
@@ -52,7 +52,7 @@ import { WaitlistController } from '../interfaces/controllers/waitlist.controlle
     GetMyWaitlistUseCase,
     GetClinicWaitlistUseCase,
     AddWaitlistPriorityUseCase,
-    AppointmentCancelledListener,
+    SlotReleasedListener,
     WaitlistNotificationListener,
     ExpireStaleOffersUseCase,
     ExpireStaleEntriesUseCase,

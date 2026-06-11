@@ -20,7 +20,7 @@
 | 8 | Reagendar no resetea `pendingUntil` ni `reminderSent` | Cita re-cancelada o sin recordatorio | Bajo | ✅ Hecho |
 | 9 | Sobrecupo pisa slots libres y omite validaciones | Turno libre robado | Medio | ✅ Hecho |
 | 10 | `overwrite` borra especialidades que no regenera | Pérdida de schedules | Bajo | ✅ Hecho |
-| 11 | Liberación de slot ciega a waitlist en 3 de 4 flujos | Cupos no reoferecidos | Medio | 🟡 Medio |
+| 11 | Liberación de slot ciega a waitlist en 3 de 4 flujos | Cupos no reoferecidos | Medio | ✅ Hecho |
 | 12 | `NO_SHOW` inalcanzable desde la API | Reportes incorrectos | Bajo | 🟢 Bajo |
 | 13 | `AvailabilityType` EXCEPTION/EXTRA no aplica | Excepciones de horario no funcionan | Medio | 🟢 Bajo |
 | 14 | Paciente puede tener dos citas simultáneas | Conflicto de agenda del paciente | Bajo | 🟢 Bajo |
@@ -237,19 +237,27 @@ El timeout de pago se extrajo a `getAppointmentPaymentTimeoutMs()` en `shared/ut
 
 ---
 
-### #11 · La waitlist queda ciega cuando un slot se libera por reschedule o expiración
+### #11 · La waitlist queda ciega cuando un slot se libera por reschedule o expiración — ✅ Hecho (junio 2026)
 
-**Problema:** `appointment.cancelled` solo se emite si `updated.patient.profile.userId` existe (`cancel-appointment.use-case.ts:112`). Reschedule no emite ningún evento (el slot viejo liberado nunca se reofrece). El cron de expiración usa `updateMany` y no puede emitir eventos.
+**Problema:** `appointment.cancelled` solo se emitía si `updated.patient.profile.userId` existía. Reschedule no emitía ningún evento (el slot viejo liberado nunca se reofrecía). El cron de expiración usaba `updateMany` y no podía emitir eventos.
 
-**Fix:**
-1. Quitar la condición `if (updated.patient.profile.userId)` del emit de `appointment.cancelled` — el evento debe emitirse siempre.
-2. En reschedule: emitir `appointment.slot_released` (o `appointment.cancelled` con metadata) al cambiar de schedule.
-3. En el cron de expiración: tras `updateMany`, consultar las citas expiradas y emitir `appointment.cancelled` por cada una, o cambiar a un loop de `update` individual.
+**Fix aplicado (variación sobre lo propuesto):** en vez de quitar la condición del userId, se separaron las responsabilidades en dos eventos:
+- **`appointment.slot_released`** (nuevo, en `availability-events.interface.ts`): lo consume la waitlist (`SlotReleasedListener`, ex `AppointmentCancelledListener`) y se emite **siempre** en los 4 flujos de liberación: cancelación manual, cancelación por bloqueo/feriado (listener), reschedule (slot viejo, salvo que quede en el mismo slot) y expiración de pago.
+- **`appointment.cancelled`** queda solo para mail + notificación in-app, que sí requieren usuario asociado (la condición del userId está justificada ahí: el payload exige `patientUserId`).
+
+Refactors absorbidos de la revisión SOLID de fixes #1–#5:
+- La construcción de ambos eventos se unificó en `appointment-event.builder.ts` (estaba duplicada entre `cancel-appointment` y `availability-change.listener`).
+- `ExpirePendingAppointmentsUseCase` se movió de payments a appointments (era ciclo de vida de citas y PaymentsModule no puede importar AppointmentsModule sin ciclo) y dejó de inyectar `PrismaService`: usa `expirePendingPastDeadline(now)` del repositorio, que cancela en transacción (findMany + updateMany) y retorna los slots liberados para emitir los eventos.
 
 **Archivos:**
+- `server/src/shared/events/availability-events.interface.ts` — `SLOT_RELEASED_EVENT`
+- `server/src/modules/appointments/application/services/appointment-event.builder.ts` (nuevo)
 - `server/src/modules/appointments/application/use-cases/cancel-appointment.use-case.ts`
-- `server/src/modules/appointments/application/use-cases/reschedule-appointment.use-case.ts`
-- `server/src/modules/payments/application/use-cases/expire-pending-appointments.use-case.ts`
+- `server/src/modules/appointments/application/use-cases/reschedule-appointment.use-case.ts` (+3 tests)
+- `server/src/modules/appointments/application/use-cases/expire-pending-appointments.use-case.ts` (movido, +spec)
+- `server/src/modules/appointments/application/listeners/availability-change.listener.ts`
+- `server/src/modules/appointments/infrastructure/persistence/prisma-appointment.repository.ts` — `expirePendingPastDeadline`
+- `server/src/modules/waitlist/application/listeners/slot-released.listener.ts` (ex `appointment-cancelled.listener.ts`)
 
 ---
 

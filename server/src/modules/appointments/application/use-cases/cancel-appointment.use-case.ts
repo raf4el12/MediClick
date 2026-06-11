@@ -22,11 +22,12 @@ import {
   nowInTimezone,
 } from '../../../../shared/utils/date-time.utils.js';
 import { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
-import type { AppointmentCancelledEvent } from '../../../../shared/mail/events/mail-events.interface.js';
+import { SLOT_RELEASED_EVENT } from '../../../../shared/events/availability-events.interface.js';
 import {
-  DEFAULT_TIMEZONE,
-  DEFAULT_CLINIC_NAME,
-} from '../../../../shared/constants/defaults.constant.js';
+  buildAppointmentCancelledEvent,
+  buildSlotReleasedEvent,
+} from '../services/appointment-event.builder.js';
+import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
 
 @Injectable()
 export class CancelAppointmentUseCase {
@@ -109,27 +110,24 @@ export class CancelAppointmentUseCase {
     // No se procesa refund automático — el admin debe revisarlo desde el dashboard.
     await this.flagRefundPendingIfPaid(id, dto.reason, userRole);
 
-    if (updated.patient.profile.userId) {
-      const clinicId = await this.timezoneResolver.resolveClinicIdByDoctorId(
-        updated.schedule.doctor.id,
-      );
-      const event: AppointmentCancelledEvent = {
-        appointmentId: updated.id,
-        patientEmail: updated.patient.profile.email,
-        patientName: `${updated.patient.profile.name} ${updated.patient.profile.lastName}`,
-        patientUserId: updated.patient.profile.userId,
-        doctorName: `${updated.schedule.doctor.profile.name} ${updated.schedule.doctor.profile.lastName}`,
-        clinicName: updated.schedule.doctor.clinic?.name ?? DEFAULT_CLINIC_NAME,
-        clinicTimezone:
-          updated.schedule.doctor.clinic?.timezone ?? DEFAULT_TIMEZONE,
-        scheduleDate: updated.schedule.scheduleDate,
-        cancelReason: dto.reason ?? null,
-        scheduleId: updated.scheduleId,
-        startTime: updated.startTime,
-        endTime: updated.endTime,
-        clinicId,
-      };
-      this.eventEmitter.emit('appointment.cancelled', event);
+    const clinicId = await this.timezoneResolver.resolveClinicIdByDoctorId(
+      updated.schedule.doctor.id,
+    );
+
+    // El slot liberado se reofrece SIEMPRE a la waitlist, tenga o no usuario
+    // el paciente. Mail/notificación sí requieren usuario (builder retorna null).
+    this.eventEmitter.emit(
+      SLOT_RELEASED_EVENT,
+      buildSlotReleasedEvent(updated, clinicId),
+    );
+
+    const cancelledEvent = buildAppointmentCancelledEvent(
+      updated,
+      dto.reason ?? null,
+      clinicId,
+    );
+    if (cancelledEvent) {
+      this.eventEmitter.emit('appointment.cancelled', cancelledEvent);
     }
 
     return this.toResponse(updated);

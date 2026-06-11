@@ -8,6 +8,7 @@ import type {
   AppointmentWithRelations,
   DashboardFilters,
   PatientAppointmentFilters,
+  ExpiredAppointmentSlot,
 } from '../../domain/interfaces/appointment-data.interface.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
@@ -475,6 +476,42 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       },
       { isolationLevel: 'Serializable' },
     );
+  }
+
+  async expirePendingPastDeadline(now: Date): Promise<ExpiredAppointmentSlot[]> {
+    return this.prisma.$transaction(async (tx) => {
+      const expired = await tx.appointments.findMany({
+        where: {
+          status: 'PENDING',
+          // Incluye FAILED: un pago rechazado deja la cita en PENDING/FAILED y,
+          // si el paciente no reintenta antes de pendingUntil, debe expirar igual
+          // que un PENDING/PENDING. Sin esto la cita ocupaba el slot indefinidamente.
+          paymentStatus: { in: ['PENDING', 'FAILED'] },
+          pendingUntil: { lt: now },
+          deleted: false,
+        },
+        select: {
+          id: true,
+          scheduleId: true,
+          startTime: true,
+          endTime: true,
+          clinicId: true,
+        },
+      });
+
+      if (expired.length === 0) return [];
+
+      await tx.appointments.updateMany({
+        where: { id: { in: expired.map((e) => e.id) } },
+        data: {
+          status: 'CANCELLED',
+          cancelReason: 'Pago no completado dentro del tiempo permitido',
+          updatedAt: now,
+        },
+      });
+
+      return expired;
+    });
   }
 
   async createOverbookAtomic(

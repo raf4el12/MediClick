@@ -2,9 +2,10 @@ import { AvailabilityChangeListener } from './availability-change.listener.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type { AppointmentWithRelations } from '../../domain/interfaces/appointment-data.interface.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
-import type {
-  ScheduleBlockedEvent,
-  HolidayCreatedEvent,
+import {
+  SLOT_RELEASED_EVENT,
+  type ScheduleBlockedEvent,
+  type HolidayCreatedEvent,
 } from '../../../../shared/events/availability-events.interface.js';
 
 describe('AvailabilityChangeListener', () => {
@@ -105,7 +106,12 @@ describe('AvailabilityChangeListener', () => {
       100,
       expect.objectContaining({ status: AppointmentStatus.CANCELLED }),
     );
-    expect(eventEmitter.emit).toHaveBeenCalledTimes(2);
+    // Por cada cita: slot_released (waitlist) + appointment.cancelled (mail)
+    expect(eventEmitter.emit).toHaveBeenCalledTimes(4);
+    expect(eventEmitter.emit).toHaveBeenCalledWith(
+      SLOT_RELEASED_EVENT,
+      expect.objectContaining({ scheduleId: 20, clinicId: 7 }),
+    );
     expect(eventEmitter.emit).toHaveBeenCalledWith(
       'appointment.cancelled',
       expect.objectContaining({ scheduleId: 20, clinicId: 7 }),
@@ -139,7 +145,7 @@ describe('AvailabilityChangeListener', () => {
     );
   });
 
-  it('no emite appointment.cancelled si la cita no tiene usuario asociado', async () => {
+  it('cita sin usuario asociado: reofrece el slot pero no emite el mail de cancelación', async () => {
     appointmentRepository.findActiveByDoctorAndDateRange.mockResolvedValue([
       buildAppointment({ id: 100 }),
     ]);
@@ -162,7 +168,11 @@ describe('AvailabilityChangeListener', () => {
     await listener.handleScheduleBlocked(blockEvent());
 
     expect(appointmentRepository.update).toHaveBeenCalledTimes(1);
-    expect(eventEmitter.emit).not.toHaveBeenCalled();
+    expect(eventEmitter.emit).toHaveBeenCalledTimes(1);
+    expect(eventEmitter.emit).toHaveBeenCalledWith(
+      SLOT_RELEASED_EVENT,
+      expect.objectContaining({ appointmentId: 100 }),
+    );
   });
 
   it('no hace nada si no hay citas afectadas', async () => {

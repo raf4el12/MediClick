@@ -4,6 +4,7 @@ import type {
   AppointmentWithRelations,
   DashboardFilters,
   PatientAppointmentFilters,
+  ExpiredAppointmentSlot,
 } from '../interfaces/appointment-data.interface.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
@@ -103,4 +104,10 @@ export interface IAppointmentRepository {
     date: Date,
     maxOverbookPerDay: number,
   ): Promise<AppointmentWithRelations>;
+
+  /**
+   * Cancela atómicamente las citas PENDING cuyo deadline de pago venció y
+   * retorna los slots liberados (para reofrecerlos a la lista de espera).
+   */
+  expirePendingPastDeadline(now: Date): Promise<ExpiredAppointmentSlot[]>;
 }
