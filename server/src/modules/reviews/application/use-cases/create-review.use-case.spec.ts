@@ -40,6 +40,7 @@ describe('CreateReviewUseCase — TDD', () => {
     cancellationFee: null,
     isOverbook: false,
     pendingUntil: null,
+    clinicId: null,
     deleted: false,
     createdAt: new Date(),
     updatedAt: null,

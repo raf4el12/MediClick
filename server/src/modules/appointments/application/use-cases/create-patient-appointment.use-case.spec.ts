@@ -7,9 +7,7 @@ import { CreatePatientAppointmentUseCase } from './create-patient-appointment.us
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type { IPatientRepository } from '../../../patients/domain/repositories/patient.repository.js';
 import type { IScheduleRepository } from '../../../schedules/domain/repositories/schedule.repository.js';
-import type { IHolidayRepository } from '../../../holidays/domain/repositories/holiday.repository.js';
-import type { IScheduleBlockRepository } from '../../../schedule-blocks/domain/repositories/schedule-block.repository.js';
-import type { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
+import type { AppointmentSlotValidatorService } from '../services/appointment-slot-validator.service.js';
 import type { ScheduleWithRelations } from '../../../schedules/domain/interfaces/schedule-data.interface.js';
 
 describe('CreatePatientAppointmentUseCase — TDD', () => {
@@ -19,15 +17,8 @@ describe('CreatePatientAppointmentUseCase — TDD', () => {
   >;
   let patientRepository: jest.Mocked<Pick<IPatientRepository, 'findByUserId'>>;
   let scheduleRepository: jest.Mocked<Pick<IScheduleRepository, 'findById'>>;
-  let holidayRepository: jest.Mocked<Pick<IHolidayRepository, 'isHoliday'>>;
-  let scheduleBlockRepository: jest.Mocked<
-    Pick<IScheduleBlockRepository, 'isBlocked'>
-  >;
-  let timezoneResolver: jest.Mocked<
-    Pick<
-      TimezoneResolverService,
-      'resolveByDoctorId' | 'resolveClinicIdByDoctorId'
-    >
+  let slotValidator: jest.Mocked<
+    Pick<AppointmentSlotValidatorService, 'validate'>
   >;
 
   // Fecha futura garantizada — nunca será "pasada" en los tests
@@ -111,26 +102,15 @@ describe('CreatePatientAppointmentUseCase — TDD', () => {
       createWithOverlapCheck: jest.fn().mockResolvedValue(buildAppointment()),
     };
 
-    holidayRepository = {
-      isHoliday: jest.fn().mockResolvedValue(false),
-    };
-
-    scheduleBlockRepository = {
-      isBlocked: jest.fn().mockResolvedValue(false),
-    };
-
-    timezoneResolver = {
-      resolveByDoctorId: jest.fn().mockResolvedValue('America/Lima'),
-      resolveClinicIdByDoctorId: jest.fn().mockResolvedValue(1),
+    slotValidator = {
+      validate: jest.fn().mockResolvedValue(1),
     };
 
     useCase = new CreatePatientAppointmentUseCase(
       appointmentRepository as any,
       patientRepository as any,
       scheduleRepository as any,
-      holidayRepository as any,
-      scheduleBlockRepository as any,
-      timezoneResolver as any,
+      slotValidator as any,
     );
   });
 
@@ -194,67 +174,51 @@ describe('CreatePatientAppointmentUseCase — TDD', () => {
     await expect(useCase.execute(42, dto)).rejects.toThrow(BadRequestException);
   });
 
-  // ── Iteración TDD 5: Validación de slot ───────────────────────────────────
+  // ── Iteración TDD 5: Precondiciones delegadas al slot validator ───────────
 
-  it('RED→GREEN: lanza BadRequestException si startTime >= endTime', async () => {
-    await expect(
-      useCase.execute(42, { ...dto, startTime: '10:00', endTime: '09:00' }),
-    ).rejects.toThrow(BadRequestException);
+  it('delega las precondiciones al validador sin sede (el paciente reserva en cualquier clínica)', async () => {
+    await useCase.execute(42, dto);
+
+    expect(slotValidator.validate).toHaveBeenCalledWith({
+      doctorId: 3,
+      scheduleDate: FUTURE_DATE,
+      schedTimeFrom: new Date('1970-01-01T08:00:00.000Z'),
+      schedTimeTo: new Date('1970-01-01T17:00:00.000Z'),
+      slotStart: expect.any(Date),
+      slotEnd: expect.any(Date),
+    });
   });
 
-  it('RED→GREEN: lanza BadRequestException si el slot está fuera del rango del turno', async () => {
-    // Turno 08:00–09:00, slot solicitado 09:00–09:30 supera el límite
-    scheduleRepository.findById.mockResolvedValue(
-      buildSchedule({
-        timeFrom: new Date('1970-01-01T08:00:00.000Z'),
-        timeTo: new Date('1970-01-01T09:00:00.000Z'),
-      }),
+  it('asocia a la cita el clinicId del doctor retornado por el validador', async () => {
+    slotValidator.validate.mockResolvedValue(7);
+
+    await useCase.execute(42, dto);
+
+    expect(appointmentRepository.createWithOverlapCheck).toHaveBeenCalledWith(
+      expect.objectContaining({ clinicId: 7 }),
+      expect.any(Date),
+      expect.any(Date),
     );
-
-    await expect(
-      useCase.execute(42, { ...dto, startTime: '09:00', endTime: '09:30' }),
-    ).rejects.toThrow(BadRequestException);
   });
 
-  // ── Iteración TDD 6: Fecha pasada ─────────────────────────────────────────
-
-  it('RED→GREEN: lanza BadRequestException si la fecha del schedule es pasada', async () => {
-    scheduleRepository.findById.mockResolvedValue(
-      buildSchedule({ scheduleDate: new Date('2020-01-01T00:00:00.000Z') }),
+  it('propaga BadRequestException del validador (rango/fecha pasada/2h/feriado)', async () => {
+    slotValidator.validate.mockRejectedValue(
+      new BadRequestException('No se puede agendar una cita en un día feriado'),
     );
 
     await expect(useCase.execute(42, dto)).rejects.toThrow(BadRequestException);
+    expect(appointmentRepository.createWithOverlapCheck).not.toHaveBeenCalled();
   });
 
-  // ── Iteración TDD 7: Buffer de 2 horas ────────────────────────────────────
-
-  it('RED→GREEN: lanza BadRequestException si el slot es hoy y tiene menos de 2h de anticipación', async () => {
-    // Usar hoy UTC como fecha del schedule y slot a las 00:01 (siempre < 2h desde ahora)
-    const todayUTC = new Date();
-    todayUTC.setUTCHours(0, 0, 0, 0);
-
-    scheduleRepository.findById.mockResolvedValue(
-      buildSchedule({ scheduleDate: todayUTC }),
+  it('propaga ConflictException del validador (bloqueo del doctor)', async () => {
+    slotValidator.validate.mockRejectedValue(
+      new ConflictException(
+        'El doctor tiene un bloqueo de horario que cubre la fecha/hora seleccionada',
+      ),
     );
-
-    // 00:01 siempre tiene menos de 2h de buffer respecto a cualquier hora actual
-    await expect(
-      useCase.execute(42, { ...dto, startTime: '00:01', endTime: '00:30' }),
-    ).rejects.toThrow(BadRequestException);
-  });
-
-  // ── Iteración TDD 8: Restricciones de disponibilidad ─────────────────────
-
-  it('RED→GREEN: lanza BadRequestException si la fecha es feriado', async () => {
-    holidayRepository.isHoliday.mockResolvedValue(true);
-
-    await expect(useCase.execute(42, dto)).rejects.toThrow(BadRequestException);
-  });
-
-  it('RED→GREEN: lanza ConflictException si el doctor tiene un bloqueo de horario', async () => {
-    scheduleBlockRepository.isBlocked.mockResolvedValue(true);
 
     await expect(useCase.execute(42, dto)).rejects.toThrow(ConflictException);
+    expect(appointmentRepository.createWithOverlapCheck).not.toHaveBeenCalled();
   });
 
   it('RED→GREEN: propaga ConflictException si la creación atómica detecta superposición', async () => {
@@ -267,13 +231,12 @@ describe('CreatePatientAppointmentUseCase — TDD', () => {
     await expect(useCase.execute(42, dto)).rejects.toThrow(ConflictException);
   });
 
-  // ── Iteración TDD 9: Verificaciones previas + creación atómica ─────────────
+  // ── Iteración TDD 6: Verificaciones previas + creación atómica ─────────────
 
-  it('consulta feriados y bloqueos antes de crear la cita atómicamente', async () => {
+  it('valida precondiciones antes de crear la cita atómicamente', async () => {
     await useCase.execute(42, dto);
 
-    expect(holidayRepository.isHoliday).toHaveBeenCalledTimes(1);
-    expect(scheduleBlockRepository.isBlocked).toHaveBeenCalledTimes(1);
+    expect(slotValidator.validate).toHaveBeenCalledTimes(1);
     expect(appointmentRepository.createWithOverlapCheck).toHaveBeenCalledTimes(1);
   });
 });

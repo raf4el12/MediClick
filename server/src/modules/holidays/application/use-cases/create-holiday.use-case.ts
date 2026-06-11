@@ -1,13 +1,19 @@
 import { Injectable, Inject, ForbiddenException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreateHolidayDto } from '../dto/create-holiday.dto.js';
 import { HolidayResponseDto } from '../dto/holiday-response.dto.js';
 import type { IHolidayRepository } from '../../domain/repositories/holiday.repository.js';
+import {
+  HOLIDAY_CREATED_EVENT,
+  type HolidayCreatedEvent,
+} from '../../../../shared/events/availability-events.interface.js';
 
 @Injectable()
 export class CreateHolidayUseCase {
   constructor(
     @Inject('IHolidayRepository')
     private readonly holidayRepository: IHolidayRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(
@@ -37,6 +43,7 @@ export class CreateHolidayUseCase {
     });
 
     // Si es recurrente, propagar a todos los años que ya tienen feriados sembrados
+    const holidayDates = [parsedDate];
     if (dto.isRecurring) {
       const existingYears = await this.holidayRepository.findDistinctYears();
       const otherYears = existingYears.filter((y) => y !== year);
@@ -50,7 +57,19 @@ export class CreateHolidayUseCase {
           clinicId: effectiveClinicId,
         }));
         await this.holidayRepository.createMany(copies);
+        holidayDates.push(...copies.map((c) => c.date));
       }
+    }
+
+    // Cancelar (async) las citas ya reservadas en cada fecha del feriado,
+    // incluidas las copias de otros años cuando es recurrente.
+    for (const date of holidayDates) {
+      const holidayEvent: HolidayCreatedEvent = {
+        date,
+        clinicId: effectiveClinicId ?? null,
+        name: dto.name,
+      };
+      this.eventEmitter.emit(HOLIDAY_CREATED_EVENT, holidayEvent);
     }
 
     return {
