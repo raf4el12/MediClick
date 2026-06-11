@@ -2,6 +2,7 @@ import {
   Injectable,
   Inject,
   BadRequestException,
+  ConflictException,
   ForbiddenException,
 } from '@nestjs/common';
 import { CreateOverbookAppointmentDto } from '../dto/create-overbook-appointment.dto.js';
@@ -11,10 +12,15 @@ import type { IPatientRepository } from '../../../patients/domain/repositories/p
 import type { IDoctorRepository } from '../../../doctors/domain/repositories/doctor.repository.js';
 import type { IScheduleRepository } from '../../../schedules/domain/repositories/schedule.repository.js';
 import type { ISpecialtyRepository } from '../../../specialties/domain/repositories/specialty.repository.js';
+import type { IHolidayRepository } from '../../../holidays/domain/repositories/holiday.repository.js';
+import type { IScheduleBlockRepository } from '../../../schedule-blocks/domain/repositories/schedule-block.repository.js';
 import {
   dateToTimeString,
+  normalizeToTimeOnly,
+  nowInTimezone,
   todayStartInTimezone,
   scheduleDateToLocalDay,
+  MIN_BOOKING_ANTICIPATION_MS,
 } from '../../../../shared/utils/date-time.utils.js';
 import { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
 import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
@@ -25,7 +31,8 @@ import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant
  * Reglas:
  * - Solo ADMIN o DOCTOR pueden crear sobrecupos
  * - Máximo configurable por doctor/día (maxOverbookPerDay)
- * - Se agenda al final del último slot existente del bloque
+ * - Se agenda después del bloque normal: max(fin del turno, fin de la última cita)
+ * - Valida feriado, bloqueo del doctor y anticipación de 2h (si es hoy)
  * - Se marca explícitamente como isOverbook = true
  */
 @Injectable()
@@ -41,6 +48,10 @@ export class CreateOverbookAppointmentUseCase {
     private readonly scheduleRepository: IScheduleRepository,
     @Inject('ISpecialtyRepository')
     private readonly specialtyRepository: ISpecialtyRepository,
+    @Inject('IHolidayRepository')
+    private readonly holidayRepository: IHolidayRepository,
+    @Inject('IScheduleBlockRepository')
+    private readonly scheduleBlockRepository: IScheduleBlockRepository,
     private readonly timezoneResolver: TimezoneResolverService,
   ) {}
 
@@ -94,6 +105,16 @@ export class CreateOverbookAppointmentUseCase {
       );
     }
 
+    const isHoliday = await this.holidayRepository.isHoliday(
+      appointmentDate,
+      doctor.clinicId ?? undefined,
+    );
+    if (isHoliday) {
+      throw new BadRequestException(
+        'No se puede crear un sobrecupo en un día feriado',
+      );
+    }
+
     // 5. Obtener los schedules del doctor para esa fecha y especialidad
     const schedules = await this.scheduleRepository.findByDoctorAndDate(
       dto.doctorId,
@@ -124,23 +145,50 @@ export class CreateOverbookAppointmentUseCase {
         !['CANCELLED', 'NO_SHOW'].includes(a.status),
     );
 
-    // El sobrecupo empieza al final del último slot ocupado o al final del schedule
-    let overbookStartTime: Date;
-    if (activeAppointmentsInSchedule.length > 0) {
-      // Encontrar la cita que termina más tarde
-      const latestEnd = activeAppointmentsInSchedule.reduce(
-        (max, a) => (a.endTime.getTime() > max.getTime() ? a.endTime : max),
-        activeAppointmentsInSchedule[0].endTime,
-      );
-      overbookStartTime = latestEnd;
-    } else {
-      // No hay citas → el sobrecupo empieza al final del schedule
-      overbookStartTime = new Date(lastSchedule.timeTo);
-    }
+    // El sobrecupo siempre va después del bloque normal: max(fin del turno,
+    // fin de la última cita activa). Si arrancara al final de la última cita,
+    // pisaría los slots regulares aún libres al final del turno.
+    const overbookStartTime = activeAppointmentsInSchedule.reduce(
+      (max, a) => {
+        const end = normalizeToTimeOnly(a.endTime);
+        return end.getTime() > max.getTime() ? end : max;
+      },
+      normalizeToTimeOnly(new Date(lastSchedule.timeTo)),
+    );
 
     // 9. Calcular endTime basado en la duración de la especialidad
     const durationMs = specialty.duration * 60 * 1000;
     const overbookEndTime = new Date(overbookStartTime.getTime() + durationMs);
+
+    // Anticipación mínima si el sobrecupo es para hoy (igual que en create)
+    if (dateOnly.getTime() === todayStart.getTime()) {
+      const now = nowInTimezone(tz);
+      const slotDateTime = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        overbookStartTime.getUTCHours(),
+        overbookStartTime.getUTCMinutes(),
+      );
+      if (slotDateTime.getTime() - now.getTime() < MIN_BOOKING_ANTICIPATION_MS) {
+        throw new BadRequestException(
+          'Debe haber al menos 2 horas de anticipación para crear un sobrecupo',
+        );
+      }
+    }
+
+    // Bloqueo de horario del doctor sobre el rango del sobrecupo
+    const isBlocked = await this.scheduleBlockRepository.isBlocked(
+      dto.doctorId,
+      appointmentDate,
+      overbookStartTime,
+      overbookEndTime,
+    );
+    if (isBlocked) {
+      throw new ConflictException(
+        'El doctor tiene un bloqueo de horario que cubre la fecha/hora del sobrecupo',
+      );
+    }
 
     // 10. Verificar límite y crear sobrecupo atómicamente (previene exceder maxOverbookPerDay)
     const appointment = await this.appointmentRepository.createOverbookAtomic(

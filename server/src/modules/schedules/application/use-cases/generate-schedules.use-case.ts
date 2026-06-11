@@ -173,11 +173,14 @@ export class GenerateSchedulesUseCase {
     const doctorClinicId = doctorClinicCache.get(doctorId) ?? null;
 
     if (dto.overwrite) {
+      // Si se regenera una sola especialidad, borrar solo sus schedules:
+      // sin el filtro desaparecían los de las demás especialidades.
       deleted =
         await this.scheduleRepository.deleteUnbookedByDoctorAndDateRange(
           doctorId,
           rangeStart,
           rangeEnd,
+          dto.specialtyId,
         );
     }
 

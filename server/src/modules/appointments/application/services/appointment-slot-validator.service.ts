@@ -28,13 +28,18 @@ export interface ValidateSlotParams {
   slotStart: Date;
   /** Hora de fin del slot solicitado (hora-only) */
   slotEnd: Date;
+  /** Duración configurada de la especialidad en minutos (specialty.duration) */
+  durationMinutes: number;
+  /** Descanso entre slots consecutivos en minutos (specialty.bufferMinutes) */
+  bufferMinutes?: number | null;
   /** clinicId del JWT; si se provee, valida que el doctor sea de la misma sede */
   jwtClinicId?: number | null;
 }
 
 /**
  * Centraliza las precondiciones de un slot para agendar/reagendar una cita:
- * rango del turno, fecha pasada, anticipación mínima, sede, feriado y bloqueo.
+ * rango del turno, duración y alineación a la grilla, fecha pasada,
+ * anticipación mínima, sede, feriado y bloqueo.
  *
  * Existe para que create y reschedule apliquen exactamente las mismas reglas
  * (reschedule las omitía → se podía reagendar a fechas pasadas, feriados o
@@ -63,6 +68,8 @@ export class AppointmentSlotValidatorService {
       schedTimeTo,
       slotStart,
       slotEnd,
+      durationMinutes,
+      bufferMinutes,
       jwtClinicId,
     } = params;
 
@@ -83,6 +90,26 @@ export class AppointmentSlotValidatorService {
       throw new BadRequestException(
         `El slot ${dateToTimeString(slotStart)}-${dateToTimeString(slotEnd)} está fuera del rango del turno ` +
           `${dateToTimeString(schedTimeFrom)}-${dateToTimeString(schedTimeTo)}`,
+      );
+    }
+
+    // ── Duración exacta y alineación a la grilla de la especialidad ──
+    if (!durationMinutes || durationMinutes <= 0) {
+      throw new BadRequestException(
+        'La especialidad no tiene una duración configurada',
+      );
+    }
+
+    if (slotEndMinutes - slotStartMinutes !== durationMinutes) {
+      throw new BadRequestException(
+        `El slot debe durar exactamente ${durationMinutes} minutos`,
+      );
+    }
+
+    const gridStep = durationMinutes + (bufferMinutes ?? 0);
+    if ((slotStartMinutes - schedFromMinutes) % gridStep !== 0) {
+      throw new BadRequestException(
+        'El slot no está alineado a la grilla de horarios de la especialidad',
       );
     }
 

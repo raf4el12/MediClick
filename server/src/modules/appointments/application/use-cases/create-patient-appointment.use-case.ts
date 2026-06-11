@@ -14,6 +14,7 @@ import {
   parseHHmm,
   dateToTimeString,
 } from '../../../../shared/utils/date-time.utils.js';
+import { getAppointmentPaymentTimeoutMs } from '../../../../shared/utils/payment-timeout.util.js';
 import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
 
 @Injectable()
@@ -27,14 +28,6 @@ export class CreatePatientAppointmentUseCase {
     private readonly scheduleRepository: IScheduleRepository,
     private readonly slotValidator: AppointmentSlotValidatorService,
   ) {}
-
-  /** Ventana para completar el pago antes de que la cita expire */
-  private getPaymentTimeoutMs(): number {
-    const minutes = Number(
-      process.env.APPOINTMENT_PAYMENT_TIMEOUT_MINUTES ?? '15',
-    );
-    return (Number.isFinite(minutes) && minutes > 0 ? minutes : 15) * 60 * 1000;
-  }
 
   async execute(
     userId: number,
@@ -64,8 +57,9 @@ export class CreatePatientAppointmentUseCase {
     const slotStart = parseHHmm(dto.startTime);
     const slotEnd = parseHHmm(dto.endTime);
 
-    // Precondiciones del slot (rango, fecha pasada, 2h, feriado, bloqueo).
-    // Sin jwtClinicId: el paciente puede reservar en cualquier sede.
+    // Precondiciones del slot (rango, duración/grilla, fecha pasada, 2h,
+    // feriado, bloqueo). Sin jwtClinicId: el paciente puede reservar en
+    // cualquier sede.
     const clinicId = await this.slotValidator.validate({
       doctorId: schedule.doctorId,
       scheduleDate: new Date(schedule.scheduleDate),
@@ -73,13 +67,17 @@ export class CreatePatientAppointmentUseCase {
       schedTimeTo: new Date(schedule.timeTo),
       slotStart,
       slotEnd,
+      durationMinutes: schedule.specialty.duration,
+      bufferMinutes: schedule.specialty.bufferMinutes,
     });
 
     // Verifica overlap y crea la cita en una sola transacción serializable.
     // El monto y el deadline de pago se escriben dentro de la misma transacción
     // para que la reserva sea atómica y no exista ventana de carrera (TOCTOU)
     // entre el chequeo de superposición y el create.
-    const pendingUntil = new Date(Date.now() + this.getPaymentTimeoutMs());
+    const pendingUntil = new Date(
+      Date.now() + getAppointmentPaymentTimeoutMs(),
+    );
     const appointment = await this.appointmentRepository.createWithOverlapCheck(
       {
         patientId: patient.id,

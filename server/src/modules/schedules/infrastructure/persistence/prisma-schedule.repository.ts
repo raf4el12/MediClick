@@ -23,7 +23,15 @@ const scheduleInclude = {
       clinic: { select: { timezone: true } },
     },
   },
-  specialty: { select: { id: true, name: true, price: true } },
+  specialty: {
+    select: {
+      id: true,
+      name: true,
+      price: true,
+      duration: true,
+      bufferMinutes: true,
+    },
+  },
 } as const;
 
 @Injectable()
@@ -154,10 +162,12 @@ export class PrismaScheduleRepository implements IScheduleRepository {
     doctorId: number,
     dateFrom: Date,
     dateTo: Date,
+    specialtyId?: number,
   ): Promise<number> {
     const result = await this.prisma.schedules.deleteMany({
       where: {
         doctorId,
+        ...(specialtyId && { specialtyId }),
         scheduleDate: { gte: dateFrom, lte: dateTo },
         // Solo eliminar los que NO tienen citas activas
         appointments: {

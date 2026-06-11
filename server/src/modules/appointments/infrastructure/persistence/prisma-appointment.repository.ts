@@ -460,6 +460,12 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
             ...(data.scheduleId && { scheduleId: data.scheduleId }),
             ...(data.startTime && { startTime: data.startTime }),
             ...(data.endTime && { endTime: data.endTime }),
+            ...(data.pendingUntil !== undefined && {
+              pendingUntil: data.pendingUntil,
+            }),
+            ...(data.reminderSent !== undefined && {
+              reminderSent: data.reminderSent,
+            }),
             updatedAt: data.updatedAt ?? new Date(),
           },
           include: appointmentInclude,
@@ -496,6 +502,21 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         if (currentOverbooks >= maxOverbookPerDay) {
           throw new ConflictException(
             `Se alcanzó el límite de sobrecupos (${maxOverbookPerDay}) para este doctor en esta fecha`,
+          );
+        }
+
+        const overlap = await tx.appointments.count({
+          where: this.buildDoctorOverlapWhere(
+            doctorId,
+            date,
+            data.startTime,
+            data.endTime,
+          ),
+        });
+
+        if (overlap > 0) {
+          throw new ConflictException(
+            'Ya existe una cita que se superpone con el horario del sobrecupo',
           );
         }
 

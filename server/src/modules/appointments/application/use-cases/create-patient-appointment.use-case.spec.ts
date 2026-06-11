@@ -42,7 +42,13 @@ describe('CreatePatientAppointmentUseCase — TDD', () => {
       profile: { name: 'Dr', lastName: 'House' },
       clinic: { timezone: 'America/Lima' },
     },
-    specialty: { id: 2, name: 'Medicina', price: 120 },
+    specialty: {
+      id: 2,
+      name: 'Medicina',
+      price: 120,
+      duration: 30,
+      bufferMinutes: 0,
+    },
     ...overrides,
   });
 
@@ -160,7 +166,15 @@ describe('CreatePatientAppointmentUseCase — TDD', () => {
 
   it('RED→GREEN: lanza BadRequestException si la especialidad no tiene precio', async () => {
     scheduleRepository.findById.mockResolvedValue(
-      buildSchedule({ specialty: { id: 2, name: 'Medicina', price: 0 } }),
+      buildSchedule({
+        specialty: {
+          id: 2,
+          name: 'Medicina',
+          price: 0,
+          duration: 30,
+          bufferMinutes: 0,
+        },
+      }),
     );
 
     await expect(useCase.execute(42, dto)).rejects.toThrow(BadRequestException);
@@ -168,7 +182,15 @@ describe('CreatePatientAppointmentUseCase — TDD', () => {
 
   it('RED→GREEN: lanza BadRequestException si el precio de especialidad es null', async () => {
     scheduleRepository.findById.mockResolvedValue(
-      buildSchedule({ specialty: { id: 2, name: 'Medicina', price: null } }),
+      buildSchedule({
+        specialty: {
+          id: 2,
+          name: 'Medicina',
+          price: null,
+          duration: 30,
+          bufferMinutes: 0,
+        },
+      }),
     );
 
     await expect(useCase.execute(42, dto)).rejects.toThrow(BadRequestException);
@@ -186,6 +208,8 @@ describe('CreatePatientAppointmentUseCase — TDD', () => {
       schedTimeTo: new Date('1970-01-01T17:00:00.000Z'),
       slotStart: expect.any(Date),
       slotEnd: expect.any(Date),
+      durationMinutes: 30,
+      bufferMinutes: 0,
     });
   });
 

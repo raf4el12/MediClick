@@ -45,8 +45,8 @@ export class CreateAppointmentUseCase {
     const slotStart = parseHHmm(dto.startTime);
     const slotEnd = parseHHmm(dto.endTime);
 
-    // Precondiciones del slot (rango, fecha pasada, 2h, sede, feriado, bloqueo).
-    // Retorna el clinicId del doctor para asociarlo a la cita.
+    // Precondiciones del slot (rango, duración/grilla, fecha pasada, 2h, sede,
+    // feriado, bloqueo). Retorna el clinicId del doctor para asociarlo a la cita.
     const doctorClinicId = await this.slotValidator.validate({
       doctorId: schedule.doctorId,
       scheduleDate: new Date(schedule.scheduleDate),
@@ -54,6 +54,8 @@ export class CreateAppointmentUseCase {
       schedTimeTo: new Date(schedule.timeTo),
       slotStart,
       slotEnd,
+      durationMinutes: schedule.specialty.duration,
+      bufferMinutes: schedule.specialty.bufferMinutes,
       jwtClinicId,
     });
 

@@ -12,7 +12,13 @@ export interface ScheduleWithRelations {
     profile: { name: string; lastName: string };
     clinic: { timezone: string } | null;
   };
-  specialty: { id: number; name: string; price: number | null };
+  specialty: {
+    id: number;
+    name: string;
+    price: number | null;
+    duration: number;
+    bufferMinutes: number | null;
+  };
 }
 
 export interface CreateScheduleData {
