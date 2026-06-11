@@ -13,6 +13,7 @@ import {
   nowInTimezone,
   todayStartInTimezone,
   scheduleDateToLocalDay,
+  MIN_BOOKING_ANTICIPATION_MS,
 } from '../../../../shared/utils/date-time.utils.js';
 import { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
 
@@ -42,9 +43,6 @@ export interface ValidateSlotParams {
  */
 @Injectable()
 export class AppointmentSlotValidatorService {
-  /** Buffer mínimo en milisegundos (2 horas) */
-  private static readonly MIN_BUFFER_MS = 2 * 60 * 60 * 1000;
-
   constructor(
     @Inject('IHolidayRepository')
     private readonly holidayRepository: IHolidayRepository,
@@ -109,7 +107,7 @@ export class AppointmentSlotValidatorService {
         slotStart.getUTCMinutes(),
       );
       const diff = scheduleDateTime.getTime() - now.getTime();
-      if (diff < AppointmentSlotValidatorService.MIN_BUFFER_MS) {
+      if (diff < MIN_BOOKING_ANTICIPATION_MS) {
         throw new BadRequestException(
           'Debe haber al menos 2 horas de anticipación para agendar una cita',
         );

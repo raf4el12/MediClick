@@ -15,7 +15,7 @@
 | 3 | Cita PENDING+FAILED nunca expira (slot zombi) | Slot bloqueado para siempre | Bajo | ✅ Hecho |
 | 4 | Reagendar no valida feriados, bloqueos, fecha, sede | Citas en días inválidos | Medio | ✅ Hecho |
 | 5 | Bloqueo/feriado no cancela citas ya reservadas | Citas activas en días vetados | Medio | ✅ Hecho |
-| 6 | Slots mostrados no filtran feriados/bloqueos/anticipación | Falsa disponibilidad al paciente | Bajo | 🟠 Alto |
+| 6 | Slots mostrados no filtran feriados/bloqueos/anticipación | Falsa disponibilidad al paciente | Bajo | ✅ Hecho |
 | 7 | Duración del slot no se valida al reservar | Grilla desalineada, slots gigantes | Medio | 🟡 Medio |
 | 8 | Reagendar no resetea `pendingUntil` ni `reminderSent` | Cita re-cancelada o sin recordatorio | Bajo | 🟡 Medio |
 | 9 | Sobrecupo pisa slots libres y omite validaciones | Turno libre robado | Medio | 🟡 Medio |
@@ -150,17 +150,21 @@
 
 ---
 
-### #6 · Slots mostrados al paciente no filtran feriados, bloqueos ni anticipación
+### #6 · Slots mostrados al paciente no filtran feriados, bloqueos ni anticipación — ✅ Hecho (junio 2026)
 
 **Problema:** `get-available-time-slots.use-case.ts` solo cruza con citas existentes. El paciente ve slots "disponibles" en feriados, durante bloqueos del doctor y en la ventana de 2 horas (hoy). Al intentar reservar recibe el error, pero ya eligió un slot que nunca debió mostrarse.
 
-**Fix:** en `GetAvailableTimeSlotsUseCase.execute` agregar:
-1. Check `isHoliday` para la fecha pedida.
-2. `scheduleBlockRepository.findActiveByDoctorAndDateRange` para filtrar slots bloqueados.
-3. Para fecha = hoy, filtrar slots cuyo `startTime` esté dentro de las próximas 2 horas.
+**Fix aplicado:** `GetAvailableTimeSlotsUseCase.execute` ahora aplica las mismas reglas que el `AppointmentSlotValidatorService`:
+1. Fecha pasada o feriado (`isHoliday` global o de la sede del doctor) → retorna `[]` (día sin atención).
+2. Bloqueos vía `findActiveByDoctorAndDateRange`: FULL_DAY cubre todo el día; TIME_RANGE se cruza con `timeRangesOverlap`. Slots afectados quedan `available: false`, igual que los ocupados.
+3. Para fecha = hoy (en la timezone de la sede), slots cuyo `startTime` cae dentro de la ventana de anticipación quedan `available: false`. La constante de 2 horas se extrajo a `MIN_BOOKING_ANTICIPATION_MS` en `date-time.utils.ts`, compartida con el validador para que el listado y la reserva nunca deriven.
+
+Spec nuevo con 10 tests (feriado, bloqueo por rango, día completo, anticipación con fake timers, fecha pasada).
 
 **Archivos:**
-- `server/src/modules/schedules/application/use-cases/get-available-time-slots.use-case.ts`
+- `server/src/modules/schedules/application/use-cases/get-available-time-slots.use-case.ts` (+spec)
+- `server/src/shared/utils/date-time.utils.ts` — `MIN_BOOKING_ANTICIPATION_MS`
+- `server/src/modules/appointments/application/services/appointment-slot-validator.service.ts` — usa la constante compartida
 
 ---
 

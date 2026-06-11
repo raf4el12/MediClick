@@ -12,6 +12,12 @@
  * al validar anticipación mínima o fechas pasadas.
  */
 
+/**
+ * Anticipación mínima para reservar un slot (2 horas). Compartida entre el
+ * validador de citas y el listado de slots para que muestren la misma regla.
+ */
+export const MIN_BOOKING_ANTICIPATION_MS = 2 * 60 * 60 * 1000;
+
 // ── Conversión HH:mm ↔ Date UTC ──
 
 /**
