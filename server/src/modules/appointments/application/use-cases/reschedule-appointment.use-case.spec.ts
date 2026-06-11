@@ -225,7 +225,73 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
     await expect(useCase.execute(10, dto)).rejects.toThrow(ConflictException);
   });
 
-  // ── Iteración TDD 6: Verificación de argumentos al repositorio ────────────
+  // ── Iteración TDD 6: pendingUntil y reminderSent (huequecito #8) ──────────
+
+  it('cita pagada: conserva su estado y queda sin deadline de pago', async () => {
+    appointmentRepository.findById.mockResolvedValue(
+      buildAppointment({
+        status: AppointmentStatus.CONFIRMED,
+        paymentStatus: 'PAID',
+        pendingUntil: new Date('2026-01-01T00:00:00.000Z'),
+      }),
+    );
+
+    await useCase.execute(10, dto);
+
+    expect(appointmentRepository.rescheduleWithOverlapCheck).toHaveBeenCalledWith(
+      10,
+      expect.objectContaining({
+        status: AppointmentStatus.CONFIRMED,
+        pendingUntil: null,
+      }),
+      99,
+      expect.any(Date),
+      expect.any(Date),
+    );
+  });
+
+  it('cita impaga con deadline: renueva pendingUntil hacia el futuro (el cron no la cancela al minuto)', async () => {
+    appointmentRepository.findById.mockResolvedValue(
+      buildAppointment({
+        paymentStatus: 'PENDING',
+        pendingUntil: new Date('2020-01-01T00:00:00.000Z'),
+      }),
+    );
+
+    await useCase.execute(10, dto);
+
+    const data =
+      appointmentRepository.rescheduleWithOverlapCheck.mock.calls[0][1];
+    expect(data.status).toBe(AppointmentStatus.PENDING);
+    expect(data.pendingUntil).toBeInstanceOf(Date);
+    expect((data.pendingUntil as Date).getTime()).toBeGreaterThan(Date.now());
+  });
+
+  it('cita de staff (sin pago online): no se le asigna deadline de pago', async () => {
+    await useCase.execute(10, dto);
+
+    expect(appointmentRepository.rescheduleWithOverlapCheck).toHaveBeenCalledWith(
+      10,
+      expect.objectContaining({ pendingUntil: null }),
+      99,
+      expect.any(Date),
+      expect.any(Date),
+    );
+  });
+
+  it('resetea reminderSent para que la nueva fecha reciba recordatorio', async () => {
+    await useCase.execute(10, dto);
+
+    expect(appointmentRepository.rescheduleWithOverlapCheck).toHaveBeenCalledWith(
+      10,
+      expect.objectContaining({ reminderSent: false }),
+      99,
+      expect.any(Date),
+      expect.any(Date),
+    );
+  });
+
+  // ── Iteración TDD 7: Verificación de argumentos al repositorio ────────────
 
   it('no invoca rescheduleWithOverlapCheck si la cita está en estado COMPLETED', async () => {
     appointmentRepository.findById.mockResolvedValue(

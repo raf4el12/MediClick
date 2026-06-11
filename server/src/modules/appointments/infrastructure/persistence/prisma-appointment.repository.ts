@@ -460,6 +460,12 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
             ...(data.scheduleId && { scheduleId: data.scheduleId }),
             ...(data.startTime && { startTime: data.startTime }),
             ...(data.endTime && { endTime: data.endTime }),
+            ...(data.pendingUntil !== undefined && {
+              pendingUntil: data.pendingUntil,
+            }),
+            ...(data.reminderSent !== undefined && {
+              reminderSent: data.reminderSent,
+            }),
             updatedAt: data.updatedAt ?? new Date(),
           },
           include: appointmentInclude,

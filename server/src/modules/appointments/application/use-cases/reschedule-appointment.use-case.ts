@@ -14,6 +14,7 @@ import {
   parseHHmm,
   dateToTimeString,
 } from '../../../../shared/utils/date-time.utils.js';
+import { getAppointmentPaymentTimeoutMs } from '../../../../shared/utils/payment-timeout.util.js';
 import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
 
 @Injectable()
@@ -72,6 +73,18 @@ export class RescheduleAppointmentUseCase {
       jwtClinicId,
     });
 
+    // Una cita pagada conserva su estado (no vuelve a PENDING sin que nadie
+    // la re-confirme) y no lleva deadline de pago.
+    const isPaid = appointment.paymentStatus === 'PAID';
+
+    // Solo se renueva el deadline si la cita ya tenía uno (reserva con pago
+    // online). Las citas de staff tienen pendingUntil null y ponérselo aquí
+    // haría que el cron de expiración las cancele.
+    const pendingUntil =
+      !isPaid && appointment.pendingUntil
+        ? new Date(Date.now() + getAppointmentPaymentTimeoutMs())
+        : null;
+
     // Verificar superposición y reagendar atómicamente (previene double-booking)
     const updated = await this.appointmentRepository.rescheduleWithOverlapCheck(
       id,
@@ -79,7 +92,9 @@ export class RescheduleAppointmentUseCase {
         scheduleId: dto.newScheduleId,
         startTime: newStartTime,
         endTime: newEndTime,
-        status: AppointmentStatus.PENDING,
+        status: isPaid ? appointment.status : AppointmentStatus.PENDING,
+        pendingUntil,
+        reminderSent: false,
         updatedAt: new Date(),
       },
       dto.newScheduleId,

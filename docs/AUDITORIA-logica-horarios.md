@@ -17,7 +17,7 @@
 | 5 | Bloqueo/feriado no cancela citas ya reservadas | Citas activas en días vetados | Medio | ✅ Hecho |
 | 6 | Slots mostrados no filtran feriados/bloqueos/anticipación | Falsa disponibilidad al paciente | Bajo | ✅ Hecho |
 | 7 | Duración del slot no se valida al reservar | Grilla desalineada, slots gigantes | Medio | ✅ Hecho |
-| 8 | Reagendar no resetea `pendingUntil` ni `reminderSent` | Cita re-cancelada o sin recordatorio | Bajo | 🟡 Medio |
+| 8 | Reagendar no resetea `pendingUntil` ni `reminderSent` | Cita re-cancelada o sin recordatorio | Bajo | ✅ Hecho |
 | 9 | Sobrecupo pisa slots libres y omite validaciones | Turno libre robado | Medio | 🟡 Medio |
 | 10 | `overwrite` borra especialidades que no regenera | Pérdida de schedules | Bajo | 🟡 Medio |
 | 11 | Liberación de slot ciega a waitlist en 3 de 4 flujos | Cupos no reoferecidos | Medio | 🟡 Medio |
@@ -189,18 +189,23 @@ El `scheduleInclude` del repo de schedules ahora trae `specialty.duration`/`buff
 
 ---
 
-### #8 · Reagendar deja `pendingUntil` y `reminderSent` en estado viejo
+### #8 · Reagendar deja `pendingUntil` y `reminderSent` en estado viejo — ✅ Hecho (junio 2026)
 
 **Problema:** `reschedule` fuerza `status: PENDING` pero no actualiza `pendingUntil`. Si la cita tenía un deadline de pago viejo, el cron la cancela al minuto siguiente. Una cita pagada (CONFIRMED) reagendada vuelve a PENDING sin que nadie la re-confirme. `reminderSent = true` no se resetea, por lo que la cita en la nueva fecha no recibirá recordatorio.
 
-**Fix:** en `rescheduleWithOverlapCheck`, agregar:
-- `pendingUntil: new Date(Date.now() + paymentTimeoutMs)` si el nuevo estado es PENDING y hay pago pendiente; `null` si estaba pagada (conservar CONFIRMED).
-- `reminderSent: false` siempre.
-- Conservar `status: CONFIRMED` si la cita ya fue pagada.
+**Fix aplicado:** en el use-case de reschedule:
+- Cita pagada (`paymentStatus: PAID`): conserva su estado actual (CONFIRMED no vuelve a PENDING) y `pendingUntil: null`.
+- Cita impaga **con deadline previo** (reserva con pago online): `pendingUntil` se renueva con el timeout de pago y vuelve a PENDING.
+- Cita impaga **sin deadline** (flujo staff, sin pago online): `pendingUntil` queda null — asignarle uno haría que el cron de expiración la cancele.
+- `reminderSent: false` siempre, para que la nueva fecha reciba recordatorio.
+
+El timeout de pago se extrajo a `getAppointmentPaymentTimeoutMs()` en `shared/utils/payment-timeout.util.ts` (estaba duplicado en `create-patient-appointment` y `accept-offer`; reschedule era la tercera copia). `UpdateAppointmentData` y el update de `rescheduleWithOverlapCheck` aceptan ahora `pendingUntil`/`reminderSent` (con check `!== undefined` para poder escribir null).
 
 **Archivos:**
+- `server/src/modules/appointments/application/use-cases/reschedule-appointment.use-case.ts` (+spec: 4 tests nuevos)
 - `server/src/modules/appointments/infrastructure/persistence/prisma-appointment.repository.ts` — `rescheduleWithOverlapCheck`
-- `server/src/modules/appointments/application/use-cases/reschedule-appointment.use-case.ts`
+- `server/src/modules/appointments/domain/interfaces/appointment-data.interface.ts` — `UpdateAppointmentData`
+- `server/src/shared/utils/payment-timeout.util.ts` — helper compartido (refactor en `create-patient-appointment` y `accept-offer`)
 
 ---
 

@@ -20,6 +20,8 @@ export interface UpdateAppointmentData {
   startTime?: Date;
   endTime?: Date;
   notes?: string;
+  pendingUntil?: Date | null;
+  reminderSent?: boolean;
   updatedAt?: Date;
 }
 
