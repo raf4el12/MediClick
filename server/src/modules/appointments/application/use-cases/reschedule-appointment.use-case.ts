@@ -4,6 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { RescheduleAppointmentDto } from '../dto/reschedule-appointment.dto.js';
 import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
@@ -13,8 +14,11 @@ import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-s
 import {
   parseHHmm,
   dateToTimeString,
+  toMinutesUTC,
 } from '../../../../shared/utils/date-time.utils.js';
 import { getAppointmentPaymentTimeoutMs } from '../../../../shared/utils/payment-timeout.util.js';
+import { SLOT_RELEASED_EVENT } from '../../../../shared/events/availability-events.interface.js';
+import { buildSlotReleasedEvent } from '../services/appointment-event.builder.js';
 import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
 
 @Injectable()
@@ -25,6 +29,7 @@ export class RescheduleAppointmentUseCase {
     @Inject('IScheduleRepository')
     private readonly scheduleRepository: IScheduleRepository,
     private readonly slotValidator: AppointmentSlotValidatorService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(
@@ -101,6 +106,19 @@ export class RescheduleAppointmentUseCase {
       newStartTime,
       newEndTime,
     );
+
+    // El slot viejo quedó libre: reofrecerlo a la waitlist (salvo que el
+    // reagendamiento haya quedado en el mismo slot).
+    const slotChanged =
+      appointment.scheduleId !== dto.newScheduleId ||
+      toMinutesUTC(appointment.startTime) !== toMinutesUTC(newStartTime) ||
+      toMinutesUTC(appointment.endTime) !== toMinutesUTC(newEndTime);
+    if (slotChanged) {
+      this.eventEmitter.emit(
+        SLOT_RELEASED_EVENT,
+        buildSlotReleasedEvent(appointment),
+      );
+    }
 
     return this.toResponse(updated);
   }

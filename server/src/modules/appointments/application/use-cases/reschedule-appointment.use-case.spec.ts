@@ -18,6 +18,7 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
   >;
   let scheduleRepository: jest.Mocked<Pick<IScheduleRepository, 'findById'>>;
   let slotValidator: jest.Mocked<Pick<AppointmentSlotValidatorService, 'validate'>>;
+  let eventEmitter: { emit: jest.Mock };
 
   const buildAppointment = (
     overrides: Partial<AppointmentWithRelations> = {},
@@ -112,11 +113,13 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
     slotValidator = {
       validate: jest.fn().mockResolvedValue(7),
     };
+    eventEmitter = { emit: jest.fn() };
 
     useCase = new RescheduleAppointmentUseCase(
       appointmentRepository as any,
       scheduleRepository as any,
       slotValidator as any,
+      eventEmitter as any,
     );
   });
 
@@ -291,7 +294,46 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
     );
   });
 
-  // ── Iteración TDD 7: Verificación de argumentos al repositorio ────────────
+  // ── Iteración TDD 7: Slot viejo liberado → waitlist (huequecito #11) ──────
+
+  it('emite slot_released con los datos del slot VIEJO al reagendar', async () => {
+    await useCase.execute(10, dto);
+
+    expect(eventEmitter.emit).toHaveBeenCalledWith(
+      'appointment.slot_released',
+      expect.objectContaining({
+        appointmentId: 10,
+        scheduleId: 5,
+        startTime: new Date('1970-01-01T09:00:00.000Z'),
+        endTime: new Date('1970-01-01T09:30:00.000Z'),
+      }),
+    );
+  });
+
+  it('no emite slot_released si el reagendamiento quedó en el mismo slot', async () => {
+    appointmentRepository.findById.mockResolvedValue(
+      buildAppointment({
+        scheduleId: 99,
+        startTime: new Date('1970-01-01T10:00:00.000Z'),
+        endTime: new Date('1970-01-01T10:30:00.000Z'),
+      }),
+    );
+
+    await useCase.execute(10, dto);
+
+    expect(eventEmitter.emit).not.toHaveBeenCalled();
+  });
+
+  it('no emite slot_released si el reagendamiento falla por superposición', async () => {
+    appointmentRepository.rescheduleWithOverlapCheck.mockRejectedValue(
+      new ConflictException('superposición'),
+    );
+
+    await expect(useCase.execute(10, dto)).rejects.toThrow(ConflictException);
+    expect(eventEmitter.emit).not.toHaveBeenCalled();
+  });
+
+  // ── Iteración TDD 8: Verificación de argumentos al repositorio ────────────
 
   it('no invoca rescheduleWithOverlapCheck si la cita está en estado COMPLETED', async () => {
     appointmentRepository.findById.mockResolvedValue(

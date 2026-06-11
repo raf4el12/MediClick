@@ -69,6 +69,15 @@ export interface AppointmentWithRelations {
   };
 }
 
+/** Slot liberado por una cita expirada (datos mínimos para la waitlist). */
+export interface ExpiredAppointmentSlot {
+  id: number;
+  scheduleId: number;
+  startTime: Date;
+  endTime: Date;
+  clinicId: number | null;
+}
+
 export interface DashboardFilters {
   dateFrom?: Date;
   dateTo?: Date;

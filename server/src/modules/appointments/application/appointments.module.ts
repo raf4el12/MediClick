@@ -19,6 +19,7 @@ import { CreateOverbookAppointmentUseCase } from './use-cases/create-overbook-ap
 import { CompleteAppointmentUseCase } from './use-cases/complete-appointment.use-case.js';
 import { GetMyAppointmentsUseCase } from './use-cases/get-my-appointments.use-case.js';
 import { CreatePatientAppointmentUseCase } from './use-cases/create-patient-appointment.use-case.js';
+import { ExpirePendingAppointmentsUseCase } from './use-cases/expire-pending-appointments.use-case.js';
 import { AppointmentSlotValidatorService } from './services/appointment-slot-validator.service.js';
 import { AvailabilityChangeListener } from './listeners/availability-change.listener.js';
 import { AppointmentController } from '../interfaces/controllers/appointment.controller.js';
@@ -51,6 +52,7 @@ import { AppointmentController } from '../interfaces/controllers/appointment.con
     CompleteAppointmentUseCase,
     GetMyAppointmentsUseCase,
     CreatePatientAppointmentUseCase,
+    ExpirePendingAppointmentsUseCase,
     AppointmentSlotValidatorService,
     AvailabilityChangeListener,
   ],
