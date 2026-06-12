@@ -109,6 +109,9 @@ export class PrismaAvailabilityRepository implements IAvailabilityRepository {
         doctorId,
         dayOfWeek,
         isAvailable: true,
+        // Las EXCEPTION son sustractivas (suprimen slots, no los generan):
+        // no cuentan como solapamiento para reglas REGULAR/EXTRA nuevas.
+        type: { not: 'EXCEPTION' },
         ...(excludeId && { id: { not: excludeId } }),
         // Time overlap: existente.timeFrom < nuevo.timeTo AND existente.timeTo > nuevo.timeFrom
         timeFrom: { lt: timeTo },

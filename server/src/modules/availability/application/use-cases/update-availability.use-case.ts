@@ -9,6 +9,7 @@ import {
 import { UpdateAvailabilityDto } from '../dto/update-availability.dto.js';
 import { AvailabilityResponseDto } from '../dto/availability-response.dto.js';
 import type { IAvailabilityRepository } from '../../domain/repositories/availability.repository.js';
+import { AvailabilityType } from '../../../../shared/domain/enums/availability-type.enum.js';
 import type { UpdateAvailabilityData } from '../../domain/interfaces/availability-data.interface.js';
 import { ScheduleRegenerationService } from '../../../schedules/domain/services/schedule-regeneration.service.js';
 import {
@@ -57,7 +58,13 @@ export class UpdateAvailabilityUseCase {
       );
     }
 
-    if (dto.timeFrom || dto.timeTo) {
+    // Una EXCEPTION se superpone por diseño con la regla que suprime,
+    // así que no pasa por la validación de solapamiento.
+    const effectiveType = updateData.type ?? existing.type;
+    if (
+      (dto.timeFrom || dto.timeTo) &&
+      effectiveType !== AvailabilityType.EXCEPTION
+    ) {
       const newStartDate = updateData.startDate ?? existing.startDate;
       const newEndDate = updateData.endDate ?? existing.endDate;
 

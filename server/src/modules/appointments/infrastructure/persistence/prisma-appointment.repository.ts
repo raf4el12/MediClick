@@ -262,6 +262,29 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     };
   }
 
+  /**
+   * Overlap de agenda del PACIENTE: citas activas del mismo paciente en la
+   * misma fecha que se superpongan en horario (con cualquier doctor).
+   */
+  private buildPatientOverlapWhere(
+    patientId: number,
+    scheduleDate: Date,
+    startTime: Date,
+    endTime: Date,
+    excludeId?: number,
+  ): Prisma.AppointmentsWhereInput {
+    const { start, end } = utcDayRange(scheduleDate);
+    return {
+      deleted: false,
+      patientId,
+      status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+      startTime: { lt: endTime },
+      endTime: { gt: startTime },
+      schedule: { scheduleDate: { gte: start, lt: end } },
+      ...(excludeId && { id: { not: excludeId } }),
+    };
+  }
+
   async hasOverlappingAppointment(
     scheduleId: number,
     startTime: Date,
@@ -400,6 +423,21 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
           );
         }
 
+        const patientOverlap = await tx.appointments.count({
+          where: this.buildPatientOverlapWhere(
+            data.patientId,
+            schedule.scheduleDate,
+            startTime,
+            endTime,
+          ),
+        });
+
+        if (patientOverlap > 0) {
+          throw new ConflictException(
+            'El paciente ya tiene otra cita que se superpone en ese horario',
+          );
+        }
+
         const result = await tx.appointments.create({
           data: {
             patientId: data.patientId,
@@ -451,6 +489,30 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         if (overlap > 0) {
           throw new ConflictException(
             'Ya existe una cita que se superpone con el horario seleccionado',
+          );
+        }
+
+        const current = await tx.appointments.findUnique({
+          where: { id },
+          select: { patientId: true },
+        });
+        if (!current) {
+          throw new ConflictException('La cita ya no existe');
+        }
+
+        const patientOverlap = await tx.appointments.count({
+          where: this.buildPatientOverlapWhere(
+            current.patientId,
+            schedule.scheduleDate,
+            startTime,
+            endTime,
+            id,
+          ),
+        });
+
+        if (patientOverlap > 0) {
+          throw new ConflictException(
+            'El paciente ya tiene otra cita que se superpone en ese horario',
           );
         }
 
@@ -554,6 +616,21 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         if (overlap > 0) {
           throw new ConflictException(
             'Ya existe una cita que se superpone con el horario del sobrecupo',
+          );
+        }
+
+        const patientOverlap = await tx.appointments.count({
+          where: this.buildPatientOverlapWhere(
+            data.patientId,
+            date,
+            data.startTime,
+            data.endTime,
+          ),
+        });
+
+        if (patientOverlap > 0) {
+          throw new ConflictException(
+            'El paciente ya tiene otra cita que se superpone en ese horario',
           );
         }
 
