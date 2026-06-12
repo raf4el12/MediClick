@@ -22,7 +22,7 @@
 | 10 | `overwrite` borra especialidades que no regenera | Pérdida de schedules | Bajo | ✅ Hecho |
 | 11 | Liberación de slot ciega a waitlist en 3 de 4 flujos | Cupos no reoferecidos | Medio | ✅ Hecho |
 | 12 | `NO_SHOW` inalcanzable desde la API | Reportes incorrectos | Bajo | ✅ Hecho |
-| 13 | `AvailabilityType` EXCEPTION/EXTRA no aplica | Excepciones de horario no funcionan | Medio | 🟢 Bajo |
+| 13 | `AvailabilityType` EXCEPTION/EXTRA no aplica | Excepciones de horario no funcionan | Medio | ✅ Hecho |
 | 14 | Paciente puede tener dos citas simultáneas | Conflicto de agenda del paciente | Bajo | 🟢 Bajo |
 | 15 | `cancellationFee` se guarda pero nunca se cobra | Penalización inoperante | Medio | 🟢 Bajo |
 
@@ -275,17 +275,21 @@ Refactors absorbidos de la revisión SOLID de fixes #1–#5:
 
 ---
 
-### #13 · `AvailabilityType` EXCEPTION y EXTRA no afectan la generación de schedules
+### #13 · `AvailabilityType` EXCEPTION y EXTRA no afectan la generación de schedules — ✅ Hecho (junio 2026)
 
-**Problema:** `generate-schedules.use-case.ts:258-264` filtra availabilities solo por `dayOfWeek + isAvailable`. Una EXCEPTION con `isAvailable: false` no resta la regla REGULAR del mismo día — el tipo es cosmético. Tampoco es posible una disponibilidad de un solo día (`startDate >= endDate` rechazado en create).
+**Problema:** la generación filtraba availabilities solo por `dayOfWeek + isAvailable`. Una EXCEPTION no restaba la regla REGULAR del mismo día — el tipo era cosmético. Tampoco era posible una disponibilidad de un solo día (`startDate >= endDate` rechazado en create).
 
-**Fix:**
-1. En la generación, resolver la regla final por día priorizando EXCEPTION sobre REGULAR (la EXCEPTION con `isAvailable: false` para ese día cancela la REGULAR).
-2. Cambiar la validación en `create-availability.use-case.ts` de `>=` a `>` para permitir mismo día de inicio y fin.
+**Fix aplicado (variación sobre lo propuesto):** el doc proponía modelar la cancelación con `isAvailable: false`, pero ese campo está sobrecargado como flag de borrado lógico (`softDelete` lo pone en false y todos los queries filtran `isAvailable: true`), así que la semántica quedó en el tipo:
+- **EXCEPTION es sustractiva por sí misma**: dentro de su vigencia (fecha + día + rango horario) suprime los slots de su especialidad que se solapen; nunca genera slots. Misma mecánica slot a slot que los bloqueos TIME_RANGE.
+- **EXTRA sigue siendo aditiva** (ya funcionaba como regla con rango de fechas).
+- `create-availability` permite vigencia de un solo día (`>` en vez de `>=`) — necesario para excepciones puntuales.
+- La EXCEPTION no pasa por la validación de solapamiento (pisa la regla por diseño), ni en create ni en update; y `findOverlapping` excluye las EXCEPTION para que una regla aditiva nueva no choque contra una sustractiva.
 
 **Archivos:**
-- `server/src/modules/schedules/application/use-cases/generate-schedules.use-case.ts`
-- `server/src/modules/availability/application/use-cases/create-availability.use-case.ts`
+- `server/src/modules/schedules/application/use-cases/generate-schedules.use-case.ts` (+3 tests)
+- `server/src/modules/availability/application/use-cases/create-availability.use-case.ts` (+spec nuevo: 4 tests)
+- `server/src/modules/availability/application/use-cases/update-availability.use-case.ts`
+- `server/src/modules/availability/infrastructure/persistence/prisma-availability.repository.ts` — `findOverlapping`
 
 ---
 

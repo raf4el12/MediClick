@@ -25,16 +25,18 @@ describe('GenerateSchedulesUseCase — overwrite', () => {
     DayOfWeek.SATURDAY,
   ];
 
-  const buildRule = (specialtyId: number) => ({
+  const buildRule = (specialtyId: number, overrides: any = {}) => ({
     doctorId: 3,
     specialtyId,
     dayOfWeek: DAYS[new Date(`${DATE}T00:00:00.000Z`).getUTCDay()],
     isAvailable: true,
+    type: 'REGULAR',
     startDate: null,
     endDate: null,
     timeFrom: new Date('1970-01-01T08:00:00.000Z'),
     timeTo: new Date('1970-01-01T09:00:00.000Z'),
     clinicId: 7,
+    ...overrides,
   });
 
   const dto = {
@@ -112,5 +114,52 @@ describe('GenerateSchedulesUseCase — overwrite', () => {
     const created = scheduleRepository.createMany.mock.calls[0][0];
     expect(created.length).toBeGreaterThan(0);
     expect(created.every((s: any) => s.specialtyId === 2)).toBe(true);
+  });
+
+  // ── EXCEPTION sustractiva (huequecito #13) ─────────────────────────────────
+
+  it('EXCEPTION suprime los slots de su especialidad que solapan su horario', async () => {
+    availabilityRepository.findActiveByDoctorIds.mockResolvedValue([
+      buildRule(2), // REGULAR 08:00-09:00 → slots 08:00 y 08:30
+      buildRule(2, {
+        type: 'EXCEPTION',
+        timeFrom: new Date('1970-01-01T08:00:00.000Z'),
+        timeTo: new Date('1970-01-01T08:30:00.000Z'),
+      }),
+    ]);
+
+    const result = await useCase.execute(dto);
+
+    const created = scheduleRepository.createMany.mock.calls[0][0];
+    expect(created).toHaveLength(1);
+    expect(created[0].timeFrom).toEqual(new Date('1970-01-01T08:30:00.000Z'));
+    expect(result.skipped).toBe(1);
+  });
+
+  it('EXCEPTION de otra especialidad no suprime los slots', async () => {
+    availabilityRepository.findActiveByDoctorIds.mockResolvedValue([
+      buildRule(2),
+      buildRule(9, {
+        type: 'EXCEPTION',
+        timeFrom: new Date('1970-01-01T08:00:00.000Z'),
+        timeTo: new Date('1970-01-01T09:00:00.000Z'),
+      }),
+    ]);
+
+    await useCase.execute(dto);
+
+    const created = scheduleRepository.createMany.mock.calls[0][0];
+    expect(created).toHaveLength(2);
+  });
+
+  it('una EXCEPTION sola no genera slots', async () => {
+    availabilityRepository.findActiveByDoctorIds.mockResolvedValue([
+      buildRule(2, { type: 'EXCEPTION' }),
+    ]);
+
+    const result = await useCase.execute(dto);
+
+    expect(scheduleRepository.createMany).not.toHaveBeenCalled();
+    expect(result.generated).toBe(0);
   });
 });
