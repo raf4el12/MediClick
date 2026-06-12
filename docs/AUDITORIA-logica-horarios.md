@@ -21,7 +21,7 @@
 | 9 | Sobrecupo pisa slots libres y omite validaciones | Turno libre robado | Medio | ✅ Hecho |
 | 10 | `overwrite` borra especialidades que no regenera | Pérdida de schedules | Bajo | ✅ Hecho |
 | 11 | Liberación de slot ciega a waitlist en 3 de 4 flujos | Cupos no reoferecidos | Medio | ✅ Hecho |
-| 12 | `NO_SHOW` inalcanzable desde la API | Reportes incorrectos | Bajo | 🟢 Bajo |
+| 12 | `NO_SHOW` inalcanzable desde la API | Reportes incorrectos | Bajo | ✅ Hecho |
 | 13 | `AvailabilityType` EXCEPTION/EXTRA no aplica | Excepciones de horario no funcionan | Medio | 🟢 Bajo |
 | 14 | Paciente puede tener dos citas simultáneas | Conflicto de agenda del paciente | Bajo | 🟢 Bajo |
 | 15 | `cancellationFee` se guarda pero nunca se cobra | Penalización inoperante | Medio | 🟢 Bajo |
@@ -263,11 +263,15 @@ Refactors absorbidos de la revisión SOLID de fixes #1–#5:
 
 ## Fase 4 — Bajo: completitud y modelo de dominio
 
-### #12 · `NO_SHOW` no tiene un use case que lo establezca
+### #12 · `NO_SHOW` no tiene un use case que lo establezca — ✅ Hecho (junio 2026)
 
-**Problema:** el enum tiene `NO_SHOW` y los queries lo excluyen correctamente, pero ningún use case de citas lo setea. Las citas a las que el paciente no asistió quedan CONFIRMED para siempre y distorsionan reportes de no-show y tasas de asistencia.
+**Problema:** el enum tiene `NO_SHOW` y los queries lo excluyen correctamente, pero ningún use case de citas lo seteaba. Las citas a las que el paciente no asistió quedaban CONFIRMED para siempre y distorsionaban reportes de no-show y tasas de asistencia.
 
-**Fix:** agregar `mark-no-show-appointment.use-case.ts` que solo permita el estado `CONFIRMED → NO_SHOW`. Invocarlo manualmente desde el dashboard del doctor al final de su turno, o automáticamente en un job tras X minutos del `startTime` sin check-in.
+**Fix aplicado:** `mark-no-show-appointment.use-case.ts` con dos reglas: solo `CONFIRMED → NO_SHOW`, y solo una vez pasada la hora de inicio de la cita (en la timezone de la sede — no se puede marcar inasistencia de una cita futura). Expuesto como `PATCH /appointments/:id/no-show` (`UPDATE APPOINTMENTS`), para invocarlo desde el dashboard del doctor. El job automático tras X minutos sin check-in queda como extensión opcional no implementada.
+
+**Archivos:**
+- `server/src/modules/appointments/application/use-cases/mark-no-show-appointment.use-case.ts` (+spec: 7 tests)
+- `server/src/modules/appointments/interfaces/controllers/appointment.controller.ts` — endpoint `:id/no-show`
 
 ---
 
