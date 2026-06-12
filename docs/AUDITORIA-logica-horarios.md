@@ -23,7 +23,7 @@
 | 11 | Liberación de slot ciega a waitlist en 3 de 4 flujos | Cupos no reoferecidos | Medio | ✅ Hecho |
 | 12 | `NO_SHOW` inalcanzable desde la API | Reportes incorrectos | Bajo | ✅ Hecho |
 | 13 | `AvailabilityType` EXCEPTION/EXTRA no aplica | Excepciones de horario no funcionan | Medio | ✅ Hecho |
-| 14 | Paciente puede tener dos citas simultáneas | Conflicto de agenda del paciente | Bajo | 🟢 Bajo |
+| 14 | Paciente puede tener dos citas simultáneas | Conflicto de agenda del paciente | Bajo | ✅ Hecho |
 | 15 | `cancellationFee` se guarda pero nunca se cobra | Penalización inoperante | Medio | 🟢 Bajo |
 
 ---
@@ -293,11 +293,11 @@ Refactors absorbidos de la revisión SOLID de fixes #1–#5:
 
 ---
 
-### #14 · Un paciente puede tener dos citas simultáneas con doctores distintos
+### #14 · Un paciente puede tener dos citas simultáneas con doctores distintos — ✅ Hecho (junio 2026)
 
-**Problema:** no existe ningún check de solapamiento por `patientId`. Si el paciente reserva dos slots a la misma hora con doctores distintos (schedules distintos), ambos creates pasan.
+**Problema:** no existía ningún check de solapamiento por `patientId`. Si el paciente reservaba dos slots a la misma hora con doctores distintos (schedules distintos), ambos creates pasaban.
 
-**Fix:** en `createWithOverlapCheck` y `hasOverlappingAppointment`, agregar una verificación adicional: `where: { patientId, startTime: { lt: endTime }, endTime: { gt: startTime }, status: { notIn: ['CANCELLED', 'NO_SHOW'] } }`.
+**Fix aplicado:** nuevo `buildPatientOverlapWhere` (paciente + solape horario + **misma fecha** vía `schedule.scheduleDate` — el where propuesto en el doc omitía la fecha y, con horas hour-only base 1970, chocaría contra citas de cualquier día). Aplicado dentro de las tres transacciones serializables de escritura: `createWithOverlapCheck`, `rescheduleWithOverlapCheck` (excluyendo la propia cita) y `createOverbookAtomic`. Mensaje distinto al del overlap de doctor para distinguir la causa. `hasOverlappingAppointment` no se tocó: es el check de slot del doctor que usa la waitlist y no tiene `patientId` en su firma. El índice existente `@@index([patientId, status])` cubre el query.
 
 **Archivos:**
 - `server/src/modules/appointments/infrastructure/persistence/prisma-appointment.repository.ts`
