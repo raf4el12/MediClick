@@ -24,7 +24,7 @@
 | 12 | `NO_SHOW` inalcanzable desde la API | Reportes incorrectos | Bajo | ✅ Hecho |
 | 13 | `AvailabilityType` EXCEPTION/EXTRA no aplica | Excepciones de horario no funcionan | Medio | ✅ Hecho |
 | 14 | Paciente puede tener dos citas simultáneas | Conflicto de agenda del paciente | Bajo | ✅ Hecho |
-| 15 | `cancellationFee` se guarda pero nunca se cobra | Penalización inoperante | Medio | 🟢 Bajo |
+| 15 | `cancellationFee` se guarda pero nunca se cobra | Penalización inoperante | Medio | ✅ Hecho |
 
 ---
 
@@ -304,11 +304,14 @@ Refactors absorbidos de la revisión SOLID de fixes #1–#5:
 
 ---
 
-### #15 · `cancellationFee` se calcula y guarda, pero no tiene flujo de cobro
+### #15 · `cancellationFee` se calcula y guarda, pero no tiene flujo de cobro — ✅ Hecho (junio 2026)
 
-**Problema:** `cancel-appointment.use-case.ts:94-98` calcula la penalización y la persiste en `cancellationFee`, pero no existe ninguna lógica que la cobre. Se aplica incluso si la cita nunca fue pagada (paciente sin tarjeta).
+**Problema:** se calculaba la penalización y se persistía en `cancellationFee`, pero ninguna lógica la cobraba. Además se aplicaba incluso si la cita nunca fue pagada (paciente sin transacción).
 
-**Fix:** en la cancelación tardía de un paciente, si existe una transacción PAID, crear una transacción adicional de tipo "FEE" o aplicar una retención parcial vía MercadoPago. Si no hay pago previo, definir la política (¿deuda pendiente? ¿bloqueo del paciente?). Documentar antes de implementar.
+**Fix aplicado (diseño en `docs/superpowers/specs/2026-06-15-cancellation-fee-collection-design.md`):** el fee solo se calcula cuando existe una transacción PAID que cobrar (corrige el cobro fantasma). El cobro se modela como flag de revisión manual, espejo del refund: la transacción PAID se marca con `needsFeeCollection`/`feeAmount`/`feeReason`/`feeRequestedAt` en su metadata, junto al `needsRefund` existente, en una sola escritura, para que el admin reconcilie el neto. Sin llamadas automáticas a MercadoPago. El lookup de la transacción se unificó (antes el cálculo del fee y el flag de refund hacían consultas separadas).
+
+**Archivos:**
+- `server/src/modules/appointments/application/use-cases/cancel-appointment.use-case.ts` (+spec: 4 tests nuevos)
 
 ---
 

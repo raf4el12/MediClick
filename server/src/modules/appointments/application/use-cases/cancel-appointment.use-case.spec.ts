@@ -81,6 +81,10 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
     );
   });
 
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('flags the transaction as refund-pending when it was PAID', async () => {
     transactionRepository.findLatestByAppointmentId.mockResolvedValue({
       id: 77,
@@ -137,5 +141,84 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
     await useCase.execute(50, { reason: 'x' }, 'ADMIN');
 
     expect(transactionRepository.update).not.toHaveBeenCalled();
+  });
+
+  it('paciente cancela tarde con pago PAID: persiste el fee y marca needsFeeCollection', async () => {
+    // 2026-12-01T14:00Z = 09:00 Lima → ~1h antes de la cita (10:00)
+    jest.useFakeTimers({ now: new Date('2026-12-01T14:00:00Z') });
+    specialtyRepository.findById.mockResolvedValue({ id: 3, price: 120 } as any);
+    transactionRepository.findLatestByAppointmentId.mockResolvedValue({
+      id: 77,
+      status: 'PAID',
+      metadata: null,
+    } as any);
+
+    await useCase.execute(50, { reason: 'No puedo asistir' }, 'PATIENT');
+
+    // fee = 50% de 120 = 60, persistido en la cita
+    expect(appointmentRepository.update).toHaveBeenCalledWith(
+      50,
+      expect.objectContaining({ cancellationFee: 60 }),
+    );
+    // flag de cobro (+ refund) en la transacción
+    expect(transactionRepository.update).toHaveBeenCalledWith(
+      77,
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          needsRefund: true,
+          needsFeeCollection: true,
+          feeAmount: 60,
+        }),
+      }),
+    );
+  });
+
+  it('paciente cancela tarde SIN pago PAID: no calcula fee ni toca la transacción', async () => {
+    jest.useFakeTimers({ now: new Date('2026-12-01T14:00:00Z') });
+    specialtyRepository.findById.mockResolvedValue({ id: 3, price: 120 } as any);
+    transactionRepository.findLatestByAppointmentId.mockResolvedValue({
+      id: 77,
+      status: 'PENDING',
+      metadata: null,
+    } as any);
+
+    await useCase.execute(50, { reason: 'No puedo asistir' }, 'PATIENT');
+
+    const apptArg = appointmentRepository.update.mock.calls[0][1];
+    expect(apptArg.cancellationFee).toBeUndefined();
+    expect(transactionRepository.update).not.toHaveBeenCalled();
+  });
+
+  it('paciente cancela temprano (>24h) con pago PAID: sin fee, refund intacto', async () => {
+    // 2026-11-20 → ~11 días antes de la cita
+    jest.useFakeTimers({ now: new Date('2026-11-20T14:00:00Z') });
+    specialtyRepository.findById.mockResolvedValue({ id: 3, price: 120 } as any);
+    transactionRepository.findLatestByAppointmentId.mockResolvedValue({
+      id: 77,
+      status: 'PAID',
+      metadata: null,
+    } as any);
+
+    await useCase.execute(50, { reason: 'Cambio de planes' }, 'PATIENT');
+
+    const apptArg = appointmentRepository.update.mock.calls[0][1];
+    expect(apptArg.cancellationFee).toBeUndefined();
+    const txArg = transactionRepository.update.mock.calls[0][1];
+    expect(txArg.metadata).toMatchObject({ needsRefund: true });
+    expect((txArg.metadata as any).needsFeeCollection).toBeUndefined();
+  });
+
+  it('staff cancela con pago PAID: solo refund, sin fee', async () => {
+    transactionRepository.findLatestByAppointmentId.mockResolvedValue({
+      id: 77,
+      status: 'PAID',
+      metadata: null,
+    } as any);
+
+    await useCase.execute(50, { reason: 'Reprogramación interna' }, 'ADMIN');
+
+    const txArg = transactionRepository.update.mock.calls[0][1];
+    expect(txArg.metadata).toMatchObject({ needsRefund: true });
+    expect((txArg.metadata as any).needsFeeCollection).toBeUndefined();
   });
 });

@@ -16,69 +16,17 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import Chip from '@mui/material/Chip';
+import InputAdornment from '@mui/material/InputAdornment';
 import { rolesService } from '@/services/roles.service';
-import type { RoleDto, PermissionDto, PermissionGroup } from '../types';
-
-const SUBJECT_LABELS: Record<string, string> = {
-  ALL: 'Todos (Wildcard)',
-  APPOINTMENTS: 'Citas',
-  AVAILABILITY: 'Disponibilidad',
-  CATEGORIES: 'Categorías',
-  CLINICS: 'Sedes',
-  CLINICAL_NOTES: 'Notas Clínicas',
-  DOCTORS: 'Doctores',
-  HOLIDAYS: 'Feriados',
-  MEDICAL_HISTORY: 'Historial Médico',
-  NOTIFICATIONS: 'Notificaciones',
-  PATIENTS: 'Pacientes',
-  PRESCRIPTIONS: 'Recetas',
-  REPORTS: 'Reportes',
-  ROLES: 'Roles',
-  SCHEDULES: 'Horarios',
-  SCHEDULE_BLOCKS: 'Bloqueos',
-  SPECIALTIES: 'Especialidades',
-  USERS: 'Usuarios',
-  PAYMENTS: 'Pagos',
-};
-
-const ACTION_LABELS: Record<string, string> = {
-  CREATE: 'Crear',
-  READ: 'Leer',
-  UPDATE: 'Editar',
-  DELETE: 'Eliminar',
-  MANAGE: 'Gestionar',
-};
-
-const ACTION_COLORS: Record<string, 'success' | 'info' | 'warning' | 'error' | 'primary'> = {
-  CREATE: 'success',
-  READ: 'info',
-  UPDATE: 'warning',
-  DELETE: 'error',
-  MANAGE: 'primary',
-};
-
-function groupPermissions(permissions: PermissionDto[]): PermissionGroup[] {
-  const map = new Map<string, PermissionGroup>();
-
-  for (const p of permissions) {
-    const group = map.get(p.subject);
-    if (group) {
-      group.permissions.push({ id: p.id, action: p.action, description: p.description });
-    } else {
-      map.set(p.subject, {
-        subject: p.subject,
-        permissions: [{ id: p.id, action: p.action, description: p.description }],
-      });
-    }
-  }
-
-  // Ordenar: ALL primero, luego alfabéticamente
-  return Array.from(map.values()).sort((a, b) => {
-    if (a.subject === 'ALL') return -1;
-    if (b.subject === 'ALL') return 1;
-    return a.subject.localeCompare(b.subject);
-  });
-}
+import {
+  actionColor,
+  actionLabel,
+  groupBySubject,
+  subjectIcon,
+  subjectLabel,
+  type SubjectGroup,
+} from '../permissionsMeta';
+import type { RoleDto, PermissionDto } from '../types';
 
 interface RoleFormDrawerProps {
   open: boolean;
@@ -94,8 +42,24 @@ export function RoleFormDrawer({ open, editRole, permissions, onClose, onSuccess
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
 
-  const groups = useMemo(() => groupPermissions(permissions), [permissions]);
+  const groups = useMemo(() => {
+    return groupBySubject(permissions).sort((a, b) => {
+      if (a.subject === 'ALL') return -1;
+      if (b.subject === 'ALL') return 1;
+      return subjectLabel(a.subject).localeCompare(subjectLabel(b.subject));
+    });
+  }, [permissions]);
+
+  const visibleGroups = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return groups;
+    return groups.filter((g) => subjectLabel(g.subject).toLowerCase().includes(q));
+  }, [groups, query]);
+
+  const allIds = useMemo(() => permissions.map((p) => p.id), [permissions]);
+  const allPermsSelected = allIds.length > 0 && allIds.every((id) => selectedIds.has(id));
 
   useEffect(() => {
     if (open) {
@@ -109,8 +73,13 @@ export function RoleFormDrawer({ open, editRole, permissions, onClose, onSuccess
         setSelectedIds(new Set());
       }
       setError(null);
+      setQuery('');
     }
   }, [open, editRole]);
+
+  const toggleAll = () => {
+    setSelectedIds((prev) => (prev.size >= allIds.length ? new Set() : new Set(allIds)));
+  };
 
   const togglePermission = (id: number) => {
     setSelectedIds((prev) => {
@@ -124,7 +93,7 @@ export function RoleFormDrawer({ open, editRole, permissions, onClose, onSuccess
     });
   };
 
-  const toggleSubjectAll = (group: PermissionGroup) => {
+  const toggleSubjectAll = (group: SubjectGroup) => {
     const groupIds = group.permissions.map((p) => p.id);
     const allSelected = groupIds.every((id) => selectedIds.has(id));
     setSelectedIds((prev) => {
@@ -162,9 +131,13 @@ export function RoleFormDrawer({ open, editRole, permissions, onClose, onSuccess
 
       onSuccess();
       onClose();
-    } catch (err: any) {
-      const msg = err?.response?.data?.message;
-      setError(typeof msg === 'string' ? msg : Array.isArray(msg) ? msg[0] : 'Error al guardar el rol');
+    } catch (err) {
+      const fallback = 'Error al guardar el rol';
+      const msg = (err as { response?: { data?: { message?: string | string[] } } })
+        ?.response?.data?.message;
+      setError(
+        typeof msg === 'string' ? msg : Array.isArray(msg) ? (msg[0] ?? fallback) : fallback,
+      );
     } finally {
       setSaving(false);
     }
@@ -225,11 +198,54 @@ export function RoleFormDrawer({ open, editRole, permissions, onClose, onSuccess
             placeholder="Breve descripción del rol"
           />
 
-          <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1.5 }}>
-            Permisos
-          </Typography>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              mb: 1.5,
+            }}
+          >
+            <Typography variant="subtitle2" fontWeight={600}>
+              Permisos
+            </Typography>
+            <Button
+              size="small"
+              onClick={toggleAll}
+              startIcon={
+                <i
+                  className={allPermsSelected ? 'ri-checkbox-blank-line' : 'ri-checkbox-multiple-line'}
+                  style={{ fontSize: 16 }}
+                />
+              }
+            >
+              {allPermsSelected ? 'Quitar todo' : 'Seleccionar todo'}
+            </Button>
+          </Box>
 
-          {groups.map((group) => {
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Buscar módulo…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            sx={{ mb: 2 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <i className="ri-search-line" style={{ fontSize: 18 }} />
+                </InputAdornment>
+              ),
+            }}
+          />
+
+          {visibleGroups.length === 0 && (
+            <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+              Ningún módulo coincide con “{query}”.
+            </Typography>
+          )}
+
+          {visibleGroups.map((group) => {
             const groupIds = group.permissions.map((p) => p.id);
             const selectedInGroup = groupIds.filter((id) => selectedIds.has(id)).length;
             const allSelected = selectedInGroup === groupIds.length;
@@ -260,8 +276,12 @@ export function RoleFormDrawer({ open, editRole, permissions, onClose, onSuccess
                     onClick={(e) => e.stopPropagation()}
                     size="small"
                   />
+                  <i
+                    className={subjectIcon(group.subject)}
+                    style={{ fontSize: 17, opacity: 0.7 }}
+                  />
                   <Typography variant="body2" fontWeight={600}>
-                    {SUBJECT_LABELS[group.subject] ?? group.subject}
+                    {subjectLabel(group.subject)}
                   </Typography>
                   {selectedInGroup > 0 && (
                     <Chip
@@ -288,9 +308,9 @@ export function RoleFormDrawer({ open, editRole, permissions, onClose, onSuccess
                       label={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Chip
-                            label={ACTION_LABELS[perm.action] ?? perm.action}
+                            label={actionLabel(perm.action)}
                             size="small"
-                            color={ACTION_COLORS[perm.action] ?? 'default'}
+                            color={actionColor(perm.action)}
                             sx={{ fontSize: '0.7rem', height: 22, minWidth: 70 }}
                           />
                         </Box>

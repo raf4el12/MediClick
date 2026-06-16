@@ -16,13 +16,17 @@ import Alert from '@mui/material/Alert';
 import Chip from '@mui/material/Chip';
 import Tooltip from '@mui/material/Tooltip';
 import Skeleton from '@mui/material/Skeleton';
+import LinearProgress from '@mui/material/LinearProgress';
+import { alpha } from '@mui/material/styles';
 import { StatusBadge } from '@/@core/components/mui/StatusBadge';
+import { isFullAccess, moduleCount, roleVisual } from '../permissionsMeta';
 import type { RoleDto } from '../types';
 
 interface RolesTableProps {
   roles: RoleDto[];
   loading: boolean;
   error: string | null;
+  totalPermissions: number;
   onAdd: () => void;
   onEdit: (role: RoleDto) => void;
   onDelete: (role: RoleDto) => void;
@@ -34,6 +38,7 @@ export const RolesTable = memo(function RolesTable({
   roles,
   loading,
   error,
+  totalPermissions,
   onAdd,
   onEdit,
   onDelete,
@@ -96,16 +101,45 @@ export const RolesTable = memo(function RolesTable({
                   </TableRow>
                 ))
               ) : roles.length > 0 ? (
-                roles.map((role) => (
+                roles.map((role) => {
+                  const visual = roleVisual(role);
+                  return (
                   <TableRow key={role.id} hover>
                     <TableCell>
-                      <Box>
-                        <Typography fontWeight={500}>{role.name}</Typography>
-                        {role.description && (
-                          <Typography variant="caption" color="text.secondary">
-                            {role.description}
-                          </Typography>
-                        )}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Box
+                          sx={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 2,
+                            flexShrink: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: (theme) => theme.palette[visual.color].main,
+                            bgcolor: (theme) => alpha(theme.palette[visual.color].main, 0.12),
+                          }}
+                        >
+                          <i className={visual.icon} style={{ fontSize: 20 }} />
+                        </Box>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography fontWeight={600}>{role.name}</Typography>
+                          {role.description && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{
+                                display: 'block',
+                                maxWidth: 260,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {role.description}
+                            </Typography>
+                          )}
+                        </Box>
                       </Box>
                     </TableCell>
                     <TableCell>
@@ -116,30 +150,51 @@ export const RolesTable = memo(function RolesTable({
                         variant="outlined"
                       />
                     </TableCell>
-                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {role.permissions.length === 0 ? (
-                          <Typography variant="caption" color="text.secondary">Sin permisos</Typography>
-                        ) : role.permissions.some(p => p.action === 'MANAGE' && p.subject === 'ALL') ? (
-                          <Chip label="Acceso total" size="small" color="warning" variant="outlined" />
-                        ) : (
-                          <>
-                            <Typography variant="body2" color="text.secondary">
-                              {role.permissions.length} permiso{role.permissions.length !== 1 ? 's' : ''}
-                            </Typography>
-                            <Tooltip title="Ver permisos">
-                              <IconButton
-                                size="small"
-                                color="primary"
-                                onClick={() => onViewPermissions(role)}
-                                aria-label="Ver permisos del rol"
-                              >
-                                <i className="ri-eye-line" style={{ fontSize: 18 }} />
-                              </IconButton>
-                            </Tooltip>
-                          </>
-                        )}
-                      </Box>
+                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' }, minWidth: 240 }}>
+                      {role.permissions.length === 0 ? (
+                        <Typography variant="caption" color="text.secondary">Sin permisos</Typography>
+                      ) : isFullAccess(role.permissions) ? (
+                        <Chip
+                          icon={<i className="ri-shield-star-line" style={{ fontSize: 14 }} />}
+                          label="Acceso total"
+                          size="small"
+                          color="warning"
+                          variant="outlined"
+                          sx={{ fontWeight: 600 }}
+                        />
+                      ) : (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                          <Box sx={{ flex: 1, maxWidth: 160 }}>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                              <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                                {role.permissions.length} permiso{role.permissions.length !== 1 ? 's' : ''}
+                              </Typography>
+                              <Typography variant="caption" color="text.disabled">
+                                {moduleCount(role.permissions)} módulo{moduleCount(role.permissions) !== 1 ? 's' : ''}
+                              </Typography>
+                            </Box>
+                            <LinearProgress
+                              variant="determinate"
+                              value={
+                                totalPermissions > 0
+                                  ? Math.min(100, Math.round((role.permissions.length / totalPermissions) * 100))
+                                  : 0
+                              }
+                              sx={{ height: 6, borderRadius: 3 }}
+                            />
+                          </Box>
+                          <Tooltip title="Ver permisos">
+                            <IconButton
+                              size="small"
+                              color="primary"
+                              onClick={() => onViewPermissions(role)}
+                              aria-label="Ver permisos del rol"
+                            >
+                              <i className="ri-eye-line" style={{ fontSize: 18 }} />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      )}
                     </TableCell>
                     <TableCell align="center">
                       <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
@@ -174,7 +229,8 @@ export const RolesTable = memo(function RolesTable({
                       </Box>
                     </TableCell>
                   </TableRow>
-                ))
+                  );
+                })
               ) : (
                 <TableRow>
                   <TableCell colSpan={4} sx={{ textAlign: 'center', py: 6 }}>
