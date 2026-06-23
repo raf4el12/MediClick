@@ -123,6 +123,10 @@ server/src/modules/interoperability/
 
 ### Riesgos
 - No doblar GraphQL a FHIR: los clientes esperan REST conforme. Mantener APIs separadas.
+- **Tenant scoping (heredado de Fase 0):** `FhirResource` tiene `clinicId` pero NO está en
+  el tenant-filtering de `PrismaService`, y el repo lee con `this.prisma` (sin auto-filtro).
+  Antes de exponer cualquier lectura FHIR aquí, scopear por clínica (registrar el modelo en
+  el filtro o usar `this.prisma.tenant` / filtro explícito) o se filtran recursos entre tenants.
 
 ---
 
