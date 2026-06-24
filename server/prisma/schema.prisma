@@ -653,3 +653,30 @@ model WaitlistOffers {
   @@index([status, expiresAt]) // cron de expiración de ofertas
   @@index([scheduleId, startTime, endTime])
 }
+
+// --- FHIR RESOURCE STORE (interoperabilidad) ---
+
+model FhirResource {
+  id           String   @id @default(uuid())
+  resourceType String
+  versionId    Int      @default(1)
+  content      Json
+  clinicId     Int
+  deleted      Boolean  @default(false)
+  lastUpdated  DateTime @updatedAt
+  createdAt    DateTime @default(now())
+
+  @@unique([resourceType, id])
+  @@index([resourceType, clinicId])
+}
+
+model FhirResourceHistory {
+  id           String   @id @default(uuid())
+  resourceType String
+  resourceId   String
+  versionId    Int
+  content      Json
+  recordedAt   DateTime @default(now())
+
+  @@index([resourceType, resourceId, versionId])
+}

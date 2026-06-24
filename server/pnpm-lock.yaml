@@ -14,6 +14,9 @@ importers:
       '@as-integrations/express5':
         specifier: ^1.1.2
         version: 1.1.2(@apollo/server@5.5.0(graphql@16.13.2))(express@5.2.1)
+      '@medplum/fhirtypes':
+        specifier: ^5.1.21
+        version: 5.1.21
       '@nest-lab/throttler-storage-redis':
         specifier: ^1.2.0
         version: 1.2.0(@nestjs/common@11.1.13(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.13)(@nestjs/throttler@6.5.0(@nestjs/common@11.1.13(class-transformer@0.5.1)(class-validator@0.14.3)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/core@11.1.13)(reflect-metadata@0.2.2))(ioredis@5.9.2)(reflect-metadata@0.2.2)
@@ -908,6 +911,10 @@ packages:
   '@lukeed/csprng@1.1.0':
     resolution: {integrity: sha512-Z7C/xXCiGWsg0KuKsHTKJxbWhpI3Vs5GwLfOean7MGyVFGqdRgBbAjOCh6u4bbjPc/8MJ2pZmK/0DLdCbivLDA==}
     engines: {node: '>=8'}
+
+  '@medplum/fhirtypes@5.1.21':
+    resolution: {integrity: sha512-Kf6TD4VT2F3P0EJ/Tnu3/6sjCaEvqXg9xC24gz4KEb/3+S4lbRVYG0MfuCh8QMvA8pzMR8xx3s6WUIiyOLH7Kg==}
+    engines: {node: ^22.18.0 || >=24.2.0}
 
   '@microsoft/tsdoc@0.16.0':
     resolution: {integrity: sha512-xgAyonlVVS+q7Vc7qLW0UrJU7rSFcETRWsqdXZtjzRU8dF+6CkozTK4V4y1LwOX7j8r/vHphjDeMeGI4tNGeGA==}
@@ -5161,6 +5168,8 @@ snapshots:
       '@jridgewell/sourcemap-codec': 1.5.5
 
   '@lukeed/csprng@1.1.0': {}
+
+  '@medplum/fhirtypes@5.1.21': {}
 
   '@microsoft/tsdoc@0.16.0': {}
 
