@@ -52,6 +52,7 @@ export class MercadoPagoGatewayService implements IPaymentGatewayService {
           failure: input.backUrls.failure,
           pending: input.backUrls.pending,
         },
+        auto_return: 'approved',
         notification_url: input.notificationUrl,
         ...(input.payerEmail && { payer: { email: input.payerEmail } }),
         ...(expirationTo && {
