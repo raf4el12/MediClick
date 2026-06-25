@@ -79,11 +79,13 @@ export class PaymentController {
     @CurrentUser('id') userId: number,
     @CurrentUser('role') role: string,
     @Param('id', ParseIntPipe) appointmentId: number,
+    @Query('paymentId') paymentId?: string,
   ): Promise<PaymentResponseDto> {
     return this.getPaymentByAppointmentUseCase.execute(
       userId,
       role,
       appointmentId,
+      paymentId,
     );
   }
 }

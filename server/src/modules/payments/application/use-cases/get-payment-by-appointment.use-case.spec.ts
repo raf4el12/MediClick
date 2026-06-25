@@ -6,6 +6,7 @@ describe('GetPaymentByAppointmentUseCase', () => {
   let useCase: GetPaymentByAppointmentUseCase;
   let prisma: { appointments: { findUnique: jest.Mock } };
   let transactionRepository: jest.Mocked<ITransactionRepository>;
+  let handlePaymentWebhookUseCase: { execute: jest.Mock };
 
   beforeEach(() => {
     prisma = { appointments: { findUnique: jest.fn() } };
@@ -19,10 +20,12 @@ describe('GetPaymentByAppointmentUseCase', () => {
       findByAppointmentId: jest.fn(),
       findAll: jest.fn(),
     };
+    handlePaymentWebhookUseCase = { execute: jest.fn() };
 
     useCase = new GetPaymentByAppointmentUseCase(
       prisma as any,
       transactionRepository,
+      handlePaymentWebhookUseCase as any,
     );
   });
 
@@ -110,5 +113,42 @@ describe('GetPaymentByAppointmentUseCase', () => {
     await expect(
       useCase.execute(42, 'PATIENT', 10),
     ).rejects.toThrow(NotFoundException);
+  });
+
+  it('re-syncs a PENDING transaction via the webhook when a paymentId is provided', async () => {
+    prisma.appointments.findUnique.mockResolvedValue({
+      id: 10,
+      deleted: false,
+      patient: { profile: { userId: 42 } },
+    });
+    const pending = {
+      id: 3,
+      appointmentId: 10,
+      amount: 100,
+      currency: 'PEN',
+      status: 'PENDING',
+      paymentMethod: null,
+      gatewayId: null,
+      preferenceId: 'pref_3',
+      externalRef: '10',
+      payerEmail: null,
+      failureReason: null,
+      paidAt: null,
+      metadata: null,
+      clinicId: null,
+      createdAt: new Date(),
+      updatedAt: null,
+    };
+    transactionRepository.findLatestByAppointmentId
+      .mockResolvedValueOnce(pending as any)
+      .mockResolvedValueOnce({ ...pending, status: 'PAID', paidAt: new Date() } as any);
+
+    const result = await useCase.execute(42, 'PATIENT', 10, 'mp_999');
+
+    expect(handlePaymentWebhookUseCase.execute).toHaveBeenCalledWith({
+      type: 'payment',
+      data: { id: 'mp_999' },
+    });
+    expect(result.status).toBe('PAID');
   });
 });

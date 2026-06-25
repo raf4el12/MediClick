@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import type { ITransactionRepository } from '../../domain/repositories/transaction.repository.js';
 import { PaymentResponseDto } from '../dto/payment-response.dto.js';
+import { HandlePaymentWebhookUseCase } from './handle-payment-webhook.use-case.js';
 
 @Injectable()
 export class GetPaymentByAppointmentUseCase {
@@ -14,12 +15,14 @@ export class GetPaymentByAppointmentUseCase {
     private readonly prisma: PrismaService,
     @Inject('ITransactionRepository')
     private readonly transactionRepository: ITransactionRepository,
+    private readonly handlePaymentWebhookUseCase: HandlePaymentWebhookUseCase,
   ) {}
 
   async execute(
     userId: number,
     role: string,
     appointmentId: number,
+    paymentId?: string,
   ): Promise<PaymentResponseDto> {
     const appointment = await this.prisma.appointments.findUnique({
       where: { id: appointmentId },
@@ -43,12 +46,25 @@ export class GetPaymentByAppointmentUseCase {
       throw new ForbiddenException('Esta cita no te pertenece');
     }
 
-    const transaction =
+    let transaction =
       await this.transactionRepository.findLatestByAppointmentId(appointmentId);
+      
     if (!transaction) {
       throw new NotFoundException(
         'No hay pagos registrados para esta cita',
       );
+    }
+
+    if (transaction.status === 'PENDING' && paymentId) {
+      await this.handlePaymentWebhookUseCase.execute({
+        type: 'payment',
+        data: { id: paymentId },
+      });
+      // Re-fetch transaction to get updated status
+      transaction = await this.transactionRepository.findLatestByAppointmentId(appointmentId);
+      if (!transaction) {
+        throw new NotFoundException('No hay pagos registrados para esta cita');
+      }
     }
 
     return {

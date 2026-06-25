@@ -15,10 +15,11 @@ export const paymentsService = {
     return response.data;
   },
 
-  getByAppointment: async (appointmentId: number): Promise<PaymentResponse> => {
-    const response = await api.get<PaymentResponse>(
-      `/payments/appointment/${appointmentId}`,
-    );
+  getByAppointment: async (appointmentId: number, paymentId?: string | null): Promise<PaymentResponse> => {
+    const url = paymentId 
+      ? `/payments/appointment/${appointmentId}?paymentId=${paymentId}`
+      : `/payments/appointment/${appointmentId}`;
+    const response = await api.get<PaymentResponse>(url);
 
     return response.data;
   },
