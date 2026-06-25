@@ -43,8 +43,11 @@ export function usePaymentResult(
       setError('No se pudo identificar la cita asociada al pago.');
       return;
     }
+    
+    const paymentIdParam = searchParams.get('payment_id');
+    
     try {
-      const data = await paymentsService.getByAppointment(appointmentId);
+      const data = await paymentsService.getByAppointment(appointmentId, paymentIdParam);
       setPayment(data);
       setError(null);
     } catch (err: unknown) {
@@ -53,7 +56,7 @@ export function usePaymentResult(
     } finally {
       setLoading(false);
     }
-  }, [appointmentId]);
+  }, [appointmentId, searchParams]);
 
   useEffect(() => {
     void refetch();
