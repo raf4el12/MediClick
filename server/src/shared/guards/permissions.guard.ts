@@ -6,8 +6,10 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { SecurityEventType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { RedisService } from '../redis/redis.service.js';
+import { SecurityAuditService } from '../security-audit/security-audit.service.js';
 import {
   PERMISSIONS_KEY,
   ROLE_PERMISSIONS_CACHE_PREFIX,
@@ -29,6 +31,7 @@ export class PermissionsGuard implements CanActivate {
     private readonly reflector: Reflector,
     private readonly redisService: RedisService,
     private readonly prisma: PrismaService,
+    private readonly audit: SecurityAuditService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -55,6 +58,18 @@ export class PermissionsGuard implements CanActivate {
     const hasPermission = this.matchPermission(permissions, required);
 
     if (!hasPermission) {
+      const req = request as {
+        ip?: string;
+        headers?: Record<string, string | undefined>;
+      };
+      void this.audit.record({
+        eventType: SecurityEventType.PERMISSION_DENIED,
+        userId: user.id,
+        clinicId: user.clinicId,
+        ip: req.ip,
+        userAgent: req.headers?.['user-agent'],
+        resource: `${required.action}:${required.subject}`,
+      });
       throw new ForbiddenException(
         'No tienes permisos para acceder a este recurso',
       );

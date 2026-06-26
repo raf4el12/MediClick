@@ -22,6 +22,7 @@ describe('PermissionsGuard — OWASP A01: Broken Access Control', () => {
   let reflector: jest.Mocked<Reflector>;
   let redisService: { get: jest.Mock; set: jest.Mock };
   let prisma: { rolePermissions: { findMany: jest.Mock } };
+  let audit: { record: jest.Mock };
 
   beforeEach(() => {
     reflector = { getAllAndOverride: jest.fn() } as any;
@@ -37,7 +38,14 @@ describe('PermissionsGuard — OWASP A01: Broken Access Control', () => {
       },
     };
 
-    guard = new PermissionsGuard(reflector, redisService as any, prisma as any);
+    audit = { record: jest.fn().mockResolvedValue(undefined) };
+
+    guard = new PermissionsGuard(
+      reflector,
+      redisService as any,
+      prisma as any,
+      audit as any,
+    );
   });
 
   // A01.1 — Endpoint sin decorador: acceso libre ─────────────────────────────
@@ -111,6 +119,43 @@ describe('PermissionsGuard — OWASP A01: Broken Access Control', () => {
     const ctx = buildContext({ id: 1, roleId: 2 });
 
     await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
+  });
+
+  // A09: Security Logging — la denegación deja rastro de auditoría ────────────
+
+  it('A09: registra PERMISSION_DENIED al denegar el acceso', async () => {
+    reflector.getAllAndOverride.mockReturnValue({
+      action: 'DELETE',
+      subject: 'APPOINTMENTS',
+    });
+    prisma.rolePermissions.findMany.mockResolvedValue([
+      { permission: { action: 'READ', subject: 'APPOINTMENTS' } },
+    ]);
+    const ctx = buildContext({ id: 7, roleId: 2, clinicId: 3 });
+
+    await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
+    expect(audit.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventType: 'PERMISSION_DENIED',
+        userId: 7,
+        clinicId: 3,
+        resource: 'DELETE:APPOINTMENTS',
+      }),
+    );
+  });
+
+  it('A09: NO registra nada cuando el acceso se concede', async () => {
+    reflector.getAllAndOverride.mockReturnValue({
+      action: 'READ',
+      subject: 'APPOINTMENTS',
+    });
+    prisma.rolePermissions.findMany.mockResolvedValue([
+      { permission: { action: 'READ', subject: 'APPOINTMENTS' } },
+    ]);
+    const ctx = buildContext({ id: 7, roleId: 2, clinicId: 3 });
+
+    await expect(guard.canActivate(ctx)).resolves.toBe(true);
+    expect(audit.record).not.toHaveBeenCalled();
   });
 
   // A01.5 — Wildcards: MANAGE permite todo ──────────────────────────────────
