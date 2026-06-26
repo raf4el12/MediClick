@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tenantStorage } from '../../prisma/tenant-context.js';
+import { getRequestFromContext } from '../utils/get-request-from-context.js';
 
 /**
  * Sets the tenant clinicId in AsyncLocalStorage so PrismaService.tenant
@@ -20,11 +21,13 @@ export class TenantInterceptor implements NestInterceptor {
     context: ExecutionContext,
     next: CallHandler,
   ): Observable<unknown> {
-    const req = context
-      .switchToHttp()
-      .getRequest<{ user?: { clinicId?: number | null } }>();
+    // No usar switchToHttp(): en GraphQL devuelve el root del resolver, no el
+    // req — clinicId quedaría null y Prisma no aplicaría el filtro de tenant.
+    const req = getRequestFromContext(context) as {
+      user?: { clinicId?: number | null };
+    };
 
-    const clinicId: number | null = req.user?.clinicId ?? null;
+    const clinicId: number | null = req?.user?.clinicId ?? null;
 
     return new Observable((observer) => {
       tenantStorage.run(clinicId, () => {
