@@ -17,7 +17,7 @@ import {
   ApiBearerAuth,
   ApiCookieAuth,
 } from '@nestjs/swagger';
-import { Throttle, SkipThrottle } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 import { ConfigService } from '@nestjs/config';
 import { LoginDto } from '../../application/dto/login.dto.js';
@@ -54,6 +54,8 @@ import {
 } from '../../application/dto/lookup-document.dto.js';
 import { LookupDocumentUseCase } from '../../application/use-cases/lookup-document.use-case.js';
 import { Auth, CurrentUser } from '../../../../shared/decorators/index.js';
+import { SecurityEventType } from '@prisma/client';
+import { SecurityAuditService } from '../../../../shared/security-audit/security-audit.service.js';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -74,6 +76,7 @@ export class AuthController {
     private readonly getSessionsUseCase: GetSessionsUseCase,
     private readonly lookupDocumentUseCase: LookupDocumentUseCase,
     private readonly configService: ConfigService,
+    private readonly securityAudit: SecurityAuditService,
   ) {
     this.isProduction = this.configService.get('NODE_ENV') === 'production';
   }
@@ -120,8 +123,23 @@ export class AuthController {
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: express.Response,
+    @Req() req: express.Request,
   ): Promise<Omit<AuthResponseDto, 'refreshToken'>> {
-    const result = await this.loginUseCase.execute(dto, dto.deviceId);
+    let result: Awaited<ReturnType<LoginUseCase['execute']>>;
+    try {
+      result = await this.loginUseCase.execute(dto, dto.deviceId);
+    } catch (err) {
+      if (err instanceof UnauthorizedException) {
+        void this.securityAudit.record({
+          eventType: SecurityEventType.LOGIN_FAILED,
+          email: dto.email,
+          ip: req.ip,
+          userAgent: req.headers['user-agent'],
+          metadata: { reason: err.message },
+        });
+      }
+      throw err;
+    }
 
     this.setTokenCookies(res, result.accessToken, result.refreshToken!);
 

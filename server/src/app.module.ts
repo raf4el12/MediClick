@@ -16,6 +16,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
 import { RedisModule } from './shared/redis/redis.module.js';
 import { PdfModule } from './shared/pdf/pdf.module.js';
 import { MailModule } from './shared/mail/mail.module.js';
+import { SecurityAuditModule } from './shared/security-audit/security-audit.module.js';
 import { HealthModule } from './shared/health/health.module.js';
 import { AuthModule } from './modules/auth/application/auth.module.js';
 import { UsersModule } from './modules/users/application/users.module.js';
@@ -79,6 +80,7 @@ import { InteroperabilityModule } from './modules/interoperability/application/i
     RedisModule,
     PdfModule,
     MailModule,
+    SecurityAuditModule,
     HealthModule,
     AuthModule,
     UsersModule,

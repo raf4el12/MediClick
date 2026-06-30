@@ -6,15 +6,23 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { SecurityEventType } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { RedisService } from '../redis/redis.service.js';
+import { SecurityAuditService } from '../security-audit/security-audit.service.js';
 import {
   PERMISSIONS_KEY,
   ROLE_PERMISSIONS_CACHE_PREFIX,
   ROLE_PERMISSIONS_CACHE_TTL,
 } from '../constants/permissions.constant.js';
 import type { RequiredPermission } from '../decorators/require-permissions.decorator.js';
+import type { AuthenticatedRequest } from '../domain/interfaces/authenticated-user.interface.js';
 import { getRequestFromContext } from '../utils/get-request-from-context.js';
+
+type RequestWithMeta = AuthenticatedRequest & {
+  ip?: string;
+  headers?: Record<string, string | undefined>;
+};
 
 interface CachedPermission {
   action: string;
@@ -29,6 +37,7 @@ export class PermissionsGuard implements CanActivate {
     private readonly reflector: Reflector,
     private readonly redisService: RedisService,
     private readonly prisma: PrismaService,
+    private readonly audit: SecurityAuditService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -42,7 +51,7 @@ export class PermissionsGuard implements CanActivate {
       return true;
     }
 
-    const request = getRequestFromContext(context);
+    const request = getRequestFromContext(context) as RequestWithMeta;
     const user = request.user;
 
     if (!user || !user.roleId) {
@@ -55,6 +64,14 @@ export class PermissionsGuard implements CanActivate {
     const hasPermission = this.matchPermission(permissions, required);
 
     if (!hasPermission) {
+      void this.audit.record({
+        eventType: SecurityEventType.PERMISSION_DENIED,
+        userId: user.id,
+        clinicId: user.clinicId,
+        ip: request.ip,
+        userAgent: request.headers?.['user-agent'],
+        resource: `${required.action}:${required.subject}`,
+      });
       throw new ForbiddenException(
         'No tienes permisos para acceder a este recurso',
       );
@@ -94,7 +111,9 @@ export class PermissionsGuard implements CanActivate {
         ROLE_PERMISSIONS_CACHE_TTL,
       );
     } catch {
-      this.logger.warn(`Error escribiendo caché de permisos para rol ${roleId}`);
+      this.logger.warn(
+        `Error escribiendo caché de permisos para rol ${roleId}`,
+      );
     }
 
     return permissions;
@@ -110,8 +129,7 @@ export class PermissionsGuard implements CanActivate {
     required: RequiredPermission,
   ): boolean {
     return permissions.some((p) => {
-      const actionMatch =
-        p.action === required.action || p.action === 'MANAGE';
+      const actionMatch = p.action === required.action || p.action === 'MANAGE';
       const subjectMatch =
         p.subject === required.subject || p.subject === 'ALL';
       return actionMatch && subjectMatch;

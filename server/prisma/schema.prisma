@@ -100,6 +100,11 @@ enum WaitlistOfferStatus {
   EXPIRED
 }
 
+enum SecurityEventType {
+  LOGIN_FAILED
+  PERMISSION_DENIED
+}
+
 model Users {
   id            Int             @id @default(autoincrement())
   name          String
@@ -652,6 +657,26 @@ model WaitlistOffers {
   @@index([waitlistEntryId, status])
   @@index([status, expiresAt]) // cron de expiración de ofertas
   @@index([scheduleId, startTime, endTime])
+}
+
+// Bitácora de seguridad append-only. Sin FKs a propósito: el registro debe
+// sobrevivir el borrado del usuario/clínica que lo originó. userId/email/clinicId
+// se guardan como snapshot del momento del evento.
+model SecurityAuditLogs {
+  id        Int               @id @default(autoincrement())
+  eventType SecurityEventType
+  userId    Int?
+  email     String?
+  clinicId  Int?
+  ip        String?
+  userAgent String?
+  resource  String? // p.ej. "READ:Appointment" en denegaciones de permiso
+  metadata  Json?
+  createdAt DateTime          @default(now())
+
+  @@index([eventType, createdAt])
+  @@index([userId])
+  @@index([email])
 }
 
 // --- FHIR RESOURCE STORE (interoperabilidad) ---
