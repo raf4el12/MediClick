@@ -12,7 +12,11 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { Auth } from '../../../../shared/decorators/index.js';
+import {
+  Auth,
+  CurrentClinic,
+  CurrentUser,
+} from '../../../../shared/decorators/index.js';
 import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
 import { PaginationDto } from '../../../../shared/utils/dtos/pagination-dto.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
@@ -103,8 +107,15 @@ export class ClinicController {
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateClinicDto,
+    @CurrentClinic() callerClinicId: number | null,
+    @CurrentUser('roleName') callerRoleName: string,
   ): Promise<ClinicResponseDto> {
-    return this.updateClinicUseCase.execute(id, dto);
+    return this.updateClinicUseCase.execute(
+      id,
+      dto,
+      callerClinicId,
+      callerRoleName,
+    );
   }
 
   @Delete(':id')
