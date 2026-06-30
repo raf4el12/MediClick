@@ -17,7 +17,7 @@ import {
   ApiBearerAuth,
   ApiCookieAuth,
 } from '@nestjs/swagger';
-import { Throttle, SkipThrottle } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 import express from 'express';
 import { ConfigService } from '@nestjs/config';
 import { LoginDto } from '../../application/dto/login.dto.js';

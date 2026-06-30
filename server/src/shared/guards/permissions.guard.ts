@@ -16,7 +16,13 @@ import {
   ROLE_PERMISSIONS_CACHE_TTL,
 } from '../constants/permissions.constant.js';
 import type { RequiredPermission } from '../decorators/require-permissions.decorator.js';
+import type { AuthenticatedRequest } from '../domain/interfaces/authenticated-user.interface.js';
 import { getRequestFromContext } from '../utils/get-request-from-context.js';
+
+type RequestWithMeta = AuthenticatedRequest & {
+  ip?: string;
+  headers?: Record<string, string | undefined>;
+};
 
 interface CachedPermission {
   action: string;
@@ -45,7 +51,7 @@ export class PermissionsGuard implements CanActivate {
       return true;
     }
 
-    const request = getRequestFromContext(context);
+    const request = getRequestFromContext(context) as RequestWithMeta;
     const user = request.user;
 
     if (!user || !user.roleId) {
@@ -58,16 +64,12 @@ export class PermissionsGuard implements CanActivate {
     const hasPermission = this.matchPermission(permissions, required);
 
     if (!hasPermission) {
-      const req = request as {
-        ip?: string;
-        headers?: Record<string, string | undefined>;
-      };
       void this.audit.record({
         eventType: SecurityEventType.PERMISSION_DENIED,
         userId: user.id,
         clinicId: user.clinicId,
-        ip: req.ip,
-        userAgent: req.headers?.['user-agent'],
+        ip: request.ip,
+        userAgent: request.headers?.['user-agent'],
         resource: `${required.action}:${required.subject}`,
       });
       throw new ForbiddenException(
@@ -109,7 +111,9 @@ export class PermissionsGuard implements CanActivate {
         ROLE_PERMISSIONS_CACHE_TTL,
       );
     } catch {
-      this.logger.warn(`Error escribiendo caché de permisos para rol ${roleId}`);
+      this.logger.warn(
+        `Error escribiendo caché de permisos para rol ${roleId}`,
+      );
     }
 
     return permissions;
@@ -125,8 +129,7 @@ export class PermissionsGuard implements CanActivate {
     required: RequiredPermission,
   ): boolean {
     return permissions.some((p) => {
-      const actionMatch =
-        p.action === required.action || p.action === 'MANAGE';
+      const actionMatch = p.action === required.action || p.action === 'MANAGE';
       const subjectMatch =
         p.subject === required.subject || p.subject === 'ALL';
       return actionMatch && subjectMatch;
