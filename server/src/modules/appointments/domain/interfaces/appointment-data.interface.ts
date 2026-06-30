@@ -8,6 +8,8 @@ export interface CreateAppointmentData {
   reason?: string;
   isOverbook?: boolean;
   clinicId?: number | null;
+  amount?: number | null;
+  pendingUntil?: Date | null;
 }
 
 export interface UpdateAppointmentData {
@@ -18,6 +20,8 @@ export interface UpdateAppointmentData {
   startTime?: Date;
   endTime?: Date;
   notes?: string;
+  pendingUntil?: Date | null;
+  reminderSent?: boolean;
   updatedAt?: Date;
 }
 
@@ -36,6 +40,7 @@ export interface AppointmentWithRelations {
   cancellationFee: number | null;
   isOverbook: boolean;
   pendingUntil: Date | null;
+  clinicId: number | null;
   deleted: boolean;
   createdAt: Date;
   updatedAt: Date | null;
@@ -62,6 +67,15 @@ export interface AppointmentWithRelations {
     };
     specialty: { id: number; name: string };
   };
+}
+
+/** Slot liberado por una cita expirada (datos mínimos para la waitlist). */
+export interface ExpiredAppointmentSlot {
+  id: number;
+  scheduleId: number;
+  startTime: Date;
+  endTime: Date;
+  clinicId: number | null;
 }
 
 export interface DashboardFilters {

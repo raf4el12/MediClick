@@ -29,6 +29,8 @@ export interface Doctor {
   id: number;
   licenseNumber: string;
   resume: string | null;
+  ratingAvg: number | null;
+  ratingCount: number;
   clinicId: number | null;
   clinic: DoctorClinic | null;
   isActive: boolean;

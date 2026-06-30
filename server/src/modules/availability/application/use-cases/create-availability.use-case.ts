@@ -13,6 +13,7 @@ import {
   timeStringToDate,
   dateToTimeString,
 } from '../../../../shared/utils/date-time.utils.js';
+import { AvailabilityType } from '../../../../shared/domain/enums/availability-type.enum.js';
 
 @Injectable()
 export class CreateAvailabilityUseCase {
@@ -61,26 +62,30 @@ export class CreateAvailabilityUseCase {
     const startDate = new Date(dto.startDate);
     const endDate = new Date(dto.endDate);
 
-    if (startDate >= endDate) {
+    if (startDate > endDate) {
       throw new BadRequestException(
-        'La fecha de inicio debe ser menor a la fecha de fin',
+        'La fecha de inicio debe ser menor o igual a la fecha de fin',
       );
     }
 
-    const overlapping = await this.availabilityRepository.findOverlapping(
-      dto.doctorId,
-      dto.dayOfWeek,
-      timeFrom,
-      timeTo,
-      undefined,
-      startDate,
-      endDate,
-    );
-
-    if (overlapping.length > 0) {
-      throw new ConflictException(
-        'El doctor ya tiene un horario que se solapa en ese día y rango de horas',
+    // Una EXCEPTION se superpone por diseño con la regla que suprime,
+    // así que no pasa por la validación de solapamiento.
+    if (dto.type !== AvailabilityType.EXCEPTION) {
+      const overlapping = await this.availabilityRepository.findOverlapping(
+        dto.doctorId,
+        dto.dayOfWeek,
+        timeFrom,
+        timeTo,
+        undefined,
+        startDate,
+        endDate,
       );
+
+      if (overlapping.length > 0) {
+        throw new ConflictException(
+          'El doctor ya tiene un horario que se solapa en ese día y rango de horas',
+        );
+      }
     }
 
     const availability = await this.availabilityRepository.create({

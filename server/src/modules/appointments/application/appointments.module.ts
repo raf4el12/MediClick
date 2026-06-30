@@ -17,8 +17,12 @@ import { RescheduleAppointmentUseCase } from './use-cases/reschedule-appointment
 import { ConfirmAppointmentUseCase } from './use-cases/confirm-appointment.use-case.js';
 import { CreateOverbookAppointmentUseCase } from './use-cases/create-overbook-appointment.use-case.js';
 import { CompleteAppointmentUseCase } from './use-cases/complete-appointment.use-case.js';
+import { MarkNoShowAppointmentUseCase } from './use-cases/mark-no-show-appointment.use-case.js';
 import { GetMyAppointmentsUseCase } from './use-cases/get-my-appointments.use-case.js';
 import { CreatePatientAppointmentUseCase } from './use-cases/create-patient-appointment.use-case.js';
+import { ExpirePendingAppointmentsUseCase } from './use-cases/expire-pending-appointments.use-case.js';
+import { AppointmentSlotValidatorService } from './services/appointment-slot-validator.service.js';
+import { AvailabilityChangeListener } from './listeners/availability-change.listener.js';
 import { AppointmentController } from '../interfaces/controllers/appointment.controller.js';
 
 @Module({
@@ -47,8 +51,12 @@ import { AppointmentController } from '../interfaces/controllers/appointment.con
     CreateOverbookAppointmentUseCase,
     RescheduleAppointmentUseCase,
     CompleteAppointmentUseCase,
+    MarkNoShowAppointmentUseCase,
     GetMyAppointmentsUseCase,
     CreatePatientAppointmentUseCase,
+    ExpirePendingAppointmentsUseCase,
+    AppointmentSlotValidatorService,
+    AvailabilityChangeListener,
   ],
   exports: ['IAppointmentRepository'],
 })

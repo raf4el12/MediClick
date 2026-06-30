@@ -22,11 +22,13 @@ import {
   nowInTimezone,
 } from '../../../../shared/utils/date-time.utils.js';
 import { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
-import type { AppointmentCancelledEvent } from '../../../../shared/mail/events/mail-events.interface.js';
+import { SLOT_RELEASED_EVENT } from '../../../../shared/events/availability-events.interface.js';
 import {
-  DEFAULT_TIMEZONE,
-  DEFAULT_CLINIC_NAME,
-} from '../../../../shared/constants/defaults.constant.js';
+  buildAppointmentCancelledEvent,
+  buildSlotReleasedEvent,
+} from '../services/appointment-event.builder.js';
+import type { TransactionEntity } from '../../../payments/domain/entities/transaction.entity.js';
+import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
 
 @Injectable()
 export class CancelAppointmentUseCase {
@@ -79,22 +81,27 @@ export class CancelAppointmentUseCase {
     const hoursUntilAppointment =
       (appointmentDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
 
+    // Buscar la última transacción una sola vez: el fee solo aplica si hay un
+    // pago PAID que cobrar, y los flags de refund/fee se anclan en esa transacción.
+    const tx = await this.transactionRepository.findLatestByAppointmentId(id);
+    const isPaid = tx?.status === 'PAID';
+
     let cancellationFee: number | undefined;
 
-    // Los pacientes deben cancelar con al menos 24h de anticipación
-    if (userRole === UserRole.PATIENT) {
-      if (hoursUntilAppointment < MIN_CANCELLATION_HOURS_PATIENT) {
-        // Calcular penalización basada en el precio de la especialidad
-        const specialty = await this.specialtyRepository.findById(
-          appointment.schedule.specialty.id,
+    // Penalización: paciente que cancela tarde (<24h) una cita pagada.
+    if (
+      userRole === UserRole.PATIENT &&
+      hoursUntilAppointment < MIN_CANCELLATION_HOURS_PATIENT &&
+      isPaid
+    ) {
+      const specialty = await this.specialtyRepository.findById(
+        appointment.schedule.specialty.id,
+      );
+      const specialtyPrice = specialty?.price ?? 0;
+      if (specialtyPrice > 0) {
+        cancellationFee = Math.round(
+          (specialtyPrice * CANCELLATION_FEE_PERCENTAGE) / 100,
         );
-        const specialtyPrice = specialty?.price ?? 0;
-
-        if (specialtyPrice > 0) {
-          cancellationFee = Math.round(
-            (specialtyPrice * CANCELLATION_FEE_PERCENTAGE) / 100,
-          );
-        }
       }
     }
 
@@ -105,67 +112,84 @@ export class CancelAppointmentUseCase {
       updatedAt: new Date(),
     });
 
-    // Si la cita tenía un pago PAID, se marca la transacción como "requiere refund manual".
-    // No se procesa refund automático — el admin debe revisarlo desde el dashboard.
-    await this.flagRefundPendingIfPaid(id, dto.reason, userRole);
-
-    if (updated.patient.profile.userId) {
-      const clinicId = await this.timezoneResolver.resolveClinicIdByDoctorId(
-        updated.schedule.doctor.id,
+    // Una cita pagada que se cancela requiere refund manual; si además hubo
+    // penalización por cancelación tardía, se marca el cobro del fee en la misma
+    // transacción para que el admin reconcilie el neto. Sin gateway automático.
+    if (isPaid && tx) {
+      await this.flagTransactionOnCancel(
+        id,
+        tx,
+        dto.reason,
+        userRole,
+        cancellationFee,
       );
-      const event: AppointmentCancelledEvent = {
-        appointmentId: updated.id,
-        patientEmail: updated.patient.profile.email,
-        patientName: `${updated.patient.profile.name} ${updated.patient.profile.lastName}`,
-        patientUserId: updated.patient.profile.userId,
-        doctorName: `${updated.schedule.doctor.profile.name} ${updated.schedule.doctor.profile.lastName}`,
-        clinicName: updated.schedule.doctor.clinic?.name ?? DEFAULT_CLINIC_NAME,
-        clinicTimezone:
-          updated.schedule.doctor.clinic?.timezone ?? DEFAULT_TIMEZONE,
-        scheduleDate: updated.schedule.scheduleDate,
-        cancelReason: dto.reason ?? null,
-        scheduleId: updated.scheduleId,
-        startTime: updated.startTime,
-        endTime: updated.endTime,
-        clinicId,
-      };
-      this.eventEmitter.emit('appointment.cancelled', event);
+    }
+
+    const clinicId = await this.timezoneResolver.resolveClinicIdByDoctorId(
+      updated.schedule.doctor.id,
+    );
+
+    // El slot liberado se reofrece SIEMPRE a la waitlist, tenga o no usuario
+    // el paciente. Mail/notificación sí requieren usuario (builder retorna null).
+    this.eventEmitter.emit(
+      SLOT_RELEASED_EVENT,
+      buildSlotReleasedEvent(updated, clinicId),
+    );
+
+    const cancelledEvent = buildAppointmentCancelledEvent(
+      updated,
+      dto.reason ?? null,
+      clinicId,
+    );
+    if (cancelledEvent) {
+      this.eventEmitter.emit('appointment.cancelled', cancelledEvent);
     }
 
     return this.toResponse(updated);
   }
 
   /**
-   * Si la última transacción de la cita está PAID, la marca con `needsRefund` en metadata.
-   * Un admin la procesa manualmente desde el panel de facturación
-   * (refunds automáticos vía API quedan para fase posterior).
+   * Marca la transacción PAID de una cita cancelada para revisión manual del
+   * admin: siempre `needsRefund`, y además `needsFeeCollection` cuando hubo
+   * penalización por cancelación tardía. Una sola escritura de metadata; sin
+   * refunds ni cobros automáticos vía gateway (quedan para fase posterior).
    */
-  private async flagRefundPendingIfPaid(
+  private async flagTransactionOnCancel(
     appointmentId: number,
+    tx: TransactionEntity,
     cancelReason: string | undefined,
     cancelledBy: string,
+    cancellationFee: number | undefined,
   ): Promise<void> {
-    const tx =
-      await this.transactionRepository.findLatestByAppointmentId(appointmentId);
-    if (!tx || tx.status !== 'PAID') return;
-
     const previousMetadata =
       tx.metadata && typeof tx.metadata === 'object'
         ? (tx.metadata as Record<string, unknown>)
         : {};
 
+    const now = new Date().toISOString();
+
     await this.transactionRepository.update(tx.id, {
       metadata: {
         ...previousMetadata,
         needsRefund: true,
-        refundRequestedAt: new Date().toISOString(),
+        refundRequestedAt: now,
         refundCancelReason: cancelReason ?? null,
         refundCancelledBy: cancelledBy,
+        ...(cancellationFee !== undefined && {
+          needsFeeCollection: true,
+          feeAmount: cancellationFee,
+          feeReason: 'Cancelación tardía (<24h)',
+          feeRequestedAt: now,
+        }),
       },
     });
 
     this.logger.warn(
-      `[REVIEW] Cita ${appointmentId} cancelada con pago PAID (txId=${tx.id}). Refund manual pendiente.`,
+      `[REVIEW] Cita ${appointmentId} cancelada con pago PAID (txId=${tx.id})` +
+        (cancellationFee !== undefined
+          ? `; fee S/${cancellationFee} por cobrar`
+          : '') +
+        '. Refund manual pendiente.',
     );
   }
 

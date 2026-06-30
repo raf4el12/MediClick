@@ -180,6 +180,8 @@ model Doctors {
   resume            String?
   isActive          Boolean              @default(true)
   maxOverbookPerDay Int                  @default(2) // Máximo de sobrecupos por día
+  ratingAvg         Decimal?             @db.Decimal(3, 2) // Promedio denormalizado de reseñas visibles
+  ratingCount       Int                  @default(0) // Nº de reseñas visibles
   clinicId          Int?
   deleted           Boolean              @default(false)
   createdAt         DateTime             @default(now())
@@ -333,6 +335,7 @@ model Appointments {
   prescription   Prescriptions?
   transactions   Transactions[]
   waitlistOffers WaitlistOffers[]
+  review         Reviews?
 
   @@index([patientId, status])
   @@index([scheduleId, startTime, endTime])
@@ -420,20 +423,22 @@ model Transactions {
 
 // MODELO NUEVO: Reseñas (Reputación)
 model Reviews {
-  id        Int      @id @default(autoincrement())
-  doctorId  Int
-  patientId Int
-  rating    Int      @default(0) // 1 a 5
-  comment   String?  @db.Text
-  isVisible Boolean  @default(true) // Para moderación
-  clinicId  Int?
-  createdAt DateTime @default(now())
+  id            Int      @id @default(autoincrement())
+  appointmentId Int      @unique // Reseña verificada: el paciente tuvo esta cita; 1 reseña por cita
+  doctorId      Int
+  patientId     Int
+  rating        Int      @default(0) // 1 a 5
+  comment       String?  @db.Text
+  isVisible     Boolean  @default(true) // Para moderación (post-moderación: visible al crear)
+  clinicId      Int?
+  createdAt     DateTime @default(now())
 
-  doctor  Doctors  @relation(fields: [doctorId], references: [id])
-  patient Patients @relation(fields: [patientId], references: [id])
-  clinic  Clinics? @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+  appointment Appointments @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  doctor      Doctors      @relation(fields: [doctorId], references: [id])
+  patient     Patients     @relation(fields: [patientId], references: [id])
+  clinic      Clinics?     @relation(fields: [clinicId], references: [id], onDelete: SetNull)
 
-  @@index([doctorId])
+  @@index([doctorId, isVisible])
   @@index([patientId])
   @@index([clinicId])
 }
@@ -672,4 +677,31 @@ model SecurityAuditLogs {
   @@index([eventType, createdAt])
   @@index([userId])
   @@index([email])
+}
+
+// --- FHIR RESOURCE STORE (interoperabilidad) ---
+
+model FhirResource {
+  id           String   @id @default(uuid())
+  resourceType String
+  versionId    Int      @default(1)
+  content      Json
+  clinicId     Int
+  deleted      Boolean  @default(false)
+  lastUpdated  DateTime @updatedAt
+  createdAt    DateTime @default(now())
+
+  @@unique([resourceType, id])
+  @@index([resourceType, clinicId])
+}
+
+model FhirResourceHistory {
+  id           String   @id @default(uuid())
+  resourceType String
+  resourceId   String
+  versionId    Int
+  content      Json
+  recordedAt   DateTime @default(now())
+
+  @@index([resourceType, resourceId, versionId])
 }

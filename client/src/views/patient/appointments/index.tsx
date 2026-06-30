@@ -33,6 +33,8 @@ import { alpha, useTheme } from '@mui/material/styles';
 import { useRouter } from 'next/navigation';
 import { appointmentsService } from '@/services/appointments.service';
 import { prescriptionsService } from '@/services/prescriptions.service';
+import { reviewsService } from '@/services/reviews.service';
+import { ReviewDialog } from '@/views/reviews/components/ReviewDialog';
 import { AppointmentStatus } from '@/views/appointments/types';
 import type { Appointment, PatientAppointmentFilters } from '@/views/appointments/types';
 import { PaymentStatusBadge } from '@/views/payment/components/PaymentStatusBadge';
@@ -70,6 +72,10 @@ export default function PatientAppointmentsView() {
   const [cancelReason, setCancelReason] = useState('');
   const [cancelling, setCancelling] = useState(false);
 
+  // Review
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewedApptIds, setReviewedApptIds] = useState<Set<number>>(new Set());
+
   // Prescription dialog
   const [prescriptionOpen, setPrescriptionOpen] = useState(false);
   const [prescription, setPrescription] = useState<Prescription | null>(null);
@@ -102,6 +108,18 @@ export default function PatientAppointmentsView() {
     fetchAppointments();
   }, [fetchAppointments]);
 
+  // Citas ya reseñadas → para mostrar "Reseñar" vs "Reseñado".
+  useEffect(() => {
+    reviewsService
+      .getMine()
+      .then((reviews) =>
+        setReviewedApptIds(new Set(reviews.map((r) => r.appointmentId))),
+      )
+      .catch(() => {
+        /* sin reseñas o error: se muestra "Reseñar" igualmente */
+      });
+  }, []);
+
   const handleTabChange = (_: unknown, val: TabValue | null) => {
     if (val) {
       setTab(val);
@@ -131,6 +149,18 @@ export default function PatientAppointmentsView() {
   const openDetail = (apt: Appointment) => {
     setSelectedApt(apt);
     setDetailOpen(true);
+  };
+
+  const openReview = (apt: Appointment) => {
+    setSelectedApt(apt);
+    setReviewOpen(true);
+  };
+
+  const handleReviewed = (appointmentId: number) => {
+    setReviewedApptIds((prev) => new Set(prev).add(appointmentId));
+    setReviewOpen(false);
+    setDetailOpen(false);
+    showSnackbar('¡Gracias por tu reseña!', 'success');
   };
 
   const openPrescription = async (apt: Appointment) => {
@@ -301,6 +331,29 @@ export default function PatientAppointmentsView() {
                           <i className="ri-file-list-3-line" style={{ fontSize: 18 }} />
                         </IconButton>
                       )}
+                      {isCompleted(apt.status) && (
+                        reviewedApptIds.has(apt.id) ? (
+                          <IconButton
+                            size="small"
+                            disabled
+                            title="Ya reseñada"
+                            aria-label="Cita ya reseñada"
+                            sx={{ color: 'warning.main' }}
+                          >
+                            <i className="ri-star-fill" style={{ fontSize: 18 }} />
+                          </IconButton>
+                        ) : (
+                          <IconButton
+                            size="small"
+                            title="Reseñar"
+                            aria-label="Reseñar cita"
+                            onClick={(e) => { e.stopPropagation(); openReview(apt); }}
+                            sx={{ color: 'warning.main' }}
+                          >
+                            <i className="ri-star-line" style={{ fontSize: 18 }} />
+                          </IconButton>
+                        )
+                      )}
                       {canCancel(apt.status) && (
                         <IconButton
                           size="small"
@@ -447,6 +500,16 @@ export default function PatientAppointmentsView() {
                     }}
                   >
                     Ver Receta
+                  </Button>
+                )}
+                {isCompleted(apt.status) && !reviewedApptIds.has(apt.id) && (
+                  <Button
+                    variant="outlined"
+                    color="warning"
+                    startIcon={<i className="ri-star-line" />}
+                    onClick={() => openReview(apt)}
+                  >
+                    Reseñar
                   </Button>
                 )}
                 {canCancel(apt.status) && (
@@ -665,6 +728,17 @@ export default function PatientAppointmentsView() {
           )}
         </DialogActions>
       </Dialog>
+
+      {/* Review Dialog */}
+      {selectedApt && (
+        <ReviewDialog
+          open={reviewOpen}
+          onClose={() => setReviewOpen(false)}
+          appointmentId={selectedApt.id}
+          doctorName={`${selectedApt.schedule.doctor.name} ${selectedApt.schedule.doctor.lastName}`}
+          onSubmitted={() => handleReviewed(selectedApt.id)}
+        />
+      )}
 
       <SuccessSnackbar snackbar={snackbar} onClose={closeSnackbar} />
     </Box>

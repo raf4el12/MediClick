@@ -17,6 +17,7 @@ import { WaitlistEntryStatus } from '../../domain/enums/waitlist-entry-status.en
 import { WaitlistLockService } from '../services/waitlist-lock.service.js';
 import { AcceptOfferResponseDto } from '../dto/accept-offer-response.dto.js';
 import { dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
+import { getAppointmentPaymentTimeoutMs } from '../../../../shared/utils/payment-timeout.util.js';
 import type { WaitlistOfferAcceptedEvent } from '../events/waitlist-events.interface.js';
 
 @Injectable()
@@ -38,13 +39,6 @@ export class AcceptOfferUseCase {
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
-
-  private getPaymentTimeoutMs(): number {
-    const minutes = Number(
-      process.env.APPOINTMENT_PAYMENT_TIMEOUT_MINUTES ?? '15',
-    );
-    return (Number.isFinite(minutes) && minutes > 0 ? minutes : 15) * 60 * 1000;
-  }
 
   async execute(
     userId: number,
@@ -99,7 +93,9 @@ export class AcceptOfferUseCase {
     // Precio + deadline de pago (mismo mecanismo que la reserva directa).
     const schedule = await this.scheduleRepository.findById(offer.scheduleId);
     const price = schedule?.specialty.price ?? null;
-    const pendingUntil = new Date(Date.now() + this.getPaymentTimeoutMs());
+    const pendingUntil = new Date(
+      Date.now() + getAppointmentPaymentTimeoutMs(),
+    );
     await this.prisma.appointments.update({
       where: { id: appointment.id },
       data: { ...(price && price > 0 && { amount: price }), pendingUntil },

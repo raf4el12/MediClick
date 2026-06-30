@@ -14,6 +14,7 @@ import type { IHolidayRepository } from '../../../holidays/domain/repositories/h
 import type { IScheduleBlockRepository } from '../../../schedule-blocks/domain/repositories/schedule-block.repository.js';
 import type { CreateScheduleData } from '../../domain/interfaces/schedule-data.interface.js';
 import { DayOfWeek } from '../../../../shared/domain/enums/day-of-week.enum.js';
+import { AvailabilityType } from '../../../../shared/domain/enums/availability-type.enum.js';
 import { TimeSlotCalculatorService } from '../../domain/services/time-slot-calculator.service.js';
 
 const JS_DAY_TO_ENUM: Record<number, DayOfWeek> = {
@@ -173,11 +174,14 @@ export class GenerateSchedulesUseCase {
     const doctorClinicId = doctorClinicCache.get(doctorId) ?? null;
 
     if (dto.overwrite) {
+      // Si se regenera una sola especialidad, borrar solo sus schedules:
+      // sin el filtro desaparecían los de las demás especialidades.
       deleted =
         await this.scheduleRepository.deleteUnbookedByDoctorAndDateRange(
           doctorId,
           rangeStart,
           rangeEnd,
+          dto.specialtyId,
         );
     }
 
@@ -255,7 +259,7 @@ export class GenerateSchedulesUseCase {
 
     const dayOfWeek = JS_DAY_TO_ENUM[date.getUTCDay()];
 
-    const matchingRules = availabilities.filter((a) => {
+    const dayRules = availabilities.filter((a) => {
       if (a.dayOfWeek !== dayOfWeek || !a.isAvailable) return false;
       if (!a.startDate || !a.endDate) return true;
       const startMs = Date.UTC(a.startDate.getUTCFullYear(), a.startDate.getUTCMonth(), a.startDate.getUTCDate());
@@ -263,9 +267,21 @@ export class GenerateSchedulesUseCase {
       return dateMs >= startMs && dateMs <= endMs;
     });
 
+    // EXCEPTION es sustractiva: no genera slots, suprime los de su especialidad
+    // que se solapen en horario ese día. REGULAR y EXTRA sí generan.
+    const exceptions = dayRules.filter(
+      (a) => a.type === AvailabilityType.EXCEPTION,
+    );
+    const matchingRules = dayRules.filter(
+      (a) => a.type !== AvailabilityType.EXCEPTION,
+    );
+
     const timeRangeBlocks = this.getTimeRangeBlocks(dateMs, scheduleBlocks);
 
     for (const rule of matchingRules) {
+      const ruleExceptions = exceptions.filter(
+        (e) => e.specialtyId === rule.specialtyId,
+      );
       const result = await this.generateSlotsForRule(
         rule,
         date,
@@ -273,6 +289,7 @@ export class GenerateSchedulesUseCase {
         doctorId,
         doctorClinicId,
         timeRangeBlocks,
+        ruleExceptions,
         existingSet,
         specialtyCache,
       );
@@ -293,6 +310,7 @@ export class GenerateSchedulesUseCase {
     doctorId: number,
     doctorClinicId: number | null,
     timeRangeBlocks: any[],
+    exceptions: any[],
     existingSet: Set<string>,
     specialtyCache: Map<number, { duration: number | null; bufferMinutes: number }>,
   ): Promise<{ slots: CreateScheduleData[]; skipped: number }> {
@@ -326,7 +344,11 @@ export class GenerateSchedulesUseCase {
         return slot.startTime < block.timeTo && slot.endTime > block.timeFrom;
       });
 
-      if (isBlocked) {
+      const isExcepted = exceptions.some(
+        (e) => slot.startTime < e.timeTo && slot.endTime > e.timeFrom,
+      );
+
+      if (isBlocked || isExcepted) {
         skipped++;
         continue;
       }

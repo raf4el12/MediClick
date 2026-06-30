@@ -23,6 +23,7 @@ import { doctorsService } from '@/services/doctors.service';
 import { schedulesService } from '@/services/schedules.service';
 import { appointmentsService } from '@/services/appointments.service';
 import { paymentsService } from '@/services/payments.service';
+import { DoctorRatingBadge } from '@/views/reviews/components/DoctorRatingBadge';
 import { filterAvailableSlots } from '@/views/appointments/functions/filterAvailableSlots';
 import { getTodayInTimezone } from '@/utils/timezone';
 import { extractApiError } from '@/utils/extractApiError';
@@ -432,9 +433,15 @@ export default function PatientBookView() {
                         <Typography variant="subtitle2" fontWeight={600} noWrap>
                           Dr. {doc.profile.name} {doc.profile.lastName}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                           CMP: {doc.licenseNumber}
                         </Typography>
+                        <Box sx={{ mt: 0.5 }}>
+                          <DoctorRatingBadge
+                            ratingAvg={doc.ratingAvg}
+                            ratingCount={doc.ratingCount}
+                          />
+                        </Box>
                       </Box>
                     </CardContent>
                   </CardActionArea>

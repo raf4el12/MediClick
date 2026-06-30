@@ -2,26 +2,19 @@ import {
   Injectable,
   Inject,
   BadRequestException,
-  ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { CreatePatientAppointmentDto } from '../dto/create-patient-appointment.dto.js';
 import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type { IPatientRepository } from '../../../patients/domain/repositories/patient.repository.js';
 import type { IScheduleRepository } from '../../../schedules/domain/repositories/schedule.repository.js';
-import type { IHolidayRepository } from '../../../holidays/domain/repositories/holiday.repository.js';
-import type { IScheduleBlockRepository } from '../../../schedule-blocks/domain/repositories/schedule-block.repository.js';
+import { AppointmentSlotValidatorService } from '../services/appointment-slot-validator.service.js';
 import {
   parseHHmm,
   dateToTimeString,
-  toMinutesUTC,
-  nowInTimezone,
-  todayStartInTimezone,
-  scheduleDateToLocalDay,
 } from '../../../../shared/utils/date-time.utils.js';
-import { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
+import { getAppointmentPaymentTimeoutMs } from '../../../../shared/utils/payment-timeout.util.js';
 import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
 
 @Injectable()
@@ -33,24 +26,8 @@ export class CreatePatientAppointmentUseCase {
     private readonly patientRepository: IPatientRepository,
     @Inject('IScheduleRepository')
     private readonly scheduleRepository: IScheduleRepository,
-    @Inject('IHolidayRepository')
-    private readonly holidayRepository: IHolidayRepository,
-    @Inject('IScheduleBlockRepository')
-    private readonly scheduleBlockRepository: IScheduleBlockRepository,
-    private readonly timezoneResolver: TimezoneResolverService,
-    private readonly prisma: PrismaService,
+    private readonly slotValidator: AppointmentSlotValidatorService,
   ) {}
-
-  /** Buffer mínimo en milisegundos (2 horas) */
-  private static readonly MIN_BUFFER_MS = 2 * 60 * 60 * 1000;
-
-  /** Ventana para completar el pago antes de que la cita expire */
-  private getPaymentTimeoutMs(): number {
-    const minutes = Number(
-      process.env.APPOINTMENT_PAYMENT_TIMEOUT_MINUTES ?? '15',
-    );
-    return (Number.isFinite(minutes) && minutes > 0 ? minutes : 15) * 60 * 1000;
-  }
 
   async execute(
     userId: number,
@@ -80,111 +57,41 @@ export class CreatePatientAppointmentUseCase {
     const slotStart = parseHHmm(dto.startTime);
     const slotEnd = parseHHmm(dto.endTime);
 
-    if (slotStart.getTime() >= slotEnd.getTime()) {
-      throw new BadRequestException('startTime debe ser anterior a endTime');
-    }
+    // Precondiciones del slot (rango, duración/grilla, fecha pasada, 2h,
+    // feriado, bloqueo). Sin jwtClinicId: el paciente puede reservar en
+    // cualquier sede.
+    const clinicId = await this.slotValidator.validate({
+      doctorId: schedule.doctorId,
+      scheduleDate: new Date(schedule.scheduleDate),
+      schedTimeFrom: new Date(schedule.timeFrom),
+      schedTimeTo: new Date(schedule.timeTo),
+      slotStart,
+      slotEnd,
+      durationMinutes: schedule.specialty.duration,
+      bufferMinutes: schedule.specialty.bufferMinutes,
+    });
 
-    // ── Validar que el slot cabe dentro del rango del schedule ──
-    const schedTimeFrom = new Date(schedule.timeFrom);
-    const schedTimeTo = new Date(schedule.timeTo);
-
-    const schedFromMinutes = toMinutesUTC(schedTimeFrom);
-    const schedToMinutes = toMinutesUTC(schedTimeTo);
-    const slotStartMinutes = toMinutesUTC(slotStart);
-    const slotEndMinutes = toMinutesUTC(slotEnd);
-
-    if (
-      slotStartMinutes < schedFromMinutes ||
-      slotEndMinutes > schedToMinutes
-    ) {
-      throw new BadRequestException(
-        `El slot ${dto.startTime}-${dto.endTime} está fuera del rango del turno ` +
-          `${dateToTimeString(schedTimeFrom)}-${dateToTimeString(schedTimeTo)}`,
-      );
-    }
-
-    // ── Validación de fecha/hora (zona horaria de la sede del doctor) ──
-    const tz = await this.timezoneResolver.resolveByDoctorId(schedule.doctorId);
-    const now = nowInTimezone(tz);
-    const scheduleDate = new Date(schedule.scheduleDate);
-    const todayStart = todayStartInTimezone(tz);
-    const scheduleDayStart = scheduleDateToLocalDay(scheduleDate);
-
-    if (scheduleDayStart < todayStart) {
-      throw new BadRequestException(
-        'No se puede agendar una cita en una fecha pasada',
-      );
-    }
-
-    if (scheduleDayStart.getTime() === todayStart.getTime()) {
-      const scheduleDateTime = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        now.getDate(),
-        slotStart.getUTCHours(),
-        slotStart.getUTCMinutes(),
-      );
-      const diff = scheduleDateTime.getTime() - now.getTime();
-      if (diff < CreatePatientAppointmentUseCase.MIN_BUFFER_MS) {
-        throw new BadRequestException(
-          'Debe haber al menos 2 horas de anticipación para agendar una cita',
-        );
-      }
-    }
-
-    const clinicId = await this.timezoneResolver.resolveClinicIdByDoctorId(
-      schedule.doctorId,
+    // Verifica overlap y crea la cita en una sola transacción serializable.
+    // El monto y el deadline de pago se escriben dentro de la misma transacción
+    // para que la reserva sea atómica y no exista ventana de carrera (TOCTOU)
+    // entre el chequeo de superposición y el create.
+    const pendingUntil = new Date(
+      Date.now() + getAppointmentPaymentTimeoutMs(),
     );
-
-    const [isHoliday, isBlocked, hasOverlap] = await Promise.all([
-      this.holidayRepository.isHoliday(scheduleDate, clinicId ?? undefined),
-      this.scheduleBlockRepository.isBlocked(
-        schedule.doctorId,
-        scheduleDate,
-        slotStart,
-        slotEnd,
-      ),
-      this.appointmentRepository.hasOverlappingAppointment(
-        dto.scheduleId,
-        slotStart,
-        slotEnd,
-      ),
-    ]);
-
-    if (isHoliday) {
-      throw new BadRequestException(
-        'No se puede agendar una cita en un día feriado',
-      );
-    }
-    if (isBlocked) {
-      throw new ConflictException(
-        'El doctor tiene un bloqueo de horario que cubre la fecha/hora seleccionada',
-      );
-    }
-    if (hasOverlap) {
-      throw new ConflictException(
-        'Ya existe una cita que se superpone con el horario seleccionado',
-      );
-    }
-
-    const appointment = await this.appointmentRepository.create({
-      patientId: patient.id,
-      scheduleId: dto.scheduleId,
-      startTime: slotStart,
-      endTime: slotEnd,
-      reason: dto.reason,
-      clinicId: clinicId ?? null,
-    });
-
-    // Setea monto + deadline de pago. Se hace aparte del create() del repo
-    // para no invadir la interface compartida con otros flujos (admin/staff)
-    // que podrían no requerir pre-pago.
-    const pendingUntil = new Date(Date.now() + this.getPaymentTimeoutMs());
-    await this.prisma.appointments.update({
-      where: { id: appointment.id },
-      data: { amount: specialtyPrice, pendingUntil },
-    });
-    appointment.amount = specialtyPrice;
+    const appointment = await this.appointmentRepository.createWithOverlapCheck(
+      {
+        patientId: patient.id,
+        scheduleId: dto.scheduleId,
+        startTime: slotStart,
+        endTime: slotEnd,
+        reason: dto.reason,
+        clinicId: clinicId ?? null,
+        amount: specialtyPrice,
+        pendingUntil,
+      },
+      slotStart,
+      slotEnd,
+    );
 
     return {
       id: appointment.id,

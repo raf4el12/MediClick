@@ -1,0 +1,324 @@
+# Auditoría — Huecos lógicos en horarios, citas y pacientes
+
+> Resultado de la revisión de los módulos `appointments`, `schedules`, `availability`,
+> `schedule-blocks`, `holidays`, `scheduler` y `payments`.  
+> Fecha: junio 2026.
+
+---
+
+## Tablero de prioridades
+
+| # | Hueco | Impacto | Esfuerzo | Prioridad |
+|---|-------|---------|----------|-----------|
+| 1 | TOCTOU en reserva de paciente (sin transacción) | Double-booking real | Bajo | ✅ Hecho |
+| 2 | Overlap check por `scheduleId`, no por doctor+hora | Double-booking cruzado | Medio | ✅ Hecho |
+| 3 | Cita PENDING+FAILED nunca expira (slot zombi) | Slot bloqueado para siempre | Bajo | ✅ Hecho |
+| 4 | Reagendar no valida feriados, bloqueos, fecha, sede | Citas en días inválidos | Medio | ✅ Hecho |
+| 5 | Bloqueo/feriado no cancela citas ya reservadas | Citas activas en días vetados | Medio | ✅ Hecho |
+| 6 | Slots mostrados no filtran feriados/bloqueos/anticipación | Falsa disponibilidad al paciente | Bajo | ✅ Hecho |
+| 7 | Duración del slot no se valida al reservar | Grilla desalineada, slots gigantes | Medio | ✅ Hecho |
+| 8 | Reagendar no resetea `pendingUntil` ni `reminderSent` | Cita re-cancelada o sin recordatorio | Bajo | ✅ Hecho |
+| 9 | Sobrecupo pisa slots libres y omite validaciones | Turno libre robado | Medio | ✅ Hecho |
+| 10 | `overwrite` borra especialidades que no regenera | Pérdida de schedules | Bajo | ✅ Hecho |
+| 11 | Liberación de slot ciega a waitlist en 3 de 4 flujos | Cupos no reoferecidos | Medio | ✅ Hecho |
+| 12 | `NO_SHOW` inalcanzable desde la API | Reportes incorrectos | Bajo | ✅ Hecho |
+| 13 | `AvailabilityType` EXCEPTION/EXTRA no aplica | Excepciones de horario no funcionan | Medio | ✅ Hecho |
+| 14 | Paciente puede tener dos citas simultáneas | Conflicto de agenda del paciente | Bajo | ✅ Hecho |
+| 15 | `cancellationFee` se guarda pero nunca se cobra | Penalización inoperante | Medio | ✅ Hecho |
+
+---
+
+## Fase 1 — Urgente: integridad de datos
+
+### #1 · TOCTOU en la reserva del paciente ✅ Resuelto
+
+> **Implementado (junio 2026):** `CreateAppointmentData` ahora acepta `amount`/`pendingUntil`
+> opcionales; `createWithOverlapCheck` los escribe dentro de su transacción `Serializable`.
+> El use-case del paciente dejó de hacer `hasOverlappingAppointment` + `create()` + `update()`
+> por separado y ahora hace la reserva atómica en una sola transacción. Se eliminó la
+> inyección de `PrismaService` del use-case. Tests del módulo en verde (31/31).
+
+**Problema:** `create-patient-appointment.use-case.ts:139-177` ejecuta `hasOverlappingAppointment` y luego `create()` como dos llamadas separadas. Entre ambas, otro request puede tomar el mismo slot. El flujo de staff usa `createWithOverlapCheck` con transacción `Serializable`, pero no el flujo más concurrente.
+
+**Fix:** reemplazar el bloque `[isHoliday, isBlocked, hasOverlap]` + `create()` por `createWithOverlapCheck` (ya existe en el repositorio). Mover la escritura de `amount`/`pendingUntil` al cuerpo de esa transacción o hacer un segundo `update` aceptable —lo crítico es que el create sea atómico con el overlap check.
+
+**Archivos:**
+- `server/src/modules/appointments/application/use-cases/create-patient-appointment.use-case.ts`
+- `server/src/modules/appointments/infrastructure/persistence/prisma-appointment.repository.ts` — `createWithOverlapCheck`
+
+---
+
+### #2 · Overlap check por `scheduleId` permite double-booking cruzado ✅ Resuelto
+
+> **Implementado (junio 2026):** nuevo helper privado `buildDoctorOverlapWhere(doctorId,
+> scheduleDate, startTime, endTime, excludeId?)` en el repo, que filtra por relación
+> `schedule.doctorId` + `scheduleDate` (rango de día UTC) en vez de por `scheduleId`.
+> Lo usan `hasOverlappingAppointment`, `createWithOverlapCheck` y `rescheduleWithOverlapCheck`
+> (cada uno lee `doctorId`/`scheduleDate` del schedule antes del count). Como `startTime`/
+> `endTime` son hora-only (base 1970-01-01), acotar a doctor+día es lo que hace válido el
+> overlap entre schedules distintos. La waitlist (`find-next-match`) se beneficia sin cambios.
+> Tests en verde (62/62 en appointments+waitlist).
+
+**Problema:** todos los overlap checks filtran `where: { scheduleId }`. Si un doctor queda con dos schedules solapados (caso real cuando se regeneran parcialmente por specialtyId), las citas de uno no ven las del otro. El doctor puede quedar con dos citas a la misma hora.
+
+**Fix:** en `hasOverlappingAppointment` y en `createWithOverlapCheck`, agregar join a través de `schedule` para filtrar por `doctorId + startTime + endTime` además del `scheduleId`. El índice `@@index([scheduleId, startTime, endTime])` en `Appointments` se mantiene; agregar `@@index([doctorId, startTime, endTime])` mediante la relación o una vista.
+
+**Archivos:**
+- `server/src/modules/appointments/infrastructure/persistence/prisma-appointment.repository.ts` — `hasOverlappingAppointment`, `createWithOverlapCheck`
+- `server/prisma/schema.prisma` — índice compuesto vía schedule
+
+---
+
+### #3 · Cita PENDING con pago FAILED nunca expira (slot zombi) ✅ Resuelto
+
+> **Implementado (junio 2026):** el `where` del cron `expire-pending-appointments` pasó de
+> `paymentStatus: 'PENDING'` a `paymentStatus: { in: ['PENDING', 'FAILED'] }`. Una cita con
+> pago rechazado (PENDING/FAILED) cuya ventana `pendingUntil` venció ahora expira igual que
+> una nunca pagada, respetando la ventana de reintento mientras `pendingUntil` no haya pasado.
+> No toca PAID (ya pasó a CONFIRMED). Spec ampliado con caso de FAILED. Tests en verde (3/3).
+>
+> Pendiente relacionado: el cron sigue usando `updateMany` sin emitir `appointment.cancelled`
+> → ver hueco #11 (la waitlist no se entera de estos slots liberados).
+
+**Problema:** el webhook ante pago rechazado setea `paymentStatus: FAILED` dejando `status: PENDING`. El cron `expire-pending-appointments` exige `paymentStatus: PENDING`, así que esa cita nunca matchea y ocupa el slot indefinidamente (los overlap checks solo excluyen CANCELLED/NO_SHOW).
+
+**Fix:** ampliar el `where` del cron para incluir `paymentStatus: { in: ['PENDING', 'FAILED'] }`, o cancelar directamente en el webhook cuando `status = FAILED` y la cita sigue `PENDING`.
+
+**Archivos:**
+- `server/src/modules/payments/application/use-cases/expire-pending-appointments.use-case.ts`
+- `server/src/modules/payments/application/use-cases/handle-payment-webhook.use-case.ts`
+
+---
+
+## Fase 2 — Alto: validaciones faltantes en flujos existentes
+
+### #4 · Reagendar no re-valida feriados, bloqueos, fecha pasada ni sede ✅ Resuelto
+
+> **Implementado (junio 2026):** nuevo `AppointmentSlotValidatorService`
+> (`application/services/`) que centraliza rango del turno, fecha pasada, anticipación
+> de 2h, sede (`jwtClinicId`), feriado y bloqueo, y retorna el `clinicId` del doctor.
+> Lo usan `reschedule` (el fix) y `create-appointment` (refactor, fuente canónica, sin
+> duplicar reglas). El controller pasa `@CurrentClinic()` a reschedule. Specs: validador
+> con su propio `.spec` (9 casos) + `reschedule.spec` mockea el validador y verifica la
+> delegación. Suite completa en verde (200/200).
+>
+> ~~Deuda menor anotada: `create-patient-appointment` aún tiene su validación inline.~~
+> **Saldada (junio 2026):** `create-patient-appointment` migrado al validador (sin
+> `jwtClinicId`: el paciente reserva en cualquier sede; usa el `clinicId` retornado).
+> Su spec pasó a verificar la delegación, igual que el de reschedule.
+
+**Problema:** `reschedule-appointment.use-case.ts` solo valida que el slot quepa dentro del rango del schedule. No verifica fecha pasada, anticipación de 2 horas, feriados, bloqueos del doctor, ni que el nuevo schedule pertenezca al mismo doctor/especialidad/sede. Permite reagendar a ayer o a las vacaciones del doctor.
+
+**Fix:** extraer las validaciones de `create-appointment.use-case.ts` a un helper compartido (`validateSlotPreConditions`) e invocarlo en reschedule con el nuevo schedule. El método ya recibe `jwtClinicId` —solo falta propagarlo.
+
+**Archivos:**
+- `server/src/modules/appointments/application/use-cases/reschedule-appointment.use-case.ts`
+- `server/src/modules/appointments/application/use-cases/create-appointment.use-case.ts`
+
+---
+
+### #5 · Crear un bloqueo o feriado no cancela citas ya reservadas ✅ Resuelto
+
+> **Implementado (junio 2026):** patrón por eventos para evitar ciclo de módulos
+> (`appointments` ya importa `schedule-blocks`/`holidays`). `create-schedule-block`
+> emite `schedule.blocked` y `create-holiday` emite `holiday.created` (interfaces en
+> `shared/events/availability-events.interface.ts`). Un listener nuevo en
+> `AppointmentsModule` (`AvailabilityChangeListener`) busca las citas activas afectadas
+> (nuevos métodos repo `findActiveByDoctorAndDateRange` y `findActiveByDateAndClinic`),
+> las cancela y emite `appointment.cancelled` por cada una → mail + reoferta a la
+> waitlist. FULL_DAY cancela todo el día; TIME_RANGE filtra por solape horario; feriado
+> por sede o global. Se expuso `clinicId` en `AppointmentWithRelations`. Tests: listener
+> con `.spec` (5 casos). Suite 205/205.
+>
+> Alcance: cubre **create** de bloqueo y feriado. Un feriado **recurrente** emite un
+> evento por cada año sembrado (no solo el del DTO), así también se cancelan citas ya
+> reservadas en años futuros (spec de `create-holiday` lo cubre). Pendiente (extensión):
+> `update-holiday` y `update-schedule-block` (si amplían rango), y el flag de refund para
+> citas pagadas canceladas por causa de la clínica. El evento se emite solo si el paciente
+> tiene `userId` (igual que la cancelación manual) → se generaliza con el hueco #11.
+> Limitación conocida: una cita con `clinicId` null (doctor sin sede) no es alcanzada por
+> un feriado de sede (el global sí la alcanza).
+
+**Problema:** `create-schedule-block.use-case.ts` regenera solo schedules *sin citas*. Las citas ya confirmadas dentro del rango del bloqueo quedan vivas. Con feriados (`create-holiday`) ni siquiera se regeneran schedules. El personal tiene que cancelarlas manualmente una a una.
+
+**Fix:** en la creación de bloqueos y feriados, buscar citas activas en el rango afectado, cancelarlas (con razón automática, p. ej. "Bloqueo de agenda") y emitir `appointment.cancelled` por cada una para activar la waitlist.
+
+**Archivos:**
+- `server/src/modules/schedule-blocks/application/use-cases/create-schedule-block.use-case.ts`
+- `server/src/modules/holidays/application/use-cases/create-holiday.use-case.ts`
+- `server/src/modules/holidays/application/use-cases/update-holiday.use-case.ts`
+
+---
+
+### #6 · Slots mostrados al paciente no filtran feriados, bloqueos ni anticipación — ✅ Hecho (junio 2026)
+
+**Problema:** `get-available-time-slots.use-case.ts` solo cruza con citas existentes. El paciente ve slots "disponibles" en feriados, durante bloqueos del doctor y en la ventana de 2 horas (hoy). Al intentar reservar recibe el error, pero ya eligió un slot que nunca debió mostrarse.
+
+**Fix aplicado:** `GetAvailableTimeSlotsUseCase.execute` ahora aplica las mismas reglas que el `AppointmentSlotValidatorService`:
+1. Fecha pasada o feriado (`isHoliday` global o de la sede del doctor) → retorna `[]` (día sin atención).
+2. Bloqueos vía `findActiveByDoctorAndDateRange`: FULL_DAY cubre todo el día; TIME_RANGE se cruza con `timeRangesOverlap`. Slots afectados quedan `available: false`, igual que los ocupados.
+3. Para fecha = hoy (en la timezone de la sede), slots cuyo `startTime` cae dentro de la ventana de anticipación quedan `available: false`. La constante de 2 horas se extrajo a `MIN_BOOKING_ANTICIPATION_MS` en `date-time.utils.ts`, compartida con el validador para que el listado y la reserva nunca deriven.
+
+Spec nuevo con 10 tests (feriado, bloqueo por rango, día completo, anticipación con fake timers, fecha pasada).
+
+**Archivos:**
+- `server/src/modules/schedules/application/use-cases/get-available-time-slots.use-case.ts` (+spec)
+- `server/src/shared/utils/date-time.utils.ts` — `MIN_BOOKING_ANTICIPATION_MS`
+- `server/src/modules/appointments/application/services/appointment-slot-validator.service.ts` — usa la constante compartida
+
+---
+
+## Fase 3 — Medio: robustez y consistencia
+
+### #7 · La duración del slot no se valida al crear ni reagendar — ✅ Hecho (junio 2026)
+
+**Problema:** `startTime`/`endTime` se aceptan si caben dentro del schedule, sin validar que sean múltiplos de `specialty.duration` ni que estén alineados con la grilla. Un cliente puede mandar `08:07-08:11` (desalinea la grilla) o `08:00-14:00` (bloquea el bloque completo).
+
+**Fix aplicado:** la validación vive en `AppointmentSlotValidatorService` (parámetros obligatorios `durationMinutes` + `bufferMinutes`), así cubre los tres flujos a la vez: create staff, create paciente y reschedule. Reglas:
+1. `endTime - startTime === specialty.duration` exacto (no múltiplo: la grilla es de slots iguales).
+2. Alineación: `(slotStart - schedule.timeFrom) % (duration + buffer) === 0` — el mismo paso que usa `TimeSlotCalculatorService` para generar la grilla.
+
+El `scheduleInclude` del repo de schedules ahora trae `specialty.duration`/`bufferMinutes` (ya traía `price`), así que no hay query extra. De paso se corrigió el test de anticipación de 2h del spec del validador, que pasaba por la razón equivocada (el slot caía fuera del rango del turno antes de llegar a la regla de anticipación).
+
+**Archivos:**
+- `server/src/modules/appointments/application/services/appointment-slot-validator.service.ts` (+spec: 4 tests nuevos)
+- `server/src/modules/appointments/application/use-cases/create-appointment.use-case.ts`
+- `server/src/modules/appointments/application/use-cases/create-patient-appointment.use-case.ts`
+- `server/src/modules/appointments/application/use-cases/reschedule-appointment.use-case.ts`
+- `server/src/modules/schedules/infrastructure/persistence/prisma-schedule.repository.ts` — include ampliado
+
+---
+
+### #8 · Reagendar deja `pendingUntil` y `reminderSent` en estado viejo — ✅ Hecho (junio 2026)
+
+**Problema:** `reschedule` fuerza `status: PENDING` pero no actualiza `pendingUntil`. Si la cita tenía un deadline de pago viejo, el cron la cancela al minuto siguiente. Una cita pagada (CONFIRMED) reagendada vuelve a PENDING sin que nadie la re-confirme. `reminderSent = true` no se resetea, por lo que la cita en la nueva fecha no recibirá recordatorio.
+
+**Fix aplicado:** en el use-case de reschedule:
+- Cita pagada (`paymentStatus: PAID`): conserva su estado actual (CONFIRMED no vuelve a PENDING) y `pendingUntil: null`.
+- Cita impaga **con deadline previo** (reserva con pago online): `pendingUntil` se renueva con el timeout de pago y vuelve a PENDING.
+- Cita impaga **sin deadline** (flujo staff, sin pago online): `pendingUntil` queda null — asignarle uno haría que el cron de expiración la cancele.
+- `reminderSent: false` siempre, para que la nueva fecha reciba recordatorio.
+
+El timeout de pago se extrajo a `getAppointmentPaymentTimeoutMs()` en `shared/utils/payment-timeout.util.ts` (estaba duplicado en `create-patient-appointment` y `accept-offer`; reschedule era la tercera copia). `UpdateAppointmentData` y el update de `rescheduleWithOverlapCheck` aceptan ahora `pendingUntil`/`reminderSent` (con check `!== undefined` para poder escribir null).
+
+**Archivos:**
+- `server/src/modules/appointments/application/use-cases/reschedule-appointment.use-case.ts` (+spec: 4 tests nuevos)
+- `server/src/modules/appointments/infrastructure/persistence/prisma-appointment.repository.ts` — `rescheduleWithOverlapCheck`
+- `server/src/modules/appointments/domain/interfaces/appointment-data.interface.ts` — `UpdateAppointmentData`
+- `server/src/shared/utils/payment-timeout.util.ts` — helper compartido (refactor en `create-patient-appointment` y `accept-offer`)
+
+---
+
+### #9 · El sobrecupo puede pisar slots libres y no valida feriados/bloqueos — ✅ Hecho (junio 2026)
+
+**Problema:** `create-overbook-appointment.use-case.ts` calculaba `overbookStartTime` como el `endTime` de la última cita activa. Si había slots regulares libres al final del turno, el sobrecupo los pisaba. Además no validaba feriados, bloqueos ni anticipación de 2 horas para citas de hoy. `createOverbookAtomic` solo verificaba el contador diario, sin overlap check.
+
+**Fix aplicado:**
+1. `overbookStartTime = max(timeTo del turno, maxEndTime de citas activas)` — el sobrecupo siempre queda *después* del bloque normal y encadena tras sobrecupos previos. Los tiempos se normalizan con `normalizeToTimeOnly` por las fechas base inconsistentes en BD.
+2. Validaciones nuevas: feriado (global o de la sede del doctor, BadRequest), bloqueo del doctor sobre el rango calculado (`isBlocked`, Conflict) y anticipación de 2h si es hoy (usa `MIN_BOOKING_ANTICIPATION_MS` compartida). No se usó el `AppointmentSlotValidatorService` porque el sobrecupo vive *fuera* del rango del turno por diseño — el check de rango del validador lo rechazaría.
+3. `createOverbookAtomic` agrega overlap check con `buildDoctorOverlapWhere` dentro de la misma transacción serializable, además del contador diario.
+
+**Archivos:**
+- `server/src/modules/appointments/application/use-cases/create-overbook-appointment.use-case.ts` (+spec nuevo: 12 tests)
+- `server/src/modules/appointments/infrastructure/persistence/prisma-appointment.repository.ts` — `createOverbookAtomic`
+
+---
+
+### #10 · `overwrite` con filtro de especialidad borra schedules de otras especialidades — ✅ Hecho (junio 2026)
+
+**Problema:** `generate-schedules.use-case.ts` llamaba `deleteUnbookedByDoctorAndDateRange` sin filtro de especialidad, pero si se pasó `dto.specialtyId`, solo se regeneran las availabilities de esa especialidad. Los schedules de las otras desaparecían.
+
+**Fix aplicado:** `deleteUnbookedByDoctorAndDateRange` acepta `specialtyId?` opcional y el use-case pasa `dto.specialtyId`: con filtro borra solo esa especialidad, sin filtro mantiene el comportamiento anterior (todas). `ScheduleRegenerationService` no cambia — borra y regenera todas las especialidades, lo cual es coherente. Spec nuevo con 4 tests (overwrite con/sin filtro, sin overwrite, generación filtrada).
+
+**Archivos:**
+- `server/src/modules/schedules/application/use-cases/generate-schedules.use-case.ts` (+spec nuevo)
+- `server/src/modules/schedules/infrastructure/persistence/prisma-schedule.repository.ts` — `deleteUnbookedByDoctorAndDateRange`
+- `server/src/modules/schedules/domain/repositories/schedule.repository.ts` — firma
+
+---
+
+### #11 · La waitlist queda ciega cuando un slot se libera por reschedule o expiración — ✅ Hecho (junio 2026)
+
+**Problema:** `appointment.cancelled` solo se emitía si `updated.patient.profile.userId` existía. Reschedule no emitía ningún evento (el slot viejo liberado nunca se reofrecía). El cron de expiración usaba `updateMany` y no podía emitir eventos.
+
+**Fix aplicado (variación sobre lo propuesto):** en vez de quitar la condición del userId, se separaron las responsabilidades en dos eventos:
+- **`appointment.slot_released`** (nuevo, en `availability-events.interface.ts`): lo consume la waitlist (`SlotReleasedListener`, ex `AppointmentCancelledListener`) y se emite **siempre** en los 4 flujos de liberación: cancelación manual, cancelación por bloqueo/feriado (listener), reschedule (slot viejo, salvo que quede en el mismo slot) y expiración de pago.
+- **`appointment.cancelled`** queda solo para mail + notificación in-app, que sí requieren usuario asociado (la condición del userId está justificada ahí: el payload exige `patientUserId`).
+
+Refactors absorbidos de la revisión SOLID de fixes #1–#5:
+- La construcción de ambos eventos se unificó en `appointment-event.builder.ts` (estaba duplicada entre `cancel-appointment` y `availability-change.listener`).
+- `ExpirePendingAppointmentsUseCase` se movió de payments a appointments (era ciclo de vida de citas y PaymentsModule no puede importar AppointmentsModule sin ciclo) y dejó de inyectar `PrismaService`: usa `expirePendingPastDeadline(now)` del repositorio, que cancela en transacción (findMany + updateMany) y retorna los slots liberados para emitir los eventos.
+
+**Archivos:**
+- `server/src/shared/events/availability-events.interface.ts` — `SLOT_RELEASED_EVENT`
+- `server/src/modules/appointments/application/services/appointment-event.builder.ts` (nuevo)
+- `server/src/modules/appointments/application/use-cases/cancel-appointment.use-case.ts`
+- `server/src/modules/appointments/application/use-cases/reschedule-appointment.use-case.ts` (+3 tests)
+- `server/src/modules/appointments/application/use-cases/expire-pending-appointments.use-case.ts` (movido, +spec)
+- `server/src/modules/appointments/application/listeners/availability-change.listener.ts`
+- `server/src/modules/appointments/infrastructure/persistence/prisma-appointment.repository.ts` — `expirePendingPastDeadline`
+- `server/src/modules/waitlist/application/listeners/slot-released.listener.ts` (ex `appointment-cancelled.listener.ts`)
+
+---
+
+## Fase 4 — Bajo: completitud y modelo de dominio
+
+### #12 · `NO_SHOW` no tiene un use case que lo establezca — ✅ Hecho (junio 2026)
+
+**Problema:** el enum tiene `NO_SHOW` y los queries lo excluyen correctamente, pero ningún use case de citas lo seteaba. Las citas a las que el paciente no asistió quedaban CONFIRMED para siempre y distorsionaban reportes de no-show y tasas de asistencia.
+
+**Fix aplicado:** `mark-no-show-appointment.use-case.ts` con dos reglas: solo `CONFIRMED → NO_SHOW`, y solo una vez pasada la hora de inicio de la cita (en la timezone de la sede — no se puede marcar inasistencia de una cita futura). Expuesto como `PATCH /appointments/:id/no-show` (`UPDATE APPOINTMENTS`), para invocarlo desde el dashboard del doctor. El job automático tras X minutos sin check-in queda como extensión opcional no implementada.
+
+**Archivos:**
+- `server/src/modules/appointments/application/use-cases/mark-no-show-appointment.use-case.ts` (+spec: 7 tests)
+- `server/src/modules/appointments/interfaces/controllers/appointment.controller.ts` — endpoint `:id/no-show`
+
+---
+
+### #13 · `AvailabilityType` EXCEPTION y EXTRA no afectan la generación de schedules — ✅ Hecho (junio 2026)
+
+**Problema:** la generación filtraba availabilities solo por `dayOfWeek + isAvailable`. Una EXCEPTION no restaba la regla REGULAR del mismo día — el tipo era cosmético. Tampoco era posible una disponibilidad de un solo día (`startDate >= endDate` rechazado en create).
+
+**Fix aplicado (variación sobre lo propuesto):** el doc proponía modelar la cancelación con `isAvailable: false`, pero ese campo está sobrecargado como flag de borrado lógico (`softDelete` lo pone en false y todos los queries filtran `isAvailable: true`), así que la semántica quedó en el tipo:
+- **EXCEPTION es sustractiva por sí misma**: dentro de su vigencia (fecha + día + rango horario) suprime los slots de su especialidad que se solapen; nunca genera slots. Misma mecánica slot a slot que los bloqueos TIME_RANGE.
+- **EXTRA sigue siendo aditiva** (ya funcionaba como regla con rango de fechas).
+- `create-availability` permite vigencia de un solo día (`>` en vez de `>=`) — necesario para excepciones puntuales.
+- La EXCEPTION no pasa por la validación de solapamiento (pisa la regla por diseño), ni en create ni en update; y `findOverlapping` excluye las EXCEPTION para que una regla aditiva nueva no choque contra una sustractiva.
+
+**Archivos:**
+- `server/src/modules/schedules/application/use-cases/generate-schedules.use-case.ts` (+3 tests)
+- `server/src/modules/availability/application/use-cases/create-availability.use-case.ts` (+spec nuevo: 4 tests)
+- `server/src/modules/availability/application/use-cases/update-availability.use-case.ts`
+- `server/src/modules/availability/infrastructure/persistence/prisma-availability.repository.ts` — `findOverlapping`
+
+---
+
+### #14 · Un paciente puede tener dos citas simultáneas con doctores distintos — ✅ Hecho (junio 2026)
+
+**Problema:** no existía ningún check de solapamiento por `patientId`. Si el paciente reservaba dos slots a la misma hora con doctores distintos (schedules distintos), ambos creates pasaban.
+
+**Fix aplicado:** nuevo `buildPatientOverlapWhere` (paciente + solape horario + **misma fecha** vía `schedule.scheduleDate` — el where propuesto en el doc omitía la fecha y, con horas hour-only base 1970, chocaría contra citas de cualquier día). Aplicado dentro de las tres transacciones serializables de escritura: `createWithOverlapCheck`, `rescheduleWithOverlapCheck` (excluyendo la propia cita) y `createOverbookAtomic`. Mensaje distinto al del overlap de doctor para distinguir la causa. `hasOverlappingAppointment` no se tocó: es el check de slot del doctor que usa la waitlist y no tiene `patientId` en su firma. El índice existente `@@index([patientId, status])` cubre el query.
+
+**Archivos:**
+- `server/src/modules/appointments/infrastructure/persistence/prisma-appointment.repository.ts`
+
+---
+
+### #15 · `cancellationFee` se calcula y guarda, pero no tiene flujo de cobro — ✅ Hecho (junio 2026)
+
+**Problema:** se calculaba la penalización y se persistía en `cancellationFee`, pero ninguna lógica la cobraba. Además se aplicaba incluso si la cita nunca fue pagada (paciente sin transacción).
+
+**Fix aplicado (diseño en `docs/superpowers/specs/2026-06-15-cancellation-fee-collection-design.md`):** el fee solo se calcula cuando existe una transacción PAID que cobrar (corrige el cobro fantasma). El cobro se modela como flag de revisión manual, espejo del refund: la transacción PAID se marca con `needsFeeCollection`/`feeAmount`/`feeReason`/`feeRequestedAt` en su metadata, junto al `needsRefund` existente, en una sola escritura, para que el admin reconcilie el neto. Sin llamadas automáticas a MercadoPago. El lookup de la transacción se unificó (antes el cálculo del fee y el flag de refund hacían consultas separadas).
+
+**Archivos:**
+- `server/src/modules/appointments/application/use-cases/cancel-appointment.use-case.ts` (+spec: 4 tests nuevos)
+
+---
+
+## Convención de cierre por hueco
+
+1. Use-case corregido con validación o lógica añadida.
+2. Tests unitarios del use-case cubren el nuevo path (caso base + caso de error).
+3. `pnpm tsc --noEmit` en client limpio si hay cambio de DTO/response.
+4. Suite del módulo en verde (`pnpm jest <módulo>`).
+5. Entrada en `mem_save` si la decisión de implementación es no obvia.

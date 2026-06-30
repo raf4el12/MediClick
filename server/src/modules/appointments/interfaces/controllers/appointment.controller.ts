@@ -28,6 +28,7 @@ import { RescheduleAppointmentUseCase } from '../../application/use-cases/resche
 import { ConfirmAppointmentUseCase } from '../../application/use-cases/confirm-appointment.use-case.js';
 import { CreateOverbookAppointmentUseCase } from '../../application/use-cases/create-overbook-appointment.use-case.js';
 import { CompleteAppointmentUseCase } from '../../application/use-cases/complete-appointment.use-case.js';
+import { MarkNoShowAppointmentUseCase } from '../../application/use-cases/mark-no-show-appointment.use-case.js';
 import { GetMyAppointmentsUseCase } from '../../application/use-cases/get-my-appointments.use-case.js';
 import { CreatePatientAppointmentUseCase } from '../../application/use-cases/create-patient-appointment.use-case.js';
 import { CreateOverbookAppointmentDto } from '../../application/dto/create-overbook-appointment.dto.js';
@@ -49,6 +50,7 @@ export class AppointmentController {
     private readonly createOverbookAppointmentUseCase: CreateOverbookAppointmentUseCase,
     private readonly rescheduleAppointmentUseCase: RescheduleAppointmentUseCase,
     private readonly completeAppointmentUseCase: CompleteAppointmentUseCase,
+    private readonly markNoShowAppointmentUseCase: MarkNoShowAppointmentUseCase,
     private readonly getMyAppointmentsUseCase: GetMyAppointmentsUseCase,
     private readonly createPatientAppointmentUseCase: CreatePatientAppointmentUseCase,
   ) {}
@@ -233,8 +235,9 @@ export class AppointmentController {
   async reschedule(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: RescheduleAppointmentDto,
+    @CurrentClinic() clinicId: number | null,
   ): Promise<AppointmentResponseDto> {
-    return this.rescheduleAppointmentUseCase.execute(id, dto);
+    return this.rescheduleAppointmentUseCase.execute(id, dto, clinicId);
   }
 
   @Patch(':id/complete')
@@ -248,5 +251,21 @@ export class AppointmentController {
     @Param('id', ParseIntPipe) id: number,
   ): Promise<AppointmentResponseDto> {
     return this.completeAppointmentUseCase.execute(id);
+  }
+
+  @Patch(':id/no-show')
+  @Auth()
+  @RequirePermissions('UPDATE', 'APPOINTMENTS')
+  @ApiOperation({ summary: 'Marcar inasistencia (CONFIRMED → NO_SHOW)' })
+  @ApiResponse({ status: 200, type: AppointmentResponseDto })
+  @ApiResponse({
+    status: 400,
+    description: 'Estado no permite marcar inasistencia o la cita aún no inicia',
+  })
+  @ApiResponse({ status: 404, description: 'Cita no encontrada' })
+  async markNoShow(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<AppointmentResponseDto> {
+    return this.markNoShowAppointmentUseCase.execute(id);
   }
 }

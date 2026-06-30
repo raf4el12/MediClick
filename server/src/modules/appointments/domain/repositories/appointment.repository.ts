@@ -4,6 +4,7 @@ import type {
   AppointmentWithRelations,
   DashboardFilters,
   PatientAppointmentFilters,
+  ExpiredAppointmentSlot,
 } from '../interfaces/appointment-data.interface.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
@@ -30,8 +31,9 @@ export interface IAppointmentRepository {
     excludeId?: number,
   ): Promise<boolean>;
   /**
-   * Verifica si existe una cita activa que se superponga con el rango dado
-   * dentro del mismo schedule. Usa lógica de overlap: A.start < B.end AND A.end > B.start.
+   * Verifica si existe una cita activa del MISMO doctor en la MISMA fecha que se
+   * superponga con el rango horario dado (a través de cualquier schedule, no solo
+   * el indicado). Usa lógica de overlap: A.start < B.end AND A.end > B.start.
    */
   hasOverlappingAppointment(
     scheduleId: number,
@@ -42,6 +44,27 @@ export interface IAppointmentRepository {
   findByDoctorAndDate(
     doctorId: number,
     date: Date,
+  ): Promise<AppointmentWithRelations[]>;
+
+  /**
+   * Citas activas (no canceladas/no-show) de un doctor cuyo schedule cae en el
+   * rango de fechas [dateFrom, dateTo]. Usado para invalidar citas al crear un
+   * bloqueo de horario.
+   */
+  findActiveByDoctorAndDateRange(
+    doctorId: number,
+    dateFrom: Date,
+    dateTo: Date,
+  ): Promise<AppointmentWithRelations[]>;
+
+  /**
+   * Citas activas (no canceladas/no-show) en una fecha concreta. Si se pasa
+   * clinicId, se acota a esa sede; si es null/undefined, abarca todas (feriado
+   * global). Usado para invalidar citas al crear un feriado.
+   */
+  findActiveByDateAndClinic(
+    date: Date,
+    clinicId?: number | null,
   ): Promise<AppointmentWithRelations[]>;
 
   /**
@@ -81,4 +104,10 @@ export interface IAppointmentRepository {
     date: Date,
     maxOverbookPerDay: number,
   ): Promise<AppointmentWithRelations>;
+
+  /**
+   * Cancela atómicamente las citas PENDING cuyo deadline de pago venció y
+   * retorna los slots liberados (para reofrecerlos a la lista de espera).
+   */
+  expirePendingPastDeadline(now: Date): Promise<ExpiredAppointmentSlot[]>;
 }

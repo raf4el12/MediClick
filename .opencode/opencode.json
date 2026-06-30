@@ -1,0 +1,29 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "skills": {
+    "paths": [".opencode/skills"]
+  },
+  "instructions": ["CLAUDE.md", "docs/ROADMAP-citas.md"],
+  "agent": {
+    "backend": {
+      "description": "NestJS/Prisma/GraphQL backend specialist for MediClick. Creates and modifies server modules following DDD pattern with domain/application/infrastructure/interfaces layers, Prisma schema and migrations, GraphQL resolvers, use-cases with execute(), and REST controllers with RBAC guards.",
+      "mode": "subagent",
+      "permission": { "edit": "allow", "bash": "ask" }
+    },
+    "frontend": {
+      "description": "Next.js/MUI/Redux frontend specialist for MediClick. Creates views, components, Redux Toolkit slices, React Query hooks, MUI v5 components, Zod validation schemas, and role-based App Router pages.",
+      "mode": "subagent",
+      "permission": { "edit": "allow", "bash": "ask" }
+    },
+    "feature-planner": {
+      "description": "Read-only agent that analyzes ROADMAP-citas.md and the existing codebase to plan feature implementation. Reviews what exists and generates detailed implementation plans with module boundaries, risks, dependencies, and ordering. Use ONLY when planning a new feature from the roadmap.",
+      "mode": "subagent",
+      "permission": { "edit": "deny", "bash": "deny", "read": "allow", "glob": "allow", "grep": "allow" }
+    },
+    "code-reviewer": {
+      "description": "Read-only agent that reviews code after every fix/feature. Verifies Clean Architecture layering, SOLID principles, test coverage, type safety, and the AUDITORIA's Convención de cierre por hueco. Use before committing any fix.",
+      "mode": "subagent",
+      "permission": { "edit": "deny", "bash": "allow", "read": "allow", "glob": "allow", "grep": "allow" }
+    }
+  }
+}

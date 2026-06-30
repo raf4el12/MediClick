@@ -33,6 +33,7 @@ export default function RolesView() {
           roles={controller.roles}
           loading={controller.loading}
           error={controller.error}
+          totalPermissions={controller.permissions.length}
           onAdd={controller.openCreateDrawer}
           onEdit={controller.openEditDrawer}
           onDelete={controller.setDeleteTarget}
@@ -50,6 +51,7 @@ export default function RolesView() {
       />
 
       <PermissionsDialog
+        key={viewRole?.id ?? 'closed'}
         role={viewRole}
         onClose={() => setViewRole(null)}
       />

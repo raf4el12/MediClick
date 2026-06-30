@@ -42,6 +42,7 @@ export interface IScheduleRepository {
     doctorId: number,
     dateFrom: Date,
     dateTo: Date,
+    specialtyId?: number,
   ): Promise<number>;
 
   /**

@@ -4,16 +4,21 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { RescheduleAppointmentDto } from '../dto/reschedule-appointment.dto.js';
 import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type { IScheduleRepository } from '../../../schedules/domain/repositories/schedule.repository.js';
+import { AppointmentSlotValidatorService } from '../services/appointment-slot-validator.service.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
 import {
   parseHHmm,
   dateToTimeString,
   toMinutesUTC,
 } from '../../../../shared/utils/date-time.utils.js';
+import { getAppointmentPaymentTimeoutMs } from '../../../../shared/utils/payment-timeout.util.js';
+import { SLOT_RELEASED_EVENT } from '../../../../shared/events/availability-events.interface.js';
+import { buildSlotReleasedEvent } from '../services/appointment-event.builder.js';
 import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
 
 @Injectable()
@@ -23,11 +28,14 @@ export class RescheduleAppointmentUseCase {
     private readonly appointmentRepository: IAppointmentRepository,
     @Inject('IScheduleRepository')
     private readonly scheduleRepository: IScheduleRepository,
+    private readonly slotValidator: AppointmentSlotValidatorService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(
     id: number,
     dto: RescheduleAppointmentDto,
+    jwtClinicId?: number | null,
   ): Promise<AppointmentResponseDto> {
     const appointment = await this.appointmentRepository.findById(id);
     if (!appointment) {
@@ -52,32 +60,35 @@ export class RescheduleAppointmentUseCase {
       throw new BadRequestException('El nuevo horario especificado no existe');
     }
 
-    // Parsear y validar tiempos del nuevo slot
+    // Parsear tiempos del nuevo slot
     const newStartTime = parseHHmm(dto.startTime);
     const newEndTime = parseHHmm(dto.endTime);
 
-    if (newStartTime.getTime() >= newEndTime.getTime()) {
-      throw new BadRequestException('startTime debe ser anterior a endTime');
-    }
+    // Mismas precondiciones que al crear: rango del turno, duración/grilla,
+    // fecha pasada, anticipación de 2h, sede, feriado y bloqueo del doctor.
+    await this.slotValidator.validate({
+      doctorId: newSchedule.doctorId,
+      scheduleDate: new Date(newSchedule.scheduleDate),
+      schedTimeFrom: new Date(newSchedule.timeFrom),
+      schedTimeTo: new Date(newSchedule.timeTo),
+      slotStart: newStartTime,
+      slotEnd: newEndTime,
+      durationMinutes: newSchedule.specialty.duration,
+      bufferMinutes: newSchedule.specialty.bufferMinutes,
+      jwtClinicId,
+    });
 
-    // Validar que el slot cabe dentro del rango del nuevo schedule
-    const schedTimeFrom = new Date(newSchedule.timeFrom);
-    const schedTimeTo = new Date(newSchedule.timeTo);
+    // Una cita pagada conserva su estado (no vuelve a PENDING sin que nadie
+    // la re-confirme) y no lleva deadline de pago.
+    const isPaid = appointment.paymentStatus === 'PAID';
 
-    const schedFromMinutes = toMinutesUTC(schedTimeFrom);
-    const schedToMinutes = toMinutesUTC(schedTimeTo);
-    const slotStartMinutes = toMinutesUTC(newStartTime);
-    const slotEndMinutes = toMinutesUTC(newEndTime);
-
-    if (
-      slotStartMinutes < schedFromMinutes ||
-      slotEndMinutes > schedToMinutes
-    ) {
-      throw new BadRequestException(
-        `El slot ${dto.startTime}-${dto.endTime} está fuera del rango del turno ` +
-          `${dateToTimeString(schedTimeFrom)}-${dateToTimeString(schedTimeTo)}`,
-      );
-    }
+    // Solo se renueva el deadline si la cita ya tenía uno (reserva con pago
+    // online). Las citas de staff tienen pendingUntil null y ponérselo aquí
+    // haría que el cron de expiración las cancele.
+    const pendingUntil =
+      !isPaid && appointment.pendingUntil
+        ? new Date(Date.now() + getAppointmentPaymentTimeoutMs())
+        : null;
 
     // Verificar superposición y reagendar atómicamente (previene double-booking)
     const updated = await this.appointmentRepository.rescheduleWithOverlapCheck(
@@ -86,13 +97,28 @@ export class RescheduleAppointmentUseCase {
         scheduleId: dto.newScheduleId,
         startTime: newStartTime,
         endTime: newEndTime,
-        status: AppointmentStatus.PENDING,
+        status: isPaid ? appointment.status : AppointmentStatus.PENDING,
+        pendingUntil,
+        reminderSent: false,
         updatedAt: new Date(),
       },
       dto.newScheduleId,
       newStartTime,
       newEndTime,
     );
+
+    // El slot viejo quedó libre: reofrecerlo a la waitlist (salvo que el
+    // reagendamiento haya quedado en el mismo slot).
+    const slotChanged =
+      appointment.scheduleId !== dto.newScheduleId ||
+      toMinutesUTC(appointment.startTime) !== toMinutesUTC(newStartTime) ||
+      toMinutesUTC(appointment.endTime) !== toMinutesUTC(newEndTime);
+    if (slotChanged) {
+      this.eventEmitter.emit(
+        SLOT_RELEASED_EVENT,
+        buildSlotReleasedEvent(appointment),
+      );
+    }
 
     return this.toResponse(updated);
   }

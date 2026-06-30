@@ -1,4 +1,5 @@
 import { Injectable, ConflictException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type {
@@ -7,6 +8,7 @@ import type {
   AppointmentWithRelations,
   DashboardFilters,
   PatientAppointmentFilters,
+  ExpiredAppointmentSlot,
 } from '../../domain/interfaces/appointment-data.interface.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
@@ -230,22 +232,79 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     return count > 0;
   }
 
+  /**
+   * Construye el filtro de superposición a nivel de DOCTOR + FECHA (no de scheduleId).
+   *
+   * Como startTime/endTime se almacenan como hora-only (base 1970-01-01), el overlap
+   * de horas solo es válido si se acota al mismo doctor y al mismo día. Filtrar por
+   * scheduleId dejaba pasar el double-booking cuando un doctor tenía dos schedules
+   * solapados (p. ej. tras una regeneración parcial o entre especialidades distintas).
+   */
+  private buildDoctorOverlapWhere(
+    doctorId: number,
+    scheduleDate: Date,
+    startTime: Date,
+    endTime: Date,
+    excludeId?: number,
+  ): Prisma.AppointmentsWhereInput {
+    const { start, end } = utcDayRange(scheduleDate);
+    return {
+      deleted: false,
+      status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+      // Overlap: A.start < B.end AND A.end > B.start
+      startTime: { lt: endTime },
+      endTime: { gt: startTime },
+      schedule: {
+        doctorId,
+        scheduleDate: { gte: start, lt: end },
+      },
+      ...(excludeId && { id: { not: excludeId } }),
+    };
+  }
+
+  /**
+   * Overlap de agenda del PACIENTE: citas activas del mismo paciente en la
+   * misma fecha que se superpongan en horario (con cualquier doctor).
+   */
+  private buildPatientOverlapWhere(
+    patientId: number,
+    scheduleDate: Date,
+    startTime: Date,
+    endTime: Date,
+    excludeId?: number,
+  ): Prisma.AppointmentsWhereInput {
+    const { start, end } = utcDayRange(scheduleDate);
+    return {
+      deleted: false,
+      patientId,
+      status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+      startTime: { lt: endTime },
+      endTime: { gt: startTime },
+      schedule: { scheduleDate: { gte: start, lt: end } },
+      ...(excludeId && { id: { not: excludeId } }),
+    };
+  }
+
   async hasOverlappingAppointment(
     scheduleId: number,
     startTime: Date,
     endTime: Date,
     excludeId?: number,
   ): Promise<boolean> {
+    const schedule = await this.prisma.schedules.findUnique({
+      where: { id: scheduleId },
+      select: { doctorId: true, scheduleDate: true },
+    });
+    if (!schedule) return false;
+
     const count = await this.prisma.appointments.count({
-      where: {
-        scheduleId,
-        deleted: false,
-        status: { notIn: ['CANCELLED', 'NO_SHOW'] },
-        // Overlap: A.start < B.end AND A.end > B.start
-        startTime: { lt: endTime },
-        endTime: { gt: startTime },
-        ...(excludeId && { id: { not: excludeId } }),
-      },
+      where: this.buildDoctorOverlapWhere(
+        schedule.doctorId,
+        schedule.scheduleDate,
+        startTime,
+        endTime,
+        excludeId,
+      ),
     });
     return count > 0;
   }
@@ -266,6 +325,50 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       },
       include: appointmentInclude,
       orderBy: { schedule: { timeFrom: 'asc' } },
+    });
+
+    return rows.map((r) => this.mapToRelations(r));
+  }
+
+  async findActiveByDoctorAndDateRange(
+    doctorId: number,
+    dateFrom: Date,
+    dateTo: Date,
+  ): Promise<AppointmentWithRelations[]> {
+    const { start } = utcDayRange(dateFrom);
+    const { end } = utcDayRange(dateTo);
+
+    const rows = await this.prisma.appointments.findMany({
+      where: {
+        deleted: false,
+        status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+        schedule: {
+          doctorId,
+          scheduleDate: { gte: start, lt: end },
+        },
+      },
+      include: appointmentInclude,
+    });
+
+    return rows.map((r) => this.mapToRelations(r));
+  }
+
+  async findActiveByDateAndClinic(
+    date: Date,
+    clinicId?: number | null,
+  ): Promise<AppointmentWithRelations[]> {
+    const { start, end } = utcDayRange(date);
+
+    const rows = await this.prisma.appointments.findMany({
+      where: {
+        deleted: false,
+        status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+        ...(clinicId != null && { clinicId }),
+        schedule: {
+          scheduleDate: { gte: start, lt: end },
+        },
+      },
+      include: appointmentInclude,
     });
 
     return rows.map((r) => this.mapToRelations(r));
@@ -297,19 +400,41 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
   ): Promise<AppointmentWithRelations> {
     return this.prisma.$transaction(
       async (tx) => {
+        const schedule = await tx.schedules.findUnique({
+          where: { id: data.scheduleId },
+          select: { doctorId: true, scheduleDate: true },
+        });
+        if (!schedule) {
+          throw new ConflictException('El horario especificado ya no existe');
+        }
+
         const overlap = await tx.appointments.count({
-          where: {
-            scheduleId: data.scheduleId,
-            deleted: false,
-            status: { notIn: ['CANCELLED', 'NO_SHOW'] },
-            startTime: { lt: endTime },
-            endTime: { gt: startTime },
-          },
+          where: this.buildDoctorOverlapWhere(
+            schedule.doctorId,
+            schedule.scheduleDate,
+            startTime,
+            endTime,
+          ),
         });
 
         if (overlap > 0) {
           throw new ConflictException(
             'Ya existe una cita que se superpone con el horario seleccionado',
+          );
+        }
+
+        const patientOverlap = await tx.appointments.count({
+          where: this.buildPatientOverlapWhere(
+            data.patientId,
+            schedule.scheduleDate,
+            startTime,
+            endTime,
+          ),
+        });
+
+        if (patientOverlap > 0) {
+          throw new ConflictException(
+            'El paciente ya tiene otra cita que se superpone en ese horario',
           );
         }
 
@@ -321,6 +446,8 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
             endTime: data.endTime,
             reason: data.reason,
             ...(data.isOverbook && { isOverbook: true }),
+            ...(data.amount != null && { amount: data.amount }),
+            ...(data.pendingUntil != null && { pendingUntil: data.pendingUntil }),
             clinicId: data.clinicId ?? null,
           },
           include: appointmentInclude,
@@ -341,20 +468,51 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
   ): Promise<AppointmentWithRelations> {
     return this.prisma.$transaction(
       async (tx) => {
+        const schedule = await tx.schedules.findUnique({
+          where: { id: newScheduleId },
+          select: { doctorId: true, scheduleDate: true },
+        });
+        if (!schedule) {
+          throw new ConflictException('El horario especificado ya no existe');
+        }
+
         const overlap = await tx.appointments.count({
-          where: {
-            scheduleId: newScheduleId,
-            deleted: false,
-            status: { notIn: ['CANCELLED', 'NO_SHOW'] },
-            startTime: { lt: endTime },
-            endTime: { gt: startTime },
-            id: { not: id },
-          },
+          where: this.buildDoctorOverlapWhere(
+            schedule.doctorId,
+            schedule.scheduleDate,
+            startTime,
+            endTime,
+            id,
+          ),
         });
 
         if (overlap > 0) {
           throw new ConflictException(
             'Ya existe una cita que se superpone con el horario seleccionado',
+          );
+        }
+
+        const current = await tx.appointments.findUnique({
+          where: { id },
+          select: { patientId: true },
+        });
+        if (!current) {
+          throw new ConflictException('La cita ya no existe');
+        }
+
+        const patientOverlap = await tx.appointments.count({
+          where: this.buildPatientOverlapWhere(
+            current.patientId,
+            schedule.scheduleDate,
+            startTime,
+            endTime,
+            id,
+          ),
+        });
+
+        if (patientOverlap > 0) {
+          throw new ConflictException(
+            'El paciente ya tiene otra cita que se superpone en ese horario',
           );
         }
 
@@ -365,6 +523,12 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
             ...(data.scheduleId && { scheduleId: data.scheduleId }),
             ...(data.startTime && { startTime: data.startTime }),
             ...(data.endTime && { endTime: data.endTime }),
+            ...(data.pendingUntil !== undefined && {
+              pendingUntil: data.pendingUntil,
+            }),
+            ...(data.reminderSent !== undefined && {
+              reminderSent: data.reminderSent,
+            }),
             updatedAt: data.updatedAt ?? new Date(),
           },
           include: appointmentInclude,
@@ -374,6 +538,42 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       },
       { isolationLevel: 'Serializable' },
     );
+  }
+
+  async expirePendingPastDeadline(now: Date): Promise<ExpiredAppointmentSlot[]> {
+    return this.prisma.$transaction(async (tx) => {
+      const expired = await tx.appointments.findMany({
+        where: {
+          status: 'PENDING',
+          // Incluye FAILED: un pago rechazado deja la cita en PENDING/FAILED y,
+          // si el paciente no reintenta antes de pendingUntil, debe expirar igual
+          // que un PENDING/PENDING. Sin esto la cita ocupaba el slot indefinidamente.
+          paymentStatus: { in: ['PENDING', 'FAILED'] },
+          pendingUntil: { lt: now },
+          deleted: false,
+        },
+        select: {
+          id: true,
+          scheduleId: true,
+          startTime: true,
+          endTime: true,
+          clinicId: true,
+        },
+      });
+
+      if (expired.length === 0) return [];
+
+      await tx.appointments.updateMany({
+        where: { id: { in: expired.map((e) => e.id) } },
+        data: {
+          status: 'CANCELLED',
+          cancelReason: 'Pago no completado dentro del tiempo permitido',
+          updatedAt: now,
+        },
+      });
+
+      return expired;
+    });
   }
 
   async createOverbookAtomic(
@@ -401,6 +601,36 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         if (currentOverbooks >= maxOverbookPerDay) {
           throw new ConflictException(
             `Se alcanzó el límite de sobrecupos (${maxOverbookPerDay}) para este doctor en esta fecha`,
+          );
+        }
+
+        const overlap = await tx.appointments.count({
+          where: this.buildDoctorOverlapWhere(
+            doctorId,
+            date,
+            data.startTime,
+            data.endTime,
+          ),
+        });
+
+        if (overlap > 0) {
+          throw new ConflictException(
+            'Ya existe una cita que se superpone con el horario del sobrecupo',
+          );
+        }
+
+        const patientOverlap = await tx.appointments.count({
+          where: this.buildPatientOverlapWhere(
+            data.patientId,
+            date,
+            data.startTime,
+            data.endTime,
+          ),
+        });
+
+        if (patientOverlap > 0) {
+          throw new ConflictException(
+            'El paciente ya tiene otra cita que se superpone en ese horario',
           );
         }
 
@@ -439,6 +669,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       cancellationFee: raw.cancellationFee ? Number(raw.cancellationFee) : null,
       isOverbook: raw.isOverbook,
       pendingUntil: raw.pendingUntil ?? null,
+      clinicId: raw.clinicId ?? null,
       deleted: raw.deleted,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,

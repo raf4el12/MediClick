@@ -88,6 +88,8 @@ export class OnboardDoctorUseCase {
       licenseNumber: doctor.licenseNumber,
       resume: doctor.resume,
       maxOverbookPerDay: doctor.maxOverbookPerDay,
+      ratingAvg: doctor.ratingAvg,
+      ratingCount: doctor.ratingCount,
       clinicId: doctor.clinicId,
       clinic: doctor.clinic,
       isActive: doctor.isActive,

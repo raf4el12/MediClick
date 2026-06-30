@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { IDoctorRepository } from '../../domain/repositories/doctor.repository.js';
 import {
@@ -32,7 +33,12 @@ const doctorInclude = {
 
 function mapDoctorRelations(raw: any): DoctorWithRelations {
   const { user, ...profileRest } = raw.profile;
-  return { ...raw, profile: { ...profileRest, email: user?.email ?? null } };
+  return {
+    ...raw,
+    // ratingAvg llega como Prisma.Decimal; el dominio lo expone como number.
+    ratingAvg: raw.ratingAvg != null ? Number(raw.ratingAvg) : null,
+    profile: { ...profileRest, email: user?.email ?? null },
+  };
 }
 
 @Injectable()
@@ -135,13 +141,22 @@ export class PrismaDoctorRepository implements IDoctorRepository {
       }),
     };
 
+    const sortField = orderBy || 'createdAt';
+    const sortMode = (orderByMode || 'desc') as Prisma.SortOrder;
+    // Al ordenar por rating, los doctores sin reseñas (ratingAvg null) van al
+    // final en vez de encabezar la lista por el orden de nulls de Postgres.
+    const orderByClause: Prisma.DoctorsOrderByWithRelationInput =
+      sortField === 'ratingAvg'
+        ? { ratingAvg: { sort: sortMode, nulls: 'last' } }
+        : { [sortField]: sortMode };
+
     const [rows, count] = await Promise.all([
       this.prisma.tenant.doctors.findMany({
         where,
         include: doctorInclude,
         skip: offset,
         take: limit,
-        orderBy: { [orderBy || 'createdAt']: orderByMode || 'desc' },
+        orderBy: orderByClause,
       }),
       this.prisma.tenant.doctors.count({ where }),
     ]);

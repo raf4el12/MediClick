@@ -1,7 +1,12 @@
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
 import { RescheduleAppointmentUseCase } from './reschedule-appointment.use-case.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type { IScheduleRepository } from '../../../schedules/domain/repositories/schedule.repository.js';
+import type { AppointmentSlotValidatorService } from '../services/appointment-slot-validator.service.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
 import type { AppointmentWithRelations } from '../../domain/interfaces/appointment-data.interface.js';
 import type { ScheduleWithRelations } from '../../../schedules/domain/interfaces/schedule-data.interface.js';
@@ -12,6 +17,8 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
     Pick<IAppointmentRepository, 'findById' | 'rescheduleWithOverlapCheck'>
   >;
   let scheduleRepository: jest.Mocked<Pick<IScheduleRepository, 'findById'>>;
+  let slotValidator: jest.Mocked<Pick<AppointmentSlotValidatorService, 'validate'>>;
+  let eventEmitter: { emit: jest.Mock };
 
   const buildAppointment = (
     overrides: Partial<AppointmentWithRelations> = {},
@@ -30,6 +37,7 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
     cancellationFee: null,
     isOverbook: false,
     pendingUntil: null,
+    clinicId: null,
     deleted: false,
     createdAt: new Date(),
     updatedAt: null,
@@ -70,7 +78,13 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
       profile: { name: 'Dr', lastName: 'House' },
       clinic: { timezone: 'America/Lima' },
     },
-    specialty: { id: 2, name: 'Medicina', price: 120 },
+    specialty: {
+      id: 2,
+      name: 'Medicina',
+      price: 120,
+      duration: 30,
+      bufferMinutes: 0,
+    },
     ...overrides,
   });
 
@@ -96,9 +110,16 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
       findById: jest.fn().mockResolvedValue(buildSchedule()),
     };
 
+    slotValidator = {
+      validate: jest.fn().mockResolvedValue(7),
+    };
+    eventEmitter = { emit: jest.fn() };
+
     useCase = new RescheduleAppointmentUseCase(
       appointmentRepository as any,
       scheduleRepository as any,
+      slotValidator as any,
+      eventEmitter as any,
     );
   });
 
@@ -170,38 +191,149 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
     await expect(useCase.execute(10, dto)).rejects.toThrow(BadRequestException);
   });
 
-  // ── Iteración TDD 5: Validación del slot ──────────────────────────────────
+  // ── Iteración TDD 5: Precondiciones delegadas al slot validator ───────────
 
-  it('RED→GREEN: lanza BadRequestException si startTime >= endTime', async () => {
-    await expect(
-      useCase.execute(10, { ...dto, startTime: '10:30', endTime: '10:00' }),
-    ).rejects.toThrow(BadRequestException);
-  });
+  it('valida las precondiciones del slot contra el NUEVO schedule (doctor, fecha, rango, sede)', async () => {
+    await useCase.execute(10, dto, 7);
 
-  it('RED→GREEN: lanza BadRequestException si el slot está fuera del rango del turno', async () => {
-    scheduleRepository.findById.mockResolvedValue(
-      buildSchedule({
-        timeFrom: new Date('1970-01-01T14:00:00.000Z'),
-        timeTo: new Date('1970-01-01T17:00:00.000Z'),
+    expect(slotValidator.validate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        doctorId: 3,
+        scheduleDate: new Date('2030-06-01T00:00:00.000Z'),
+        schedTimeFrom: new Date('1970-01-01T08:00:00.000Z'),
+        schedTimeTo: new Date('1970-01-01T17:00:00.000Z'),
+        durationMinutes: 30,
+        bufferMinutes: 0,
+        jwtClinicId: 7,
       }),
     );
+  });
 
-    // slot 10:00-10:30 queda fuera del rango 14:00-17:00
+  it('propaga la excepción del validador (p. ej. feriado/bloqueo/fecha pasada)', async () => {
+    slotValidator.validate.mockRejectedValue(
+      new BadRequestException('No se puede agendar una cita en un día feriado'),
+    );
+
     await expect(useCase.execute(10, dto)).rejects.toThrow(BadRequestException);
+    expect(appointmentRepository.rescheduleWithOverlapCheck).not.toHaveBeenCalled();
   });
 
-  it('acepta un slot que cabe exactamente en el límite del turno', async () => {
-    scheduleRepository.findById.mockResolvedValue(
-      buildSchedule({
-        timeFrom: new Date('1970-01-01T10:00:00.000Z'),
-        timeTo: new Date('1970-01-01T10:30:00.000Z'),
+  it('propaga ConflictException si el nuevo horario ya está ocupado', async () => {
+    appointmentRepository.rescheduleWithOverlapCheck.mockRejectedValue(
+      new ConflictException(
+        'Ya existe una cita que se superpone con el horario seleccionado',
+      ),
+    );
+
+    await expect(useCase.execute(10, dto)).rejects.toThrow(ConflictException);
+  });
+
+  // ── Iteración TDD 6: pendingUntil y reminderSent (huequecito #8) ──────────
+
+  it('cita pagada: conserva su estado y queda sin deadline de pago', async () => {
+    appointmentRepository.findById.mockResolvedValue(
+      buildAppointment({
+        status: AppointmentStatus.CONFIRMED,
+        paymentStatus: 'PAID',
+        pendingUntil: new Date('2026-01-01T00:00:00.000Z'),
       }),
     );
 
-    await expect(useCase.execute(10, dto)).resolves.toBeDefined();
+    await useCase.execute(10, dto);
+
+    expect(appointmentRepository.rescheduleWithOverlapCheck).toHaveBeenCalledWith(
+      10,
+      expect.objectContaining({
+        status: AppointmentStatus.CONFIRMED,
+        pendingUntil: null,
+      }),
+      99,
+      expect.any(Date),
+      expect.any(Date),
+    );
   });
 
-  // ── Iteración TDD 6: Verificación de argumentos al repositorio ────────────
+  it('cita impaga con deadline: renueva pendingUntil hacia el futuro (el cron no la cancela al minuto)', async () => {
+    appointmentRepository.findById.mockResolvedValue(
+      buildAppointment({
+        paymentStatus: 'PENDING',
+        pendingUntil: new Date('2020-01-01T00:00:00.000Z'),
+      }),
+    );
+
+    await useCase.execute(10, dto);
+
+    const data =
+      appointmentRepository.rescheduleWithOverlapCheck.mock.calls[0][1];
+    expect(data.status).toBe(AppointmentStatus.PENDING);
+    expect(data.pendingUntil).toBeInstanceOf(Date);
+    expect((data.pendingUntil as Date).getTime()).toBeGreaterThan(Date.now());
+  });
+
+  it('cita de staff (sin pago online): no se le asigna deadline de pago', async () => {
+    await useCase.execute(10, dto);
+
+    expect(appointmentRepository.rescheduleWithOverlapCheck).toHaveBeenCalledWith(
+      10,
+      expect.objectContaining({ pendingUntil: null }),
+      99,
+      expect.any(Date),
+      expect.any(Date),
+    );
+  });
+
+  it('resetea reminderSent para que la nueva fecha reciba recordatorio', async () => {
+    await useCase.execute(10, dto);
+
+    expect(appointmentRepository.rescheduleWithOverlapCheck).toHaveBeenCalledWith(
+      10,
+      expect.objectContaining({ reminderSent: false }),
+      99,
+      expect.any(Date),
+      expect.any(Date),
+    );
+  });
+
+  // ── Iteración TDD 7: Slot viejo liberado → waitlist (huequecito #11) ──────
+
+  it('emite slot_released con los datos del slot VIEJO al reagendar', async () => {
+    await useCase.execute(10, dto);
+
+    expect(eventEmitter.emit).toHaveBeenCalledWith(
+      'appointment.slot_released',
+      expect.objectContaining({
+        appointmentId: 10,
+        scheduleId: 5,
+        startTime: new Date('1970-01-01T09:00:00.000Z'),
+        endTime: new Date('1970-01-01T09:30:00.000Z'),
+      }),
+    );
+  });
+
+  it('no emite slot_released si el reagendamiento quedó en el mismo slot', async () => {
+    appointmentRepository.findById.mockResolvedValue(
+      buildAppointment({
+        scheduleId: 99,
+        startTime: new Date('1970-01-01T10:00:00.000Z'),
+        endTime: new Date('1970-01-01T10:30:00.000Z'),
+      }),
+    );
+
+    await useCase.execute(10, dto);
+
+    expect(eventEmitter.emit).not.toHaveBeenCalled();
+  });
+
+  it('no emite slot_released si el reagendamiento falla por superposición', async () => {
+    appointmentRepository.rescheduleWithOverlapCheck.mockRejectedValue(
+      new ConflictException('superposición'),
+    );
+
+    await expect(useCase.execute(10, dto)).rejects.toThrow(ConflictException);
+    expect(eventEmitter.emit).not.toHaveBeenCalled();
+  });
+
+  // ── Iteración TDD 8: Verificación de argumentos al repositorio ────────────
 
   it('no invoca rescheduleWithOverlapCheck si la cita está en estado COMPLETED', async () => {
     appointmentRepository.findById.mockResolvedValue(
