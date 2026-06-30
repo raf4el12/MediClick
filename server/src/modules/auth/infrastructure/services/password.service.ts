@@ -4,7 +4,9 @@ import { IPasswordService } from '../../../../shared/domain/contracts/password-s
 
 @Injectable()
 export class PasswordService implements IPasswordService {
-  private readonly SALT_ROUNDS = 10;
+  // OWASP A02: cost factor 12 (OWASP recomienda >=10; 12 da margen frente al
+  // avance de hardware sin penalizar el login de forma perceptible).
+  private readonly SALT_ROUNDS = 12;
 
   async hash(password: string): Promise<string> {
     return bcrypt.hash(password, this.SALT_ROUNDS);
