@@ -70,6 +70,8 @@ const VerticalLayout = ({ navbar, navigation, footer, children }: VerticalLayout
         </Box>
         <Box
           component="main"
+          id="main-content"
+          tabIndex={-1}
           className="cb-target"
           sx={{
             flexGrow: 1,

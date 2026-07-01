@@ -59,6 +59,37 @@ a {
    Accesibilidad (WCAG 2.1 AA — NTP-ISO/IEC 40500)
    ───────────────────────────────────────────── */
 
+/* Saltar al contenido — motora / ceguera / baja visión (WCAG 2.4.1 Bypass Blocks)
+   Oculto fuera de pantalla por defecto (no display:none/visibility:hidden,
+   eso lo sacaría del orden de tabulación) y visible al recibir foco. */
+.skip-to-content {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 1300;
+  padding: 12px 20px;
+  background-color: var(--primary-color);
+  color: #FFFFFF;
+  font-weight: 600;
+  border-radius: var(--border-radius);
+}
+
+.skip-to-content:focus {
+  left: 8px;
+  top: 8px;
+  outline: 3px solid var(--text-primary);
+  outline-offset: 2px;
+}
+
+/* El landmark principal recibe foco programático al activar el skip-link.
+   Sin esto, la regla global *:focus-visible dibujaría un anillo alrededor de
+   TODA el área de contenido. El foco sigue moviéndose (lectores de pantalla
+   continúan desde ahí), solo se oculta el anillo redundante. */
+#main-content:focus,
+#main-content:focus-visible {
+  outline: none;
+}
+
 /* Reducir animaciones — vestibular / cognitiva / motora */
 html[data-reduce-motion='true'] *,
 html[data-reduce-motion='true'] *::before,
