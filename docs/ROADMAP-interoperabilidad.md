@@ -30,7 +30,7 @@
 
 | Fase | Entregable | Desbloquea | Esfuerzo | Estado |
 |------|------------|-----------|----------|--------|
-| 0 | Bounded context `interoperability` + **FHIR Resource Store** (jsonb) + historial | Todo lo demás | Medio | 🔲 |
+| 0 | Bounded context `interoperability` + **FHIR Resource Store** (jsonb) + historial | Todo lo demás | Medio | ✅ |
 | 1 | **Proyección por eventos** → recursos FHIR + `Provenance`/`AuditEvent` | Trazabilidad | Medio | 🔲 |
 | 2 | **API FHIR REST de lectura** (`Patient`, `Encounter`, `CapabilityStatement`) | Consumo externo | Medio | 🔲 |
 | 3 | **MPI / Client Registry** + gateway RENIEC + stewardship | Identidad unificada | Alto | 🔲 |
@@ -47,6 +47,60 @@ externo signifique algo. Después la **infraestructura de resiliencia** (5) ante
 escritura externa. Recién entonces **integración externa** (6). La **seguridad/consentimiento** (7)
 es un *gate*: se construye en paralelo pero **nada sale al exterior sin que esté cerrada**.
 Finalmente lo más difícil: **offline rural + RENHICE** (8).
+
+---
+
+## Meta del programa: hitos medibles y estrategia de adopción
+
+La meta ("que no haya brechas entre centros de salud privados y estatales; el paciente con su
+información unificada") tiene una parte que se resuelve con arquitectura y otra que depende de
+actores externos. Este roadmap garantiza lo primero y **posiciona** para lo segundo. Para que la
+meta sea medible, se fijan tres hitos:
+
+### Hito M1 — Continuidad inter-clínicas dentro de la red MediClick
+> *"Un paciente atendido en la clínica A (tenant A) y luego en la clínica B (tenant B) tiene una
+> sola historia, visible en ambas con su consentimiento."*
+
+- **Depende de:** Fase 3 (MPI: una identidad por humano, N registros por clínica) + Fase 7
+  (consentimiento que gobierna el acceso cruzado).
+- **Por qué es el primer "sin brechas" real:** es 100 % alcanzable con código propio, sin esperar
+  al Estado. Hoy dos tenants de MediClick son silos entre sí; cerrar esa brecha interna es la
+  demostración end-to-end del modelo antes de federarse con nadie.
+- **Criterio de aceptación:** consulta FHIR `Patient/$everything` (o equivalente) cross-tenant
+  autorizada por `Consent` activo, con `AuditEvent` de cada acceso.
+
+### Hito M2 — El paciente porta su información (IPS)
+> *"Cualquier paciente puede llevarse su resumen clínico estándar (IPS firmado, PDF + FHIR + QR)
+> y presentarlo en cualquier establecimiento, conectado o no."*
+
+- **Depende de:** Fases 0–4 (programa **R-A**, que por esto sube de prioridad: es el primer
+  roadmap posterior a ejecutar).
+- **Por qué importa:** es el **puente pragmático** mientras el Estado no llega — elimina la brecha
+  *hoy* sin requerir que el establecimiento receptor esté integrado a nada.
+
+### Hito M3 — Nodo federado al HIE nacional
+> *"MediClick conectado a RENHICE (o al mecanismo que el Estado exponga) como repositorio afiliado."*
+
+- **Depende de:** Fases 6–8 **y de factores externos** (RENHICE operativo, convenios con
+  MINSA/EsSalud, contratos RENIEC).
+
+### Riesgo de adopción externa (explícito)
+
+M3 **no depende solo de este código**: exige que el otro lado exista y quiera conectarse. La
+estrategia frente a ese riesgo:
+
+1. **MediClick nunca es el cuello de botella.** Las fases 0–7 dejan el sistema hablando FHIR/IPS
+   con consentimiento y auditoría; cuando el Estado esté listo, conectarse es un adapter (Fase 6),
+   no una reescritura.
+2. **MediClick como mini-HIE regional.** La red multi-tenant ya es, en pequeño, un intercambio de
+   salud funcionando (M1). Ese activo se federa al HIE nacional cuando exista; mientras tanto, es
+   valor demostrable por sí mismo.
+3. **El paciente como transporte (M2).** Si las instituciones no se conectan entre sí, la
+   información viaja con el paciente en formato estándar. Es como los países nórdicos arrancaron
+   antes de sus plataformas nacionales.
+
+**Orden de valor:** M1 y M2 son controlables y demostrables (tesis/producto); M3 se persigue en
+paralelo pero nunca bloquea a los anteriores.
 
 ---
 
@@ -134,6 +188,9 @@ server/src/modules/interoperability/
 
 **Objetivo:** resolver identidades duplicadas/cruzadas. Un registro dorado (EMPI) por humano,
 con N identidades por fuente.
+
+> 🎯 Esta fase, junto con la 7, habilita el **Hito M1 (continuidad inter-clínicas)** — el primer
+> "sin brechas" medible del programa. Diseñar el MPI pensando en cross-tenant desde el día uno.
 
 ### Lógica
 - `PatientMaster` (golden record) ↔ `PatientIdentifier` (namespaced: `system` + `value`,
@@ -233,7 +290,7 @@ vertebral FHIR. Orden sugerido y dependencias:
 
 | Programa | Qué resuelve | Depende de |
 |----------|--------------|-----------|
-| **R-A · Documento clínico portable (IPS)** | Generar/leer el International Patient Summary del paciente | Fases 0–4 |
+| **R-A · Documento clínico portable (IPS)** ⬆️ | Generar/leer el International Patient Summary del paciente — **prioridad elevada: materializa el Hito M2** (puente mientras el Estado no se conecta) | Fases 0–4 |
 | **R-B · Reportería clínica y de salud pública** | Tableros epidemiológicos, indicadores MINSA, notificación obligatoria | Fase 1 (eventos) + 4 (terminología) |
 | **R-C · De-identificación y analítica** | Datasets anonimizados para investigación/IA sin exponer PII | Fase 7 (seguridad) |
 | **R-D · IA clínica sobre datos estructurados** | Apoyo a decisión, alertas, predicción de no-show clínica | R-A + R-C |
