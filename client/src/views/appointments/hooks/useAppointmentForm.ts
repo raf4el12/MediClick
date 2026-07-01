@@ -282,6 +282,7 @@ export function useAppointmentForm({ open, onSuccess, onClose }: UseAppointmentF
     selectedDoctorId,
     selectedScheduleId,
     selectedPatientId,
+    selectedSlotTime,
     reason,
     selectedSpecialty,
     selectedDoctor,
