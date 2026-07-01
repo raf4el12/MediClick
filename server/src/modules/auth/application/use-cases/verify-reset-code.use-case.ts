@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { createHash, randomBytes } from 'crypto';
 import { VerifyResetCodeDto } from '../dto/verify-reset-code.dto.js';
 import { RedisService } from '../../../../shared/redis/redis.service.js';

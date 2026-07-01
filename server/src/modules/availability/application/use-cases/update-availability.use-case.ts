@@ -91,8 +91,12 @@ export class UpdateAvailabilityUseCase {
     // startDate/endDate pueden ser null (REGULAR sin límite),
     // se usa hoy como inicio y 3 meses adelante como fin por defecto.
     const now = new Date();
-    const fallbackStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-    const fallbackEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 3, 0));
+    const fallbackStart = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+    );
+    const fallbackEnd = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 3, 0),
+    );
 
     const oldStart = existing.startDate ?? fallbackStart;
     const oldEnd = existing.endDate ?? fallbackEnd;

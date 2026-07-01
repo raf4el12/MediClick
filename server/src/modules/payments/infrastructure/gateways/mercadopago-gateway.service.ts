@@ -1,4 +1,8 @@
-import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { MercadoPagoConfig, Preference, Payment } from 'mercadopago';
 import * as crypto from 'crypto';
 import type {
@@ -61,7 +65,7 @@ export class MercadoPagoGatewayService implements IPaymentGatewayService {
           expiration_date_to: expirationTo.toISOString(),
         }),
       };
-      
+
       this.logger.debug(`Payload sent to MP: ${JSON.stringify(bodyPayload)}`);
 
       const response = await preference.create({
@@ -95,7 +99,8 @@ export class MercadoPagoGatewayService implements IPaymentGatewayService {
 
       return {
         gatewayPaymentId: String(response.id),
-        status: (response.status ?? 'pending') as GatewayPaymentStatus['status'],
+        status: (response.status ??
+          'pending') as GatewayPaymentStatus['status'],
         externalReference: response.external_reference ?? null,
         amount: Number(response.transaction_amount ?? 0),
         currency: response.currency_id ?? 'PEN',
@@ -140,14 +145,13 @@ export class MercadoPagoGatewayService implements IPaymentGatewayService {
     const requestId = this.headerToString(headers['x-request-id']);
     if (!signature || !requestId) return false;
 
-    const parts = signature.split(',').reduce<Record<string, string>>(
-      (acc, part) => {
+    const parts = signature
+      .split(',')
+      .reduce<Record<string, string>>((acc, part) => {
         const [k, v] = part.split('=');
         if (k && v) acc[k.trim()] = v.trim();
         return acc;
-      },
-      {},
-    );
+      }, {});
     const ts = parts.ts;
     const v1 = parts.v1;
     if (!ts || !v1) return false;

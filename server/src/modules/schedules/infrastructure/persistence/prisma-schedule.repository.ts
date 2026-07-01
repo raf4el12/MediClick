@@ -68,7 +68,9 @@ export class PrismaScheduleRepository implements IScheduleRepository {
     const { limit, offset, orderBy, orderByMode } = params;
 
     // Zona horaria de la sede (o fallback America/Lima)
-    const todayStart = todayStartInTimezone(filters.timezone ?? DEFAULT_TIMEZONE);
+    const todayStart = todayStartInTimezone(
+      filters.timezone ?? DEFAULT_TIMEZONE,
+    );
 
     // Nunca devolver fechas pasadas: forzar dateFrom >= hoy
     const effectiveDateFrom =

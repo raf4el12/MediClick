@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Inject,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, Inject, ForbiddenException } from '@nestjs/common';
 import { MedicalHistoryQueryDto } from '../dto/medical-history-query.dto.js';
 import {
   PaginatedMedicalHistoryResponseDto,
@@ -32,16 +28,17 @@ export class FindMedicalHistoryByPatientUseCase {
   ): Promise<PaginatedMedicalHistoryResponseDto> {
     // Doctores solo pueden ver historial de pacientes que han atendido
     if (role === UserRole.DOCTOR && userId) {
-      const doctorId =
-        await this.doctorRepository.findDoctorIdByUserId(userId);
+      const doctorId = await this.doctorRepository.findDoctorIdByUserId(userId);
       if (!doctorId) {
         throw new ForbiddenException(
           'No se encontró un doctor asociado a este usuario',
         );
       }
 
-      const hasRelation =
-        await this.patientRepository.hasRelationWithDoctor(patientId, doctorId);
+      const hasRelation = await this.patientRepository.hasRelationWithDoctor(
+        patientId,
+        doctorId,
+      );
       if (!hasRelation) {
         throw new ForbiddenException(
           'No tiene permiso para ver el historial de este paciente',

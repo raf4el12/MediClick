@@ -56,7 +56,10 @@ export class AcceptOfferUseCase {
     }
 
     // Claim atómico: gana el primer accept; un doble-click recibe Conflict.
-    const claimed = await this.offerRepository.claimPending(offerId, new Date());
+    const claimed = await this.offerRepository.claimPending(
+      offerId,
+      new Date(),
+    );
     if (!claimed) {
       throw new ConflictException(
         'La oferta ya no está disponible (fue aceptada o expiró)',

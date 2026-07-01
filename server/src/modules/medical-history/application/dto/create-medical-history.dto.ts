@@ -32,7 +32,9 @@ export class CreateMedicalHistoryDto {
     description: 'Descripción detallada',
   })
   @IsString()
-  @MaxLength(2000, { message: 'La descripción no debe exceder 2000 caracteres' })
+  @MaxLength(2000, {
+    message: 'La descripción no debe exceder 2000 caracteres',
+  })
   @IsOptional()
   description?: string;
 

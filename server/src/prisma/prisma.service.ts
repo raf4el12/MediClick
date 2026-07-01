@@ -89,22 +89,34 @@ export class PrismaService
         query: {
           $allModels: {
             async findMany({ model, args, query }) {
-              return query(withTenantFilter(model, args as WhereArgs) as typeof args);
+              return query(
+                withTenantFilter(model, args as WhereArgs) as typeof args,
+              );
             },
             async findFirst({ model, args, query }) {
-              return query(withTenantFilter(model, args as WhereArgs) as typeof args);
+              return query(
+                withTenantFilter(model, args as WhereArgs) as typeof args,
+              );
             },
             async findFirstOrThrow({ model, args, query }) {
-              return query(withTenantFilter(model, args as WhereArgs) as typeof args);
+              return query(
+                withTenantFilter(model, args as WhereArgs) as typeof args,
+              );
             },
             async count({ model, args, query }) {
-              return query(withTenantFilter(model, args as WhereArgs) as typeof args);
+              return query(
+                withTenantFilter(model, args as WhereArgs) as typeof args,
+              );
             },
             async updateMany({ model, args, query }) {
-              return query(withTenantFilter(model, args as WhereArgs) as typeof args);
+              return query(
+                withTenantFilter(model, args as WhereArgs) as typeof args,
+              );
             },
             async deleteMany({ model, args, query }) {
-              return query(withTenantFilter(model, args as WhereArgs) as typeof args);
+              return query(
+                withTenantFilter(model, args as WhereArgs) as typeof args,
+              );
             },
           },
         },

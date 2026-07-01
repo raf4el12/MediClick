@@ -19,7 +19,9 @@ export class ExpireStaleEntriesUseCase {
   async execute(): Promise<void> {
     const count = await this.entryRepository.expireStale(new Date());
     if (count > 0) {
-      this.logger.log(`[WAITLIST] ${count} entradas de lista de espera expiradas`);
+      this.logger.log(
+        `[WAITLIST] ${count} entradas de lista de espera expiradas`,
+      );
     }
   }
 }

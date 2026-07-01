@@ -146,7 +146,10 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
   it('paciente cancela tarde con pago PAID: persiste el fee y marca needsFeeCollection', async () => {
     // 2026-12-01T14:00Z = 09:00 Lima → ~1h antes de la cita (10:00)
     jest.useFakeTimers({ now: new Date('2026-12-01T14:00:00Z') });
-    specialtyRepository.findById.mockResolvedValue({ id: 3, price: 120 } as any);
+    specialtyRepository.findById.mockResolvedValue({
+      id: 3,
+      price: 120,
+    } as any);
     transactionRepository.findLatestByAppointmentId.mockResolvedValue({
       id: 77,
       status: 'PAID',
@@ -175,7 +178,10 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
 
   it('paciente cancela tarde SIN pago PAID: no calcula fee ni toca la transacción', async () => {
     jest.useFakeTimers({ now: new Date('2026-12-01T14:00:00Z') });
-    specialtyRepository.findById.mockResolvedValue({ id: 3, price: 120 } as any);
+    specialtyRepository.findById.mockResolvedValue({
+      id: 3,
+      price: 120,
+    } as any);
     transactionRepository.findLatestByAppointmentId.mockResolvedValue({
       id: 77,
       status: 'PENDING',
@@ -192,7 +198,10 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
   it('paciente cancela temprano (>24h) con pago PAID: sin fee, refund intacto', async () => {
     // 2026-11-20 → ~11 días antes de la cita
     jest.useFakeTimers({ now: new Date('2026-11-20T14:00:00Z') });
-    specialtyRepository.findById.mockResolvedValue({ id: 3, price: 120 } as any);
+    specialtyRepository.findById.mockResolvedValue({
+      id: 3,
+      price: 120,
+    } as any);
     transactionRepository.findLatestByAppointmentId.mockResolvedValue({
       id: 77,
       status: 'PAID',

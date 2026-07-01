@@ -126,7 +126,8 @@ export class CreatePatientAppointmentUseCase {
         },
         specialty: appointment.schedule.specialty,
       },
-      timezone: appointment.schedule.doctor.clinic?.timezone ?? DEFAULT_TIMEZONE,
+      timezone:
+        appointment.schedule.doctor.clinic?.timezone ?? DEFAULT_TIMEZONE,
       hasPrescription: appointment.hasPrescription,
       notesCount: appointment.notesCount,
       createdAt: appointment.createdAt,

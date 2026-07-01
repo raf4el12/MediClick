@@ -1,4 +1,7 @@
-import { UnauthorizedException, ServiceUnavailableException } from '@nestjs/common';
+import {
+  UnauthorizedException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { RefreshTokenUseCase } from './refresh-token.use-case.js';
 import type { IUserRepository } from '../../../users/domain/repositories/user.repository.js';
 import type { ITokenService } from '../../domain/contracts/token-service.interface.js';

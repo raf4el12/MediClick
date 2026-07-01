@@ -25,7 +25,12 @@ function buildCreatedEntry(overrides: any = {}) {
     fulfilledAt: null,
     patient: {
       id: 42,
-      profile: { name: 'Luis', lastName: 'Pérez', userId: 900, email: 'l@t.com' },
+      profile: {
+        name: 'Luis',
+        lastName: 'Pérez',
+        userId: 900,
+        email: 'l@t.com',
+      },
     },
     specialty: { id: 3, name: 'Cardiología' },
     doctor: null,

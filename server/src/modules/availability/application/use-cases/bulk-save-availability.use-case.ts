@@ -120,9 +120,7 @@ export class BulkSaveAvailabilityUseCase {
       const regenStart = new Date(
         Math.min(...allDates.map((d) => d.getTime())),
       );
-      const regenEnd = new Date(
-        Math.max(...allDates.map((d) => d.getTime())),
-      );
+      const regenEnd = new Date(Math.max(...allDates.map((d) => d.getTime())));
 
       await this.scheduleRegenerationService.regenerateForDoctor(
         dto.doctorId,

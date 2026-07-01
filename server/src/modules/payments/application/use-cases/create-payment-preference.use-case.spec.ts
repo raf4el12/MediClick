@@ -99,21 +99,24 @@ describe('CreatePaymentPreferenceUseCase', () => {
   it('throws NotFoundException when appointment does not exist', async () => {
     prisma.appointments.findUnique.mockResolvedValue(null);
 
-    await expect(
-      useCase.execute(42, { appointmentId: 999 }),
-    ).rejects.toThrow(NotFoundException);
+    await expect(useCase.execute(42, { appointmentId: 999 })).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('throws ForbiddenException when appointment belongs to another user', async () => {
     prisma.appointments.findUnique.mockResolvedValue(
       buildAppointment({
-        patient: { id: 1, profile: { userId: 7, user: { email: 'otro@example.com' } } },
+        patient: {
+          id: 1,
+          profile: { userId: 7, user: { email: 'otro@example.com' } },
+        },
       }),
     );
 
-    await expect(
-      useCase.execute(42, { appointmentId: 123 }),
-    ).rejects.toThrow(ForbiddenException);
+    await expect(useCase.execute(42, { appointmentId: 123 })).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 
   it('rejects already paid appointments', async () => {
@@ -121,9 +124,9 @@ describe('CreatePaymentPreferenceUseCase', () => {
       buildAppointment({ paymentStatus: 'PAID' }),
     );
 
-    await expect(
-      useCase.execute(42, { appointmentId: 123 }),
-    ).rejects.toThrow(BadRequestException);
+    await expect(useCase.execute(42, { appointmentId: 123 })).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it('rejects appointments past their pendingUntil deadline', async () => {
@@ -131,9 +134,9 @@ describe('CreatePaymentPreferenceUseCase', () => {
       buildAppointment({ pendingUntil: new Date(Date.now() - 1000) }),
     );
 
-    await expect(
-      useCase.execute(42, { appointmentId: 123 }),
-    ).rejects.toThrow(BadRequestException);
+    await expect(useCase.execute(42, { appointmentId: 123 })).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it('rejects appointments whose specialty has no price', async () => {
@@ -146,18 +149,18 @@ describe('CreatePaymentPreferenceUseCase', () => {
       }),
     );
 
-    await expect(
-      useCase.execute(42, { appointmentId: 123 }),
-    ).rejects.toThrow(BadRequestException);
+    await expect(useCase.execute(42, { appointmentId: 123 })).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it('fails when MP_NOTIFICATION_URL is missing', async () => {
     delete process.env.MP_NOTIFICATION_URL;
     prisma.appointments.findUnique.mockResolvedValue(buildAppointment());
 
-    await expect(
-      useCase.execute(42, { appointmentId: 123 }),
-    ).rejects.toThrow(BadRequestException);
+    await expect(useCase.execute(42, { appointmentId: 123 })).rejects.toThrow(
+      BadRequestException,
+    );
     expect(gateway.createPreference).not.toHaveBeenCalled();
   });
 });

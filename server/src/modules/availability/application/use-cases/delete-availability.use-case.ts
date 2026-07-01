@@ -32,8 +32,12 @@ export class DeleteAvailabilityUseCase {
     // startDate/endDate pueden ser null (REGULAR sin límite),
     // se usa hoy como inicio y 3 meses adelante como fin por defecto.
     const now = new Date();
-    const dateFrom = existing.startDate ?? new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
-    const dateTo = existing.endDate ?? new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 3, 0));
+    const dateFrom =
+      existing.startDate ??
+      new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const dateTo =
+      existing.endDate ??
+      new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 3, 0));
 
     await this.scheduleRegenerationService.regenerateForDoctor(
       existing.doctorId,

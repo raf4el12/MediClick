@@ -70,7 +70,9 @@ export class WaitlistController {
   @Auth()
   @RequirePermissions('CREATE', 'APPOINTMENTS')
   @Throttle({ long: { ttl: 60000, limit: 10 } })
-  @ApiOperation({ summary: 'Aceptar una oferta de cupo (crea la cita PENDING de pago)' })
+  @ApiOperation({
+    summary: 'Aceptar una oferta de cupo (crea la cita PENDING de pago)',
+  })
   @ApiResponse({ status: 201, type: AcceptOfferResponseDto })
   @ApiResponse({ status: 403, description: 'La oferta no te pertenece' })
   @ApiResponse({ status: 409, description: 'La oferta ya no está disponible' })
@@ -85,7 +87,9 @@ export class WaitlistController {
   @Auth()
   @RequirePermissions('UPDATE', 'APPOINTMENTS')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Rechazar una oferta (se reofrece al siguiente en cola)' })
+  @ApiOperation({
+    summary: 'Rechazar una oferta (se reofrece al siguiente en cola)',
+  })
   @ApiResponse({ status: 200, description: 'Oferta rechazada' })
   async rejectOffer(
     @CurrentUser('id') userId: number,

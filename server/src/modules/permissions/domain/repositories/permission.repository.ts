@@ -5,5 +5,9 @@ export interface IPermissionRepository {
   findById(id: number): Promise<PermissionEntity | null>;
   findByIds(ids: number[]): Promise<PermissionEntity[]>;
   findByRoleId(roleId: number): Promise<PermissionEntity[]>;
-  upsert(action: string, subject: string, description?: string): Promise<PermissionEntity>;
+  upsert(
+    action: string,
+    subject: string,
+    description?: string,
+  ): Promise<PermissionEntity>;
 }

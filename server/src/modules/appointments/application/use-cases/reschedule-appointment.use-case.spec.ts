@@ -17,7 +17,9 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
     Pick<IAppointmentRepository, 'findById' | 'rescheduleWithOverlapCheck'>
   >;
   let scheduleRepository: jest.Mocked<Pick<IScheduleRepository, 'findById'>>;
-  let slotValidator: jest.Mocked<Pick<AppointmentSlotValidatorService, 'validate'>>;
+  let slotValidator: jest.Mocked<
+    Pick<AppointmentSlotValidatorService, 'validate'>
+  >;
   let eventEmitter: { emit: jest.Mock };
 
   const buildAppointment = (
@@ -45,7 +47,12 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
     notesCount: 0,
     patient: {
       id: 1,
-      profile: { name: 'Ana', lastName: 'Gómez', email: 'ana@x.com', userId: 1 },
+      profile: {
+        name: 'Ana',
+        lastName: 'Gómez',
+        email: 'ana@x.com',
+        userId: 1,
+      },
     },
     schedule: {
       id: 5,
@@ -129,7 +136,9 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
     const result = await useCase.execute(10, dto);
 
     expect(result.id).toBe(10);
-    expect(appointmentRepository.rescheduleWithOverlapCheck).toHaveBeenCalledWith(
+    expect(
+      appointmentRepository.rescheduleWithOverlapCheck,
+    ).toHaveBeenCalledWith(
       10,
       expect.objectContaining({
         scheduleId: 99,
@@ -215,7 +224,9 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
     );
 
     await expect(useCase.execute(10, dto)).rejects.toThrow(BadRequestException);
-    expect(appointmentRepository.rescheduleWithOverlapCheck).not.toHaveBeenCalled();
+    expect(
+      appointmentRepository.rescheduleWithOverlapCheck,
+    ).not.toHaveBeenCalled();
   });
 
   it('propaga ConflictException si el nuevo horario ya está ocupado', async () => {
@@ -241,7 +252,9 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
 
     await useCase.execute(10, dto);
 
-    expect(appointmentRepository.rescheduleWithOverlapCheck).toHaveBeenCalledWith(
+    expect(
+      appointmentRepository.rescheduleWithOverlapCheck,
+    ).toHaveBeenCalledWith(
       10,
       expect.objectContaining({
         status: AppointmentStatus.CONFIRMED,
@@ -273,7 +286,9 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
   it('cita de staff (sin pago online): no se le asigna deadline de pago', async () => {
     await useCase.execute(10, dto);
 
-    expect(appointmentRepository.rescheduleWithOverlapCheck).toHaveBeenCalledWith(
+    expect(
+      appointmentRepository.rescheduleWithOverlapCheck,
+    ).toHaveBeenCalledWith(
       10,
       expect.objectContaining({ pendingUntil: null }),
       99,
@@ -285,7 +300,9 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
   it('resetea reminderSent para que la nueva fecha reciba recordatorio', async () => {
     await useCase.execute(10, dto);
 
-    expect(appointmentRepository.rescheduleWithOverlapCheck).toHaveBeenCalledWith(
+    expect(
+      appointmentRepository.rescheduleWithOverlapCheck,
+    ).toHaveBeenCalledWith(
       10,
       expect.objectContaining({ reminderSent: false }),
       99,
@@ -341,6 +358,8 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
     );
 
     await expect(useCase.execute(10, dto)).rejects.toThrow();
-    expect(appointmentRepository.rescheduleWithOverlapCheck).not.toHaveBeenCalled();
+    expect(
+      appointmentRepository.rescheduleWithOverlapCheck,
+    ).not.toHaveBeenCalled();
   });
 });

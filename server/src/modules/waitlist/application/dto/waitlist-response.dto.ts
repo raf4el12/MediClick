@@ -31,6 +31,8 @@ export class WaitlistOfferResponseDto {
   @ApiProperty() endTime: string;
   @ApiProperty() expiresAt: Date;
   @ApiProperty({ enum: WaitlistOfferStatus }) status: WaitlistOfferStatus;
-  @ApiProperty({ description: 'Segundos restantes antes de que expire la oferta' })
+  @ApiProperty({
+    description: 'Segundos restantes antes de que expire la oferta',
+  })
   secondsRemaining: number;
 }

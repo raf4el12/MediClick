@@ -69,9 +69,11 @@ describe('LoginUseCase', () => {
 
     prisma = {
       rolePermissions: {
-        findMany: jest.fn().mockResolvedValue([
-          { permission: { action: 'READ', subject: 'APPOINTMENTS' } },
-        ]),
+        findMany: jest
+          .fn()
+          .mockResolvedValue([
+            { permission: { action: 'READ', subject: 'APPOINTMENTS' } },
+          ]),
       },
     };
 

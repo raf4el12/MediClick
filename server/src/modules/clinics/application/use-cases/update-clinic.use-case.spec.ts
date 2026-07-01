@@ -28,9 +28,7 @@ describe('UpdateClinicUseCase — OWASP A01', () => {
     repo = {
       findById: jest.fn().mockImplementation((id: number) => clinicRow(id)),
       existsByNameExcluding: jest.fn().mockResolvedValue(false),
-      update: jest
-        .fn()
-        .mockImplementation((id: number) => clinicRow(id)),
+      update: jest.fn().mockImplementation((id: number) => clinicRow(id)),
     };
     useCase = new UpdateClinicUseCase(repo as any);
   });

@@ -108,9 +108,9 @@ export class AppointmentReminderService {
       try {
         const patientName = `${appt.patient.profile.name} ${appt.patient.profile.lastName}`;
         const doctorName = `${appt.schedule.doctor.profile.name} ${appt.schedule.doctor.profile.lastName}`;
-        const clinicName = appt.schedule.doctor.clinic?.name ?? DEFAULT_CLINIC_NAME;
-        const clinicTimezone =
-          appt.schedule.doctor.clinic?.timezone ?? tz;
+        const clinicName =
+          appt.schedule.doctor.clinic?.name ?? DEFAULT_CLINIC_NAME;
+        const clinicTimezone = appt.schedule.doctor.clinic?.timezone ?? tz;
         const patientUserId = appt.patient.profile.userId;
 
         await this.mailService.send({

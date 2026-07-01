@@ -11,7 +11,9 @@ describe('CreateHolidayUseCase', () => {
   >;
   let eventEmitter: { emit: jest.Mock };
 
-  const buildHoliday = (overrides: Partial<HolidayEntity> = {}): HolidayEntity => ({
+  const buildHoliday = (
+    overrides: Partial<HolidayEntity> = {},
+  ): HolidayEntity => ({
     id: 1,
     name: 'Fiestas Patrias',
     date: new Date('2026-07-28T12:00:00.000Z'),
@@ -91,9 +93,9 @@ describe('CreateHolidayUseCase', () => {
   });
 
   it('staff no puede crear feriados para otra sede', async () => {
-    await expect(
-      useCase.execute({ ...dto, clinicId: 9 }, 7),
-    ).rejects.toThrow(ForbiddenException);
+    await expect(useCase.execute({ ...dto, clinicId: 9 }, 7)).rejects.toThrow(
+      ForbiddenException,
+    );
     expect(holidayRepository.create).not.toHaveBeenCalled();
     expect(eventEmitter.emit).not.toHaveBeenCalled();
   });

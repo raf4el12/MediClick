@@ -25,7 +25,11 @@ export class FhirResourceService {
     const existing = await this.repo.findByTypeAndId(input.resourceType, id);
     const versionId = nextVersionId(existing);
     const lastUpdated = new Date();
-    const content = stampResource(input.content, { id, versionId, lastUpdated });
+    const content = stampResource(input.content, {
+      id,
+      versionId,
+      lastUpdated,
+    });
 
     return this.repo.persist({
       id,
@@ -44,10 +48,7 @@ export class FhirResourceService {
     return this.repo.findByTypeAndId(resourceType, id);
   }
 
-  getHistory(
-    resourceType: string,
-    id: string,
-  ): Promise<FhirResourceVersion[]> {
+  getHistory(resourceType: string, id: string): Promise<FhirResourceVersion[]> {
     return this.repo.findHistory(resourceType, id);
   }
 }

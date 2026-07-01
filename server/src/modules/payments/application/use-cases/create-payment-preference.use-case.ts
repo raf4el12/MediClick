@@ -34,7 +34,9 @@ export class CreatePaymentPreferenceUseCase {
         patient: {
           select: {
             id: true,
-            profile: { select: { userId: true, user: { select: { email: true } } } },
+            profile: {
+              select: { userId: true, user: { select: { email: true } } },
+            },
           },
         },
         schedule: {

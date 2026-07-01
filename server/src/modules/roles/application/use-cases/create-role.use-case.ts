@@ -27,7 +27,9 @@ export class CreateRoleUseCase {
 
     const existing = await this.roleRepository.findByName(dto.name, clinicId);
     if (existing) {
-      throw new ConflictException(`Ya existe un rol con el nombre "${dto.name}" en esta clínica`);
+      throw new ConflictException(
+        `Ya existe un rol con el nombre "${dto.name}" en esta clínica`,
+      );
     }
 
     const role = await this.roleRepository.create({

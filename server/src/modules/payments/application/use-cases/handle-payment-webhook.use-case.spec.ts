@@ -80,7 +80,10 @@ describe('HandlePaymentWebhookUseCase', () => {
   });
 
   it('ignores non-payment event types', async () => {
-    await useCase.execute({ type: 'topic_claim_integration', data: { id: 'x' } } as any);
+    await useCase.execute({
+      type: 'topic_claim_integration',
+      data: { id: 'x' },
+    } as any);
     expect(gateway.getPayment).not.toHaveBeenCalled();
   });
 
@@ -182,7 +185,10 @@ describe('HandlePaymentWebhookUseCase', () => {
 
   it('maps rejected payment to FAILED and updates appointment paymentStatus', async () => {
     gateway.getPayment.mockResolvedValue(
-      buildGatewayStatus({ status: 'rejected', statusDetail: 'cc_rejected_other_reason' }),
+      buildGatewayStatus({
+        status: 'rejected',
+        statusDetail: 'cc_rejected_other_reason',
+      }),
     );
     prisma.appointments.findUnique.mockResolvedValue(buildAppointment());
     transactionRepository.findByGatewayId.mockResolvedValue(null);

@@ -21,7 +21,11 @@ export class PrismaSpecialtyRepository implements ISpecialtyRepository {
       data,
       include: { category: categorySelect },
     });
-    return { ...result, duration: result.duration ?? 30, price: result.price ? Number(result.price) : null };
+    return {
+      ...result,
+      duration: result.duration ?? 30,
+      price: result.price ? Number(result.price) : null,
+    };
   }
 
   async findAllPaginated(
@@ -85,7 +89,11 @@ export class PrismaSpecialtyRepository implements ISpecialtyRepository {
       include: { category: categorySelect },
     });
     if (!result) return null;
-    return { ...result, duration: result.duration ?? 30, price: result.price ? Number(result.price) : null };
+    return {
+      ...result,
+      duration: result.duration ?? 30,
+      price: result.price ? Number(result.price) : null,
+    };
   }
 
   async findByIds(ids: number[]): Promise<SpecialtyEntity[]> {
@@ -108,7 +116,11 @@ export class PrismaSpecialtyRepository implements ISpecialtyRepository {
       data: { ...data, updatedAt: new Date() },
       include: { category: categorySelect },
     });
-    return { ...result, duration: result.duration ?? 30, price: result.price ? Number(result.price) : null };
+    return {
+      ...result,
+      duration: result.duration ?? 30,
+      price: result.price ? Number(result.price) : null,
+    };
   }
 
   async softDelete(id: number): Promise<void> {

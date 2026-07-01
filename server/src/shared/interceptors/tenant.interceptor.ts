@@ -17,10 +17,7 @@ import { getRequestFromContext } from '../utils/get-request-from-context.js';
  */
 @Injectable()
 export class TenantInterceptor implements NestInterceptor {
-  intercept(
-    context: ExecutionContext,
-    next: CallHandler,
-  ): Observable<unknown> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     // No usar switchToHttp(): en GraphQL devuelve el root del resolver, no el
     // req — clinicId quedaría null y Prisma no aplicaría el filtro de tenant.
     const req = getRequestFromContext(context) as {

@@ -11,7 +11,8 @@ export class PreferenceResponseDto {
   initPoint: string;
 
   @ApiProperty({
-    example: 'https://sandbox.mercadopago.com.pe/checkout/v1/redirect?pref_id=...',
+    example:
+      'https://sandbox.mercadopago.com.pe/checkout/v1/redirect?pref_id=...',
     description: 'URL sandbox (para desarrollo/testing).',
   })
   sandboxInitPoint: string;

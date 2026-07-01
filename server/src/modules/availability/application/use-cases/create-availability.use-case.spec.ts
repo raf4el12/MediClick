@@ -58,14 +58,22 @@ describe('CreateAvailabilityUseCase', () => {
 
   it('permite una vigencia de un solo día (startDate === endDate)', async () => {
     await expect(
-      useCase.execute({ ...dto, startDate: '2026-07-01', endDate: '2026-07-01' }),
+      useCase.execute({
+        ...dto,
+        startDate: '2026-07-01',
+        endDate: '2026-07-01',
+      }),
     ).resolves.toBeDefined();
     expect(availabilityRepository.create).toHaveBeenCalled();
   });
 
   it('rechaza startDate posterior a endDate', async () => {
     await expect(
-      useCase.execute({ ...dto, startDate: '2026-07-31', endDate: '2026-07-01' }),
+      useCase.execute({
+        ...dto,
+        startDate: '2026-07-31',
+        endDate: '2026-07-01',
+      }),
     ).rejects.toThrow(BadRequestException);
   });
 

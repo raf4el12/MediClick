@@ -67,9 +67,9 @@ describe('GetPaymentByAppointmentUseCase', () => {
       patient: { profile: { userId: 99 } },
     });
 
-    await expect(
-      useCase.execute(42, 'PATIENT', 10),
-    ).rejects.toThrow(ForbiddenException);
+    await expect(useCase.execute(42, 'PATIENT', 10)).rejects.toThrow(
+      ForbiddenException,
+    );
   });
 
   it('allows ADMIN to read any appointment payment', async () => {
@@ -110,9 +110,9 @@ describe('GetPaymentByAppointmentUseCase', () => {
     });
     transactionRepository.findLatestByAppointmentId.mockResolvedValue(null);
 
-    await expect(
-      useCase.execute(42, 'PATIENT', 10),
-    ).rejects.toThrow(NotFoundException);
+    await expect(useCase.execute(42, 'PATIENT', 10)).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('re-syncs a PENDING transaction via the webhook when a paymentId is provided', async () => {
@@ -141,7 +141,11 @@ describe('GetPaymentByAppointmentUseCase', () => {
     };
     transactionRepository.findLatestByAppointmentId
       .mockResolvedValueOnce(pending as any)
-      .mockResolvedValueOnce({ ...pending, status: 'PAID', paidAt: new Date() } as any);
+      .mockResolvedValueOnce({
+        ...pending,
+        status: 'PAID',
+        paidAt: new Date(),
+      } as any);
 
     const result = await useCase.execute(42, 'PATIENT', 10, 'mp_999');
 

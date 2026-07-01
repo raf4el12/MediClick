@@ -17,7 +17,8 @@ export class UpdateMyProfileDto {
   @ApiPropertyOptional({ example: '+51999888777' })
   @IsString()
   @Matches(/^\+[1-9]\d{6,14}$/, {
-    message: 'Debe ser un número válido en formato internacional (ej: +51999888777)',
+    message:
+      'Debe ser un número válido en formato internacional (ej: +51999888777)',
   })
   @IsOptional()
   phone?: string;

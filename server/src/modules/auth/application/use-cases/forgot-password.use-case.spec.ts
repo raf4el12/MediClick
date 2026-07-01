@@ -62,7 +62,10 @@ describe('ForgotPasswordUseCase — OWASP A01/A07: User Enumeration Prevention',
   });
 
   it('A01/A07.1: retorna void sin lanzar error para un usuario INACTIVO', async () => {
-    userRepository.findByEmail.mockResolvedValue({ ...mockUser, isActive: false });
+    userRepository.findByEmail.mockResolvedValue({
+      ...mockUser,
+      isActive: false,
+    });
 
     await expect(
       useCase.execute({ email: 'ana@mediclick.com' }),
@@ -70,7 +73,10 @@ describe('ForgotPasswordUseCase — OWASP A01/A07: User Enumeration Prevention',
   });
 
   it('A01/A07.1: retorna void sin lanzar error para un usuario ELIMINADO', async () => {
-    userRepository.findByEmail.mockResolvedValue({ ...mockUser, deleted: true });
+    userRepository.findByEmail.mockResolvedValue({
+      ...mockUser,
+      deleted: true,
+    });
 
     await expect(
       useCase.execute({ email: 'ana@mediclick.com' }),

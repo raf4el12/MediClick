@@ -28,7 +28,10 @@ export class WaitlistNotificationListener {
           type: 'GENERAL',
           title: 'Cupo disponible',
           message: `Se liberó un cupo con el Dr(a). ${event.doctorName} (${event.specialtyName}). Acéptalo antes de que expire.`,
-          metadata: { offerId: event.offerId, scheduleDate: event.scheduleDate },
+          metadata: {
+            offerId: event.offerId,
+            scheduleDate: event.scheduleDate,
+          },
           clinicId: event.clinicId,
         });
       } catch (error) {
@@ -82,7 +85,10 @@ export class WaitlistNotificationListener {
         type: 'GENERAL',
         title: 'Cupo reservado',
         message: `Reservaste el cupo con el Dr(a). ${event.doctorName}. Completa el pago para confirmar tu cita.`,
-        metadata: { appointmentId: event.appointmentId, offerId: event.offerId },
+        metadata: {
+          appointmentId: event.appointmentId,
+          offerId: event.offerId,
+        },
         clinicId: event.clinicId,
       });
     } catch (error) {

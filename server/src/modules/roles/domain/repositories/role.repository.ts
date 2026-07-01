@@ -3,7 +3,10 @@ import { RoleEntity } from '../entities/role.entity.js';
 export interface IRoleRepository {
   findAll(clinicId?: number | null): Promise<RoleEntity[]>;
   findById(id: number): Promise<RoleEntity | null>;
-  findByName(name: string, clinicId?: number | null): Promise<RoleEntity | null>;
+  findByName(
+    name: string,
+    clinicId?: number | null,
+  ): Promise<RoleEntity | null>;
   create(data: {
     name: string;
     description?: string;

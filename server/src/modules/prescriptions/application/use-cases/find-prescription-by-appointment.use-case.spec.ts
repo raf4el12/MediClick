@@ -7,8 +7,12 @@ import type { IDoctorRepository } from '../../../doctors/domain/repositories/doc
 describe('FindPrescriptionByAppointmentUseCase', () => {
   let useCase: FindPrescriptionByAppointmentUseCase;
   let prescriptionRepository: jest.Mocked<IPrescriptionRepository>;
-  let appointmentRepository: jest.Mocked<Pick<IAppointmentRepository, 'findById'>>;
-  let doctorRepository: jest.Mocked<Pick<IDoctorRepository, 'findDoctorIdByUserId'>>;
+  let appointmentRepository: jest.Mocked<
+    Pick<IAppointmentRepository, 'findById'>
+  >;
+  let doctorRepository: jest.Mocked<
+    Pick<IDoctorRepository, 'findDoctorIdByUserId'>
+  >;
 
   const mockPrescription = {
     id: 1,

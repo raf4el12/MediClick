@@ -53,7 +53,9 @@ describe('RejectOfferUseCase', () => {
     offerRepo.findById.mockResolvedValue(buildOffer());
     patientRepo.findByUserId.mockResolvedValue({ id: 42 });
     offerRepo.markRejected.mockResolvedValue(null);
-    await expect(useCase.execute(900, 777)).rejects.toThrow(BadRequestException);
+    await expect(useCase.execute(900, 777)).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it('al rechazar libera el lock y reofrece el slot al siguiente en cola', async () => {
@@ -64,7 +66,10 @@ describe('RejectOfferUseCase', () => {
 
     await useCase.execute(900, 777);
 
-    expect(lock.release).toHaveBeenCalledWith(offer.scheduleId, offer.startTime);
+    expect(lock.release).toHaveBeenCalledWith(
+      offer.scheduleId,
+      offer.startTime,
+    );
     expect(findNextMatch.execute).toHaveBeenCalledWith(
       expect.objectContaining({ scheduleId: 100, clinicId: 1 }),
     );
