@@ -261,6 +261,8 @@ describe('CreatePatientAppointmentUseCase — TDD', () => {
     await useCase.execute(42, dto);
 
     expect(slotValidator.validate).toHaveBeenCalledTimes(1);
-    expect(appointmentRepository.createWithOverlapCheck).toHaveBeenCalledTimes(1);
+    expect(appointmentRepository.createWithOverlapCheck).toHaveBeenCalledTimes(
+      1,
+    );
   });
 });

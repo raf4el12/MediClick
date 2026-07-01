@@ -1,5 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { ITransactionRepository, PaginatedTransactions } from '../../domain/repositories/transaction.repository.js';
+import type {
+  ITransactionRepository,
+  PaginatedTransactions,
+} from '../../domain/repositories/transaction.repository.js';
 import type { ListPaymentsQueryDto } from '../dto/list-payments-query.dto.js';
 
 @Injectable()

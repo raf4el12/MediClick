@@ -94,8 +94,7 @@ export class HandlePaymentWebhookUseCase {
         status,
         paymentMethod,
         payerEmail: gatewayStatus.payerEmail,
-        failureReason:
-          status === 'FAILED' ? gatewayStatus.statusDetail : null,
+        failureReason: status === 'FAILED' ? gatewayStatus.statusDetail : null,
         paidAt: status === 'PAID' ? gatewayStatus.approvedAt : null,
         metadata: gatewayStatus.raw,
       });
@@ -149,7 +148,10 @@ export class HandlePaymentWebhookUseCase {
           channel: 'IN_APP',
           title: 'Pago confirmado',
           message: `Tu cita #${appointmentId} fue pagada y confirmada exitosamente.`,
-          metadata: { appointmentId, paymentId: gatewayStatus.gatewayPaymentId },
+          metadata: {
+            appointmentId,
+            paymentId: gatewayStatus.gatewayPaymentId,
+          },
           clinicId: appointment.clinicId ?? null,
         });
       }
@@ -235,7 +237,11 @@ export class HandlePaymentWebhookUseCase {
     ) {
       return 'CREDIT_CARD';
     }
-    if (m.includes('transfer') || m.includes('bank') || m.includes('pagoefectivo')) {
+    if (
+      m.includes('transfer') ||
+      m.includes('bank') ||
+      m.includes('pagoefectivo')
+    ) {
       return 'TRANSFER';
     }
     return 'OTHER';

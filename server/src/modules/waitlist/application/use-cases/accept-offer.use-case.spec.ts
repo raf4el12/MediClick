@@ -105,7 +105,9 @@ describe('AcceptOfferUseCase', () => {
     offerRepo.findById.mockResolvedValue(offer);
     patientRepo.findByUserId.mockResolvedValue({ id: 42 });
     offerRepo.claimPending.mockResolvedValue(offer);
-    appointmentRepo.createWithOverlapCheck.mockResolvedValue(buildAppointment());
+    appointmentRepo.createWithOverlapCheck.mockResolvedValue(
+      buildAppointment(),
+    );
 
     const result = await useCase.execute(900, 777);
 
@@ -117,7 +119,10 @@ describe('AcceptOfferUseCase', () => {
       expect.objectContaining({ status: 'FULFILLED' }),
     );
     expect(offerRepo.setCreatedAppointment).toHaveBeenCalledWith(777, 5000);
-    expect(lock.release).toHaveBeenCalledWith(offer.scheduleId, offer.startTime);
+    expect(lock.release).toHaveBeenCalledWith(
+      offer.scheduleId,
+      offer.startTime,
+    );
     expect(eventEmitter.emit).toHaveBeenCalledWith(
       'waitlist.offer.accepted',
       expect.objectContaining({ appointmentId: 5000 }),
@@ -134,7 +139,10 @@ describe('AcceptOfferUseCase', () => {
     );
 
     await expect(useCase.execute(900, 777)).rejects.toThrow(ConflictException);
-    expect(lock.release).toHaveBeenCalledWith(offer.scheduleId, offer.startTime);
+    expect(lock.release).toHaveBeenCalledWith(
+      offer.scheduleId,
+      offer.startTime,
+    );
     expect(entryRepo.update).not.toHaveBeenCalled(); // el paciente sigue en cola
   });
 });

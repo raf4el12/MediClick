@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Inject,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { CreateAppointmentDto } from '../dto/create-appointment.dto.js';
 import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
@@ -60,19 +56,18 @@ export class CreateAppointmentUseCase {
     });
 
     // ── Verificar colisión y crear cita atómicamente (previene double-booking) ──
-    const appointment =
-      await this.appointmentRepository.createWithOverlapCheck(
-        {
-          patientId: dto.patientId,
-          scheduleId: dto.scheduleId,
-          startTime: slotStart,
-          endTime: slotEnd,
-          reason: dto.reason,
-          clinicId: doctorClinicId ?? null,
-        },
-        slotStart,
-        slotEnd,
-      );
+    const appointment = await this.appointmentRepository.createWithOverlapCheck(
+      {
+        patientId: dto.patientId,
+        scheduleId: dto.scheduleId,
+        startTime: slotStart,
+        endTime: slotEnd,
+        reason: dto.reason,
+        clinicId: doctorClinicId ?? null,
+      },
+      slotStart,
+      slotEnd,
+    );
 
     return this.toResponse(appointment);
   }

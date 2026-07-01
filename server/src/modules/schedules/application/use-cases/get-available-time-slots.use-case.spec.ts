@@ -104,7 +104,12 @@ describe('GetAvailableTimeSlotsUseCase', () => {
     const result = await useCase.execute(dto);
 
     expect(result).toEqual([
-      { scheduleId: 10, startTime: '08:00', endTime: '09:00', available: false },
+      {
+        scheduleId: 10,
+        startTime: '08:00',
+        endTime: '09:00',
+        available: false,
+      },
       { scheduleId: 10, startTime: '09:00', endTime: '10:00', available: true },
     ]);
   });

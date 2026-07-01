@@ -92,7 +92,8 @@ export class CreatePrescriptionUseCase {
         patientName: `${appointment.patient.profile.name} ${appointment.patient.profile.lastName}`,
         patientUserId: appointment.patient.profile.userId,
         doctorName: `${appointment.schedule.doctor.profile.name} ${appointment.schedule.doctor.profile.lastName}`,
-        clinicName: appointment.schedule.doctor.clinic?.name ?? DEFAULT_CLINIC_NAME,
+        clinicName:
+          appointment.schedule.doctor.clinic?.name ?? DEFAULT_CLINIC_NAME,
         clinicTimezone:
           appointment.schedule.doctor.clinic?.timezone ?? DEFAULT_TIMEZONE,
         medications: dto.items.map((item) => ({

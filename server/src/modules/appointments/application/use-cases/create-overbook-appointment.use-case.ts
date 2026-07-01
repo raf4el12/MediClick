@@ -170,7 +170,10 @@ export class CreateOverbookAppointmentUseCase {
         overbookStartTime.getUTCHours(),
         overbookStartTime.getUTCMinutes(),
       );
-      if (slotDateTime.getTime() - now.getTime() < MIN_BOOKING_ANTICIPATION_MS) {
+      if (
+        slotDateTime.getTime() - now.getTime() <
+        MIN_BOOKING_ANTICIPATION_MS
+      ) {
         throw new BadRequestException(
           'Debe haber al menos 2 horas de anticipación para crear un sobrecupo',
         );

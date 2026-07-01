@@ -53,7 +53,9 @@ export class PrismaWaitlistEntryRepository implements IWaitlistEntryRepository {
       data: {
         ...(data.status && { status: data.status }),
         ...(data.priority !== undefined && { priority: data.priority }),
-        ...(data.fulfilledAt !== undefined && { fulfilledAt: data.fulfilledAt }),
+        ...(data.fulfilledAt !== undefined && {
+          fulfilledAt: data.fulfilledAt,
+        }),
         updatedAt: data.updatedAt ?? new Date(),
       },
       include: waitlistEntryInclude,
@@ -115,7 +117,10 @@ export class PrismaWaitlistEntryRepository implements IWaitlistEntryRepository {
                 scheduleId: criteria.scheduleId,
                 startTime: criteria.startTime,
                 status: {
-                  in: [WaitlistOfferStatus.REJECTED, WaitlistOfferStatus.EXPIRED],
+                  in: [
+                    WaitlistOfferStatus.REJECTED,
+                    WaitlistOfferStatus.EXPIRED,
+                  ],
                 },
               },
             ],

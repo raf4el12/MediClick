@@ -69,7 +69,11 @@ export class PrescriptionController {
     @Param('appointmentId', ParseIntPipe) appointmentId: number,
     @Res() res: Response,
   ): Promise<void> {
-    const buffer = await this.generatePdfUseCase.execute(userId, appointmentId, role);
+    const buffer = await this.generatePdfUseCase.execute(
+      userId,
+      appointmentId,
+      role,
+    );
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': `inline; filename="receta-${appointmentId}.pdf"`,

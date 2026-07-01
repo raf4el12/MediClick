@@ -36,7 +36,12 @@ describe('MarkNoShowAppointmentUseCase', () => {
     notesCount: 0,
     patient: {
       id: 1,
-      profile: { name: 'Ana', lastName: 'Gómez', email: 'ana@x.com', userId: 1 },
+      profile: {
+        name: 'Ana',
+        lastName: 'Gómez',
+        email: 'ana@x.com',
+        userId: 1,
+      },
     },
     schedule: {
       id: 5,
@@ -56,11 +61,13 @@ describe('MarkNoShowAppointmentUseCase', () => {
   beforeEach(() => {
     appointmentRepository = {
       findById: jest.fn().mockResolvedValue(buildAppointment()),
-      update: jest.fn().mockImplementation((id: number) =>
-        Promise.resolve(
-          buildAppointment({ id, status: AppointmentStatus.NO_SHOW }),
+      update: jest
+        .fn()
+        .mockImplementation((id: number) =>
+          Promise.resolve(
+            buildAppointment({ id, status: AppointmentStatus.NO_SHOW }),
+          ),
         ),
-      ),
     };
     timezoneResolver = {
       resolveByDoctorId: jest.fn().mockResolvedValue('America/Lima'),

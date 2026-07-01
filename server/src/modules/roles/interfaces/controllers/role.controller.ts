@@ -33,7 +33,9 @@ export class RoleController {
   @Get()
   @Auth()
   @RequirePermissions('MANAGE', 'ROLES')
-  @ApiOperation({ summary: 'Listar roles (sistema + personalizados de la clínica)' })
+  @ApiOperation({
+    summary: 'Listar roles (sistema + personalizados de la clínica)',
+  })
   @ApiResponse({ status: 200, type: [RoleResponseDto] })
   async findAll(
     @CurrentClinic() clinicId: number | null,

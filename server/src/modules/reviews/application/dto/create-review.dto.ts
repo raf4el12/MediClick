@@ -11,7 +11,10 @@ import {
 import { Type } from 'class-transformer';
 
 export class CreateReviewDto {
-  @ApiProperty({ example: 1, description: 'ID de la cita (debe estar COMPLETED y ser del paciente)' })
+  @ApiProperty({
+    example: 1,
+    description: 'ID de la cita (debe estar COMPLETED y ser del paciente)',
+  })
   @Type(() => Number)
   @IsInt()
   @IsNotEmpty({ message: 'El appointmentId es obligatorio' })
@@ -24,7 +27,10 @@ export class CreateReviewDto {
   @Max(5, { message: 'La calificación máxima es 5' })
   rating: number;
 
-  @ApiPropertyOptional({ example: 'Excelente atención, muy puntual', description: 'Comentario' })
+  @ApiPropertyOptional({
+    example: 'Excelente atención, muy puntual',
+    description: 'Comentario',
+  })
   @IsString()
   @MaxLength(1000, { message: 'El comentario no debe exceder 1000 caracteres' })
   @IsOptional()

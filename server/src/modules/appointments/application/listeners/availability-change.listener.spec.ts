@@ -13,9 +13,7 @@ describe('AvailabilityChangeListener', () => {
   let appointmentRepository: jest.Mocked<
     Pick<
       IAppointmentRepository,
-      | 'findActiveByDoctorAndDateRange'
-      | 'findActiveByDateAndClinic'
-      | 'update'
+      'findActiveByDoctorAndDateRange' | 'findActiveByDateAndClinic' | 'update'
     >
   >;
   let eventEmitter: { emit: jest.Mock };
@@ -45,7 +43,12 @@ describe('AvailabilityChangeListener', () => {
     notesCount: 0,
     patient: {
       id: 5,
-      profile: { name: 'Ana', lastName: 'Gómez', email: 'ana@x.com', userId: 42 },
+      profile: {
+        name: 'Ana',
+        lastName: 'Gómez',
+        email: 'ana@x.com',
+        userId: 42,
+      },
     },
     schedule: {
       id: 20,
@@ -66,9 +69,13 @@ describe('AvailabilityChangeListener', () => {
     appointmentRepository = {
       findActiveByDoctorAndDateRange: jest.fn().mockResolvedValue([]),
       findActiveByDateAndClinic: jest.fn().mockResolvedValue([]),
-      update: jest.fn().mockImplementation((id: number) =>
-        Promise.resolve(buildAppointment({ id, status: AppointmentStatus.CANCELLED })),
-      ),
+      update: jest
+        .fn()
+        .mockImplementation((id: number) =>
+          Promise.resolve(
+            buildAppointment({ id, status: AppointmentStatus.CANCELLED }),
+          ),
+        ),
     };
     eventEmitter = { emit: jest.fn() };
 
@@ -197,10 +204,9 @@ describe('AvailabilityChangeListener', () => {
 
     await listener.handleHolidayCreated(event);
 
-    expect(appointmentRepository.findActiveByDateAndClinic).toHaveBeenCalledWith(
-      event.date,
-      7,
-    );
+    expect(
+      appointmentRepository.findActiveByDateAndClinic,
+    ).toHaveBeenCalledWith(event.date, 7);
     expect(appointmentRepository.update).toHaveBeenCalledWith(
       200,
       expect.objectContaining({

@@ -39,20 +39,15 @@ export class GetPaymentByAppointmentUseCase {
     }
 
     // Pacientes solo pueden ver sus propios pagos. Staff (DOCTOR/RECEPTIONIST/ADMIN) pueden ver cualquiera.
-    if (
-      role === 'PATIENT' &&
-      appointment.patient.profile.userId !== userId
-    ) {
+    if (role === 'PATIENT' && appointment.patient.profile.userId !== userId) {
       throw new ForbiddenException('Esta cita no te pertenece');
     }
 
     let transaction =
       await this.transactionRepository.findLatestByAppointmentId(appointmentId);
-      
+
     if (!transaction) {
-      throw new NotFoundException(
-        'No hay pagos registrados para esta cita',
-      );
+      throw new NotFoundException('No hay pagos registrados para esta cita');
     }
 
     if (transaction.status === 'PENDING' && paymentId) {
@@ -61,7 +56,10 @@ export class GetPaymentByAppointmentUseCase {
         data: { id: paymentId },
       });
       // Re-fetch transaction to get updated status
-      transaction = await this.transactionRepository.findLatestByAppointmentId(appointmentId);
+      transaction =
+        await this.transactionRepository.findLatestByAppointmentId(
+          appointmentId,
+        );
       if (!transaction) {
         throw new NotFoundException('No hay pagos registrados para esta cita');
       }

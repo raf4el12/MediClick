@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
-import type { ITransactionRepository, TransactionFilters, PaginatedTransactions } from '../../domain/repositories/transaction.repository.js';
+import type {
+  ITransactionRepository,
+  TransactionFilters,
+  PaginatedTransactions,
+} from '../../domain/repositories/transaction.repository.js';
 import type {
   PaymentMethodValue,
   PaymentStatusValue,

@@ -18,7 +18,9 @@ describe('CreateReviewUseCase — TDD', () => {
   let reviewRepository: jest.Mocked<
     Pick<IReviewRepository, 'existsByAppointmentId' | 'create'>
   >;
-  let appointmentRepository: jest.Mocked<Pick<IAppointmentRepository, 'findById'>>;
+  let appointmentRepository: jest.Mocked<
+    Pick<IAppointmentRepository, 'findById'>
+  >;
   let patientRepository: jest.Mocked<Pick<IPatientRepository, 'findByUserId'>>;
 
   const dto = { appointmentId: 100, rating: 5, comment: 'Excelente' };
@@ -48,7 +50,12 @@ describe('CreateReviewUseCase — TDD', () => {
     notesCount: 0,
     patient: {
       id: 5,
-      profile: { name: 'Ana', lastName: 'Gómez', email: 'ana@x.com', userId: 42 },
+      profile: {
+        name: 'Ana',
+        lastName: 'Gómez',
+        email: 'ana@x.com',
+        userId: 42,
+      },
     },
     schedule: {
       id: 20,
@@ -141,14 +148,18 @@ describe('CreateReviewUseCase — TDD', () => {
   it('lanza NotFound si la cita no existe', async () => {
     appointmentRepository.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute(42, dto, 1)).rejects.toThrow(NotFoundException);
+    await expect(useCase.execute(42, dto, 1)).rejects.toThrow(
+      NotFoundException,
+    );
     expect(reviewRepository.create).not.toHaveBeenCalled();
   });
 
   it('lanza BadRequest si el usuario no tiene paciente asociado', async () => {
     patientRepository.findByUserId.mockResolvedValue(null);
 
-    await expect(useCase.execute(42, dto, 1)).rejects.toThrow(BadRequestException);
+    await expect(useCase.execute(42, dto, 1)).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it('lanza Forbidden si la cita no pertenece al paciente', async () => {
@@ -156,7 +167,9 @@ describe('CreateReviewUseCase — TDD', () => {
       buildAppointment({ patientId: 999 }),
     );
 
-    await expect(useCase.execute(42, dto, 1)).rejects.toThrow(ForbiddenException);
+    await expect(useCase.execute(42, dto, 1)).rejects.toThrow(
+      ForbiddenException,
+    );
     expect(reviewRepository.create).not.toHaveBeenCalled();
   });
 
@@ -165,14 +178,18 @@ describe('CreateReviewUseCase — TDD', () => {
       buildAppointment({ status: AppointmentStatus.CONFIRMED }),
     );
 
-    await expect(useCase.execute(42, dto, 1)).rejects.toThrow(BadRequestException);
+    await expect(useCase.execute(42, dto, 1)).rejects.toThrow(
+      BadRequestException,
+    );
     expect(reviewRepository.create).not.toHaveBeenCalled();
   });
 
   it('lanza Conflict si la cita ya tiene reseña', async () => {
     reviewRepository.existsByAppointmentId.mockResolvedValue(true);
 
-    await expect(useCase.execute(42, dto, 1)).rejects.toThrow(ConflictException);
+    await expect(useCase.execute(42, dto, 1)).rejects.toThrow(
+      ConflictException,
+    );
     expect(reviewRepository.create).not.toHaveBeenCalled();
   });
 });

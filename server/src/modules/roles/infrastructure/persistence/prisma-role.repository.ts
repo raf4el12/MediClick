@@ -17,10 +17,7 @@ export class PrismaRoleRepository implements IRoleRepository {
     const rows = await this.prisma.roles.findMany({
       where: {
         deleted: false,
-        OR: [
-          { isSystem: true },
-          ...(clinicId ? [{ clinicId }] : []),
-        ],
+        OR: [{ isSystem: true }, ...(clinicId ? [{ clinicId }] : [])],
       },
       include: includePermissions,
       orderBy: { name: 'asc' },
@@ -120,10 +117,7 @@ export class PrismaRoleRepository implements IRoleRepository {
     });
   }
 
-  async setPermissions(
-    roleId: number,
-    permissionIds: number[],
-  ): Promise<void> {
+  async setPermissions(roleId: number, permissionIds: number[]): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
       await tx.rolePermissions.deleteMany({ where: { roleId } });
       if (permissionIds.length > 0) {

@@ -68,7 +68,7 @@ export class AppointmentGql {
   status: string;
   @Field({ nullable: true })
   reason?: string;
-  
+
   @Field(() => AppointmentScheduleGql, { nullable: true })
   schedule?: AppointmentScheduleGql;
 

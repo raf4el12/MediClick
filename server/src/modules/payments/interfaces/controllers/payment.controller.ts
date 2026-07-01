@@ -7,11 +7,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import {
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Auth } from '../../../../shared/decorators/auth.decorator.js';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator.js';
 import { CurrentClinic } from '../../../../shared/decorators/current-clinic.decorator.js';
@@ -37,7 +33,8 @@ export class PaymentController {
   @Auth()
   @RequirePermissions('CREATE', 'APPOINTMENTS')
   @ApiOperation({
-    summary: 'Crear preference de pago para una cita (Mercado Pago Checkout Pro)',
+    summary:
+      'Crear preference de pago para una cita (Mercado Pago Checkout Pro)',
   })
   @ApiResponse({
     status: 201,
@@ -60,7 +57,9 @@ export class PaymentController {
   @Get()
   @Auth()
   @RequirePermissions('READ', 'PAYMENTS')
-  @ApiOperation({ summary: 'Listar transacciones de la clínica con paginación y filtros' })
+  @ApiOperation({
+    summary: 'Listar transacciones de la clínica con paginación y filtros',
+  })
   @ApiResponse({ status: 200 })
   async listPayments(
     @CurrentClinic() clinicId: number | null,

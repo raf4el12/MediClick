@@ -75,7 +75,11 @@ export class PrismaPatientRepository implements IPatientRepository {
   }
 
   async findAllPaginated(
-    params: PaginationParams & { isActive?: boolean; doctorId?: number; clinicId?: number },
+    params: PaginationParams & {
+      isActive?: boolean;
+      doctorId?: number;
+      clinicId?: number;
+    },
   ): Promise<
     PaginatedResult<PatientWithRelations> & {
       activeCount: number;
@@ -121,7 +125,9 @@ export class PrismaPatientRepository implements IPatientRepository {
           },
           {
             profile: {
-              user: { email: { contains: searchValue, mode: 'insensitive' as const } },
+              user: {
+                email: { contains: searchValue, mode: 'insensitive' as const },
+              },
             },
           },
           {
@@ -153,7 +159,9 @@ export class PrismaPatientRepository implements IPatientRepository {
           },
           {
             profile: {
-              user: { email: { contains: searchValue, mode: 'insensitive' as const } },
+              user: {
+                email: { contains: searchValue, mode: 'insensitive' as const },
+              },
             },
           },
           {

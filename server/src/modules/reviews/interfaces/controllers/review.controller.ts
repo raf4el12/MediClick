@@ -78,7 +78,8 @@ export class ReviewController {
   @Auth()
   @RequirePermissions('UPDATE', 'REVIEWS')
   @ApiOperation({
-    summary: 'Todas las reseñas de un doctor, incluidas las ocultas (moderación)',
+    summary:
+      'Todas las reseñas de un doctor, incluidas las ocultas (moderación)',
   })
   @ApiResponse({ status: 200, type: DoctorReviewsResponseDto })
   async doctorReviewsForModeration(

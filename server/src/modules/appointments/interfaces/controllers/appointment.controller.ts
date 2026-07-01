@@ -260,7 +260,8 @@ export class AppointmentController {
   @ApiResponse({ status: 200, type: AppointmentResponseDto })
   @ApiResponse({
     status: 400,
-    description: 'Estado no permite marcar inasistencia o la cita aún no inicia',
+    description:
+      'Estado no permite marcar inasistencia o la cita aún no inicia',
   })
   @ApiResponse({ status: 404, description: 'Cita no encontrada' })
   async markNoShow(

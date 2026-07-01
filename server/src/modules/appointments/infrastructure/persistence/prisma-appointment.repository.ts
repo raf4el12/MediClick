@@ -153,7 +153,11 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       deleted: false,
       ...(filters.status && { status: filters.status }),
       ...(filters.upcoming && {
-        schedule: { scheduleDate: { gte: todayStartInTimezone(filters.timezone ?? DEFAULT_TIMEZONE) } },
+        schedule: {
+          scheduleDate: {
+            gte: todayStartInTimezone(filters.timezone ?? DEFAULT_TIMEZONE),
+          },
+        },
         status: filters.status || { notIn: ['CANCELLED', 'NO_SHOW'] },
       }),
     };
@@ -447,7 +451,9 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
             reason: data.reason,
             ...(data.isOverbook && { isOverbook: true }),
             ...(data.amount != null && { amount: data.amount }),
-            ...(data.pendingUntil != null && { pendingUntil: data.pendingUntil }),
+            ...(data.pendingUntil != null && {
+              pendingUntil: data.pendingUntil,
+            }),
             clinicId: data.clinicId ?? null,
           },
           include: appointmentInclude,
@@ -540,7 +546,9 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     );
   }
 
-  async expirePendingPastDeadline(now: Date): Promise<ExpiredAppointmentSlot[]> {
+  async expirePendingPastDeadline(
+    now: Date,
+  ): Promise<ExpiredAppointmentSlot[]> {
     return this.prisma.$transaction(async (tx) => {
       const expired = await tx.appointments.findMany({
         where: {

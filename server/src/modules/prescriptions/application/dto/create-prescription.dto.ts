@@ -59,7 +59,9 @@ export class CreatePrescriptionDto {
     description: 'Indicaciones generales',
   })
   @IsString()
-  @MaxLength(2000, { message: 'Las indicaciones no deben exceder 2000 caracteres' })
+  @MaxLength(2000, {
+    message: 'Las indicaciones no deben exceder 2000 caracteres',
+  })
   @IsOptional()
   instructions?: string;
 

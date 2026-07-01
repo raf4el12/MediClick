@@ -34,7 +34,9 @@ function httpContext(user: unknown): ExecutionContext {
  * CallHandler que captura el clinicId vigente en tenantStorage en el momento
  * en que el resolver se ejecuta — exactamente lo que verá PrismaService.tenant.
  */
-function capturingHandler(sink: { clinicId: number | null | undefined }): CallHandler {
+function capturingHandler(sink: {
+  clinicId: number | null | undefined;
+}): CallHandler {
   return {
     handle: () =>
       new Observable((s) => {
@@ -54,7 +56,9 @@ describe('TenantInterceptor', () => {
 
   it('propaga el clinicId del staff al ejecutar un resolver GraphQL', () => {
     const ctx = gqlContext({ clinicId: 7, roleName: 'CLINIC_ADMIN' });
-    const sink: { clinicId: number | null | undefined } = { clinicId: undefined };
+    const sink: { clinicId: number | null | undefined } = {
+      clinicId: undefined,
+    };
 
     interceptor.intercept(ctx, capturingHandler(sink)).subscribe();
 
@@ -71,7 +75,9 @@ describe('TenantInterceptor', () => {
 
   it('propaga el clinicId en contexto HTTP (controladores REST)', () => {
     const ctx = httpContext({ clinicId: 1, roleName: 'DOCTOR' });
-    const sink: { clinicId: number | null | undefined } = { clinicId: undefined };
+    const sink: { clinicId: number | null | undefined } = {
+      clinicId: undefined,
+    };
 
     interceptor.intercept(ctx, capturingHandler(sink)).subscribe();
 
@@ -80,7 +86,9 @@ describe('TenantInterceptor', () => {
 
   it('deja clinicId null para usuarios cross-tenant (paciente / super-admin)', () => {
     const ctx = gqlContext({ clinicId: null, roleName: 'PATIENT' });
-    const sink: { clinicId: number | null | undefined } = { clinicId: undefined };
+    const sink: { clinicId: number | null | undefined } = {
+      clinicId: undefined,
+    };
 
     interceptor.intercept(ctx, capturingHandler(sink)).subscribe();
 

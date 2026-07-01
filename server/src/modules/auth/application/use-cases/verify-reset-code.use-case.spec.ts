@@ -73,17 +73,17 @@ describe('VerifyResetCodeUseCase — OWASP A07: Brute Force Protection', () => {
   // A07.3 — Protección anti-fuerza bruta ────────────────────────────────────
 
   it('A07.3: lanza BadRequestException si el código es incorrecto', async () => {
-    await expect(
-      useCase.execute({ ...dto, code: '000000' }),
-    ).rejects.toThrow(BadRequestException);
+    await expect(useCase.execute({ ...dto, code: '000000' })).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it('A07.3: incrementa el contador de intentos tras código incorrecto', async () => {
     redisService.get.mockResolvedValue(buildPayload({ attempts: 2 }));
 
-    await expect(
-      useCase.execute({ ...dto, code: '000000' }),
-    ).rejects.toThrow(BadRequestException);
+    await expect(useCase.execute({ ...dto, code: '000000' })).rejects.toThrow(
+      BadRequestException,
+    );
 
     expect(redisService.set).toHaveBeenCalledWith(
       `password-reset-code:${dto.email}`,
@@ -105,7 +105,9 @@ describe('VerifyResetCodeUseCase — OWASP A07: Brute Force Protection', () => {
 
   it('A07.3: el código bloqueado por intentos no puede ser verificado aunque sea correcto', async () => {
     // El código ES correcto pero los intentos ya superaron el límite
-    redisService.get.mockResolvedValue(buildPayload({ code: '123456', attempts: 5 }));
+    redisService.get.mockResolvedValue(
+      buildPayload({ code: '123456', attempts: 5 }),
+    );
 
     await expect(useCase.execute(dto)).rejects.toThrow(BadRequestException);
   });
@@ -114,9 +116,9 @@ describe('VerifyResetCodeUseCase — OWASP A07: Brute Force Protection', () => {
     redisService.get.mockResolvedValue(buildPayload({ attempts: 1 }));
     redisService.ttl.mockResolvedValue(450);
 
-    await expect(
-      useCase.execute({ ...dto, code: '000000' }),
-    ).rejects.toThrow(BadRequestException);
+    await expect(useCase.execute({ ...dto, code: '000000' })).rejects.toThrow(
+      BadRequestException,
+    );
 
     expect(redisService.set).toHaveBeenCalledWith(
       expect.any(String),

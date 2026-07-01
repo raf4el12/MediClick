@@ -34,8 +34,7 @@ export class FindClinicalNotesByAppointmentUseCase {
         throw new NotFoundException('Cita no encontrada');
       }
 
-      const doctorId =
-        await this.doctorRepository.findDoctorIdByUserId(userId);
+      const doctorId = await this.doctorRepository.findDoctorIdByUserId(userId);
       if (appointment.schedule.doctor.id !== doctorId) {
         throw new ForbiddenException(
           'No tiene permiso para ver notas de esta cita',

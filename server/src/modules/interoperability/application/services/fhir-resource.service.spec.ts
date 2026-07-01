@@ -10,7 +10,9 @@ describe('FhirResourceService', () => {
 
   beforeEach(() => {
     repo = {
-      persist: jest.fn((input) => Promise.resolve({ ...input, deleted: false, createdAt: new Date() })),
+      persist: jest.fn((input) =>
+        Promise.resolve({ ...input, deleted: false, createdAt: new Date() }),
+      ),
       findByTypeAndId: jest.fn(() => Promise.resolve(null)),
       findHistory: jest.fn(() => Promise.resolve([])),
       softDelete: jest.fn(() => Promise.resolve()),
@@ -22,7 +24,10 @@ describe('FhirResourceService', () => {
     const content = { resourceType: 'Patient' } as Resource;
     await service.save({ resourceType: 'Patient', content, clinicId: 3 });
 
-    expect(repo.findByTypeAndId).toHaveBeenCalledWith('Patient', expect.stringMatching(UUID_RE));
+    expect(repo.findByTypeAndId).toHaveBeenCalledWith(
+      'Patient',
+      expect.stringMatching(UUID_RE),
+    );
     const arg = repo.persist.mock.calls[0][0];
     expect(arg.versionId).toBe(1);
     expect(arg.clinicId).toBe(3);
@@ -35,7 +40,12 @@ describe('FhirResourceService', () => {
     repo.findByTypeAndId.mockResolvedValueOnce({ versionId: 2 });
     const content = { resourceType: 'Patient' } as Resource;
 
-    await service.save({ id: 'fixed-id', resourceType: 'Patient', content, clinicId: 3 });
+    await service.save({
+      id: 'fixed-id',
+      resourceType: 'Patient',
+      content,
+      clinicId: 3,
+    });
 
     expect(repo.findByTypeAndId).toHaveBeenCalledWith('Patient', 'fixed-id');
     const arg = repo.persist.mock.calls[0][0];

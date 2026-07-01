@@ -31,9 +31,6 @@ export interface IFhirResourceRepository {
     id: string,
   ): Promise<FhirResourceEntity | null>;
   /** Versiones del recurso, más nueva primero. */
-  findHistory(
-    resourceType: string,
-    id: string,
-  ): Promise<FhirResourceVersion[]>;
+  findHistory(resourceType: string, id: string): Promise<FhirResourceVersion[]>;
   softDelete(resourceType: string, id: string): Promise<void>;
 }

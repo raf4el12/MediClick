@@ -1,5 +1,11 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateClinicalNoteDto {
@@ -14,7 +20,9 @@ export class CreateClinicalNoteDto {
     description: 'Observaciones clínicas',
   })
   @IsString()
-  @MaxLength(2000, { message: 'Las observaciones no deben exceder 2000 caracteres' })
+  @MaxLength(2000, {
+    message: 'Las observaciones no deben exceder 2000 caracteres',
+  })
   @IsOptional()
   summary?: string;
 
@@ -23,7 +31,9 @@ export class CreateClinicalNoteDto {
     description: 'Diagnóstico (CIE-10 o texto libre)',
   })
   @IsString()
-  @MaxLength(1000, { message: 'El diagnóstico no debe exceder 1000 caracteres' })
+  @MaxLength(1000, {
+    message: 'El diagnóstico no debe exceder 1000 caracteres',
+  })
   @IsOptional()
   diagnosis?: string;
 

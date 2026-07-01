@@ -111,8 +111,10 @@ describe('timeRangesOverlap', () => {
     // 09:00-10:00 vs 09:30-10:30 → overlap
     expect(
       timeRangesOverlap(
-        parseHHmm('09:00'), parseHHmm('10:00'),
-        parseHHmm('09:30'), parseHHmm('10:30'),
+        parseHHmm('09:00'),
+        parseHHmm('10:00'),
+        parseHHmm('09:30'),
+        parseHHmm('10:30'),
       ),
     ).toBe(true);
   });
@@ -121,8 +123,10 @@ describe('timeRangesOverlap', () => {
     // 08:00-12:00 contains 09:00-10:00
     expect(
       timeRangesOverlap(
-        parseHHmm('08:00'), parseHHmm('12:00'),
-        parseHHmm('09:00'), parseHHmm('10:00'),
+        parseHHmm('08:00'),
+        parseHHmm('12:00'),
+        parseHHmm('09:00'),
+        parseHHmm('10:00'),
       ),
     ).toBe(true);
   });
@@ -131,8 +135,10 @@ describe('timeRangesOverlap', () => {
     // 09:00-10:00 vs 10:00-11:00 → adjacent, not overlapping
     expect(
       timeRangesOverlap(
-        parseHHmm('09:00'), parseHHmm('10:00'),
-        parseHHmm('10:00'), parseHHmm('11:00'),
+        parseHHmm('09:00'),
+        parseHHmm('10:00'),
+        parseHHmm('10:00'),
+        parseHHmm('11:00'),
       ),
     ).toBe(false);
   });
@@ -141,8 +147,10 @@ describe('timeRangesOverlap', () => {
     // 09:00-10:00 vs 14:00-15:00 → no overlap
     expect(
       timeRangesOverlap(
-        parseHHmm('09:00'), parseHHmm('10:00'),
-        parseHHmm('14:00'), parseHHmm('15:00'),
+        parseHHmm('09:00'),
+        parseHHmm('10:00'),
+        parseHHmm('14:00'),
+        parseHHmm('15:00'),
       ),
     ).toBe(false);
   });
@@ -198,7 +206,7 @@ describe('nowInTimezone', () => {
     const utcHour = utcNow.getHours();
     const limaHour = limaNow.getHours();
     // They should differ by 5 hours (mod 24)
-    const diff = ((utcHour - limaHour) % 24 + 24) % 24;
+    const diff = (((utcHour - limaHour) % 24) + 24) % 24;
     expect(diff).toBe(5);
   });
 });
@@ -257,13 +265,17 @@ describe('Multi-timezone scenarios', () => {
 
     const limaParts = new Intl.DateTimeFormat('en-US', {
       timeZone: 'America/Lima',
-      year: 'numeric', month: '2-digit', day: '2-digit',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
       hour12: false,
     }).formatToParts(fixedInstant);
 
     const madridParts = new Intl.DateTimeFormat('en-US', {
       timeZone: 'Europe/Madrid',
-      year: 'numeric', month: '2-digit', day: '2-digit',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
       hour12: false,
     }).formatToParts(fixedInstant);
 

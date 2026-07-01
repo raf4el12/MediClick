@@ -57,7 +57,9 @@ export interface GatewayPaymentStatus {
  * Un swap de proveedor solo requiere una nueva implementación de esta interface.
  */
 export interface IPaymentGatewayService {
-  createPreference(input: CreatePreferenceInput): Promise<CreatePreferenceOutput>;
+  createPreference(
+    input: CreatePreferenceInput,
+  ): Promise<CreatePreferenceOutput>;
   getPayment(gatewayPaymentId: string): Promise<GatewayPaymentStatus>;
   validateWebhookSignature(
     headers: Record<string, string | string[] | undefined>,

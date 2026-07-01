@@ -148,7 +148,10 @@ export class GenerateSchedulesUseCase {
     rangeEnd: Date,
     holidayDatesSet: Set<string>,
     doctorClinicCache: Map<number, number | null>,
-    specialtyCache: Map<number, { duration: number | null; bufferMinutes: number }>,
+    specialtyCache: Map<
+      number,
+      { duration: number | null; bufferMinutes: number }
+    >,
   ): Promise<{ generated: number; skipped: number; deleted: number }> {
     let skipped = 0;
     let deleted = 0;
@@ -241,7 +244,10 @@ export class GenerateSchedulesUseCase {
     scheduleBlocks: any[],
     holidayDatesSet: Set<string>,
     existingSet: Set<string>,
-    specialtyCache: Map<number, { duration: number | null; bufferMinutes: number }>,
+    specialtyCache: Map<
+      number,
+      { duration: number | null; bufferMinutes: number }
+    >,
   ): Promise<{ slots: CreateScheduleData[]; skipped: number }> {
     const slots: CreateScheduleData[] = [];
     let skipped = 0;
@@ -262,8 +268,16 @@ export class GenerateSchedulesUseCase {
     const dayRules = availabilities.filter((a) => {
       if (a.dayOfWeek !== dayOfWeek || !a.isAvailable) return false;
       if (!a.startDate || !a.endDate) return true;
-      const startMs = Date.UTC(a.startDate.getUTCFullYear(), a.startDate.getUTCMonth(), a.startDate.getUTCDate());
-      const endMs = Date.UTC(a.endDate.getUTCFullYear(), a.endDate.getUTCMonth(), a.endDate.getUTCDate());
+      const startMs = Date.UTC(
+        a.startDate.getUTCFullYear(),
+        a.startDate.getUTCMonth(),
+        a.startDate.getUTCDate(),
+      );
+      const endMs = Date.UTC(
+        a.endDate.getUTCFullYear(),
+        a.endDate.getUTCMonth(),
+        a.endDate.getUTCDate(),
+      );
       return dateMs >= startMs && dateMs <= endMs;
     });
 
@@ -312,13 +326,18 @@ export class GenerateSchedulesUseCase {
     timeRangeBlocks: any[],
     exceptions: any[],
     existingSet: Set<string>,
-    specialtyCache: Map<number, { duration: number | null; bufferMinutes: number }>,
+    specialtyCache: Map<
+      number,
+      { duration: number | null; bufferMinutes: number }
+    >,
   ): Promise<{ slots: CreateScheduleData[]; skipped: number }> {
     const slots: CreateScheduleData[] = [];
     let skipped = 0;
 
     if (!specialtyCache.has(rule.specialtyId)) {
-      const specialty = await this.specialtyRepository.findById(rule.specialtyId);
+      const specialty = await this.specialtyRepository.findById(
+        rule.specialtyId,
+      );
       specialtyCache.set(rule.specialtyId, {
         duration: specialty?.duration ?? null,
         bufferMinutes: specialty?.bufferMinutes ?? 0,
@@ -377,8 +396,16 @@ export class GenerateSchedulesUseCase {
   private isFullDayBlocked(dateMs: number, scheduleBlocks: any[]): boolean {
     return scheduleBlocks.some((block) => {
       if (block.type !== 'FULL_DAY') return false;
-      const blockStart = Date.UTC(block.startDate.getUTCFullYear(), block.startDate.getUTCMonth(), block.startDate.getUTCDate());
-      const blockEnd = Date.UTC(block.endDate.getUTCFullYear(), block.endDate.getUTCMonth(), block.endDate.getUTCDate());
+      const blockStart = Date.UTC(
+        block.startDate.getUTCFullYear(),
+        block.startDate.getUTCMonth(),
+        block.startDate.getUTCDate(),
+      );
+      const blockEnd = Date.UTC(
+        block.endDate.getUTCFullYear(),
+        block.endDate.getUTCMonth(),
+        block.endDate.getUTCDate(),
+      );
       return dateMs >= blockStart && dateMs <= blockEnd;
     });
   }
@@ -386,8 +413,16 @@ export class GenerateSchedulesUseCase {
   private getTimeRangeBlocks(dateMs: number, scheduleBlocks: any[]): any[] {
     return scheduleBlocks.filter((block) => {
       if (block.type !== 'TIME_RANGE') return false;
-      const blockStart = Date.UTC(block.startDate.getUTCFullYear(), block.startDate.getUTCMonth(), block.startDate.getUTCDate());
-      const blockEnd = Date.UTC(block.endDate.getUTCFullYear(), block.endDate.getUTCMonth(), block.endDate.getUTCDate());
+      const blockStart = Date.UTC(
+        block.startDate.getUTCFullYear(),
+        block.startDate.getUTCMonth(),
+        block.startDate.getUTCDate(),
+      );
+      const blockEnd = Date.UTC(
+        block.endDate.getUTCFullYear(),
+        block.endDate.getUTCMonth(),
+        block.endDate.getUTCDate(),
+      );
       return dateMs >= blockStart && dateMs <= blockEnd;
     });
   }

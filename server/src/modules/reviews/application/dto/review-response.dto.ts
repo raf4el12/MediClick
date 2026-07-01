@@ -47,7 +47,10 @@ export class DoctorReviewsResponseDto {
   @ApiProperty()
   doctorId: number;
 
-  @ApiPropertyOptional({ example: 4.75, description: 'Promedio de reseñas visibles (null si no hay)' })
+  @ApiPropertyOptional({
+    example: 4.75,
+    description: 'Promedio de reseñas visibles (null si no hay)',
+  })
   ratingAvg: number | null;
 
   @ApiProperty({ example: 12, description: 'Nº de reseñas visibles' })

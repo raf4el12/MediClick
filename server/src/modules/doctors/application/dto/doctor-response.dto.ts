@@ -13,7 +13,11 @@ export class DoctorResponseDto {
   @ApiProperty({ example: 2, description: 'Máximo de sobrecupos por día' })
   maxOverbookPerDay: number;
 
-  @ApiProperty({ example: 4.75, nullable: true, description: 'Promedio de reseñas visibles (null si no tiene)' })
+  @ApiProperty({
+    example: 4.75,
+    nullable: true,
+    description: 'Promedio de reseñas visibles (null si no tiene)',
+  })
   ratingAvg: number | null;
 
   @ApiProperty({ example: 12, description: 'Nº de reseñas visibles' })
