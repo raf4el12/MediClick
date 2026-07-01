@@ -41,6 +41,7 @@ import { RolesModule } from './modules/roles/application/roles.module.js';
 import { PermissionsModule } from './modules/permissions/application/permissions.module.js';
 import { PatientRecordsGraphqlModule } from './modules/patient-records-graphql/application/patient-records-graphql.module.js';
 import { ReviewsModule } from './modules/reviews/application/reviews.module.js';
+import { InteroperabilityModule } from './modules/interoperability/application/interoperability.module.js';
 
 @Module({
   imports: [
@@ -103,6 +104,7 @@ import { ReviewsModule } from './modules/reviews/application/reviews.module.js';
     PermissionsModule,
     PatientRecordsGraphqlModule,
     ReviewsModule,
+    InteroperabilityModule,
   ],
   controllers: [],
   providers: [
