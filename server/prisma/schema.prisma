@@ -693,6 +693,7 @@ model FhirResource {
 
   @@unique([resourceType, id])
   @@index([resourceType, clinicId])
+  @@index([content(ops: JsonbPathOps)], map: "idx_fhir_resource_content_gin", type: Gin)
 }
 
 model FhirResourceHistory {
