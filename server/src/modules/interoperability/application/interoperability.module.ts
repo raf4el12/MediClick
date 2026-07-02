@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaFhirResourceRepository } from '../infrastructure/persistence/prisma-fhir-resource.repository.js';
 import { FhirResourceService } from './services/fhir-resource.service.js';
+import { PatientProjectionListener } from './listeners/patient-projection.listener.js';
 
 @Module({
   providers: [
@@ -9,6 +10,7 @@ import { FhirResourceService } from './services/fhir-resource.service.js';
       useClass: PrismaFhirResourceRepository,
     },
     FhirResourceService,
+    PatientProjectionListener,
   ],
   exports: [FhirResourceService],
 })
