@@ -16,6 +16,7 @@ describe('RegisterPatientUseCase — TDD', () => {
   let tokenService: jest.Mocked<ITokenService>;
   let refreshTokenRepository: jest.Mocked<IRefreshTokenRepository>;
   let prisma: any;
+  let eventEmitter: any;
 
   const dto = {
     name: 'Ana',
@@ -92,6 +93,8 @@ describe('RegisterPatientUseCase — TDD', () => {
       },
     };
 
+    eventEmitter = { emit: jest.fn() };
+
     useCase = new RegisterPatientUseCase(
       patientRepository as any,
       userRepository as any,
@@ -99,6 +102,7 @@ describe('RegisterPatientUseCase — TDD', () => {
       tokenService,
       refreshTokenRepository,
       prisma,
+      eventEmitter as any,
     );
   });
 
@@ -181,5 +185,15 @@ describe('RegisterPatientUseCase — TDD', () => {
 
     await expect(useCase.execute(dto, 'device-1')).rejects.toThrow();
     expect(passwordService.hash).not.toHaveBeenCalled();
+  });
+
+  // ── Iteración TDD 4: Evento de proyección FHIR ─────────────────────────────
+
+  it('emite patient.created con el id del paciente registrado', async () => {
+    await useCase.execute(dto, 'device-1');
+
+    expect(eventEmitter.emit).toHaveBeenCalledWith('patient.created', {
+      patientId: 10,
+    });
   });
 });

@@ -1,8 +1,13 @@
 import { Injectable, Inject, ConflictException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreatePatientDto } from '../dto/create-patient.dto.js';
 import { PatientResponseDto } from '../dto/patient-response.dto.js';
 import type { IPatientRepository } from '../../domain/repositories/patient.repository.js';
 import type { IPasswordService } from '../../../../shared/domain/contracts/password-service.interface.js';
+import {
+  PATIENT_CREATED_EVENT,
+  type PatientChangedEvent,
+} from '../../../../shared/events/patient-events.interface.js';
 
 @Injectable()
 export class CreatePatientUseCase {
@@ -11,6 +16,7 @@ export class CreatePatientUseCase {
     private readonly patientRepository: IPatientRepository,
     @Inject('IPasswordService')
     private readonly passwordService: IPasswordService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(dto: CreatePatientDto): Promise<PatientResponseDto> {
@@ -55,6 +61,9 @@ export class CreatePatientUseCase {
         chronicConditions: dto.chronicConditions,
       },
     });
+
+    const event: PatientChangedEvent = { patientId: patient.id };
+    this.eventEmitter.emit(PATIENT_CREATED_EVENT, event);
 
     return this.toResponse(patient);
   }

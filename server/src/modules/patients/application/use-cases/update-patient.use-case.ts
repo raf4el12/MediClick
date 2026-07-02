@@ -1,14 +1,20 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { UpdatePatientDto } from '../dto/update-patient.dto.js';
 import { PatientResponseDto } from '../dto/patient-response.dto.js';
 import type { IPatientRepository } from '../../domain/repositories/patient.repository.js';
 import type { UpdatePatientData } from '../../domain/interfaces/patient-data.interface.js';
+import {
+  PATIENT_UPDATED_EVENT,
+  type PatientChangedEvent,
+} from '../../../../shared/events/patient-events.interface.js';
 
 @Injectable()
 export class UpdatePatientUseCase {
   constructor(
     @Inject('IPatientRepository')
     private readonly patientRepository: IPatientRepository,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(
@@ -57,6 +63,9 @@ export class UpdatePatientUseCase {
     }
 
     const updated = await this.patientRepository.update(id, updateData);
+
+    const event: PatientChangedEvent = { patientId: updated.id };
+    this.eventEmitter.emit(PATIENT_UPDATED_EVENT, event);
 
     return {
       id: updated.id,
