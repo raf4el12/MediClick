@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { PatientProjectionListener } from './patient-projection.listener.js';
 import {
   fhirIdFor,
@@ -74,6 +75,23 @@ describe('PatientProjectionListener', () => {
     await expect(
       listener.handleCreated({ patientId: 42 }),
     ).resolves.toBeUndefined();
+  });
+
+  it('si softDelete falla, handleDeleted no propaga el error al emisor', async () => {
+    const errorSpy = jest
+      .spyOn(Logger.prototype, 'error')
+      .mockImplementation(() => undefined);
+    fhirResourceService.softDelete.mockRejectedValueOnce(
+      new Error('db caída'),
+    );
+
+    await expect(
+      listener.handleDeleted({ patientId: 42 }),
+    ).resolves.toBeUndefined();
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('[PROJECTION]'),
+    );
+    errorSpy.mockRestore();
   });
 
   it('patient.deleted hace softDelete del recurso en el store', async () => {
