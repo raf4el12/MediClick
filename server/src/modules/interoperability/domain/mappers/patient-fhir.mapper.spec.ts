@@ -64,6 +64,17 @@ describe('toFhirPatient', () => {
     expect(fhir.address).toBeUndefined();
   });
 
+  it('no emite identifier DNI si falta typeDocument aunque haya numberDocument', () => {
+    const fhir = toFhirPatient({
+      ...fullSource,
+      profile: { ...fullSource.profile, typeDocument: null },
+    });
+
+    expect(fhir.identifier).toEqual([
+      { system: IDENTIFIER_SYSTEM_PATIENT_ID, value: '42' },
+    ]);
+  });
+
   it.each([
     ['M', 'male'],
     ['MALE', 'male'],

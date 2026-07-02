@@ -35,7 +35,7 @@ export function toFhirPatient(source: PatientProjectionSource): Patient {
   const { profile } = source;
 
   const identifier: Patient['identifier'] = [];
-  if (profile.numberDocument) {
+  if (profile.typeDocument && profile.numberDocument) {
     identifier.push({
       system: IDENTIFIER_SYSTEM_DNI,
       value: profile.numberDocument,
@@ -46,12 +46,14 @@ export function toFhirPatient(source: PatientProjectionSource): Patient {
     value: String(source.id),
   });
 
+  const gender = toFhirGender(profile.gender);
+
   return {
     resourceType: 'Patient',
     identifier,
     name: [{ family: profile.lastName, given: [profile.name] }],
     active: source.isActive && !source.deleted,
-    ...(toFhirGender(profile.gender) && { gender: toFhirGender(profile.gender) }),
+    ...(gender && { gender }),
     ...(profile.birthday && {
       birthDate: profile.birthday.toISOString().slice(0, 10),
     }),
