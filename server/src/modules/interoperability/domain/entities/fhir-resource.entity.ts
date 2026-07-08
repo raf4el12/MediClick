@@ -6,7 +6,7 @@ export interface FhirResourceEntity {
   resourceType: string;
   versionId: number;
   content: Resource;
-  clinicId: number;
+  clinicId: number | null;
   deleted: boolean;
   lastUpdated: Date;
   createdAt: Date;

@@ -51,4 +51,8 @@ export class FhirResourceService {
   getHistory(resourceType: string, id: string): Promise<FhirResourceVersion[]> {
     return this.repo.findHistory(resourceType, id);
   }
+
+  softDelete(resourceType: string, id: string): Promise<void> {
+    return this.repo.softDelete(resourceType, id);
+  }
 }

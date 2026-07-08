@@ -63,4 +63,9 @@ describe('FhirResourceService', () => {
     await service.getHistory('Patient', 'abc');
     expect(repo.findHistory).toHaveBeenCalledWith('Patient', 'abc');
   });
+
+  it('softDelete delega en el repositorio', async () => {
+    await service.softDelete('Patient', 'abc-123');
+    expect(repo.softDelete).toHaveBeenCalledWith('Patient', 'abc-123');
+  });
 });

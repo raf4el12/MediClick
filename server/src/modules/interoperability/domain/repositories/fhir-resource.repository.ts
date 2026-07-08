@@ -10,7 +10,7 @@ export interface SaveFhirResourceInput {
   id?: string;
   resourceType: string;
   content: Resource;
-  clinicId: number;
+  clinicId: number | null;
 }
 
 /** Entrada ya resuelta que el repositorio persiste de forma atómica. */
@@ -19,7 +19,7 @@ export interface PersistFhirResourceInput {
   resourceType: string;
   versionId: number;
   content: Resource;
-  clinicId: number;
+  clinicId: number | null;
   lastUpdated: Date;
 }
 

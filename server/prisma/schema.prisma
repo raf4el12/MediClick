@@ -686,13 +686,14 @@ model FhirResource {
   resourceType String
   versionId    Int      @default(1)
   content      Json
-  clinicId     Int
+  clinicId     Int?
   deleted      Boolean  @default(false)
   lastUpdated  DateTime @updatedAt
   createdAt    DateTime @default(now())
 
   @@unique([resourceType, id])
   @@index([resourceType, clinicId])
+  @@index([content(ops: JsonbPathOps)], map: "idx_fhir_resource_content_gin", type: Gin)
 }
 
 model FhirResourceHistory {
