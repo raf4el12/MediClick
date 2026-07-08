@@ -31,7 +31,7 @@
 | Fase | Entregable | Desbloquea | Esfuerzo | Estado |
 |------|------------|-----------|----------|--------|
 | 0 | Bounded context `interoperability` + **FHIR Resource Store** (jsonb) + historial | Todo lo demás | Medio | ✅ |
-| 1 | **Proyección por eventos** → recursos FHIR + `Provenance`/`AuditEvent` | Trazabilidad | Medio | 🔲 |
+| 1 | **Proyección por eventos** → recursos FHIR + `Provenance`/`AuditEvent` | Trazabilidad | Medio | ✅ |
 | 2 | **API FHIR REST de lectura** (`Patient`, `Encounter`, `CapabilityStatement`) | Consumo externo | Medio | 🔲 |
 | 3 | **MPI / Client Registry** + gateway RENIEC + stewardship | Identidad unificada | Alto | 🔲 |
 | 4 | **Terminology Service** (CIE-10 ↔ SNOMED ↔ LOINC, `ConceptMap`) | Semántica | Medio | 🔲 |
@@ -158,6 +158,23 @@ server/src/modules/interoperability/
 ### Riesgos
 - `event-emitter` es **in-process y no durable** → para proyecciones internas es aceptable;
   para externas se exige Outbox (Fase 5). No mezclar ambos caminos.
+
+### Estado (implementado) y gaps conocidos
+Proyección de `Patient` + `Encounter` + `Provenance` implementada y en producción sobre eventos
+`patient.*` y `appointment.confirmed`/`cancelled`. Gaps identificados en el review final, diferidos
+a fases posteriores (no bloquean Fase 1):
+- **`Encounter.status` puede quedar obsoleto:** `complete-appointment` y `mark-no-show-appointment`
+  no emiten eventos de proyección → una cita completada o en no-show se queda proyectada como
+  `planned`. Afecta a toda cita (no solo a pacientes sin cuenta). Pendiente: emitir eventos desde
+  esos dos use-cases.
+- **`softDelete()` no escribe `FhirResourceHistory`:** un borrado lógico no queda en el historial
+  append-only. Bajo riesgo mientras no haya consumidores externos del historial; revisar antes de
+  que Fase 2 exponga `_history`.
+- **`Provenance` no es append-only por evento:** el mismo recurso se versiona con cada evento
+  (`created` → `updated` sobrescribe `activity`), en vez de un `Provenance` inmutable por evento.
+  El detalle previo solo es recuperable vía `FhirResourceHistory`.
+- (Ya documentado) `appointment.confirmed`/`cancelled` solo se emiten si el paciente tiene cuenta
+  de usuario vinculada → esas citas no se proyectan.
 
 ---
 
