@@ -1,0 +1,249 @@
+{
+  "info": {
+    "name": "MediClick - Core Modules API Tests",
+    "description": "Colección de pruebas para los módulos core de negocio (Pacientes, Doctores, Citas).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5100/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "pega_tu_token_aqui",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Autenticación para obtener el Token necesario en los otros módulos.",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@mediclick.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Patients",
+      "item": [
+        {
+          "name": "Crear Paciente",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Juan\",\n  \"lastName\": \"Perez\",\n  \"email\": \"juan.perez@example.com\",\n  \"documentNumber\": \"12345678\",\n  \"documentType\": \"DNI\",\n  \"phoneNumber\": \"999888777\",\n  \"birthDate\": \"1990-01-01\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/patients",
+              "host": ["{{baseUrl}}"],
+              "path": ["patients"]
+            }
+          }
+        },
+        {
+          "name": "Listar Pacientes (Paginado)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patients?currentPage=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["patients"],
+              "query": [
+                { "key": "currentPage", "value": "1" },
+                { "key": "pageSize", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Historial Médico de Paciente",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/patients/1/history",
+              "host": ["{{baseUrl}}"],
+              "path": ["patients", "1", "history"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Doctors",
+      "item": [
+        {
+          "name": "Onboard Doctor",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Carlos\",\n  \"lastName\": \"Ramirez\",\n  \"email\": \"dr.carlos@mediclick.com\",\n  \"cmp\": \"12345\",\n  \"specialtyIds\": [1, 2]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/doctors/onboard",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctors", "onboard"]
+            }
+          }
+        },
+        {
+          "name": "Listar Doctores (Paginado)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctors?currentPage=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctors"],
+              "query": [
+                { "key": "currentPage", "value": "1" },
+                { "key": "pageSize", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Obtener Doctor por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/doctors/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["doctors", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Appointments",
+      "item": [
+        {
+          "name": "Crear Cita",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patientId\": 1,\n  \"doctorId\": 1,\n  \"clinicId\": 1,\n  \"date\": \"2026-07-01\",\n  \"startTime\": \"09:00\",\n  \"endTime\": \"09:30\",\n  \"notes\": \"Consulta general\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/appointments",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments"]
+            }
+          }
+        },
+        {
+          "name": "Listar Citas (Dashboard)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/appointments?currentPage=1&pageSize=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments"],
+              "query": [
+                { "key": "currentPage", "value": "1" },
+                { "key": "pageSize", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Hacer Check-in (Cita llega a clínica)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/appointments/1/check-in",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "1", "check-in"]
+            }
+          }
+        },
+        {
+          "name": "Completar Cita",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/appointments/1/complete",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "1", "complete"]
+            }
+          }
+        },
+        {
+          "name": "Cancelar Cita",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"El paciente llamó para cancelar\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/appointments/1/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["appointments", "1", "cancel"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
