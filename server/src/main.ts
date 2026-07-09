@@ -4,6 +4,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import { AppModule } from './app.module.js';
+import { SECURITY_VALIDATION_PIPE_OPTIONS } from './shared/config/security-validation-pipe.config.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
@@ -28,13 +29,7 @@ async function bootstrap() {
 
   app.use(cookieParser());
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
+  app.useGlobalPipes(new ValidationPipe(SECURITY_VALIDATION_PIPE_OPTIONS));
 
   if (!isProduction) {
     const config = new DocumentBuilder()
