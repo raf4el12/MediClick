@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint \"{src,app}/**/*.{ts,tsx}\""
+    "lint": "eslint \"{src,app}/**/*.{ts,tsx}\"",
+    "test:a11y": "playwright test"
   },
   "dependencies": {
     "@dicebear/collection": "^9.3.1",

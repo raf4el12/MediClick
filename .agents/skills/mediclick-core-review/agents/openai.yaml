@@ -1,0 +1,4 @@
+interface:
+  display_name: "MediClick Core Review"
+  short_description: "Review appointment-core changes and risks"
+  default_prompt: "Use $mediclick-core-review to review these core business changes."

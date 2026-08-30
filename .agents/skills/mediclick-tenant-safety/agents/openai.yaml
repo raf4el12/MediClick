@@ -1,0 +1,4 @@
+interface:
+  display_name: "MediClick Tenant Safety"
+  short_description: "Preserve clinic isolation and patient access"
+  default_prompt: "Use $mediclick-tenant-safety to check this clinic-scoped change."

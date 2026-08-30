@@ -1,0 +1,4 @@
+interface:
+  display_name: "MediClick Appointment Core"
+  short_description: "Safeguard booking and appointment behavior"
+  default_prompt: "Use $mediclick-appointment-core to implement this appointment-flow change safely."
