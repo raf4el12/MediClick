@@ -30,6 +30,11 @@ export interface IAvailabilityRepository {
     dayOfWeek: DayOfWeek,
   ): Promise<AvailabilityEntity[]>;
   findActiveByDoctorIds(doctorIds: number[]): Promise<AvailabilityEntity[]>;
+  replaceForDoctorSpecialty(
+    doctorId: number,
+    specialtyId: number,
+    entries: CreateAvailabilityData[],
+  ): Promise<AvailabilityWithRelations[]>;
   update(
     id: number,
     data: UpdateAvailabilityData,

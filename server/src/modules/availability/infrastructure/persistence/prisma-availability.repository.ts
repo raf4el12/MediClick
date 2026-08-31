@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { IAvailabilityRepository } from '../../domain/repositories/availability.repository.js';
 import {
@@ -8,6 +9,7 @@ import {
 } from '../../domain/interfaces/availability-data.interface.js';
 import { AvailabilityEntity } from '../../domain/entities/availability.entity.js';
 import { DayOfWeek } from '../../../../shared/domain/enums/day-of-week.enum.js';
+import { AvailabilityType } from '../../../../shared/domain/enums/availability-type.enum.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
 
@@ -20,6 +22,10 @@ const availabilityInclude = {
   },
   specialty: { select: { id: true, name: true } },
 } as const;
+
+type AvailabilityRow = Prisma.AvailabilityGetPayload<{
+  include: typeof availabilityInclude;
+}>;
 
 @Injectable()
 export class PrismaAvailabilityRepository implements IAvailabilityRepository {
@@ -145,6 +151,51 @@ export class PrismaAvailabilityRepository implements IAvailabilityRepository {
     }) as any;
   }
 
+  async replaceForDoctorSpecialty(
+    doctorId: number,
+    specialtyId: number,
+    entries: CreateAvailabilityData[],
+  ): Promise<AvailabilityWithRelations[]> {
+    return this.prisma.$transaction(
+      async (tx) => {
+        // Serializa reemplazos del mismo médico y especialidad. Sin este lock,
+        // dos transacciones que desactivan el conjunto anterior antes de que la
+        // otra inserte podrían dejar ambos conjuntos activos.
+        await tx.$executeRaw(
+          Prisma.sql`SELECT pg_advisory_xact_lock(${doctorId}, ${specialtyId})`,
+        );
+        await tx.availability.updateMany({
+          where: { doctorId, specialtyId, isAvailable: true },
+          data: { isAvailable: false, updatedAt: new Date() },
+        });
+
+        const rows: AvailabilityRow[] = [];
+        for (const entry of entries) {
+          rows.push(
+            await tx.availability.create({
+              data: {
+                doctorId: entry.doctorId,
+                specialtyId: entry.specialtyId,
+                startDate: entry.startDate,
+                endDate: entry.endDate,
+                dayOfWeek: entry.dayOfWeek,
+                timeFrom: entry.timeFrom,
+                timeTo: entry.timeTo,
+                type: entry.type,
+                reason: entry.reason,
+                clinicId: entry.clinicId ?? null,
+              },
+              include: availabilityInclude,
+            }),
+          );
+        }
+
+        return rows.map((row) => this.toAvailabilityWithRelations(row));
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
+  }
+
   async update(
     id: number,
     data: UpdateAvailabilityData,
@@ -169,6 +220,33 @@ export class PrismaAvailabilityRepository implements IAvailabilityRepository {
       data: { isAvailable: false, updatedAt: new Date() },
     });
     return result.count;
+  }
+
+  private toAvailabilityWithRelations(
+    row: AvailabilityRow,
+  ): AvailabilityWithRelations {
+    if (!row.startDate || !row.endDate) {
+      throw new Error('Una regla de disponibilidad requiere rango de fechas');
+    }
+
+    return {
+      id: row.id,
+      doctorId: row.doctorId,
+      specialtyId: row.specialtyId,
+      clinicId: row.clinicId,
+      startDate: row.startDate,
+      endDate: row.endDate,
+      dayOfWeek: row.dayOfWeek as DayOfWeek,
+      timeFrom: row.timeFrom,
+      timeTo: row.timeTo,
+      isAvailable: row.isAvailable,
+      type: row.type as AvailabilityType,
+      reason: row.reason,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      doctor: row.doctor,
+      specialty: row.specialty,
+    };
   }
 
   async existsDoctorSpecialty(
