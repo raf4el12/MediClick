@@ -19,6 +19,7 @@ import { ListPaymentsQueryDto } from '../../application/dto/list-payments-query.
 import { CreatePaymentPreferenceUseCase } from '../../application/use-cases/create-payment-preference.use-case.js';
 import { GetPaymentByAppointmentUseCase } from '../../application/use-cases/get-payment-by-appointment.use-case.js';
 import { ListPaymentsUseCase } from '../../application/use-cases/list-payments.use-case.js';
+import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
 
 @ApiTags('Payments')
 @Controller('payments')
@@ -75,14 +76,12 @@ export class PaymentController {
   @ApiResponse({ status: 200, type: PaymentResponseDto })
   @ApiResponse({ status: 404, description: 'Sin pago registrado para la cita' })
   async getByAppointment(
-    @CurrentUser('id') userId: number,
-    @CurrentUser('role') role: string,
+    @CurrentUser() actor: AuthenticatedUser,
     @Param('id', ParseIntPipe) appointmentId: number,
     @Query('paymentId') paymentId?: string,
   ): Promise<PaymentResponseDto> {
     return this.getPaymentByAppointmentUseCase.execute(
-      userId,
-      role,
+      actor,
       appointmentId,
       paymentId,
     );
