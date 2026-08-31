@@ -94,6 +94,7 @@ Los estados financieros son `PENDING`, `PAID`, `PARTIAL`, `REFUNDED`, `FAILED` y
 - Reemplazar la disponibilidad de una especialidad desactiva y crea su conjunto completo dentro de una transacción serializada por médico y especialidad; un fallo conserva las reglas anteriores y las otras especialidades del médico.
 - Feriados, bloqueos y la anticipación mínima se evalúan con la fecha local de la sede.
 - Al generar cupos, solo un feriado global o de la sede del médico bloquea la fecha; un feriado de otra sede no afecta su agenda.
+- Crear o actualizar un feriado o bloqueo publica `availability.restriction_changed` con la sede, actor y rangos anterior/nuevo. El listener consulta la unión de los rangos y vuelve a comprobar `isHoliday` o `isBlocked` contra el estado final antes de cancelar una cita.
 - Crear o reagendar combina la comprobación de solapamiento y la escritura en una transacción serializable.
 
 ### Sedes y acceso

@@ -117,27 +117,19 @@
 
 ---
 
-### #5 · Crear un bloqueo o feriado no cancela citas ya reservadas ✅ Resuelto
+### #5 · Crear o actualizar un bloqueo o feriado no cancela citas ya reservadas ✅ Resuelto
 
-> **Implementado (junio 2026):** patrón por eventos para evitar ciclo de módulos
-> (`appointments` ya importa `schedule-blocks`/`holidays`). `create-schedule-block`
-> emite `schedule.blocked` y `create-holiday` emite `holiday.created` (interfaces en
-> `shared/events/availability-events.interface.ts`). Un listener nuevo en
-> `AppointmentsModule` (`AvailabilityChangeListener`) busca las citas activas afectadas
-> (nuevos métodos repo `findActiveByDoctorAndDateRange` y `findActiveByDateAndClinic`),
-> las cancela y emite `appointment.cancelled` por cada una → mail + reoferta a la
-> waitlist. FULL_DAY cancela todo el día; TIME_RANGE filtra por solape horario; feriado
-> por sede o global. Se expuso `clinicId` en `AppointmentWithRelations`. Tests: listener
-> con `.spec` (5 casos). Suite 205/205.
+> **Actualizado (agosto 2026):** `create-*` y `update-*` de feriados y bloqueos publican
+> `availability.restriction_changed` con identidad, sede, médico cuando aplica, actor y
+> rangos anterior/nuevo. `AvailabilityChangeListener` consulta la unión de ambos rangos y
+> vuelve a comprobar cada cita con `isHoliday` o `isBlocked` contra el estado final. Así un
+> bloqueo o feriado movido/reducido no cancela por un payload obsoleto, y uno expandido
+> alcanza las citas recién afectadas. Cada cancelación conserva `appointment.cancelled` y
+> `appointment.slot_released` para notificación y lista de espera.
 >
-> Alcance: cubre **create** de bloqueo y feriado. Un feriado **recurrente** emite un
-> evento por cada año sembrado (no solo el del DTO), así también se cancelan citas ya
-> reservadas en años futuros (spec de `create-holiday` lo cubre). Pendiente (extensión):
-> `update-holiday` y `update-schedule-block` (si amplían rango), y el flag de refund para
-> citas pagadas canceladas por causa de la clínica. El evento se emite solo si el paciente
-> tiene `userId` (igual que la cancelación manual) → se generaliza con el hueco #11.
-> Limitación conocida: una cita con `clinicId` null (doctor sin sede) no es alcanzada por
-> un feriado de sede (el global sí la alcanza).
+> Un feriado recurrente continúa publicando un evento por cada fecha sembrada. Queda para
+> SDD-011 la cancelación compartida y la revisión financiera de una cita pagada; no se
+> decide un reembolso automático en este flujo.
 
 **Problema:** `create-schedule-block.use-case.ts` regenera solo schedules *sin citas*. Las citas ya confirmadas dentro del rango del bloqueo quedan vivas. Con feriados (`create-holiday`) ni siquiera se regeneran schedules. El personal tiene que cancelarlas manualmente una a una.
 
