@@ -93,7 +93,11 @@ describe('FindNextMatchUseCase', () => {
     offerRepo = { create: jest.fn() };
     scheduleRepo = { findById: jest.fn() };
     appointmentRepo = { hasOverlappingAppointment: jest.fn() };
-    lock = { acquire: jest.fn(), release: jest.fn() };
+    lock = {
+      acquire: jest.fn(),
+      release: jest.fn(),
+      createToken: jest.fn().mockReturnValue('search-token'),
+    };
     eventEmitter = { emit: jest.fn() };
     useCase = new FindNextMatchUseCase(
       entryRepo,
@@ -115,14 +119,18 @@ describe('FindNextMatchUseCase', () => {
     expect(offerRepo.create).not.toHaveBeenCalled();
   });
 
-  it('libera el lock y retorna null si el schedule no existe', async () => {
+  it('libera el lock (con el token de búsqueda) y retorna null si el schedule no existe', async () => {
     lock.acquire.mockResolvedValue(true);
     scheduleRepo.findById.mockResolvedValue(null);
 
     const result = await useCase.execute(SLOT);
 
     expect(result).toBeNull();
-    expect(lock.release).toHaveBeenCalledWith(SLOT.scheduleId, SLOT.startTime);
+    expect(lock.release).toHaveBeenCalledWith(
+      SLOT.scheduleId,
+      SLOT.startTime,
+      'search-token',
+    );
   });
 
   it('libera el lock y no busca candidato si el slot ya está ocupado', async () => {
@@ -134,7 +142,11 @@ describe('FindNextMatchUseCase', () => {
 
     expect(result).toBeNull();
     expect(entryRepo.findNextMatch).not.toHaveBeenCalled();
-    expect(lock.release).toHaveBeenCalledWith(SLOT.scheduleId, SLOT.startTime);
+    expect(lock.release).toHaveBeenCalledWith(
+      SLOT.scheduleId,
+      SLOT.startTime,
+      'search-token',
+    );
   });
 
   it('libera el lock y retorna null si no hay candidato en cola', async () => {
@@ -147,16 +159,21 @@ describe('FindNextMatchUseCase', () => {
 
     expect(result).toBeNull();
     expect(offerRepo.create).not.toHaveBeenCalled();
-    expect(lock.release).toHaveBeenCalledWith(SLOT.scheduleId, SLOT.startTime);
+    expect(lock.release).toHaveBeenCalledWith(
+      SLOT.scheduleId,
+      SLOT.startTime,
+      'search-token',
+    );
   });
 
-  it('crea la oferta y emite el evento cuando hay candidato, sin liberar el lock', async () => {
+  it('crea la oferta, transfiere el lock del token de búsqueda al offerId, y emite el evento', async () => {
     const entry = buildEntry();
     lock.acquire.mockResolvedValue(true);
     scheduleRepo.findById.mockResolvedValue(buildSchedule());
     appointmentRepo.hasOverlappingAppointment.mockResolvedValue(false);
     entryRepo.findNextMatch.mockResolvedValue(entry);
-    offerRepo.create.mockResolvedValue(buildOffer(entry));
+    const offer = buildOffer(entry);
+    offerRepo.create.mockResolvedValue(offer);
 
     const result = await useCase.execute(SLOT);
 
@@ -166,8 +183,20 @@ describe('FindNextMatchUseCase', () => {
       'waitlist.offer.created',
       expect.objectContaining({ offerId: 777, patientUserId: 900 }),
     );
-    // El lock se mantiene reservado para este paciente hasta que resuelva la oferta.
-    expect(lock.release).not.toHaveBeenCalled();
+    // SDD-014: el lock se libera con el token de búsqueda (transferencia) y
+    // se re-adquiere con el offerId — el único identificador que accept/
+    // reject/expiración conocerán después para poder liberarlo ellos mismos.
+    expect(lock.release).toHaveBeenCalledWith(
+      SLOT.scheduleId,
+      SLOT.startTime,
+      'search-token',
+    );
+    expect(lock.acquire).toHaveBeenNthCalledWith(
+      2,
+      SLOT.scheduleId,
+      SLOT.startTime,
+      String(offer.id),
+    );
   });
 
   it('consulta con las franjas correctas: ANY + franja del slot (MORNING para 09:00)', async () => {
@@ -198,6 +227,10 @@ describe('FindNextMatchUseCase', () => {
     const result = await useCase.execute(SLOT);
 
     expect(result).toBeNull();
-    expect(lock.release).toHaveBeenCalledWith(SLOT.scheduleId, SLOT.startTime);
+    expect(lock.release).toHaveBeenCalledWith(
+      SLOT.scheduleId,
+      SLOT.startTime,
+      'search-token',
+    );
   });
 });

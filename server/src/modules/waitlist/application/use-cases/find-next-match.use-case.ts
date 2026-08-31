@@ -45,15 +45,22 @@ export class FindNextMatchUseCase {
   async execute(
     input: FindNextMatchInput,
   ): Promise<WaitlistOfferWithEntry | null> {
-    // 1. Lock del slot. Si ya está tomado, otro proceso lo está manejando.
-    const locked = await this.lock.acquire(input.scheduleId, input.startTime);
+    // 1. Lock del slot con un token temporal, solo válido durante esta
+    //    búsqueda. Si ya está tomado (por cualquier dueño), otro proceso lo
+    //    está manejando.
+    const searchToken = this.lock.createToken();
+    const locked = await this.lock.acquire(
+      input.scheduleId,
+      input.startTime,
+      searchToken,
+    );
     if (!locked) return null;
 
     try {
       // 2. Cargar el schedule para conocer doctor/especialidad/fecha.
       const schedule = await this.scheduleRepository.findById(input.scheduleId);
       if (!schedule) {
-        await this.lock.release(input.scheduleId, input.startTime);
+        await this.lock.release(input.scheduleId, input.startTime, searchToken);
         return null;
       }
 
@@ -65,7 +72,7 @@ export class FindNextMatchUseCase {
           input.endTime,
         );
       if (occupied) {
-        await this.lock.release(input.scheduleId, input.startTime);
+        await this.lock.release(input.scheduleId, input.startTime, searchToken);
         return null;
       }
 
@@ -80,12 +87,14 @@ export class FindNextMatchUseCase {
         startTime: input.startTime,
       });
       if (!entry) {
-        await this.lock.release(input.scheduleId, input.startTime);
+        await this.lock.release(input.scheduleId, input.startTime, searchToken);
         return null;
       }
 
-      // 5. Crear la oferta con deadline. El lock NO se libera: queda reservado
-      //    para este paciente hasta que acepte, rechace o expire.
+      // 5. Crear la oferta con deadline. El lock NO se libera: se transfiere
+      //    al offerId, el único identificador estable que accept/reject/
+      //    expiración conocerán más adelante para poder liberarlo ellos
+      //    mismos. Queda reservado para este paciente hasta que resuelva.
       const expiresAt = new Date(Date.now() + OFFER_TTL_MINUTES * 60 * 1000);
       const offer = await this.offerRepository.create({
         waitlistEntryId: entry.id,
@@ -95,6 +104,12 @@ export class FindNextMatchUseCase {
         expiresAt,
         clinicId: input.clinicId,
       });
+      await this.transferLockToOffer(
+        input.scheduleId,
+        input.startTime,
+        searchToken,
+        offer.id,
+      );
 
       this.eventEmitter.emit(
         'waitlist.offer.created',
@@ -107,8 +122,10 @@ export class FindNextMatchUseCase {
 
       return offer;
     } catch (error) {
-      // Ante cualquier fallo liberamos el lock para no congelar el slot.
-      await this.lock.release(input.scheduleId, input.startTime);
+      // Ante cualquier fallo liberamos el lock (con el token de búsqueda; si
+      // ya fue transferido al offerId, este release es un no-op seguro) para
+      // no congelar el slot.
+      await this.lock.release(input.scheduleId, input.startTime, searchToken);
       this.logger.error(
         `[WAITLIST] Error buscando match para schedule ${input.scheduleId}: ${
           error instanceof Error ? error.message : String(error)
@@ -116,6 +133,24 @@ export class FindNextMatchUseCase {
       );
       return null;
     }
+  }
+
+  /**
+   * Reemplaza el token temporal de búsqueda por el `offerId` (como string),
+   * el único valor que accept/reject/expiración tendrán disponible para
+   * liberar este lock más adelante. La ventana entre release+acquire es
+   * mínima y aceptable: en el peor caso alguien más gana el slot vacío por
+   * un instante, pero la oferta recién creada y el estado de BD siguen
+   * siendo la autoridad final — el lock es solo coordinación (SDD-013 §6.4.2).
+   */
+  private async transferLockToOffer(
+    scheduleId: number,
+    startTime: Date,
+    searchToken: string,
+    offerId: number,
+  ): Promise<void> {
+    await this.lock.release(scheduleId, startTime, searchToken);
+    await this.lock.acquire(scheduleId, startTime, String(offerId));
   }
 
   private toCreatedEvent(

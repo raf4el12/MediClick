@@ -1,6 +1,6 @@
 # SDD — Endurecimiento de integridad, seguridad y operación de MediClick
 
-- **Estado:** P0 y SDD-008/009/010/011/012/013 implementados; P1 restante (SDD-014 a SDD-017) y P2 propuestos
+- **Estado:** P0 y SDD-008/009/010/011/012/013/014 implementados; P1 restante (SDD-015 a SDD-017) y P2 propuestos
 - **Fecha:** 2026-08-30
 - **Alcance:** backend, persistencia, workers, despliegue y gates de CI del flujo de citas
 - **Prioridad:** corrección de P0 antes de ampliar funcionalidad
@@ -638,7 +638,7 @@ diff que toque el núcleo termina con `$mediclick-core-review` antes de integrar
 | SDD-011 ✅ | P1 | Reutilizar cancelación para restricciones y aplicar revisión financiera a citas pagadas | `$mediclick-appointment-core` + `$tdd` |
 | SDD-012 ✅ | P1 | Unificar seeds RBAC y añadir test que compara la matriz sembrada con la política declarada | `$mediclick-tenant-safety` + `$tdd` |
 | SDD-013 ✅ | P1 | Hacer atómica la aceptación waitlist y agregar carreras contra reserva directa y doble aceptación | `$mediclick-appointment-core` + `$codebase-design` + `$tdd` + `$diagnosing-bugs` |
-| SDD-014 | P1 | Cambiar locks waitlist a token + compare-and-delete; demostrar que un owner no libera lock ajeno | `$mediclick-appointment-core` + `$tdd` |
+| SDD-014 ✅ | P1 | Cambiar locks waitlist a token + compare-and-delete; demostrar que un owner no libera lock ajeno | `$mediclick-appointment-core` + `$tdd` |
 | SDD-015 | P1 | Auditar duplicados y agregar constraints de gateway, agenda y ofertas mediante migración segura | `$mediclick-appointment-core` + `$mediclick-tenant-safety` + `$tdd` |
 | SDD-016 | P1 | Añadir harness PostgreSQL real a CI para aislamiento, constraints y concurrencia | `$tdd` + `$diagnosing-bugs` |
 | SDD-017 | P1 | Restaurar build/a11y del cliente incorporando Playwright y su gate de CI | `$diagnosing-bugs` + `$tdd` |

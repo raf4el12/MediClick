@@ -69,6 +69,7 @@ describe('RejectOfferUseCase', () => {
     expect(lock.release).toHaveBeenCalledWith(
       offer.scheduleId,
       offer.startTime,
+      String(offer.id),
     );
     expect(findNextMatch.execute).toHaveBeenCalledWith(
       expect.objectContaining({ scheduleId: 100, clinicId: 1 }),

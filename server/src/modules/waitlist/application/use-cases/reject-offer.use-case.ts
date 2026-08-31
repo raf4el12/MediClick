@@ -43,8 +43,13 @@ export class RejectOfferUseCase {
     }
 
     // La entrada del paciente sigue ACTIVE: rechazar este slot no lo saca de la cola.
-    // Liberamos el lock y reofrecemos el slot al siguiente candidato.
-    await this.lock.release(offer.scheduleId, offer.startTime);
+    // Liberamos el lock (identificado por offerId) y reofrecemos el slot al
+    // siguiente candidato.
+    await this.lock.release(
+      offer.scheduleId,
+      offer.startTime,
+      String(offer.id),
+    );
     await this.findNextMatch.execute({
       scheduleId: offer.scheduleId,
       startTime: offer.startTime,

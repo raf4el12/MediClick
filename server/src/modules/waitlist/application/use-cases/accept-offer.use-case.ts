@@ -84,10 +84,15 @@ export class AcceptOfferUseCase {
           );
         }
         // SLOT_OVERLAP: el slot fue tomado entre la oferta y la aceptación.
-        // Liberamos el lock para que el siguiente en cola pueda recibirlo;
-        // el paciente sigue activo en la lista de espera (la entrada no se
-        // cerró porque la transacción completa hizo rollback).
-        await this.lock.release(offer.scheduleId, offer.startTime);
+        // Liberamos el lock (identificado por offerId) para que el siguiente
+        // en cola pueda recibirlo; el paciente sigue activo en la lista de
+        // espera (la entrada no se cerró porque la transacción completa hizo
+        // rollback).
+        await this.lock.release(
+          offer.scheduleId,
+          offer.startTime,
+          String(offer.id),
+        );
         throw new ConflictException(
           'El horario ya fue tomado. Sigues en la lista de espera para el próximo cupo.',
         );
@@ -95,7 +100,11 @@ export class AcceptOfferUseCase {
       throw error;
     }
 
-    await this.lock.release(offer.scheduleId, offer.startTime);
+    await this.lock.release(
+      offer.scheduleId,
+      offer.startTime,
+      String(offer.id),
+    );
 
     const profile = offer.entry.patient.profile;
     const acceptedEvent: WaitlistOfferAcceptedEvent = {

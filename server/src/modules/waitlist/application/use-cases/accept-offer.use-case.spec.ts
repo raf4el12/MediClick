@@ -134,6 +134,7 @@ describe('AcceptOfferUseCase', () => {
     expect(lock.release).toHaveBeenCalledWith(
       offer.scheduleId,
       offer.startTime,
+      String(offer.id),
     );
     expect(eventEmitter.emit).toHaveBeenCalledWith(
       'waitlist.offer.accepted',
@@ -153,6 +154,7 @@ describe('AcceptOfferUseCase', () => {
     expect(lock.release).toHaveBeenCalledWith(
       offer.scheduleId,
       offer.startTime,
+      String(offer.id),
     );
   });
 

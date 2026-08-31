@@ -25,7 +25,11 @@ export class ExpireStaleOffersUseCase {
     if (expired.length === 0) return;
 
     for (const offer of expired) {
-      await this.lock.release(offer.scheduleId, offer.startTime);
+      await this.lock.release(
+        offer.scheduleId,
+        offer.startTime,
+        String(offer.id),
+      );
       await this.findNextMatch.execute({
         scheduleId: offer.scheduleId,
         startTime: offer.startTime,
