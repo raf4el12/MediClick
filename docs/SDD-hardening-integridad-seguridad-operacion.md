@@ -1,6 +1,6 @@
 # SDD — Endurecimiento de integridad, seguridad y operación de MediClick
 
-- **Estado:** P0 y SDD-008/009/010 implementados; P1 restante y P2 propuestos
+- **Estado:** P0 y SDD-008/009/010/011 implementados; P1 restante y P2 propuestos
 - **Fecha:** 2026-08-30
 - **Alcance:** backend, persistencia, workers, despliegue y gates de CI del flujo de citas
 - **Prioridad:** corrección de P0 antes de ampliar funcionalidad
@@ -635,7 +635,7 @@ diff que toque el núcleo termina con `$mediclick-core-review` antes de integrar
 | SDD-008 | P1 | Crear `ScheduleGenerationPlanner` con `specialtyId` y scope de feriados; dos especialidades simultáneas generan ambas | `$mediclick-appointment-core` + `$codebase-design` + `$tdd` |
 | SDD-009 | P1 | Hacer atómico el reemplazo masivo de disponibilidad; cualquier fallo deja intacto el conjunto anterior | `$mediclick-appointment-core` + `$tdd` |
 | SDD-010 ✅ | P1 | Unificar create/update de feriado y bloqueo mediante `AvailabilityRestrictionChanged`; evaluar rango anterior+nuevo | `$mediclick-appointment-core` + `$codebase-design` + `$tdd` |
-| SDD-011 | P1 | Reutilizar cancelación para restricciones y aplicar revisión financiera a citas pagadas | `$mediclick-appointment-core` + `$tdd` |
+| SDD-011 ✅ | P1 | Reutilizar cancelación para restricciones y aplicar revisión financiera a citas pagadas | `$mediclick-appointment-core` + `$tdd` |
 | SDD-012 | P1 | Unificar seeds RBAC y añadir test que compara la matriz sembrada con la política declarada | `$mediclick-tenant-safety` + `$tdd` |
 | SDD-013 | P1 | Hacer atómica la aceptación waitlist y agregar carreras contra reserva directa y doble aceptación | `$mediclick-appointment-core` + `$codebase-design` + `$tdd` + `$diagnosing-bugs` |
 | SDD-014 | P1 | Cambiar locks waitlist a token + compare-and-delete; demostrar que un owner no libera lock ajeno | `$mediclick-appointment-core` + `$tdd` |

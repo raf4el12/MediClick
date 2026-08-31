@@ -128,8 +128,8 @@
 > `appointment.slot_released` para notificación y lista de espera.
 >
 > Un feriado recurrente continúa publicando un evento por cada fecha sembrada. Queda para
-> SDD-011 la cancelación compartida y la revisión financiera de una cita pagada; no se
-> decide un reembolso automático en este flujo.
+> La cancelación por restricción reutiliza la misma revisión financiera manual que la
+> cancelación administrativa. No se decide un reembolso automático en este flujo.
 
 **Problema:** `create-schedule-block.use-case.ts` regenera solo schedules *sin citas*. Las citas ya confirmadas dentro del rango del bloqueo quedan vivas. Con feriados (`create-holiday`) ni siquiera se regeneran schedules. El personal tiene que cancelarlas manualmente una a una.
 

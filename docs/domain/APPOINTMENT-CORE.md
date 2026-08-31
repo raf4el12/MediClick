@@ -115,7 +115,7 @@ Los estados financieros son `PENDING`, `PAID`, `PARTIAL`, `REFUNDED`, `FAILED` y
 - Pago y cita se concilian en una transacción serializable: un pago aprobado solo confirma una cita todavía pendiente y nunca revive una cita cancelada.
 - Una reserva en línea ocupa capacidad solo hasta su plazo de pago.
 - La expiración reclama con una única escritura condicional solo reservas aún pendientes y devuelve exactamente los cupos que consiguió liberar.
-- Una cancelación manual de una cita pagada queda marcada para reembolso manual.
+- Una cancelación manual o causada por una restricción de disponibilidad usa la misma ruta: una cita pagada queda marcada para reembolso manual, sin reembolso automático.
 - Si el paciente cancela una cita pagada con menos de 24 horas, la penalización actual es 50 % del precio de la especialidad y también requiere conciliación manual.
 
 ### Liberación de cupos
@@ -131,8 +131,6 @@ Estas conductas existen en el código, pero su intención de negocio no está re
 1. **Cancelación y reagendamiento tardíos**: ambos están permitidos desde `IN_PROGRESS` y `NO_SHOW` porque solo se bloquean `COMPLETED` y `CANCELLED`.
 2. **Check-in sin confirmación**: `PENDING` puede pasar directamente a `IN_PROGRESS`; el estado no distingue una cita administrativa pendiente de una reserva en línea aún no pagada.
 3. **Aceptación de oferta no completamente atómica**: la cita de lista de espera se crea primero y el precio/plazo se actualizan después; un fallo intermedio puede dejar una cita pendiente sin vencimiento.
-4. **Cancelación por feriado o bloqueo**: el listener cancela y notifica, pero no marca la transacción pagada para reembolso como sí hace la cancelación manual.
-
 ## Matriz mínima de impacto
 
 | Si cambia… | Revisar además… |
