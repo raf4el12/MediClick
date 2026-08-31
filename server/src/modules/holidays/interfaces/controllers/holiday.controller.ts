@@ -12,7 +12,11 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { Auth, CurrentClinic } from '../../../../shared/decorators/index.js';
+import {
+  Auth,
+  CurrentClinic,
+  CurrentUser,
+} from '../../../../shared/decorators/index.js';
 import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreateHolidayDto } from '../../application/dto/create-holiday.dto.js';
@@ -53,8 +57,9 @@ export class HolidayController {
   async create(
     @Body() dto: CreateHolidayDto,
     @CurrentClinic() clinicId: number | null,
+    @CurrentUser('id') actorId: number,
   ): Promise<HolidayResponseDto> {
-    return this.createHolidayUseCase.execute(dto, clinicId);
+    return this.createHolidayUseCase.execute(dto, actorId, clinicId);
   }
 
   @Post('seed')
@@ -114,8 +119,9 @@ export class HolidayController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateHolidayDto,
     @CurrentClinic() clinicId: number | null,
+    @CurrentUser('id') actorId: number,
   ): Promise<HolidayResponseDto> {
-    return this.updateHolidayUseCase.execute(id, dto, clinicId);
+    return this.updateHolidayUseCase.execute(id, dto, actorId, clinicId);
   }
 
   @Delete(':id')

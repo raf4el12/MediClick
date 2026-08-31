@@ -9,6 +9,7 @@ import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-
 export interface IHolidayRepository {
   create(data: CreateHolidayData): Promise<HolidayEntity>;
   createMany(data: CreateHolidayData[]): Promise<number>;
+  createManyAndReturn(data: CreateHolidayData[]): Promise<HolidayEntity[]>;
   findAllPaginated(
     params: PaginationParams,
     year?: number,

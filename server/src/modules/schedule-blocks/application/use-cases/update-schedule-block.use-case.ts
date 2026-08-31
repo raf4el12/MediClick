@@ -5,7 +5,11 @@ import {
   BadRequestException,
   ForbiddenException,
 } from '@nestjs/common';
-import { UpdateScheduleBlockDto } from '../dto/update-schedule-block.dto.js';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import {
+  UpdateScheduleBlockDto,
+  ScheduleBlockType,
+} from '../dto/update-schedule-block.dto.js';
 import { ScheduleBlockResponseDto } from '../dto/schedule-block-response.dto.js';
 import type { IScheduleBlockRepository } from '../../domain/repositories/schedule-block.repository.js';
 import { UpdateScheduleBlockData } from '../../domain/interfaces/schedule-block-data.interface.js';
@@ -14,6 +18,10 @@ import {
   timeStringToDate,
   dateToTimeString,
 } from '../../../../shared/utils/date-time.utils.js';
+import {
+  AVAILABILITY_RESTRICTION_CHANGED_EVENT,
+  type AvailabilityRestrictionChangedEvent,
+} from '../../../../shared/events/availability-events.interface.js';
 
 @Injectable()
 export class UpdateScheduleBlockUseCase {
@@ -21,11 +29,13 @@ export class UpdateScheduleBlockUseCase {
     @Inject('IScheduleBlockRepository')
     private readonly scheduleBlockRepository: IScheduleBlockRepository,
     private readonly scheduleRegenerationService: ScheduleRegenerationService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(
     id: number,
     dto: UpdateScheduleBlockDto,
+    actorId: number,
     clinicId?: number | null,
   ): Promise<ScheduleBlockResponseDto> {
     const existing = await this.scheduleBlockRepository.findById(id);
@@ -39,7 +49,17 @@ export class UpdateScheduleBlockUseCase {
     }
 
     // Determinar el tipo final (el actual o el nuevo si se cambia)
-    const finalType = dto.type ?? existing.type;
+    const finalType = String(dto.type ?? existing.type);
+    const finalStartDate = dto.startDate
+      ? new Date(dto.startDate)
+      : existing.startDate;
+    const finalEndDate = dto.endDate ? new Date(dto.endDate) : existing.endDate;
+
+    if (finalStartDate > finalEndDate) {
+      throw new BadRequestException(
+        'La fecha de inicio debe ser anterior o igual a la fecha de fin',
+      );
+    }
 
     // Si el tipo final es TIME_RANGE, validar que se tengan las horas
     if (finalType === 'TIME_RANGE') {
@@ -76,9 +96,8 @@ export class UpdateScheduleBlockUseCase {
     const updateData: UpdateScheduleBlockData = {};
 
     if (dto.type !== undefined) updateData.type = dto.type;
-    if (dto.startDate !== undefined)
-      updateData.startDate = new Date(dto.startDate);
-    if (dto.endDate !== undefined) updateData.endDate = new Date(dto.endDate);
+    if (dto.startDate !== undefined) updateData.startDate = finalStartDate;
+    if (dto.endDate !== undefined) updateData.endDate = finalEndDate;
     if (dto.reason !== undefined) updateData.reason = dto.reason;
     if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
 
@@ -92,7 +111,7 @@ export class UpdateScheduleBlockUseCase {
     }
 
     // Si se cambia a FULL_DAY, limpiar las horas
-    if (dto.type === 'FULL_DAY') {
+    if (dto.type === ScheduleBlockType.FULL_DAY) {
       updateData.timeFrom = null;
       updateData.timeTo = null;
     }
@@ -112,6 +131,27 @@ export class UpdateScheduleBlockUseCase {
       updated.doctorId,
       regenStart,
       regenEnd,
+    );
+
+    const restrictionEvent: AvailabilityRestrictionChangedEvent = {
+      restrictionType: 'SCHEDULE_BLOCK',
+      restrictionId: updated.id,
+      clinicId: updated.doctor.clinicId,
+      doctorId: updated.doctorId,
+      previousRange: {
+        startDate: existing.startDate,
+        endDate: existing.endDate,
+      },
+      currentRange: {
+        startDate: updated.startDate,
+        endDate: updated.endDate,
+      },
+      occurredAt: new Date(),
+      actorId,
+    };
+    this.eventEmitter.emit(
+      AVAILABILITY_RESTRICTION_CHANGED_EVENT,
+      restrictionEvent,
     );
 
     return {

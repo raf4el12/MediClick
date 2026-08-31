@@ -4,8 +4,8 @@ import { CreateHolidayDto } from '../dto/create-holiday.dto.js';
 import { HolidayResponseDto } from '../dto/holiday-response.dto.js';
 import type { IHolidayRepository } from '../../domain/repositories/holiday.repository.js';
 import {
-  HOLIDAY_CREATED_EVENT,
-  type HolidayCreatedEvent,
+  AVAILABILITY_RESTRICTION_CHANGED_EVENT,
+  type AvailabilityRestrictionChangedEvent,
 } from '../../../../shared/events/availability-events.interface.js';
 
 @Injectable()
@@ -18,6 +18,7 @@ export class CreateHolidayUseCase {
 
   async execute(
     dto: CreateHolidayDto,
+    actorId: number,
     jwtClinicId?: number | null,
   ): Promise<HolidayResponseDto> {
     // JWT clinicId prevails for staff; super-admin uses dto value
@@ -43,7 +44,7 @@ export class CreateHolidayUseCase {
     });
 
     // Si es recurrente, propagar a todos los años que ya tienen feriados sembrados
-    const holidayDates = [parsedDate];
+    const createdHolidays = [holiday];
     if (dto.isRecurring) {
       const existingYears = await this.holidayRepository.findDistinctYears();
       const otherYears = existingYears.filter((y) => y !== year);
@@ -56,20 +57,32 @@ export class CreateHolidayUseCase {
           isRecurring: true,
           clinicId: effectiveClinicId,
         }));
-        await this.holidayRepository.createMany(copies);
-        holidayDates.push(...copies.map((c) => c.date));
+        const createdCopies =
+          await this.holidayRepository.createManyAndReturn(copies);
+        createdHolidays.push(...createdCopies);
       }
     }
 
     // Cancelar (async) las citas ya reservadas en cada fecha del feriado,
     // incluidas las copias de otros años cuando es recurrente.
-    for (const date of holidayDates) {
-      const holidayEvent: HolidayCreatedEvent = {
-        date,
-        clinicId: effectiveClinicId ?? null,
-        name: dto.name,
+    for (const createdHoliday of createdHolidays) {
+      const restrictionEvent: AvailabilityRestrictionChangedEvent = {
+        restrictionType: 'HOLIDAY',
+        restrictionId: createdHoliday.id,
+        clinicId: createdHoliday.clinicId,
+        doctorId: null,
+        previousRange: null,
+        currentRange: {
+          startDate: createdHoliday.date,
+          endDate: createdHoliday.date,
+        },
+        occurredAt: new Date(),
+        actorId,
       };
-      this.eventEmitter.emit(HOLIDAY_CREATED_EVENT, holidayEvent);
+      this.eventEmitter.emit(
+        AVAILABILITY_RESTRICTION_CHANGED_EVENT,
+        restrictionEvent,
+      );
     }
 
     return {

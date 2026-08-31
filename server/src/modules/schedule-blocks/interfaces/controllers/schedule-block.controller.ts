@@ -12,7 +12,11 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { Auth, CurrentClinic } from '../../../../shared/decorators/index.js';
+import {
+  Auth,
+  CurrentClinic,
+  CurrentUser,
+} from '../../../../shared/decorators/index.js';
 import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreateScheduleBlockDto } from '../../application/dto/create-schedule-block.dto.js';
@@ -49,8 +53,9 @@ export class ScheduleBlockController {
   async create(
     @Body() dto: CreateScheduleBlockDto,
     @CurrentClinic() clinicId: number | null,
+    @CurrentUser('id') actorId: number,
   ): Promise<ScheduleBlockResponseDto> {
-    return this.createScheduleBlockUseCase.execute(dto, clinicId);
+    return this.createScheduleBlockUseCase.execute(dto, actorId, clinicId);
   }
 
   @Get()
@@ -94,8 +99,9 @@ export class ScheduleBlockController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateScheduleBlockDto,
     @CurrentClinic() clinicId: number | null,
+    @CurrentUser('id') actorId: number,
   ): Promise<ScheduleBlockResponseDto> {
-    return this.updateScheduleBlockUseCase.execute(id, dto, clinicId);
+    return this.updateScheduleBlockUseCase.execute(id, dto, actorId, clinicId);
   }
 
   @Delete(':id')

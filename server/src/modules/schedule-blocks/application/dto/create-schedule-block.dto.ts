@@ -10,7 +10,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-enum ScheduleBlockType {
+export enum ScheduleBlockType {
   FULL_DAY = 'FULL_DAY',
   TIME_RANGE = 'TIME_RANGE',
 }

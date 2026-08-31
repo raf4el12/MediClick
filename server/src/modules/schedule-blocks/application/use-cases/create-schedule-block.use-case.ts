@@ -6,7 +6,10 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { CreateScheduleBlockDto } from '../dto/create-schedule-block.dto.js';
+import {
+  CreateScheduleBlockDto,
+  ScheduleBlockType,
+} from '../dto/create-schedule-block.dto.js';
 import { ScheduleBlockResponseDto } from '../dto/schedule-block-response.dto.js';
 import type { IScheduleBlockRepository } from '../../domain/repositories/schedule-block.repository.js';
 import type { IDoctorRepository } from '../../../doctors/domain/repositories/doctor.repository.js';
@@ -16,8 +19,8 @@ import {
   dateToTimeString,
 } from '../../../../shared/utils/date-time.utils.js';
 import {
-  SCHEDULE_BLOCKED_EVENT,
-  type ScheduleBlockedEvent,
+  AVAILABILITY_RESTRICTION_CHANGED_EVENT,
+  type AvailabilityRestrictionChangedEvent,
 } from '../../../../shared/events/availability-events.interface.js';
 
 @Injectable()
@@ -33,6 +36,7 @@ export class CreateScheduleBlockUseCase {
 
   async execute(
     dto: CreateScheduleBlockDto,
+    actorId: number,
     jwtClinicId?: number | null,
   ): Promise<ScheduleBlockResponseDto> {
     // Validar que el doctor exista
@@ -49,7 +53,7 @@ export class CreateScheduleBlockUseCase {
     }
 
     // Validar que si el tipo es TIME_RANGE, se proporcionen las horas
-    if (dto.type === 'TIME_RANGE') {
+    if (dto.type === ScheduleBlockType.TIME_RANGE) {
       if (!dto.timeFrom || !dto.timeTo) {
         throw new BadRequestException(
           'Para bloqueos de tipo TIME_RANGE, timeFrom y timeTo son obligatorios',
@@ -94,16 +98,20 @@ export class CreateScheduleBlockUseCase {
     );
 
     // Cancelar (async) las citas ya reservadas que el bloqueo invalida.
-    const blockedEvent: ScheduleBlockedEvent = {
+    const restrictionEvent: AvailabilityRestrictionChangedEvent = {
+      restrictionType: 'SCHEDULE_BLOCK',
+      restrictionId: block.id,
+      clinicId: block.doctor.clinicId,
       doctorId: block.doctorId,
-      startDate: block.startDate,
-      endDate: block.endDate,
-      type: block.type as 'FULL_DAY' | 'TIME_RANGE',
-      timeFrom: block.timeFrom ?? null,
-      timeTo: block.timeTo ?? null,
-      reason: block.reason ?? null,
+      previousRange: null,
+      currentRange: { startDate: block.startDate, endDate: block.endDate },
+      occurredAt: new Date(),
+      actorId,
     };
-    this.eventEmitter.emit(SCHEDULE_BLOCKED_EVENT, blockedEvent);
+    this.eventEmitter.emit(
+      AVAILABILITY_RESTRICTION_CHANGED_EVENT,
+      restrictionEvent,
+    );
 
     return {
       id: block.id,

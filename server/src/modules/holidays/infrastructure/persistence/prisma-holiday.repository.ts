@@ -26,6 +26,15 @@ export class PrismaHolidayRepository implements IHolidayRepository {
     return result.count;
   }
 
+  async createManyAndReturn(
+    data: CreateHolidayData[],
+  ): Promise<HolidayEntity[]> {
+    return this.prisma.holidays.createManyAndReturn({
+      data,
+      skipDuplicates: true,
+    });
+  }
+
   async findAllPaginated(
     params: PaginationParams,
     year?: number,
