@@ -1,5 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { Request } from 'express';
+import type { Request } from 'express';
 
 /**
  * Extrae el clinicId del usuario autenticado (desde el JWT).

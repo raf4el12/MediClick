@@ -48,13 +48,14 @@ jobs:
       REDIS_HOST: localhost
       REDIS_PORT: 6379
       NODE_ENV: test
+      RUN_DB_INTEGRATION: 1
 
     steps:
       - uses: actions/checkout@v4
 
       - uses: pnpm/action-setup@v4
         with:
-          version: latest
+          version: 10.28.0
 
       - uses: actions/setup-node@v4
         with:
@@ -67,6 +68,9 @@ jobs:
       - name: Generate Prisma client
         run: pnpm run prisma:generate
 
+      - name: Apply database migrations
+        run: pnpm exec prisma migrate deploy
+
       - name: Lint
         run: pnpm run lint
 
@@ -75,6 +79,12 @@ jobs:
 
       - name: Run tests
         run: pnpm test -- --passWithNoTests
+
+      - name: Build production artifact
+        run: pnpm build
+
+      - name: Smoke production entrypoint
+        run: pnpm smoke:prod
 
   client:
     name: Client — Lint & Type-check
@@ -92,7 +102,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: latest
+          version: 10.28.0
 
       - uses: actions/setup-node@v4
         with:
@@ -129,7 +139,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: latest
+          version: 10.28.0
 
       - uses: actions/setup-node@v4
         with:
