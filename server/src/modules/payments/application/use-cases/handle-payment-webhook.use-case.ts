@@ -1,7 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { CreateNotificationUseCase } from '../../../notifications/application/use-cases/create-notification.use-case.js';
-import type { ITransactionRepository } from '../../domain/repositories/transaction.repository.js';
 import type {
   GatewayPaymentStatus,
   IPaymentGatewayService,
@@ -11,15 +9,15 @@ import type {
   PaymentStatusValue,
 } from '../../domain/entities/transaction.entity.js';
 import { WebhookPayloadDto } from '../dto/webhook-payload.dto.js';
+import type { IPaymentReconciliationRepository } from '../../domain/repositories/payment-reconciliation.repository.js';
 
 @Injectable()
 export class HandlePaymentWebhookUseCase {
   private readonly logger = new Logger(HandlePaymentWebhookUseCase.name);
 
   constructor(
-    private readonly prisma: PrismaService,
-    @Inject('ITransactionRepository')
-    private readonly transactionRepository: ITransactionRepository,
+    @Inject('IPaymentReconciliationRepository')
+    private readonly reconciliationRepository: IPaymentReconciliationRepository,
     @Inject('IPaymentGatewayService')
     private readonly gateway: IPaymentGatewayService,
     private readonly createNotificationUseCase: CreateNotificationUseCase,
@@ -39,16 +37,7 @@ export class HandlePaymentWebhookUseCase {
       return;
     }
 
-    let gatewayStatus: GatewayPaymentStatus;
-    try {
-      gatewayStatus = await this.gateway.getPayment(paymentId);
-    } catch (err) {
-      this.logger.error(
-        `No se pudo consultar el pago ${paymentId} en MP: ${(err as Error).message}`,
-      );
-      // Devolvemos sin lanzar para que MP no reintente indefinidamente ante un error transitorio suyo.
-      return;
-    }
+    const gatewayStatus = await this.gateway.getPayment(paymentId);
 
     const externalRef = gatewayStatus.externalReference;
     if (!externalRef) {
@@ -65,143 +54,52 @@ export class HandlePaymentWebhookUseCase {
       return;
     }
 
-    const appointment = await this.prisma.appointments.findUnique({
-      where: { id: appointmentId },
-      include: {
-        patient: {
-          select: {
-            profile: { select: { userId: true, name: true, lastName: true } },
-          },
-        },
-      },
+    const status = this.mapStatus(gatewayStatus.status);
+    const paymentMethod = this.mapPaymentMethod(gatewayStatus.paymentMethod);
+    const result = await this.reconciliationRepository.reconcile({
+      appointmentId,
+      gatewayId: gatewayStatus.gatewayPaymentId,
+      externalRef,
+      amount: gatewayStatus.amount,
+      currency: gatewayStatus.currency,
+      status,
+      paymentMethod,
+      payerEmail: gatewayStatus.payerEmail,
+      failureReason: status === 'FAILED' ? gatewayStatus.statusDetail : null,
+      paidAt: status === 'PAID' ? gatewayStatus.approvedAt : null,
+      raw: gatewayStatus.raw,
     });
-    if (!appointment) {
+    if (!result) {
       this.logger.warn(
         `Pago ${paymentId} refiere a appointmentId=${appointmentId} que no existe`,
       );
       return;
     }
 
-    const status = this.mapStatus(gatewayStatus.status);
-    const paymentMethod = this.mapPaymentMethod(gatewayStatus.paymentMethod);
-
-    const existing = await this.transactionRepository.findByGatewayId(
-      gatewayStatus.gatewayPaymentId,
-    );
-
-    if (existing) {
-      await this.transactionRepository.update(existing.id, {
-        status,
-        paymentMethod,
-        payerEmail: gatewayStatus.payerEmail,
-        failureReason: status === 'FAILED' ? gatewayStatus.statusDetail : null,
-        paidAt: status === 'PAID' ? gatewayStatus.approvedAt : null,
-        metadata: gatewayStatus.raw,
-      });
-    } else {
-      // El webhook puede llegar antes que el callback que crea la Transaction local,
-      // o la Transaction PENDING puede existir sin gatewayId todavía.
-      const pending =
-        await this.transactionRepository.findLatestByAppointmentId(
-          appointmentId,
-        );
-      if (pending && pending.status === 'PENDING' && !pending.gatewayId) {
-        await this.transactionRepository.update(pending.id, {
-          status,
-          paymentMethod,
-          gatewayId: gatewayStatus.gatewayPaymentId,
-          payerEmail: gatewayStatus.payerEmail,
-          failureReason:
-            status === 'FAILED' ? gatewayStatus.statusDetail : null,
-          paidAt: status === 'PAID' ? gatewayStatus.approvedAt : null,
-          metadata: gatewayStatus.raw,
-        });
-      } else {
-        await this.transactionRepository.create({
-          appointmentId,
-          amount: gatewayStatus.amount,
-          currency: gatewayStatus.currency,
-          status,
-          paymentMethod,
-          gatewayId: gatewayStatus.gatewayPaymentId,
-          externalRef,
-          payerEmail: gatewayStatus.payerEmail,
-          metadata: gatewayStatus.raw,
-          clinicId: appointment.clinicId ?? null,
-        });
-      }
+    if (result.financialReviewRequired) {
+      this.logger.warn(
+        `[REVIEW] Pago aprobado para cita ${appointmentId} que ya estaba CANCELLED. Revisar manualmente.`,
+      );
     }
 
-    await this.syncAppointmentState(
-      appointmentId,
-      status,
-      appointment.status,
-      gatewayStatus.amount,
-    );
-
-    if (status === 'PAID' && appointment.status !== 'CANCELLED') {
-      const userId = appointment.patient.profile.userId;
-      if (userId) {
-        await this.createNotificationUseCase.execute({
-          userId,
-          type: 'APPOINTMENT_CONFIRMED',
-          channel: 'IN_APP',
-          title: 'Pago confirmado',
-          message: `Tu cita #${appointmentId} fue pagada y confirmada exitosamente.`,
-          metadata: {
-            appointmentId,
-            paymentId: gatewayStatus.gatewayPaymentId,
-          },
-          clinicId: appointment.clinicId ?? null,
-        });
-      }
+    if (result.notificationUserId) {
+      await this.createNotificationUseCase.execute({
+        userId: result.notificationUserId,
+        type: 'APPOINTMENT_CONFIRMED',
+        channel: 'IN_APP',
+        title: 'Pago confirmado',
+        message: `Tu cita #${appointmentId} fue pagada y confirmada exitosamente.`,
+        metadata: {
+          appointmentId,
+          paymentId: gatewayStatus.gatewayPaymentId,
+        },
+        clinicId: result.clinicId,
+      });
     }
 
     this.logger.log(
       `[AUDIT] Webhook procesado | paymentId=${paymentId} appointmentId=${appointmentId} status=${status}`,
     );
-  }
-
-  private async syncAppointmentState(
-    appointmentId: number,
-    paymentStatus: PaymentStatusValue,
-    currentApptStatus: string,
-    gatewayAmount: number,
-  ): Promise<void> {
-    // Race: pago aprobado pero la cita ya fue cancelada (p. ej. por expiración).
-    // Se marca la Transaction como PAID pero NO se re-confirma la cita — revisión manual.
-    if (paymentStatus === 'PAID' && currentApptStatus === 'CANCELLED') {
-      this.logger.warn(
-        `[REVIEW] Pago aprobado para cita ${appointmentId} que ya estaba CANCELLED. Revisar manualmente.`,
-      );
-      await this.prisma.appointments.update({
-        where: { id: appointmentId },
-        data: { paymentStatus: 'PAID', amount: gatewayAmount },
-      });
-      return;
-    }
-
-    const dataByStatus: Partial<
-      Record<PaymentStatusValue, Record<string, unknown>>
-    > = {
-      PAID: {
-        paymentStatus: 'PAID',
-        status: 'CONFIRMED',
-        amount: gatewayAmount,
-        pendingUntil: null,
-        updatedAt: new Date(),
-      },
-      FAILED: { paymentStatus: 'FAILED', updatedAt: new Date() },
-      REFUNDED: { paymentStatus: 'REFUNDED', updatedAt: new Date() },
-    };
-
-    const data = dataByStatus[paymentStatus];
-    if (!data) return;
-
-    await this.prisma.appointments.update({
-      where: { id: appointmentId },
-      data,
-    });
   }
 
   private mapStatus(

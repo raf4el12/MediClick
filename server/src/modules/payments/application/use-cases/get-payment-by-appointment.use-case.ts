@@ -1,13 +1,10 @@
-import {
-  ForbiddenException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import type { ITransactionRepository } from '../../domain/repositories/transaction.repository.js';
 import { PaymentResponseDto } from '../dto/payment-response.dto.js';
 import { HandlePaymentWebhookUseCase } from './handle-payment-webhook.use-case.js';
+import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
+import { AppointmentAccessPolicy } from '../../../../shared/access/appointment-access.policy.js';
 
 @Injectable()
 export class GetPaymentByAppointmentUseCase {
@@ -16,11 +13,11 @@ export class GetPaymentByAppointmentUseCase {
     @Inject('ITransactionRepository')
     private readonly transactionRepository: ITransactionRepository,
     private readonly handlePaymentWebhookUseCase: HandlePaymentWebhookUseCase,
+    private readonly appointmentAccessPolicy: AppointmentAccessPolicy,
   ) {}
 
   async execute(
-    userId: number,
-    role: string,
+    actor: AuthenticatedUser,
     appointmentId: number,
     paymentId?: string,
   ): Promise<PaymentResponseDto> {
@@ -29,8 +26,19 @@ export class GetPaymentByAppointmentUseCase {
       select: {
         id: true,
         deleted: true,
+        clinicId: true,
         patient: {
           select: { profile: { select: { userId: true } } },
+        },
+        schedule: {
+          select: {
+            doctor: {
+              select: {
+                clinicId: true,
+                profile: { select: { userId: true } },
+              },
+            },
+          },
         },
       },
     });
@@ -38,10 +46,13 @@ export class GetPaymentByAppointmentUseCase {
       throw new NotFoundException('Cita no encontrada');
     }
 
-    // Pacientes solo pueden ver sus propios pagos. Staff (DOCTOR/RECEPTIONIST/ADMIN) pueden ver cualquiera.
-    if (role === 'PATIENT' && appointment.patient.profile.userId !== userId) {
-      throw new ForbiddenException('Esta cita no te pertenece');
-    }
+    this.appointmentAccessPolicy.authorize(actor, 'READ_PAYMENT', {
+      id: appointment.id,
+      clinicId:
+        appointment.schedule.doctor.clinicId ?? appointment.clinicId ?? null,
+      patientUserId: appointment.patient.profile.userId,
+      doctorUserId: appointment.schedule.doctor.profile.userId,
+    });
 
     let transaction =
       await this.transactionRepository.findLatestByAppointmentId(appointmentId);

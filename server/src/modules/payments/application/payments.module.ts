@@ -8,6 +8,8 @@ import { GetPaymentByAppointmentUseCase } from './use-cases/get-payment-by-appoi
 import { ListPaymentsUseCase } from './use-cases/list-payments.use-case.js';
 import { PaymentController } from '../interfaces/controllers/payment.controller.js';
 import { PaymentWebhookController } from '../interfaces/controllers/payment-webhook.controller.js';
+import { AppointmentAccessPolicy } from '../../../shared/access/appointment-access.policy.js';
+import { PrismaPaymentReconciliationRepository } from '../infrastructure/persistence/prisma-payment-reconciliation.repository.js';
 
 @Module({
   imports: [NotificationsModule],
@@ -21,10 +23,15 @@ import { PaymentWebhookController } from '../interfaces/controllers/payment-webh
       provide: 'IPaymentGatewayService',
       useClass: MercadoPagoGatewayService,
     },
+    {
+      provide: 'IPaymentReconciliationRepository',
+      useClass: PrismaPaymentReconciliationRepository,
+    },
     CreatePaymentPreferenceUseCase,
     HandlePaymentWebhookUseCase,
     GetPaymentByAppointmentUseCase,
     ListPaymentsUseCase,
+    AppointmentAccessPolicy,
   ],
   exports: ['ITransactionRepository'],
 })
