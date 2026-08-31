@@ -90,7 +90,9 @@ Los estados financieros son `PENDING`, `PAID`, `PARTIAL`, `REFUNDED`, `FAILED` y
 - Un paciente no tiene citas activas que se solapen, incluso con médicos distintos.
 - `CANCELLED` y `NO_SHOW` dejan de ocupar capacidad para las comprobaciones de solapamiento.
 - La duración del cupo coincide con la especialidad; la separación entre inicios incluye el descanso entre citas.
+- La identidad de un cupo generado incluye médico, especialidad, sede, fecha e intervalo; dos especialidades pueden ofrecer el mismo intervalo sin eliminarse entre sí.
 - Feriados, bloqueos y la anticipación mínima se evalúan con la fecha local de la sede.
+- Al generar cupos, solo un feriado global o de la sede del médico bloquea la fecha; un feriado de otra sede no afecta su agenda.
 - Crear o reagendar combina la comprobación de solapamiento y la escritura en una transacción serializable.
 
 ### Sedes y acceso

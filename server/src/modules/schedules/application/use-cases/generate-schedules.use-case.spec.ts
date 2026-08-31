@@ -116,6 +116,52 @@ describe('GenerateSchedulesUseCase — overwrite', () => {
     expect(created.every((s: any) => s.specialtyId === 2)).toBe(true);
   });
 
+  it('genera ambas especialidades cuando sus reglas comparten intervalo', async () => {
+    availabilityRepository.findActiveByDoctorIds.mockResolvedValue([
+      buildRule(2),
+      buildRule(9),
+    ]);
+
+    await useCase.execute({ ...dto, specialtyId: undefined, overwrite: false });
+
+    const created = scheduleRepository.createMany.mock.calls[0][0];
+    expect(created).toHaveLength(4);
+    expect(created.map((slot: any) => slot.specialtyId)).toEqual([2, 2, 9, 9]);
+  });
+
+  it('genera cupos cuando el feriado pertenece a otra sede', async () => {
+    holidayRepository.findByDateRange.mockResolvedValue([
+      {
+        date: new Date(`${DATE}T00:00:00.000Z`),
+        clinicId: 99,
+        isActive: true,
+      },
+    ]);
+
+    await useCase.execute({ ...dto, overwrite: false });
+
+    expect(scheduleRepository.createMany).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({ specialtyId: 2, clinicId: 7 }),
+      ]),
+    );
+  });
+
+  it('no genera cupos cuando el feriado es global o pertenece a la sede', async () => {
+    holidayRepository.findByDateRange.mockResolvedValue([
+      {
+        date: new Date(`${DATE}T00:00:00.000Z`),
+        clinicId: null,
+        isActive: true,
+      },
+    ]);
+
+    const result = await useCase.execute({ ...dto, overwrite: false });
+
+    expect(scheduleRepository.createMany).not.toHaveBeenCalled();
+    expect(result.generated).toBe(0);
+  });
+
   // ── EXCEPTION sustractiva (huequecito #13) ─────────────────────────────────
 
   it('EXCEPTION suprime los slots de su especialidad que solapan su horario', async () => {

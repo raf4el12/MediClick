@@ -31,7 +31,15 @@ export interface IScheduleRepository {
   findExistingDates(
     doctorId: number,
     dates: Date[],
-  ): Promise<{ scheduleDate: Date; timeFrom: Date; timeTo: Date }[]>;
+  ): Promise<
+    {
+      specialtyId: number;
+      clinicId: number | null;
+      scheduleDate: Date;
+      timeFrom: Date;
+      timeTo: Date;
+    }[]
+  >;
 
   /**
    * Elimina los schedules de un doctor en un rango de fechas que NO tienen

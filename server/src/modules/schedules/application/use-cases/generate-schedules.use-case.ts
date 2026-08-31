@@ -12,23 +12,16 @@ import type { IDoctorRepository } from '../../../doctors/domain/repositories/doc
 import type { ISpecialtyRepository } from '../../../specialties/domain/repositories/specialty.repository.js';
 import type { IHolidayRepository } from '../../../holidays/domain/repositories/holiday.repository.js';
 import type { IScheduleBlockRepository } from '../../../schedule-blocks/domain/repositories/schedule-block.repository.js';
-import type { CreateScheduleData } from '../../domain/interfaces/schedule-data.interface.js';
-import { DayOfWeek } from '../../../../shared/domain/enums/day-of-week.enum.js';
-import { AvailabilityType } from '../../../../shared/domain/enums/availability-type.enum.js';
-import { TimeSlotCalculatorService } from '../../domain/services/time-slot-calculator.service.js';
-
-const JS_DAY_TO_ENUM: Record<number, DayOfWeek> = {
-  0: DayOfWeek.SUNDAY,
-  1: DayOfWeek.MONDAY,
-  2: DayOfWeek.TUESDAY,
-  3: DayOfWeek.WEDNESDAY,
-  4: DayOfWeek.THURSDAY,
-  5: DayOfWeek.FRIDAY,
-  6: DayOfWeek.SATURDAY,
-};
+import type { AvailabilityEntity } from '../../../availability/domain/entities/availability.entity.js';
+import {
+  ScheduleGenerationPlanner,
+  type ScheduleSpecialtyConfig,
+} from '../../domain/services/schedule-generation-planner.service.js';
 
 @Injectable()
 export class GenerateSchedulesUseCase {
+  private readonly planner = new ScheduleGenerationPlanner();
+
   constructor(
     @Inject('IScheduleRepository')
     private readonly scheduleRepository: IScheduleRepository,
@@ -48,37 +41,14 @@ export class GenerateSchedulesUseCase {
     dto: GenerateSchedulesDto,
     jwtClinicId?: number | null,
   ): Promise<GenerateSchedulesResponseDto> {
-    // ── Resolver rango de fechas ──
     const { rangeStart, rangeEnd, dates } = this.resolveDateRange(dto);
-
-    // Determinar doctores a procesar
     const doctorClinicCache = new Map<number, number | null>();
-
-    let doctorIds: number[];
-    if (dto.doctorId) {
-      const doctor = await this.doctorRepository.findById(dto.doctorId);
-      if (!doctor) {
-        throw new BadRequestException('El doctor especificado no existe');
-      }
-
-      if (jwtClinicId && doctor.clinicId !== jwtClinicId) {
-        throw new ForbiddenException(
-          'No puede generar horarios para un doctor de otra sede',
-        );
-      }
-
-      doctorIds = [dto.doctorId];
-      doctorClinicCache.set(dto.doctorId, doctor.clinicId ?? null);
-    } else {
-      const allAvailabilities =
-        await this.availabilityRepository.findActiveByDoctorIds([]);
-
-      const filteredAvailabilities = jwtClinicId
-        ? allAvailabilities.filter((a) => a.clinicId === jwtClinicId)
-        : allAvailabilities;
-
-      doctorIds = [...new Set(filteredAvailabilities.map((a) => a.doctorId))];
-    }
+    const specialtyCache = new Map<number, ScheduleSpecialtyConfig>();
+    const doctorIds = await this.resolveDoctorIds(
+      dto,
+      jwtClinicId,
+      doctorClinicCache,
+    );
 
     if (doctorIds.length === 0) {
       return {
@@ -89,21 +59,10 @@ export class GenerateSchedulesUseCase {
       };
     }
 
-    // Pre-cargar feriados para el rango
     const holidays = await this.holidayRepository.findByDateRange(
       rangeStart,
       rangeEnd,
     );
-    const holidayDatesSet = new Set(
-      holidays.map((h) => h.date.toISOString().split('T')[0]),
-    );
-
-    // Cachear duraciones y buffer de especialidades
-    const specialtyCache = new Map<
-      number,
-      { duration: number | null; bufferMinutes: number }
-    >();
-
     let totalGenerated = 0;
     let totalSkipped = 0;
     let totalDeleted = 0;
@@ -115,7 +74,7 @@ export class GenerateSchedulesUseCase {
         dates,
         rangeStart,
         rangeEnd,
-        holidayDatesSet,
+        holidays,
         doctorClinicCache,
         specialtyCache,
       );
@@ -124,11 +83,9 @@ export class GenerateSchedulesUseCase {
       totalDeleted += result.deleted;
     }
 
-    // Construir mensaje
-    const parts: string[] = [`${totalGenerated} creados`];
+    const parts = [`${totalGenerated} creados`];
     if (totalSkipped > 0) parts.push(`${totalSkipped} omitidos`);
     if (totalDeleted > 0) parts.push(`${totalDeleted} eliminados`);
-
     return {
       generated: totalGenerated,
       skipped: totalSkipped,
@@ -137,310 +94,138 @@ export class GenerateSchedulesUseCase {
     };
   }
 
-  /**
-   * Procesa la generación de horarios para un doctor individual.
-   */
+  private async resolveDoctorIds(
+    dto: GenerateSchedulesDto,
+    jwtClinicId: number | null | undefined,
+    doctorClinicCache: Map<number, number | null>,
+  ): Promise<number[]> {
+    if (dto.doctorId) {
+      const doctor = await this.doctorRepository.findById(dto.doctorId);
+      if (!doctor) {
+        throw new BadRequestException('El doctor especificado no existe');
+      }
+      if (jwtClinicId && doctor.clinicId !== jwtClinicId) {
+        throw new ForbiddenException(
+          'No puede generar horarios para un doctor de otra sede',
+        );
+      }
+      doctorClinicCache.set(dto.doctorId, doctor.clinicId ?? null);
+      return [dto.doctorId];
+    }
+
+    const allAvailabilities =
+      await this.availabilityRepository.findActiveByDoctorIds([]);
+    const visibleAvailabilities = jwtClinicId
+      ? allAvailabilities.filter(
+          (availability) => availability.clinicId === jwtClinicId,
+        )
+      : allAvailabilities;
+    return [
+      ...new Set(
+        visibleAvailabilities.map((availability) => availability.doctorId),
+      ),
+    ];
+  }
+
   private async processDoctor(
     doctorId: number,
     dto: GenerateSchedulesDto,
     dates: Date[],
     rangeStart: Date,
     rangeEnd: Date,
-    holidayDatesSet: Set<string>,
+    holidays: Awaited<ReturnType<IHolidayRepository['findByDateRange']>>,
     doctorClinicCache: Map<number, number | null>,
-    specialtyCache: Map<
-      number,
-      { duration: number | null; bufferMinutes: number }
-    >,
+    specialtyCache: Map<number, ScheduleSpecialtyConfig>,
   ): Promise<{ generated: number; skipped: number; deleted: number }> {
-    let skipped = 0;
-    let deleted = 0;
-
     let availabilities =
       await this.availabilityRepository.findActiveByDoctorIds([doctorId]);
-
     if (dto.specialtyId) {
       availabilities = availabilities.filter(
-        (a) => a.specialtyId === dto.specialtyId,
+        (availability) => availability.specialtyId === dto.specialtyId,
       );
     }
-
     if (availabilities.length === 0) {
       return { generated: 0, skipped: 0, deleted: 0 };
     }
 
-    // Resolver clinicId del doctor
-    if (!doctorClinicCache.has(doctorId)) {
-      const doc = await this.doctorRepository.findById(doctorId);
-      doctorClinicCache.set(doctorId, doc?.clinicId ?? null);
-    }
-    const doctorClinicId = doctorClinicCache.get(doctorId) ?? null;
-
-    if (dto.overwrite) {
-      // Si se regenera una sola especialidad, borrar solo sus schedules:
-      // sin el filtro desaparecían los de las demás especialidades.
-      deleted =
-        await this.scheduleRepository.deleteUnbookedByDoctorAndDateRange(
+    const doctorClinicId = await this.resolveDoctorClinicId(
+      doctorId,
+      doctorClinicCache,
+    );
+    const deleted = dto.overwrite
+      ? await this.scheduleRepository.deleteUnbookedByDoctorAndDateRange(
           doctorId,
           rangeStart,
           rangeEnd,
           dto.specialtyId,
-        );
-    }
-
-    const scheduleBlocks =
-      await this.scheduleBlockRepository.findActiveByDoctorAndDateRange(
+        )
+      : 0;
+    const [scheduleBlocks, existingSchedules] = await Promise.all([
+      this.scheduleBlockRepository.findActiveByDoctorAndDateRange(
         doctorId,
         rangeStart,
         rangeEnd,
-      );
-
-    const existingSchedules = await this.scheduleRepository.findExistingDates(
-      doctorId,
-      dates,
-    );
-
-    const existingSet = new Set(
-      existingSchedules.map(
-        (s) =>
-          `${s.scheduleDate.toISOString().split('T')[0]}_${s.timeFrom.getTime()}_${s.timeTo.getTime()}`,
       ),
-    );
+      this.scheduleRepository.findExistingDates(doctorId, dates),
+    ]);
+    await this.populateSpecialties(availabilities, specialtyCache);
 
-    const schedulesToCreate: CreateScheduleData[] = [];
-
-    for (const date of dates) {
-      const result = await this.processDayForDoctor(
-        date,
-        doctorId,
-        doctorClinicId,
-        availabilities,
-        scheduleBlocks,
-        holidayDatesSet,
-        existingSet,
-        specialtyCache,
-      );
-      schedulesToCreate.push(...result.slots);
-      skipped += result.skipped;
-    }
-
-    let generated = 0;
-    if (schedulesToCreate.length > 0) {
-      generated = await this.scheduleRepository.createMany(schedulesToCreate);
-    }
-
-    return { generated, skipped, deleted };
-  }
-
-  /**
-   * Procesa un día específico para un doctor: verifica feriados, bloqueos,
-   * y genera los slots correspondientes.
-   */
-  private async processDayForDoctor(
-    date: Date,
-    doctorId: number,
-    doctorClinicId: number | null,
-    availabilities: any[],
-    scheduleBlocks: any[],
-    holidayDatesSet: Set<string>,
-    existingSet: Set<string>,
-    specialtyCache: Map<
-      number,
-      { duration: number | null; bufferMinutes: number }
-    >,
-  ): Promise<{ slots: CreateScheduleData[]; skipped: number }> {
-    const slots: CreateScheduleData[] = [];
-    let skipped = 0;
-    const dateStr = date.toISOString().split('T')[0];
-
-    if (holidayDatesSet.has(dateStr)) {
-      return { slots, skipped };
-    }
-
-    const dateMs = date.getTime();
-
-    if (this.isFullDayBlocked(dateMs, scheduleBlocks)) {
-      return { slots, skipped };
-    }
-
-    const dayOfWeek = JS_DAY_TO_ENUM[date.getUTCDay()];
-
-    const dayRules = availabilities.filter((a) => {
-      if (a.dayOfWeek !== dayOfWeek || !a.isAvailable) return false;
-      if (!a.startDate || !a.endDate) return true;
-      const startMs = Date.UTC(
-        a.startDate.getUTCFullYear(),
-        a.startDate.getUTCMonth(),
-        a.startDate.getUTCDate(),
-      );
-      const endMs = Date.UTC(
-        a.endDate.getUTCFullYear(),
-        a.endDate.getUTCMonth(),
-        a.endDate.getUTCDate(),
-      );
-      return dateMs >= startMs && dateMs <= endMs;
+    const plan = this.planner.plan({
+      doctorId,
+      clinicId: doctorClinicId,
+      dates,
+      availabilities,
+      holidays,
+      scheduleBlocks,
+      specialties: specialtyCache,
+      existingSchedules,
     });
+    const generated = plan.desired.length
+      ? await this.scheduleRepository.createMany(plan.desired)
+      : 0;
 
-    // EXCEPTION es sustractiva: no genera slots, suprime los de su especialidad
-    // que se solapen en horario ese día. REGULAR y EXTRA sí generan.
-    const exceptions = dayRules.filter(
-      (a) => a.type === AvailabilityType.EXCEPTION,
-    );
-    const matchingRules = dayRules.filter(
-      (a) => a.type !== AvailabilityType.EXCEPTION,
-    );
-
-    const timeRangeBlocks = this.getTimeRangeBlocks(dateMs, scheduleBlocks);
-
-    for (const rule of matchingRules) {
-      const ruleExceptions = exceptions.filter(
-        (e) => e.specialtyId === rule.specialtyId,
-      );
-      const result = await this.generateSlotsForRule(
-        rule,
-        date,
-        dateStr,
-        doctorId,
-        doctorClinicId,
-        timeRangeBlocks,
-        ruleExceptions,
-        existingSet,
-        specialtyCache,
-      );
-      slots.push(...result.slots);
-      skipped += result.skipped;
-    }
-
-    return { slots, skipped };
+    return { generated, skipped: plan.skipped.length, deleted };
   }
 
-  /**
-   * Genera los slots individuales para una regla de disponibilidad.
-   */
-  private async generateSlotsForRule(
-    rule: any,
-    date: Date,
-    dateStr: string,
+  private async resolveDoctorClinicId(
     doctorId: number,
-    doctorClinicId: number | null,
-    timeRangeBlocks: any[],
-    exceptions: any[],
-    existingSet: Set<string>,
-    specialtyCache: Map<
-      number,
-      { duration: number | null; bufferMinutes: number }
-    >,
-  ): Promise<{ slots: CreateScheduleData[]; skipped: number }> {
-    const slots: CreateScheduleData[] = [];
-    let skipped = 0;
+    doctorClinicCache: Map<number, number | null>,
+  ): Promise<number | null> {
+    if (!doctorClinicCache.has(doctorId)) {
+      const doctor = await this.doctorRepository.findById(doctorId);
+      doctorClinicCache.set(doctorId, doctor?.clinicId ?? null);
+    }
+    return doctorClinicCache.get(doctorId) ?? null;
+  }
 
-    if (!specialtyCache.has(rule.specialtyId)) {
-      const specialty = await this.specialtyRepository.findById(
-        rule.specialtyId,
-      );
-      specialtyCache.set(rule.specialtyId, {
+  private async populateSpecialties(
+    availabilities: AvailabilityEntity[],
+    specialtyCache: Map<number, ScheduleSpecialtyConfig>,
+  ): Promise<void> {
+    for (const specialtyId of new Set(
+      availabilities.map((availability) => availability.specialtyId),
+    )) {
+      if (specialtyCache.has(specialtyId)) continue;
+      const specialty = await this.specialtyRepository.findById(specialtyId);
+      specialtyCache.set(specialtyId, {
         duration: specialty?.duration ?? null,
         bufferMinutes: specialty?.bufferMinutes ?? 0,
       });
     }
-    const { duration, bufferMinutes } = specialtyCache.get(rule.specialtyId)!;
-
-    let timeSlots: { startTime: Date; endTime: Date }[];
-    if (duration && duration > 0) {
-      timeSlots = TimeSlotCalculatorService.generate(
-        rule.timeFrom,
-        rule.timeTo,
-        duration,
-        bufferMinutes,
-      );
-    } else {
-      timeSlots = [{ startTime: rule.timeFrom, endTime: rule.timeTo }];
-    }
-
-    for (const slot of timeSlots) {
-      const isBlocked = timeRangeBlocks.some((block) => {
-        if (!block.timeFrom || !block.timeTo) return false;
-        return slot.startTime < block.timeTo && slot.endTime > block.timeFrom;
-      });
-
-      const isExcepted = exceptions.some(
-        (e) => slot.startTime < e.timeTo && slot.endTime > e.timeFrom,
-      );
-
-      if (isBlocked || isExcepted) {
-        skipped++;
-        continue;
-      }
-
-      const key = `${dateStr}_${slot.startTime.getTime()}_${slot.endTime.getTime()}`;
-
-      if (existingSet.has(key)) {
-        skipped++;
-        continue;
-      }
-
-      existingSet.add(key);
-      slots.push({
-        doctorId,
-        specialtyId: rule.specialtyId,
-        scheduleDate: date,
-        timeFrom: slot.startTime,
-        timeTo: slot.endTime,
-        clinicId: doctorClinicId,
-      });
-    }
-
-    return { slots, skipped };
   }
 
-  private isFullDayBlocked(dateMs: number, scheduleBlocks: any[]): boolean {
-    return scheduleBlocks.some((block) => {
-      if (block.type !== 'FULL_DAY') return false;
-      const blockStart = Date.UTC(
-        block.startDate.getUTCFullYear(),
-        block.startDate.getUTCMonth(),
-        block.startDate.getUTCDate(),
-      );
-      const blockEnd = Date.UTC(
-        block.endDate.getUTCFullYear(),
-        block.endDate.getUTCMonth(),
-        block.endDate.getUTCDate(),
-      );
-      return dateMs >= blockStart && dateMs <= blockEnd;
-    });
-  }
-
-  private getTimeRangeBlocks(dateMs: number, scheduleBlocks: any[]): any[] {
-    return scheduleBlocks.filter((block) => {
-      if (block.type !== 'TIME_RANGE') return false;
-      const blockStart = Date.UTC(
-        block.startDate.getUTCFullYear(),
-        block.startDate.getUTCMonth(),
-        block.startDate.getUTCDate(),
-      );
-      const blockEnd = Date.UTC(
-        block.endDate.getUTCFullYear(),
-        block.endDate.getUTCMonth(),
-        block.endDate.getUTCDate(),
-      );
-      return dateMs >= blockStart && dateMs <= blockEnd;
-    });
-  }
-
-  /**
-   * Resuelve el rango de fechas a partir del DTO.
-   * Soporta dos modos: month/year o dateFrom/dateTo.
-   */
   private resolveDateRange(dto: GenerateSchedulesDto): {
     rangeStart: Date;
     rangeEnd: Date;
     dates: Date[];
   } {
     if (dto.dateFrom && dto.dateTo) {
-      const rangeStart = new Date(dto.dateFrom + 'T00:00:00Z');
-      const rangeEnd = new Date(dto.dateTo + 'T00:00:00Z');
-
-      if (isNaN(rangeStart.getTime()) || isNaN(rangeEnd.getTime())) {
+      const rangeStart = new Date(`${dto.dateFrom}T00:00:00Z`);
+      const rangeEnd = new Date(`${dto.dateTo}T00:00:00Z`);
+      if (
+        Number.isNaN(rangeStart.getTime()) ||
+        Number.isNaN(rangeEnd.getTime())
+      ) {
         throw new BadRequestException(
           'Las fechas deben tener formato YYYY-MM-DD',
         );
@@ -450,25 +235,20 @@ export class GenerateSchedulesUseCase {
           'La fecha fin debe ser igual o posterior a la fecha inicio',
         );
       }
-
-      // Limitar a máximo 366 días
       const diffDays =
         (rangeEnd.getTime() - rangeStart.getTime()) / (1000 * 60 * 60 * 24);
       if (diffDays > 366) {
         throw new BadRequestException('El rango no puede exceder 366 días');
       }
-
       const dates: Date[] = [];
       const current = new Date(rangeStart);
       while (current <= rangeEnd) {
         dates.push(new Date(current));
         current.setUTCDate(current.getUTCDate() + 1);
       }
-
       return { rangeStart, rangeEnd, dates };
     }
 
-    // Modo month/year (retrocompatible)
     if (dto.month == null || dto.year == null) {
       throw new BadRequestException(
         'Debe indicar month/year o dateFrom/dateTo',
@@ -484,12 +264,10 @@ export class GenerateSchedulesUseCase {
     const daysInMonth = new Date(Date.UTC(dto.year, dto.month, 0)).getUTCDate();
     const rangeStart = new Date(Date.UTC(dto.year, dto.month - 1, 1));
     const rangeEnd = new Date(Date.UTC(dto.year, dto.month - 1, daysInMonth));
-
-    const dates: Date[] = [];
-    for (let day = 1; day <= daysInMonth; day++) {
-      dates.push(new Date(Date.UTC(dto.year, dto.month - 1, day)));
-    }
-
+    const dates = Array.from(
+      { length: daysInMonth },
+      (_, index) => new Date(Date.UTC(dto.year!, dto.month! - 1, index + 1)),
+    );
     return { rangeStart, rangeEnd, dates };
   }
 }

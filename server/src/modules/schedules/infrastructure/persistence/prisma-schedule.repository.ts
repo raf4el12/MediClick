@@ -145,7 +145,15 @@ export class PrismaScheduleRepository implements IScheduleRepository {
   async findExistingDates(
     doctorId: number,
     dates: Date[],
-  ): Promise<{ scheduleDate: Date; timeFrom: Date; timeTo: Date }[]> {
+  ): Promise<
+    {
+      specialtyId: number;
+      clinicId: number | null;
+      scheduleDate: Date;
+      timeFrom: Date;
+      timeTo: Date;
+    }[]
+  > {
     if (dates.length === 0) return [];
 
     const minDate = dates[0];
@@ -156,7 +164,13 @@ export class PrismaScheduleRepository implements IScheduleRepository {
         doctorId,
         scheduleDate: { gte: minDate, lte: maxDate },
       },
-      select: { scheduleDate: true, timeFrom: true, timeTo: true },
+      select: {
+        specialtyId: true,
+        clinicId: true,
+        scheduleDate: true,
+        timeFrom: true,
+        timeTo: true,
+      },
     });
   }
 
