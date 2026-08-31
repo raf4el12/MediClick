@@ -19,6 +19,15 @@ export class MercadoPagoGatewayService implements IPaymentGatewayService {
 
   constructor() {
     const accessToken = process.env.MP_ACCESS_TOKEN;
+    const webhookSecret = process.env.MP_WEBHOOK_SECRET;
+    if (
+      process.env.NODE_ENV === 'production' &&
+      (!accessToken || !webhookSecret)
+    ) {
+      throw new Error(
+        'MP_ACCESS_TOKEN y MP_WEBHOOK_SECRET son obligatorios en producción',
+      );
+    }
     if (!accessToken) {
       this.logger.warn(
         'MP_ACCESS_TOKEN no está configurado. Los pagos fallarán hasta que se agregue al .env',
@@ -159,8 +168,14 @@ export class MercadoPagoGatewayService implements IPaymentGatewayService {
     // Intentar extraer data.id del body
     let dataId: string | undefined;
     try {
-      const parsed = JSON.parse(rawBody);
-      dataId = parsed?.data?.id ? String(parsed.data.id) : undefined;
+      const parsed = JSON.parse(rawBody) as {
+        data?: { id?: unknown };
+      };
+      const id = parsed?.data?.id;
+      dataId =
+        typeof id === 'string' || typeof id === 'number'
+          ? String(id)
+          : undefined;
     } catch {
       return false;
     }
@@ -172,7 +187,12 @@ export class MercadoPagoGatewayService implements IPaymentGatewayService {
       .update(manifest)
       .digest('hex');
 
-    return crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(v1));
+    if (!/^[a-fA-F0-9]{64}$/.test(v1)) return false;
+
+    const expected = Buffer.from(hmac, 'hex');
+    const received = Buffer.from(v1, 'hex');
+    if (expected.length !== received.length) return false;
+    return crypto.timingSafeEqual(expected, received);
   }
 
   private headerToString(

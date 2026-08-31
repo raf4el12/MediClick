@@ -4,9 +4,9 @@ import {
   HttpCode,
   HttpStatus,
   Inject,
-  Logger,
   Post,
   Req,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { SkipThrottle } from '@nestjs/throttler';
 import { ApiExcludeController } from '@nestjs/swagger';
@@ -17,14 +17,12 @@ import type { IPaymentGatewayService } from '../../domain/services/payment-gatew
 
 /**
  * Controlador PÚBLICO (sin @Auth). Recibe notificaciones de Mercado Pago.
- * Siempre responde 200 OK — los errores se loguean pero no se propagan,
- * para evitar que MP entre en loops de retry.
+ * Responde 200 solo cuando la firma es válida y el evento se procesó. Los
+ * fallos transitorios se propagan para que el proveedor pueda reintentar.
  */
 @ApiExcludeController()
 @Controller('payments')
 export class PaymentWebhookController {
-  private readonly logger = new Logger(PaymentWebhookController.name);
-
   constructor(
     private readonly handlePaymentWebhookUseCase: HandlePaymentWebhookUseCase,
     @Inject('IPaymentGatewayService')
@@ -47,19 +45,10 @@ export class PaymentWebhookController {
       rawBody,
     );
     if (!isValid) {
-      this.logger.warn(
-        'Webhook con firma inválida — se procesa igual porque re-consultamos a MP',
-      );
+      throw new UnauthorizedException('Firma de webhook inválida');
     }
 
-    try {
-      await this.handlePaymentWebhookUseCase.execute(body);
-    } catch (err) {
-      this.logger.error(
-        `Error al procesar webhook: ${(err as Error).message}`,
-        (err as Error).stack,
-      );
-    }
+    await this.handlePaymentWebhookUseCase.execute(body);
 
     return { received: true };
   }
