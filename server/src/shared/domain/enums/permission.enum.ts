@@ -31,6 +31,8 @@ export enum PermissionSubject {
   HOLIDAYS = 'HOLIDAYS',
   SCHEDULE_BLOCKS = 'SCHEDULE_BLOCKS',
   ROLES = 'ROLES',
+  PAYMENTS = 'PAYMENTS',
+  REVIEWS = 'REVIEWS',
 }
 
 /**

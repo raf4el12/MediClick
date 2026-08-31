@@ -14,6 +14,12 @@ import * as bcrypt from 'bcrypt';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 import 'dotenv/config';
+import {
+  buildPermissionCatalog,
+  ROLE_PERMISSIONS,
+  SYSTEM_ROLE_DESCRIPTIONS,
+  SYSTEM_ROLE_ORDER,
+} from './rbac-policy.js';
 
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
@@ -260,36 +266,11 @@ async function main() {
   });
 
   // ════════════════════════════════════════════════════
-  // 3.5  ROLES & PERMISSIONS (PBAC)
+  // 3.5  ROLES & PERMISSIONS (RBAC) — fuente única: rbac-policy.ts
   // ════════════════════════════════════════════════════
   console.log('🔐 Creando roles y permisos...');
 
-  // ── All subjects in the system ──
-  const subjects = [
-    'APPOINTMENTS', 'AVAILABILITY', 'CLINICS', 'USERS', 'CATEGORIES',
-    'CLINICAL_NOTES', 'REPORTS', 'NOTIFICATIONS', 'MEDICAL_HISTORY',
-    'PRESCRIPTIONS', 'DOCTORS', 'PATIENTS', 'SPECIALTIES',
-    'SCHEDULE_BLOCKS', 'SCHEDULES', 'ROLES', 'HOLIDAYS', 'PAYMENTS',
-  ] as const;
-  const actions = ['CREATE', 'READ', 'UPDATE', 'DELETE', 'MANAGE'] as const;
-
-  // Create all permission combinations + MANAGE:ALL wildcard
-  const permissionData: { action: string; subject: string; description: string }[] = [];
-  for (const subject of subjects) {
-    for (const action of actions) {
-      permissionData.push({
-        action,
-        subject,
-        description: `${action} ${subject}`,
-      });
-    }
-  }
-  permissionData.push({
-    action: 'MANAGE',
-    subject: 'ALL',
-    description: 'Super-admin wildcard — grants every permission',
-  });
-
+  const permissionData = buildPermissionCatalog();
   await prisma.permissions.createMany({ data: permissionData });
 
   const allPerms = await prisma.permissions.findMany();
@@ -298,74 +279,28 @@ async function main() {
     permMap[`${p.action}:${p.subject}`] = p.id;
   }
 
-  // ── System roles ──
-  const adminRole = await prisma.roles.create({
-    data: { name: 'ADMIN', description: 'Administrador del sistema', isSystem: true },
-  });
-  const doctorRole = await prisma.roles.create({
-    data: { name: 'DOCTOR', description: 'Médico', isSystem: true },
-  });
-  const receptionistRole = await prisma.roles.create({
-    data: { name: 'RECEPTIONIST', description: 'Recepcionista', isSystem: true },
-  });
-  const patientRole = await prisma.roles.create({
-    data: { name: 'PATIENT', description: 'Paciente', isSystem: true },
-  });
+  // ── System roles (mismo orden y nombres que la política declarativa) ──
+  const roleIdMap: Record<string, number> = {};
+  for (const roleName of SYSTEM_ROLE_ORDER) {
+    const role = await prisma.roles.create({
+      data: {
+        name: roleName,
+        description: SYSTEM_ROLE_DESCRIPTIONS[roleName],
+        isSystem: true,
+      },
+    });
+    roleIdMap[roleName] = role.id;
+  }
 
-  // ── Role → Permission mappings ──
-  const rolePermMap: Record<string, string[]> = {
-    ADMIN: ['MANAGE:ALL'],
-    DOCTOR: [
-      'READ:APPOINTMENTS', 'CREATE:APPOINTMENTS', 'UPDATE:APPOINTMENTS',
-      'READ:PATIENTS',
-      'CREATE:CLINICAL_NOTES', 'READ:CLINICAL_NOTES',
-      'CREATE:PRESCRIPTIONS', 'READ:PRESCRIPTIONS',
-      'READ:MEDICAL_HISTORY', 'CREATE:MEDICAL_HISTORY', 'UPDATE:MEDICAL_HISTORY',
-      'READ:SCHEDULES',
-      'READ:AVAILABILITY',
-      'READ:SCHEDULE_BLOCKS',
-      'READ:NOTIFICATIONS', 'UPDATE:NOTIFICATIONS',
-      'READ:PAYMENTS',
-    ],
-    RECEPTIONIST: [
-      'READ:APPOINTMENTS', 'CREATE:APPOINTMENTS', 'UPDATE:APPOINTMENTS',
-      'READ:PATIENTS', 'CREATE:PATIENTS', 'UPDATE:PATIENTS',
-      'READ:DOCTORS',
-      'READ:SCHEDULES', 'CREATE:SCHEDULES',
-      'READ:AVAILABILITY', 'CREATE:AVAILABILITY', 'UPDATE:AVAILABILITY', 'DELETE:AVAILABILITY',
-      'READ:SCHEDULE_BLOCKS', 'CREATE:SCHEDULE_BLOCKS', 'UPDATE:SCHEDULE_BLOCKS', 'DELETE:SCHEDULE_BLOCKS',
-      'READ:HOLIDAYS', 'CREATE:HOLIDAYS', 'UPDATE:HOLIDAYS', 'DELETE:HOLIDAYS',
-      'READ:NOTIFICATIONS', 'CREATE:NOTIFICATIONS', 'UPDATE:NOTIFICATIONS',
-      'READ:REPORTS',
-    ],
-    PATIENT: [
-      'READ:APPOINTMENTS', 'CREATE:APPOINTMENTS',
-      'READ:CLINICS',
-      'READ:CATEGORIES',
-      'READ:SPECIALTIES',
-      'READ:DOCTORS',
-      'READ:SCHEDULES',
-      'READ:PATIENTS',
-      'READ:CLINICAL_NOTES',
-      'READ:PRESCRIPTIONS',
-      'READ:MEDICAL_HISTORY',
-      'READ:NOTIFICATIONS', 'UPDATE:NOTIFICATIONS',
-    ],
-  };
-
-  const roleIdMap: Record<string, number> = {
-    ADMIN: adminRole.id,
-    DOCTOR: doctorRole.id,
-    RECEPTIONIST: receptionistRole.id,
-    PATIENT: patientRole.id,
-  };
-
+  // ── Role → Permission mappings (declarados en ROLE_PERMISSIONS) ──
   const rpData: { roleId: number; permissionId: number }[] = [];
-  for (const [roleName, perms] of Object.entries(rolePermMap)) {
-    for (const perm of perms) {
-      const permId = permMap[perm];
+  for (const [roleName, permKeys] of Object.entries(ROLE_PERMISSIONS)) {
+    const roleId = roleIdMap[roleName];
+    if (!roleId) continue; // SUPER_ADMIN no se siembra como usuario demo, pero puede existir en la política
+    for (const key of permKeys) {
+      const permId = permMap[key];
       if (permId) {
-        rpData.push({ roleId: roleIdMap[roleName]!, permissionId: permId });
+        rpData.push({ roleId, permissionId: permId });
       }
     }
   }
@@ -491,7 +426,8 @@ async function main() {
     data: {
       profileId: doctor1Profile.id,
       licenseNumber: '54321',
-      resume: 'Cardiólogo con 15 años de experiencia. Subespecialidad en ecocardiografía e insuficiencia cardíaca.',
+      resume:
+        'Cardiólogo con 15 años de experiencia. Subespecialidad en ecocardiografía e insuficiencia cardíaca.',
       maxOverbookPerDay: 2,
       clinicId: clinicLima.id,
       specialties: {
@@ -535,7 +471,8 @@ async function main() {
     data: {
       profileId: doctor2Profile.id,
       licenseNumber: '67890',
-      resume: 'Dermatóloga especialista en dermatología clínica y estética. También brinda consultas de medicina general.',
+      resume:
+        'Dermatóloga especialista en dermatología clínica y estética. También brinda consultas de medicina general.',
       maxOverbookPerDay: 1,
       clinicId: clinicLima.id,
       specialties: {
@@ -820,11 +757,46 @@ async function main() {
   // Configuración de disponibilidad por doctor (espejo de section 5)
   // days: días JS (0=Dom, 1=Lun, 2=Mar, 3=Mié, 4=Jue, 5=Vie, 6=Sáb)
   const scheduleConfigs = [
-    { doctor: doctor1, specialty: specCardioGeneral,   clinic: clinicLima,     days: [1,2,3,4,5], hFrom: 9,  hTo: 13 },
-    { doctor: doctor1, specialty: specEcocardiografia, clinic: clinicLima,     days: [2,4],       hFrom: 15, hTo: 18 },
-    { doctor: doctor2, specialty: specDermaClinica,    clinic: clinicLima,     days: [1,3,5],     hFrom: 8,  hTo: 12 },
-    { doctor: doctor2, specialty: specConsultaGeneral, clinic: clinicLima,     days: [4],         hFrom: 8,  hTo: 14 },
-    { doctor: doctor3, specialty: specConsultaAQP,     clinic: clinicArequipa, days: [1,2,3,4,5], hFrom: 8,  hTo: 16 },
+    {
+      doctor: doctor1,
+      specialty: specCardioGeneral,
+      clinic: clinicLima,
+      days: [1, 2, 3, 4, 5],
+      hFrom: 9,
+      hTo: 13,
+    },
+    {
+      doctor: doctor1,
+      specialty: specEcocardiografia,
+      clinic: clinicLima,
+      days: [2, 4],
+      hFrom: 15,
+      hTo: 18,
+    },
+    {
+      doctor: doctor2,
+      specialty: specDermaClinica,
+      clinic: clinicLima,
+      days: [1, 3, 5],
+      hFrom: 8,
+      hTo: 12,
+    },
+    {
+      doctor: doctor2,
+      specialty: specConsultaGeneral,
+      clinic: clinicLima,
+      days: [4],
+      hFrom: 8,
+      hTo: 14,
+    },
+    {
+      doctor: doctor3,
+      specialty: specConsultaAQP,
+      clinic: clinicArequipa,
+      days: [1, 2, 3, 4, 5],
+      hFrom: 8,
+      hTo: 16,
+    },
   ];
 
   // key: `${doctorId}-${specialtyId}-${offset}` → schedule row + date
@@ -845,26 +817,35 @@ async function main() {
           clinicId: cfg.clinic.id,
         },
       });
-      schedMap.set(`${cfg.doctor.id}-${cfg.specialty.id}-${offset}`, { id: sched.id, date });
+      schedMap.set(`${cfg.doctor.id}-${cfg.specialty.id}-${offset}`, {
+        id: sched.id,
+        date,
+      });
     }
   }
 
   // Helper: obtiene el schedule de un doctor/especialidad en un offset dado,
   // o el primer día disponible desde ese offset si cae en fin de semana.
-  function pickSchedule(doctorId: number, specialtyId: number, startOffset: number) {
+  function pickSchedule(
+    doctorId: number,
+    specialtyId: number,
+    startOffset: number,
+  ) {
     for (let o = startOffset; o <= 30; o++) {
       const s = schedMap.get(`${doctorId}-${specialtyId}-${o}`);
       if (s) return s;
     }
-    throw new Error(`No hay schedule para doctor ${doctorId} / specialty ${specialtyId} desde offset ${startOffset}`);
+    throw new Error(
+      `No hay schedule para doctor ${doctorId} / specialty ${specialtyId} desde offset ${startOffset}`,
+    );
   }
 
   // Referencias para las citas demo (section 8)
-  const schedule1         = pickSchedule(doctor1.id, specCardioGeneral.id,   0);
-  const schedule1Tomorrow = pickSchedule(doctor1.id, specCardioGeneral.id,   1);
-  const schedule2         = pickSchedule(doctor2.id, specDermaClinica.id,    0);
+  const schedule1 = pickSchedule(doctor1.id, specCardioGeneral.id, 0);
+  const schedule1Tomorrow = pickSchedule(doctor1.id, specCardioGeneral.id, 1);
+  const schedule2 = pickSchedule(doctor2.id, specDermaClinica.id, 0);
   const schedule2DayAfter = pickSchedule(doctor2.id, specConsultaGeneral.id, 2);
-  const schedule3         = pickSchedule(doctor3.id, specConsultaAQP.id,     1);
+  const schedule3 = pickSchedule(doctor3.id, specConsultaAQP.id, 1);
 
   // ════════════════════════════════════════════════════
   // 8. APPOINTMENTS
@@ -973,7 +954,8 @@ async function main() {
   await prisma.clinicalNotes.create({
     data: {
       appointmentId: appt1.id,
-      summary: 'Paciente masculino de 40 años con antecedentes de HTA. PA: 130/85 mmHg. Frecuencia cardíaca: 72 lpm. Ritmo sinusal normal en auscultación.',
+      summary:
+        'Paciente masculino de 40 años con antecedentes de HTA. PA: 130/85 mmHg. Frecuencia cardíaca: 72 lpm. Ritmo sinusal normal en auscultación.',
       plan: 'Continuar con Losartán 50mg/día. Control en 3 meses con EKG. Recomendación de dieta hiposódica y ejercicio aeróbico 30 min/día.',
       diagnosis: 'I10 - Hipertensión esencial (primaria), controlada',
     },
@@ -987,7 +969,8 @@ async function main() {
   const prescription1 = await prisma.prescriptions.create({
     data: {
       appointmentId: appt1.id,
-      instructions: 'Tomar los medicamentos con agua. No suspender el tratamiento sin consulta médica. Evitar el consumo excesivo de sal.',
+      instructions:
+        'Tomar los medicamentos con agua. No suspender el tratamiento sin consulta médica. Evitar el consumo excesivo de sal.',
       validUntil: daysFromNow(90),
       items: {
         create: [
@@ -1043,7 +1026,8 @@ async function main() {
       doctorId: doctor1.id,
       patientId: patient1.id,
       rating: 5,
-      comment: 'Excelente doctor, muy atento y profesional. Explicó todo con detalle y paciencia.',
+      comment:
+        'Excelente doctor, muy atento y profesional. Explicó todo con detalle y paciencia.',
     },
   });
 
@@ -1077,7 +1061,8 @@ async function main() {
     data: {
       patientId: patient1.id,
       condition: 'Hipertensión Arterial',
-      description: 'Diagnosticada hace 3 años. Tratamiento con Losartán 50mg. Buen control con PA promedio 130/85.',
+      description:
+        'Diagnosticada hace 3 años. Tratamiento con Losartán 50mg. Buen control con PA promedio 130/85.',
       diagnosedDate: new Date('2023-03-10'),
       status: MedicalHistoryStatus.CHRONIC,
       notes: 'Antecedentes familiares: padre con HTA y ACV.',
@@ -1088,7 +1073,8 @@ async function main() {
     data: {
       patientId: patient2.id,
       condition: 'Asma Bronquial Leve',
-      description: 'Asma intermitente desde la infancia. Usa salbutamol de rescate ocasionalmente.',
+      description:
+        'Asma intermitente desde la infancia. Usa salbutamol de rescate ocasionalmente.',
       diagnosedDate: new Date('2005-08-20'),
       status: MedicalHistoryStatus.ACTIVE,
     },
@@ -1098,7 +1084,8 @@ async function main() {
     data: {
       patientId: patient3.id,
       condition: 'Diabetes Mellitus Tipo 2',
-      description: 'Diagnosticada hace 5 años. Tratamiento con Metformina 850mg. HbA1c último control: 7.2%.',
+      description:
+        'Diagnosticada hace 5 años. Tratamiento con Metformina 850mg. HbA1c último control: 7.2%.',
       diagnosedDate: new Date('2021-01-15'),
       status: MedicalHistoryStatus.CHRONIC,
       notes: 'Requiere control semestral de HbA1c y fondo de ojo anual.',
@@ -1126,7 +1113,8 @@ async function main() {
       type: NotificationType.APPOINTMENT_CONFIRMED,
       channel: NotificationChannel.IN_APP,
       title: 'Cita confirmada',
-      message: 'Tu cita con el Dr. Roberto Ramírez (Cardiología General) para mañana a las 9:00 AM ha sido confirmada.',
+      message:
+        'Tu cita con el Dr. Roberto Ramírez (Cardiología General) para mañana a las 9:00 AM ha sido confirmada.',
       isRead: false,
     },
   });
@@ -1137,7 +1125,8 @@ async function main() {
       type: NotificationType.APPOINTMENT_CONFIRMED,
       channel: NotificationChannel.IN_APP,
       title: 'Cita confirmada',
-      message: 'Tu cita con la Dra. Lucía Flores (Dermatología Clínica) para hoy a las 10:00 AM ha sido confirmada.',
+      message:
+        'Tu cita con la Dra. Lucía Flores (Dermatología Clínica) para hoy a las 10:00 AM ha sido confirmada.',
       isRead: true,
     },
   });
@@ -1148,7 +1137,8 @@ async function main() {
       type: NotificationType.PRESCRIPTION_CREATED,
       channel: NotificationChannel.IN_APP,
       title: 'Nueva receta médica',
-      message: 'El Dr. Roberto Ramírez ha emitido una receta médica para tu cita de Cardiología General.',
+      message:
+        'El Dr. Roberto Ramírez ha emitido una receta médica para tu cita de Cardiología General.',
       isRead: false,
     },
   });
@@ -1159,7 +1149,8 @@ async function main() {
       type: NotificationType.APPOINTMENT_CANCELLED,
       channel: NotificationChannel.IN_APP,
       title: 'Cita cancelada',
-      message: 'Tu cita con la Dra. Lucía Flores (Dermatología Clínica) ha sido cancelada.',
+      message:
+        'Tu cita con la Dra. Lucía Flores (Dermatología Clínica) ha sido cancelada.',
       isRead: true,
     },
   });
@@ -1170,7 +1161,8 @@ async function main() {
       type: NotificationType.NEW_APPOINTMENT,
       channel: NotificationChannel.IN_APP,
       title: 'Nueva cita agendada',
-      message: 'Se ha agendado una cita con el Dr. Fernando Chávez (Consulta General) para mañana a las 10:00 AM en la sede Arequipa.',
+      message:
+        'Se ha agendado una cita con el Dr. Fernando Chávez (Consulta General) para mañana a las 10:00 AM en la sede Arequipa.',
       isRead: false,
     },
   });
@@ -1189,7 +1181,11 @@ async function main() {
     { name: 'Día del Trabajo', date: `${year}-05-01`, isRecurring: true },
     { name: 'San Pedro y San Pablo', date: `${year}-06-29`, isRecurring: true },
     { name: 'Fiestas Patrias', date: `${year}-07-28`, isRecurring: true },
-    { name: 'Fiestas Patrias (2do día)', date: `${year}-07-29`, isRecurring: true },
+    {
+      name: 'Fiestas Patrias (2do día)',
+      date: `${year}-07-29`,
+      isRecurring: true,
+    },
     { name: 'Santa Rosa de Lima', date: `${year}-08-30`, isRecurring: true },
     { name: 'Combate de Angamos', date: `${year}-10-08`, isRecurring: true },
     { name: 'Todos los Santos', date: `${year}-11-01`, isRecurring: true },
@@ -1218,21 +1214,31 @@ async function main() {
   console.log('   • 2 clínicas (Lima, Arequipa)');
   console.log('   • 5 categorías');
   console.log('   • 6 especialidades');
-  console.log(`   • 9 usuarios (1 super-admin, 1 admin clínica, 1 recepcionista, 3 doctores, 3 pacientes, contraseña: ${PASSWORD})`);
+  console.log(
+    `   • 9 usuarios (1 super-admin, 1 admin clínica, 1 recepcionista, 3 doctores, 3 pacientes, contraseña: ${PASSWORD})`,
+  );
   console.log('   • 3 doctores con disponibilidad L-V');
   console.log('   • 5 schedules (hoy, mañana, pasado)');
-  console.log('   • 6 citas (1 completada, 2 confirmadas, 1 pendiente, 1 cancelada, 1 arequipa)');
+  console.log(
+    '   • 6 citas (1 completada, 2 confirmadas, 1 pendiente, 1 cancelada, 1 arequipa)',
+  );
   console.log('   • 1 receta con 3 medicamentos');
   console.log('   • 4 historiales médicos');
   console.log('   • 5 notificaciones');
-  console.log('   • 12 feriados Perú ' + year + ' (globales, visibles para todas las clínicas)');
+  console.log(
+    '   • 12 feriados Perú ' +
+      year +
+      ' (globales, visibles para todas las clínicas)',
+  );
   if (process.env.NODE_ENV !== 'production') {
     console.log('\n🔑 Credenciales de prueba:');
     console.log(`   admin@mediclick.com / ${PASSWORD} (Super Admin)`);
     console.log(`   adminlima@mediclick.com / ${PASSWORD} (Admin Lima)`);
     console.log(`   recepcion@mediclick.com / ${PASSWORD} (Recepcionista)`);
     console.log(`   ramirez@mediclick.com / ${PASSWORD} (Doctor - Cardiólogo)`);
-    console.log(`   flores@mediclick.com / ${PASSWORD} (Doctora - Dermatóloga)`);
+    console.log(
+      `   flores@mediclick.com / ${PASSWORD} (Doctora - Dermatóloga)`,
+    );
     console.log(`   chavez@mediclick.com / ${PASSWORD} (Doctor - Arequipa)`);
     console.log(`   juan@gmail.com / ${PASSWORD} (Paciente)`);
     console.log(`   maria@gmail.com / ${PASSWORD} (Paciente)`);
