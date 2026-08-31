@@ -1,6 +1,6 @@
 # SDD — Endurecimiento de integridad, seguridad y operación de MediClick
 
-- **Estado:** Propuesto
+- **Estado:** P0 implementado; P1/P2 propuestos
 - **Fecha:** 2026-08-30
 - **Alcance:** backend, persistencia, workers, despliegue y gates de CI del flujo de citas
 - **Prioridad:** corrección de P0 antes de ampliar funcionalidad

@@ -97,14 +97,20 @@ Los estados financieros son `PENDING`, `PAID`, `PARTIAL`, `REFUNDED`, `FAILED` y
 
 - Pacientes y administradores globales pueden operar entre sedes según sus permisos.
 - Personal con sede solo opera sobre médicos y datos de esa sede.
+- Un paciente solo puede consultar pagos, cancelar o reagendar sus propias citas; las transiciones asistenciales quedan reservadas al personal autorizado.
+- Un médico solo opera citas asignadas a su propio perfil. Otro personal de sede solo opera citas de esa sede.
+- El expediente asistencial expone al paciente su propio historial, al personal únicamente datos de su sede y al médico únicamente pacientes con citas asignadas a él en esa sede.
 - Datos de catálogo globales son visibles junto con los específicos de la sede; datos asistenciales estrictos se filtran a la sede.
 - Dentro de callbacks de transacción no existe filtrado automático por sede: cada lectura y escritura sensible debe llevar el alcance explícito.
 
 ### Pago y cancelación
 
 - El resultado publicado por el proveedor se vuelve a consultar antes de aceptarse.
+- El webhook rechaza firmas inválidas y devuelve error reintentable si falla la conciliación; solo responde éxito después de persistirla.
 - `gatewayId` identifica de forma idempotente un pago ya procesado.
+- Pago y cita se concilian en una transacción serializable: un pago aprobado solo confirma una cita todavía pendiente y nunca revive una cita cancelada.
 - Una reserva en línea ocupa capacidad solo hasta su plazo de pago.
+- La expiración reclama con una única escritura condicional solo reservas aún pendientes y devuelve exactamente los cupos que consiguió liberar.
 - Una cancelación manual de una cita pagada queda marcada para reembolso manual.
 - Si el paciente cancela una cita pagada con menos de 24 horas, la penalización actual es 50 % del precio de la especialidad y también requiere conciliación manual.
 
