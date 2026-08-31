@@ -1,5 +1,4 @@
 import { Injectable, ConflictException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type {
@@ -18,6 +17,10 @@ import {
   todayStartInTimezone,
 } from '../../../../shared/utils/date-time.utils.js';
 import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
+import {
+  buildDoctorOverlapWhere,
+  buildPatientOverlapWhere,
+} from './appointment-overlap.utils.js';
 
 const appointmentInclude = {
   patient: {
@@ -236,59 +239,6 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     return count > 0;
   }
 
-  /**
-   * Construye el filtro de superposición a nivel de DOCTOR + FECHA (no de scheduleId).
-   *
-   * Como startTime/endTime se almacenan como hora-only (base 1970-01-01), el overlap
-   * de horas solo es válido si se acota al mismo doctor y al mismo día. Filtrar por
-   * scheduleId dejaba pasar el double-booking cuando un doctor tenía dos schedules
-   * solapados (p. ej. tras una regeneración parcial o entre especialidades distintas).
-   */
-  private buildDoctorOverlapWhere(
-    doctorId: number,
-    scheduleDate: Date,
-    startTime: Date,
-    endTime: Date,
-    excludeId?: number,
-  ): Prisma.AppointmentsWhereInput {
-    const { start, end } = utcDayRange(scheduleDate);
-    return {
-      deleted: false,
-      status: { notIn: ['CANCELLED', 'NO_SHOW'] },
-      // Overlap: A.start < B.end AND A.end > B.start
-      startTime: { lt: endTime },
-      endTime: { gt: startTime },
-      schedule: {
-        doctorId,
-        scheduleDate: { gte: start, lt: end },
-      },
-      ...(excludeId && { id: { not: excludeId } }),
-    };
-  }
-
-  /**
-   * Overlap de agenda del PACIENTE: citas activas del mismo paciente en la
-   * misma fecha que se superpongan en horario (con cualquier doctor).
-   */
-  private buildPatientOverlapWhere(
-    patientId: number,
-    scheduleDate: Date,
-    startTime: Date,
-    endTime: Date,
-    excludeId?: number,
-  ): Prisma.AppointmentsWhereInput {
-    const { start, end } = utcDayRange(scheduleDate);
-    return {
-      deleted: false,
-      patientId,
-      status: { notIn: ['CANCELLED', 'NO_SHOW'] },
-      startTime: { lt: endTime },
-      endTime: { gt: startTime },
-      schedule: { scheduleDate: { gte: start, lt: end } },
-      ...(excludeId && { id: { not: excludeId } }),
-    };
-  }
-
   async hasOverlappingAppointment(
     scheduleId: number,
     startTime: Date,
@@ -302,7 +252,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     if (!schedule) return false;
 
     const count = await this.prisma.appointments.count({
-      where: this.buildDoctorOverlapWhere(
+      where: buildDoctorOverlapWhere(
         schedule.doctorId,
         schedule.scheduleDate,
         startTime,
@@ -415,7 +365,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         }
 
         const overlap = await tx.appointments.count({
-          where: this.buildDoctorOverlapWhere(
+          where: buildDoctorOverlapWhere(
             schedule.doctorId,
             schedule.scheduleDate,
             startTime,
@@ -430,7 +380,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         }
 
         const patientOverlap = await tx.appointments.count({
-          where: this.buildPatientOverlapWhere(
+          where: buildPatientOverlapWhere(
             data.patientId,
             schedule.scheduleDate,
             startTime,
@@ -485,7 +435,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         }
 
         const overlap = await tx.appointments.count({
-          where: this.buildDoctorOverlapWhere(
+          where: buildDoctorOverlapWhere(
             schedule.doctorId,
             schedule.scheduleDate,
             startTime,
@@ -509,7 +459,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         }
 
         const patientOverlap = await tx.appointments.count({
-          where: this.buildPatientOverlapWhere(
+          where: buildPatientOverlapWhere(
             current.patientId,
             schedule.scheduleDate,
             startTime,
@@ -604,7 +554,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         }
 
         const overlap = await tx.appointments.count({
-          where: this.buildDoctorOverlapWhere(
+          where: buildDoctorOverlapWhere(
             doctorId,
             date,
             data.startTime,
@@ -619,7 +569,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         }
 
         const patientOverlap = await tx.appointments.count({
-          where: this.buildPatientOverlapWhere(
+          where: buildPatientOverlapWhere(
             data.patientId,
             date,
             data.startTime,

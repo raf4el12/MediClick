@@ -4,6 +4,19 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { AcceptOfferUseCase } from './accept-offer.use-case.js';
+import { AcceptOfferAtomicallyError } from '../../domain/repositories/waitlist-offer.repository.js';
+
+/**
+ * SDD-013: el use-case ya no orquesta claim → create appointment → update
+ * amount/pendingUntil → update entry → link offer como pasos separados. Todo
+ * eso vive en `acceptOfferAtomically` (repositorio, dentro de una única
+ * transacción serializable). Estos tests verifican que el use-case: resuelve
+ * ownership, delega la operación atómica con los parámetros correctos, y
+ * traduce cada motivo de fallo (`OFFER_NOT_CLAIMABLE` / `SLOT_OVERLAP`) a la
+ * excepción HTTP correspondiente — incluyendo la liberación del lock solo en
+ * el caso de overlap (la entrada nunca llegó a cerrarse porque la transacción
+ * completa hizo rollback).
+ */
 
 function buildOffer(overrides: any = {}) {
   return {
@@ -26,16 +39,20 @@ function buildOffer(overrides: any = {}) {
   };
 }
 
-function buildAppointment(overrides: any = {}) {
+function buildAcceptedOffer(overrides: any = {}) {
   return {
-    id: 5000,
-    patientId: 42,
-    scheduleId: 100,
-    startTime: new Date(Date.UTC(2030, 0, 1, 9, 0)),
-    endTime: new Date(Date.UTC(2030, 0, 1, 9, 30)),
-    status: 'PENDING',
-    paymentStatus: 'PENDING',
-    schedule: { doctor: { profile: { name: 'Ana', lastName: 'García' } } },
+    offer: buildOffer(),
+    appointment: {
+      id: 5000,
+      scheduleId: 100,
+      startTime: new Date(Date.UTC(2030, 0, 1, 9, 0)),
+      endTime: new Date(Date.UTC(2030, 0, 1, 9, 30)),
+      status: 'PENDING',
+      paymentStatus: 'PENDING',
+      amount: 120,
+      pendingUntil: new Date(Date.now() + 15 * 60 * 1000),
+      schedule: { doctor: { profile: { name: 'Ana', lastName: 'García' } } },
+    },
     ...overrides,
   };
 }
@@ -43,37 +60,27 @@ function buildAppointment(overrides: any = {}) {
 describe('AcceptOfferUseCase', () => {
   let useCase: AcceptOfferUseCase;
   let offerRepo: any;
-  let entryRepo: any;
   let patientRepo: any;
-  let appointmentRepo: any;
   let scheduleRepo: any;
   let lock: any;
-  let prisma: any;
   let eventEmitter: any;
 
   beforeEach(() => {
     offerRepo = {
       findById: jest.fn(),
-      claimPending: jest.fn(),
-      setCreatedAppointment: jest.fn(),
+      acceptOfferAtomically: jest.fn(),
     };
-    entryRepo = { update: jest.fn() };
     patientRepo = { findByUserId: jest.fn() };
-    appointmentRepo = { createWithOverlapCheck: jest.fn() };
     scheduleRepo = {
       findById: jest.fn().mockResolvedValue({ specialty: { price: 120 } }),
     };
     lock = { release: jest.fn() };
-    prisma = { appointments: { update: jest.fn() } };
     eventEmitter = { emit: jest.fn() };
     useCase = new AcceptOfferUseCase(
       offerRepo,
-      entryRepo,
       patientRepo,
-      appointmentRepo,
       scheduleRepo,
       lock,
-      prisma,
       eventEmitter,
     );
   });
@@ -81,6 +88,7 @@ describe('AcceptOfferUseCase', () => {
   it('lanza NotFound si la oferta no existe', async () => {
     offerRepo.findById.mockResolvedValue(null);
     await expect(useCase.execute(900, 777)).rejects.toThrow(NotFoundException);
+    expect(offerRepo.acceptOfferAtomically).not.toHaveBeenCalled();
   });
 
   it('lanza Forbidden si la oferta no pertenece al paciente', async () => {
@@ -88,37 +96,41 @@ describe('AcceptOfferUseCase', () => {
     patientRepo.findByUserId.mockResolvedValue({ id: 99 }); // dueño es 42
 
     await expect(useCase.execute(900, 777)).rejects.toThrow(ForbiddenException);
-    expect(offerRepo.claimPending).not.toHaveBeenCalled();
+    expect(offerRepo.acceptOfferAtomically).not.toHaveBeenCalled();
   });
 
-  it('lanza Conflict si el claim atómico falla (oferta ya tomada/expirada)', async () => {
+  it('lanza Conflict si la operación atómica falla por OFFER_NOT_CLAIMABLE (ya tomada/expirada)', async () => {
     offerRepo.findById.mockResolvedValue(buildOffer());
     patientRepo.findByUserId.mockResolvedValue({ id: 42 });
-    offerRepo.claimPending.mockResolvedValue(null);
+    offerRepo.acceptOfferAtomically.mockRejectedValue(
+      new AcceptOfferAtomicallyError('OFFER_NOT_CLAIMABLE'),
+    );
 
     await expect(useCase.execute(900, 777)).rejects.toThrow(ConflictException);
-    expect(appointmentRepo.createWithOverlapCheck).not.toHaveBeenCalled();
+    // No hay lock que liberar: la oferta nunca fue reclamada por esta llamada.
+    expect(lock.release).not.toHaveBeenCalled();
   });
 
-  it('happy path: crea la cita, cierra la entrada, enlaza la cita y libera el lock', async () => {
+  it('happy path: delega la operación atómica con offerId/patientId/amount/pendingUntil y libera el lock', async () => {
     const offer = buildOffer();
     offerRepo.findById.mockResolvedValue(offer);
     patientRepo.findByUserId.mockResolvedValue({ id: 42 });
-    offerRepo.claimPending.mockResolvedValue(offer);
-    appointmentRepo.createWithOverlapCheck.mockResolvedValue(
-      buildAppointment(),
-    );
+    offerRepo.acceptOfferAtomically.mockResolvedValue(buildAcceptedOffer());
 
     const result = await useCase.execute(900, 777);
 
+    expect(offerRepo.acceptOfferAtomically).toHaveBeenCalledWith(
+      expect.objectContaining({
+        offerId: 777,
+        patientId: 42,
+        amount: 120,
+        now: expect.any(Date),
+        pendingUntil: expect.any(Date),
+      }),
+    );
     expect(result.appointmentId).toBe(5000);
     expect(result.amount).toBe(120);
     expect(result.pendingUntil).toBeInstanceOf(Date);
-    expect(entryRepo.update).toHaveBeenCalledWith(
-      55,
-      expect.objectContaining({ status: 'FULFILLED' }),
-    );
-    expect(offerRepo.setCreatedAppointment).toHaveBeenCalledWith(777, 5000);
     expect(lock.release).toHaveBeenCalledWith(
       offer.scheduleId,
       offer.startTime,
@@ -129,13 +141,12 @@ describe('AcceptOfferUseCase', () => {
     );
   });
 
-  it('si el slot fue tomado entre oferta y aceptación, libera el lock y NO cierra la entrada', async () => {
+  it('si el slot fue tomado entre oferta y aceptación (SLOT_OVERLAP), libera el lock y devuelve Conflict', async () => {
     const offer = buildOffer();
     offerRepo.findById.mockResolvedValue(offer);
     patientRepo.findByUserId.mockResolvedValue({ id: 42 });
-    offerRepo.claimPending.mockResolvedValue(offer);
-    appointmentRepo.createWithOverlapCheck.mockRejectedValue(
-      new ConflictException('overlap'),
+    offerRepo.acceptOfferAtomically.mockRejectedValue(
+      new AcceptOfferAtomicallyError('SLOT_OVERLAP'),
     );
 
     await expect(useCase.execute(900, 777)).rejects.toThrow(ConflictException);
@@ -143,6 +154,16 @@ describe('AcceptOfferUseCase', () => {
       offer.scheduleId,
       offer.startTime,
     );
-    expect(entryRepo.update).not.toHaveBeenCalled(); // el paciente sigue en cola
+  });
+
+  it('propaga errores inesperados sin traducirlos a Conflict', async () => {
+    const offer = buildOffer();
+    offerRepo.findById.mockResolvedValue(offer);
+    patientRepo.findByUserId.mockResolvedValue({ id: 42 });
+    const unexpected = new Error('db down');
+    offerRepo.acceptOfferAtomically.mockRejectedValue(unexpected);
+
+    await expect(useCase.execute(900, 777)).rejects.toThrow('db down');
+    expect(lock.release).not.toHaveBeenCalled();
   });
 });
