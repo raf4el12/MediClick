@@ -1,15 +1,15 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
 import { OnEvent, EventEmitter2 } from '@nestjs/event-emitter';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
+import type { IHolidayRepository } from '../../../holidays/domain/repositories/holiday.repository.js';
+import type { IScheduleBlockRepository } from '../../../schedule-blocks/domain/repositories/schedule-block.repository.js';
 import type { AppointmentWithRelations } from '../../domain/interfaces/appointment-data.interface.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
-import { timeRangesOverlap } from '../../../../shared/utils/date-time.utils.js';
 import {
-  SCHEDULE_BLOCKED_EVENT,
-  HOLIDAY_CREATED_EVENT,
+  AVAILABILITY_RESTRICTION_CHANGED_EVENT,
   SLOT_RELEASED_EVENT,
-  type ScheduleBlockedEvent,
-  type HolidayCreatedEvent,
+  type AvailabilityRestrictionChangedEvent,
+  type AvailabilityRestrictionRange,
 } from '../../../../shared/events/availability-events.interface.js';
 import {
   buildAppointmentCancelledEvent,
@@ -17,9 +17,9 @@ import {
 } from '../services/appointment-event.builder.js';
 
 /**
- * Cancela las citas ya reservadas que quedan invalidadas cuando se crea un
- * bloqueo de horario o un feriado, y reofrece cada slot liberado a la lista de
- * espera (vía `appointment.slot_released`).
+ * Cancela las citas ya reservadas que quedan invalidadas después de crear o
+ * actualizar una restricción de disponibilidad, y reofrece cada slot liberado
+ * a la lista de espera (vía `appointment.slot_released`).
  *
  * Vive en el módulo appointments (tiene el repo) y reacciona por eventos para no
  * crear un ciclo de módulos con schedule-blocks/holidays.
@@ -31,48 +31,116 @@ export class AvailabilityChangeListener {
   constructor(
     @Inject('IAppointmentRepository')
     private readonly appointmentRepository: IAppointmentRepository,
+    @Inject('IHolidayRepository')
+    private readonly holidayRepository: IHolidayRepository,
+    @Inject('IScheduleBlockRepository')
+    private readonly scheduleBlockRepository: IScheduleBlockRepository,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  @OnEvent(SCHEDULE_BLOCKED_EVENT, { async: true })
-  async handleScheduleBlocked(event: ScheduleBlockedEvent): Promise<void> {
-    const appointments =
-      await this.appointmentRepository.findActiveByDoctorAndDateRange(
-        event.doctorId,
-        event.startDate,
-        event.endDate,
+  @OnEvent(AVAILABILITY_RESTRICTION_CHANGED_EVENT, { async: true })
+  async handleAvailabilityRestrictionChanged(
+    event: AvailabilityRestrictionChangedEvent,
+  ): Promise<void> {
+    const range = this.unionRange(event.previousRange, event.currentRange);
+    if (!range) {
+      this.logger.warn(
+        `Cambio de restricción ${event.restrictionId} sin rango para evaluar`,
       );
+      return;
+    }
 
-    // FULL_DAY invalida todo; TIME_RANGE solo las citas que solapan la franja.
-    const affected =
-      event.type === 'TIME_RANGE' && event.timeFrom && event.timeTo
-        ? appointments.filter((a) =>
-            timeRangesOverlap(
-              a.startTime,
-              a.endTime,
-              event.timeFrom!,
-              event.timeTo!,
-            ),
-          )
-        : appointments;
+    if (event.restrictionType === 'HOLIDAY') {
+      await this.handleHolidayRestriction(event, range);
+      return;
+    }
 
-    await this.cancelAll(
-      affected,
-      event.reason
-        ? `Bloqueo de agenda: ${event.reason}`
-        : 'Bloqueo de agenda del doctor',
-    );
+    await this.handleScheduleBlockRestriction(event, range);
   }
 
-  @OnEvent(HOLIDAY_CREATED_EVENT, { async: true })
-  async handleHolidayCreated(event: HolidayCreatedEvent): Promise<void> {
+  private async handleHolidayRestriction(
+    event: AvailabilityRestrictionChangedEvent,
+    range: AvailabilityRestrictionRange,
+  ): Promise<void> {
     const appointments =
-      await this.appointmentRepository.findActiveByDateAndClinic(
-        event.date,
+      await this.appointmentRepository.findActiveByDateRangeAndClinic(
+        range.startDate,
+        range.endDate,
         event.clinicId,
       );
 
-    await this.cancelAll(appointments, `Feriado: ${event.name}`);
+    const affected: AppointmentWithRelations[] = [];
+    for (const appointment of appointments) {
+      const clinicId =
+        appointment.clinicId ?? appointment.schedule.doctor.clinic?.id;
+      if (
+        await this.holidayRepository.isHoliday(
+          appointment.schedule.scheduleDate,
+          clinicId,
+        )
+      ) {
+        affected.push(appointment);
+      }
+    }
+
+    await this.cancelAll(affected, 'Feriado vigente');
+  }
+
+  private async handleScheduleBlockRestriction(
+    event: AvailabilityRestrictionChangedEvent,
+    range: AvailabilityRestrictionRange,
+  ): Promise<void> {
+    if (event.doctorId === null) {
+      this.logger.warn(
+        `Bloqueo ${event.restrictionId} sin médico para evaluar`,
+      );
+      return;
+    }
+
+    const appointments =
+      await this.appointmentRepository.findActiveByDoctorAndDateRange(
+        event.doctorId,
+        range.startDate,
+        range.endDate,
+      );
+
+    const affected: AppointmentWithRelations[] = [];
+    for (const appointment of appointments) {
+      if (
+        await this.scheduleBlockRepository.isBlocked(
+          appointment.schedule.doctor.id,
+          appointment.schedule.scheduleDate,
+          appointment.startTime,
+          appointment.endTime,
+        )
+      ) {
+        affected.push(appointment);
+      }
+    }
+
+    await this.cancelAll(affected, 'Bloqueo de agenda vigente');
+  }
+
+  private unionRange(
+    previousRange: AvailabilityRestrictionRange | null,
+    currentRange: AvailabilityRestrictionRange | null,
+  ): AvailabilityRestrictionRange | null {
+    const ranges = [previousRange, currentRange].filter(
+      (range): range is AvailabilityRestrictionRange => range !== null,
+    );
+    if (ranges.length === 0) return null;
+
+    return {
+      startDate: ranges.reduce(
+        (earliest, range) =>
+          range.startDate < earliest ? range.startDate : earliest,
+        ranges[0].startDate,
+      ),
+      endDate: ranges.reduce(
+        (latest, range) => (range.endDate > latest ? range.endDate : latest),
+        ranges[0].endDate,
+      ),
+    };
   }
 
   /**

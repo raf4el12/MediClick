@@ -4,29 +4,28 @@
  * Los emiten los módulos `schedule-blocks` y `holidays`; los consume un listener
  * del módulo `appointments` que cancela las citas afectadas y reofrece el slot a
  * la lista de espera (vía `appointment.slot_released`). Se usan eventos para
- * evitar un ciclo de módulos: `appointments` ya importa `schedule-blocks`/`holidays`.
+ * evitar que los productores dependan del núcleo de citas.
  */
 
-export const SCHEDULE_BLOCKED_EVENT = 'schedule.blocked';
-export const HOLIDAY_CREATED_EVENT = 'holiday.created';
+export const AVAILABILITY_RESTRICTION_CHANGED_EVENT =
+  'availability.restriction_changed';
 
-export interface ScheduleBlockedEvent {
-  doctorId: number;
+export interface AvailabilityRestrictionRange {
   startDate: Date;
   endDate: Date;
-  /** FULL_DAY cancela todo el día; TIME_RANGE solo el rango horario. */
-  type: 'FULL_DAY' | 'TIME_RANGE';
-  /** Hora-only; presentes solo cuando type === 'TIME_RANGE'. */
-  timeFrom?: Date | null;
-  timeTo?: Date | null;
-  reason?: string | null;
 }
 
-export interface HolidayCreatedEvent {
-  date: Date;
+export interface AvailabilityRestrictionChangedEvent {
+  restrictionType: 'HOLIDAY' | 'SCHEDULE_BLOCK';
+  restrictionId: number;
   /** null = feriado global (afecta todas las sedes). */
   clinicId: number | null;
-  name: string;
+  /** null cuando la restricción afecta a una sede y no a un médico concreto. */
+  doctorId: number | null;
+  previousRange: AvailabilityRestrictionRange | null;
+  currentRange: AvailabilityRestrictionRange | null;
+  occurredAt: Date;
+  actorId: number;
 }
 
 /**

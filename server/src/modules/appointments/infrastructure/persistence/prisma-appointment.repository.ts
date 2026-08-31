@@ -357,11 +357,13 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     return rows.map((r) => this.mapToRelations(r));
   }
 
-  async findActiveByDateAndClinic(
-    date: Date,
+  async findActiveByDateRangeAndClinic(
+    dateFrom: Date,
+    dateTo: Date,
     clinicId?: number | null,
   ): Promise<AppointmentWithRelations[]> {
-    const { start, end } = utcDayRange(date);
+    const { start } = utcDayRange(dateFrom);
+    const { end } = utcDayRange(dateTo);
 
     const rows = await this.prisma.appointments.findMany({
       where: {

@@ -1,11 +1,12 @@
 import { AvailabilityChangeListener } from './availability-change.listener.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
+import type { IHolidayRepository } from '../../../holidays/domain/repositories/holiday.repository.js';
+import type { IScheduleBlockRepository } from '../../../schedule-blocks/domain/repositories/schedule-block.repository.js';
 import type { AppointmentWithRelations } from '../../domain/interfaces/appointment-data.interface.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
 import {
   SLOT_RELEASED_EVENT,
-  type ScheduleBlockedEvent,
-  type HolidayCreatedEvent,
+  type AvailabilityRestrictionChangedEvent,
 } from '../../../../shared/events/availability-events.interface.js';
 
 describe('AvailabilityChangeListener', () => {
@@ -13,8 +14,14 @@ describe('AvailabilityChangeListener', () => {
   let appointmentRepository: jest.Mocked<
     Pick<
       IAppointmentRepository,
-      'findActiveByDoctorAndDateRange' | 'findActiveByDateAndClinic' | 'update'
+      | 'findActiveByDoctorAndDateRange'
+      | 'findActiveByDateRangeAndClinic'
+      | 'update'
     >
+  >;
+  let holidayRepository: jest.Mocked<Pick<IHolidayRepository, 'isHoliday'>>;
+  let scheduleBlockRepository: jest.Mocked<
+    Pick<IScheduleBlockRepository, 'isBlocked'>
   >;
   let eventEmitter: { emit: jest.Mock };
 
@@ -58,17 +65,48 @@ describe('AvailabilityChangeListener', () => {
       doctor: {
         id: 3,
         profile: { name: 'Dr', lastName: 'House' },
-        clinic: { name: 'Clínica', timezone: 'America/Lima' },
+        clinic: { id: 7, name: 'Clínica', timezone: 'America/Lima' },
       },
       specialty: { id: 2, name: 'Medicina' },
     },
     ...overrides,
   });
 
+  const appointmentOn = (
+    id: number,
+    date: string,
+  ): AppointmentWithRelations => {
+    const appointment = buildAppointment({ id });
+    return {
+      ...appointment,
+      schedule: {
+        ...appointment.schedule,
+        scheduleDate: new Date(`${date}T00:00:00.000Z`),
+      },
+    };
+  };
+
+  const restrictionEvent = (
+    overrides: Partial<AvailabilityRestrictionChangedEvent> = {},
+  ): AvailabilityRestrictionChangedEvent => ({
+    restrictionType: 'SCHEDULE_BLOCK',
+    restrictionId: 1,
+    clinicId: 7,
+    doctorId: 3,
+    previousRange: null,
+    currentRange: {
+      startDate: new Date('2030-06-01T00:00:00.000Z'),
+      endDate: new Date('2030-06-01T00:00:00.000Z'),
+    },
+    occurredAt: new Date(),
+    actorId: 42,
+    ...overrides,
+  });
+
   beforeEach(() => {
     appointmentRepository = {
       findActiveByDoctorAndDateRange: jest.fn().mockResolvedValue([]),
-      findActiveByDateAndClinic: jest.fn().mockResolvedValue([]),
+      findActiveByDateRangeAndClinic: jest.fn().mockResolvedValue([]),
       update: jest
         .fn()
         .mockImplementation((id: number) =>
@@ -77,146 +115,140 @@ describe('AvailabilityChangeListener', () => {
           ),
         ),
     };
+    holidayRepository = { isHoliday: jest.fn().mockResolvedValue(false) };
+    scheduleBlockRepository = { isBlocked: jest.fn().mockResolvedValue(false) };
     eventEmitter = { emit: jest.fn() };
 
     listener = new AvailabilityChangeListener(
       appointmentRepository as any,
+      holidayRepository as any,
+      scheduleBlockRepository as any,
       eventEmitter as any,
     );
   });
 
-  const blockEvent = (
-    overrides: Partial<ScheduleBlockedEvent> = {},
-  ): ScheduleBlockedEvent => ({
-    doctorId: 3,
-    startDate: new Date('2030-06-01T00:00:00.000Z'),
-    endDate: new Date('2030-06-01T00:00:00.000Z'),
-    type: 'FULL_DAY',
-    timeFrom: null,
-    timeTo: null,
-    reason: 'Vacaciones',
-    ...overrides,
-  });
-
-  // ── schedule.blocked ──────────────────────────────────────────────────────
-
-  it('FULL_DAY: cancela todas las citas del doctor en el rango y reofrece el slot', async () => {
+  it('un bloqueo de día completo cancela sus citas aún bloqueadas y reofrece sus slots', async () => {
     appointmentRepository.findActiveByDoctorAndDateRange.mockResolvedValue([
       buildAppointment({ id: 100 }),
       buildAppointment({ id: 101 }),
     ]);
+    scheduleBlockRepository.isBlocked.mockResolvedValue(true);
 
-    await listener.handleScheduleBlocked(blockEvent());
+    await listener.handleAvailabilityRestrictionChanged(restrictionEvent());
 
     expect(appointmentRepository.update).toHaveBeenCalledTimes(2);
-    expect(appointmentRepository.update).toHaveBeenCalledWith(
-      100,
-      expect.objectContaining({ status: AppointmentStatus.CANCELLED }),
-    );
-    // Por cada cita: slot_released (waitlist) + appointment.cancelled (mail)
     expect(eventEmitter.emit).toHaveBeenCalledTimes(4);
     expect(eventEmitter.emit).toHaveBeenCalledWith(
       SLOT_RELEASED_EVENT,
       expect.objectContaining({ scheduleId: 20, clinicId: 7 }),
     );
-    expect(eventEmitter.emit).toHaveBeenCalledWith(
-      'appointment.cancelled',
-      expect.objectContaining({ scheduleId: 20, clinicId: 7 }),
-    );
   });
 
-  it('TIME_RANGE: solo cancela las citas que solapan la franja bloqueada', async () => {
+  it('un bloqueo horario solo cancela la cita que continúa solapándose', async () => {
     appointmentRepository.findActiveByDoctorAndDateRange.mockResolvedValue([
-      // 09:00-09:30 → solapa con 09:00-10:00
       buildAppointment({ id: 100 }),
-      // 11:00-11:30 → fuera de la franja
       buildAppointment({
         id: 101,
         startTime: new Date('1970-01-01T11:00:00.000Z'),
         endTime: new Date('1970-01-01T11:30:00.000Z'),
       }),
     ]);
-
-    await listener.handleScheduleBlocked(
-      blockEvent({
-        type: 'TIME_RANGE',
-        timeFrom: new Date('1970-01-01T09:00:00.000Z'),
-        timeTo: new Date('1970-01-01T10:00:00.000Z'),
-      }),
+    scheduleBlockRepository.isBlocked.mockImplementation(
+      (_doctorId, _date, startTime) =>
+        Promise.resolve(startTime?.getUTCHours() === 9),
     );
+
+    await listener.handleAvailabilityRestrictionChanged(restrictionEvent());
 
     expect(appointmentRepository.update).toHaveBeenCalledTimes(1);
     expect(appointmentRepository.update).toHaveBeenCalledWith(
       100,
-      expect.anything(),
+      expect.objectContaining({ status: AppointmentStatus.CANCELLED }),
     );
   });
 
-  it('cita sin usuario asociado: reofrece el slot pero no emite el mail de cancelación', async () => {
+  it('un bloqueo movido cancela solo la cita que su estado final todavía invalida', async () => {
     appointmentRepository.findActiveByDoctorAndDateRange.mockResolvedValue([
-      buildAppointment({ id: 100 }),
+      appointmentOn(100, '2030-06-01'),
+      appointmentOn(101, '2030-06-03'),
     ]);
-    appointmentRepository.update.mockResolvedValue(
-      buildAppointment({
-        id: 100,
-        status: AppointmentStatus.CANCELLED,
-        patient: {
-          id: 5,
-          profile: {
-            name: 'Walk',
-            lastName: 'In',
-            email: '',
-            userId: null,
-          },
+    scheduleBlockRepository.isBlocked.mockImplementation((_doctorId, date) =>
+      Promise.resolve(date.toISOString().startsWith('2030-06-03')),
+    );
+
+    await listener.handleAvailabilityRestrictionChanged(
+      restrictionEvent({
+        previousRange: {
+          startDate: new Date('2030-06-01T00:00:00.000Z'),
+          endDate: new Date('2030-06-01T00:00:00.000Z'),
+        },
+        currentRange: {
+          startDate: new Date('2030-06-03T00:00:00.000Z'),
+          endDate: new Date('2030-06-03T00:00:00.000Z'),
         },
       }),
     );
 
-    await listener.handleScheduleBlocked(blockEvent());
-
+    expect(
+      appointmentRepository.findActiveByDoctorAndDateRange,
+    ).toHaveBeenCalledWith(
+      3,
+      new Date('2030-06-01T00:00:00.000Z'),
+      new Date('2030-06-03T00:00:00.000Z'),
+    );
     expect(appointmentRepository.update).toHaveBeenCalledTimes(1);
-    expect(eventEmitter.emit).toHaveBeenCalledTimes(1);
-    expect(eventEmitter.emit).toHaveBeenCalledWith(
-      SLOT_RELEASED_EVENT,
-      expect.objectContaining({ appointmentId: 100 }),
+    expect(appointmentRepository.update).toHaveBeenCalledWith(
+      101,
+      expect.objectContaining({ status: AppointmentStatus.CANCELLED }),
     );
   });
 
-  it('no hace nada si no hay citas afectadas', async () => {
-    await listener.handleScheduleBlocked(blockEvent());
+  it('un feriado movido cancela solo la cita de la fecha que sigue siendo feriada', async () => {
+    appointmentRepository.findActiveByDateRangeAndClinic.mockResolvedValue([
+      appointmentOn(200, '2030-06-01'),
+      appointmentOn(201, '2030-06-03'),
+    ]);
+    holidayRepository.isHoliday.mockImplementation((date) =>
+      Promise.resolve(date.toISOString().startsWith('2030-06-03')),
+    );
+
+    await listener.handleAvailabilityRestrictionChanged(
+      restrictionEvent({
+        restrictionType: 'HOLIDAY',
+        doctorId: null,
+        previousRange: {
+          startDate: new Date('2030-06-01T12:00:00.000Z'),
+          endDate: new Date('2030-06-01T12:00:00.000Z'),
+        },
+        currentRange: {
+          startDate: new Date('2030-06-03T12:00:00.000Z'),
+          endDate: new Date('2030-06-03T12:00:00.000Z'),
+        },
+      }),
+    );
+
+    expect(
+      appointmentRepository.findActiveByDateRangeAndClinic,
+    ).toHaveBeenCalledWith(
+      new Date('2030-06-01T12:00:00.000Z'),
+      new Date('2030-06-03T12:00:00.000Z'),
+      7,
+    );
+    expect(appointmentRepository.update).toHaveBeenCalledTimes(1);
+    expect(appointmentRepository.update).toHaveBeenCalledWith(
+      201,
+      expect.objectContaining({ status: AppointmentStatus.CANCELLED }),
+    );
+  });
+
+  it('no reofrece una cita cuando ninguna candidata sigue afectada', async () => {
+    appointmentRepository.findActiveByDoctorAndDateRange.mockResolvedValue([
+      buildAppointment({ id: 100 }),
+    ]);
+
+    await listener.handleAvailabilityRestrictionChanged(restrictionEvent());
 
     expect(appointmentRepository.update).not.toHaveBeenCalled();
     expect(eventEmitter.emit).not.toHaveBeenCalled();
-  });
-
-  // ── holiday.created ───────────────────────────────────────────────────────
-
-  it('feriado: cancela las citas de la fecha y reofrece los slots', async () => {
-    appointmentRepository.findActiveByDateAndClinic.mockResolvedValue([
-      buildAppointment({ id: 200 }),
-    ]);
-
-    const event: HolidayCreatedEvent = {
-      date: new Date('2030-06-01T12:00:00.000Z'),
-      clinicId: 7,
-      name: 'Día de la Independencia',
-    };
-
-    await listener.handleHolidayCreated(event);
-
-    expect(
-      appointmentRepository.findActiveByDateAndClinic,
-    ).toHaveBeenCalledWith(event.date, 7);
-    expect(appointmentRepository.update).toHaveBeenCalledWith(
-      200,
-      expect.objectContaining({
-        status: AppointmentStatus.CANCELLED,
-        cancelReason: expect.stringContaining('Día de la Independencia'),
-      }),
-    );
-    expect(eventEmitter.emit).toHaveBeenCalledWith(
-      'appointment.cancelled',
-      expect.objectContaining({ appointmentId: 200 }),
-    );
   });
 });

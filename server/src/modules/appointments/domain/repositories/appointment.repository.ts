@@ -58,12 +58,13 @@ export interface IAppointmentRepository {
   ): Promise<AppointmentWithRelations[]>;
 
   /**
-   * Citas activas (no canceladas/no-show) en una fecha concreta. Si se pasa
-   * clinicId, se acota a esa sede; si es null/undefined, abarca todas (feriado
-   * global). Usado para invalidar citas al crear un feriado.
+   * Citas activas (no canceladas/no-show) dentro de un rango inclusivo. Si se
+   * pasa clinicId, se acota a esa sede; si es null/undefined, abarca todas
+   * (feriado global). Usado al revalidar una restricción de disponibilidad.
    */
-  findActiveByDateAndClinic(
-    date: Date,
+  findActiveByDateRangeAndClinic(
+    dateFrom: Date,
+    dateTo: Date,
     clinicId?: number | null,
   ): Promise<AppointmentWithRelations[]>;
 
