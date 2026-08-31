@@ -1,13 +1,11 @@
 import { AvailabilityChangeListener } from './availability-change.listener.js';
+import type { AppointmentCancellationService } from '../services/appointment-cancellation.service.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type { IHolidayRepository } from '../../../holidays/domain/repositories/holiday.repository.js';
 import type { IScheduleBlockRepository } from '../../../schedule-blocks/domain/repositories/schedule-block.repository.js';
 import type { AppointmentWithRelations } from '../../domain/interfaces/appointment-data.interface.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
-import {
-  SLOT_RELEASED_EVENT,
-  type AvailabilityRestrictionChangedEvent,
-} from '../../../../shared/events/availability-events.interface.js';
+import { type AvailabilityRestrictionChangedEvent } from '../../../../shared/events/availability-events.interface.js';
 
 describe('AvailabilityChangeListener', () => {
   let listener: AvailabilityChangeListener;
@@ -23,7 +21,9 @@ describe('AvailabilityChangeListener', () => {
   let scheduleBlockRepository: jest.Mocked<
     Pick<IScheduleBlockRepository, 'isBlocked'>
   >;
-  let eventEmitter: { emit: jest.Mock };
+  let cancellationService: jest.Mocked<
+    Pick<AppointmentCancellationService, 'cancel'>
+  >;
 
   const buildAppointment = (
     overrides: Partial<AppointmentWithRelations> = {},
@@ -117,13 +117,13 @@ describe('AvailabilityChangeListener', () => {
     };
     holidayRepository = { isHoliday: jest.fn().mockResolvedValue(false) };
     scheduleBlockRepository = { isBlocked: jest.fn().mockResolvedValue(false) };
-    eventEmitter = { emit: jest.fn() };
+    cancellationService = { cancel: jest.fn().mockResolvedValue(undefined) };
 
     listener = new AvailabilityChangeListener(
       appointmentRepository as any,
       holidayRepository as any,
       scheduleBlockRepository as any,
-      eventEmitter as any,
+      cancellationService as any,
     );
   });
 
@@ -136,11 +136,13 @@ describe('AvailabilityChangeListener', () => {
 
     await listener.handleAvailabilityRestrictionChanged(restrictionEvent());
 
-    expect(appointmentRepository.update).toHaveBeenCalledTimes(2);
-    expect(eventEmitter.emit).toHaveBeenCalledTimes(4);
-    expect(eventEmitter.emit).toHaveBeenCalledWith(
-      SLOT_RELEASED_EVENT,
-      expect.objectContaining({ scheduleId: 20, clinicId: 7 }),
+    expect(cancellationService.cancel).toHaveBeenCalledTimes(2);
+    expect(cancellationService.cancel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        appointmentId: 100,
+        reason: 'Bloqueo de agenda vigente',
+        cancelledBy: 'SYSTEM_AVAILABILITY_RESTRICTION',
+      }),
     );
   });
 
@@ -160,10 +162,9 @@ describe('AvailabilityChangeListener', () => {
 
     await listener.handleAvailabilityRestrictionChanged(restrictionEvent());
 
-    expect(appointmentRepository.update).toHaveBeenCalledTimes(1);
-    expect(appointmentRepository.update).toHaveBeenCalledWith(
-      100,
-      expect.objectContaining({ status: AppointmentStatus.CANCELLED }),
+    expect(cancellationService.cancel).toHaveBeenCalledTimes(1);
+    expect(cancellationService.cancel).toHaveBeenCalledWith(
+      expect.objectContaining({ appointmentId: 100 }),
     );
   });
 
@@ -196,10 +197,9 @@ describe('AvailabilityChangeListener', () => {
       new Date('2030-06-01T00:00:00.000Z'),
       new Date('2030-06-03T00:00:00.000Z'),
     );
-    expect(appointmentRepository.update).toHaveBeenCalledTimes(1);
-    expect(appointmentRepository.update).toHaveBeenCalledWith(
-      101,
-      expect.objectContaining({ status: AppointmentStatus.CANCELLED }),
+    expect(cancellationService.cancel).toHaveBeenCalledTimes(1);
+    expect(cancellationService.cancel).toHaveBeenCalledWith(
+      expect.objectContaining({ appointmentId: 101 }),
     );
   });
 
@@ -234,10 +234,9 @@ describe('AvailabilityChangeListener', () => {
       new Date('2030-06-03T12:00:00.000Z'),
       7,
     );
-    expect(appointmentRepository.update).toHaveBeenCalledTimes(1);
-    expect(appointmentRepository.update).toHaveBeenCalledWith(
-      201,
-      expect.objectContaining({ status: AppointmentStatus.CANCELLED }),
+    expect(cancellationService.cancel).toHaveBeenCalledTimes(1);
+    expect(cancellationService.cancel).toHaveBeenCalledWith(
+      expect.objectContaining({ appointmentId: 201 }),
     );
   });
 
@@ -248,7 +247,6 @@ describe('AvailabilityChangeListener', () => {
 
     await listener.handleAvailabilityRestrictionChanged(restrictionEvent());
 
-    expect(appointmentRepository.update).not.toHaveBeenCalled();
-    expect(eventEmitter.emit).not.toHaveBeenCalled();
+    expect(cancellationService.cancel).not.toHaveBeenCalled();
   });
 });

@@ -14,7 +14,7 @@ export interface CreateAppointmentData {
 
 export interface UpdateAppointmentData {
   status?: AppointmentStatus;
-  cancelReason?: string;
+  cancelReason?: string | null;
   cancellationFee?: number;
   scheduleId?: number;
   startTime?: Date;

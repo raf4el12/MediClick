@@ -1,20 +1,15 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
-import { OnEvent, EventEmitter2 } from '@nestjs/event-emitter';
+import { OnEvent } from '@nestjs/event-emitter';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type { IHolidayRepository } from '../../../holidays/domain/repositories/holiday.repository.js';
 import type { IScheduleBlockRepository } from '../../../schedule-blocks/domain/repositories/schedule-block.repository.js';
 import type { AppointmentWithRelations } from '../../domain/interfaces/appointment-data.interface.js';
-import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
 import {
   AVAILABILITY_RESTRICTION_CHANGED_EVENT,
-  SLOT_RELEASED_EVENT,
   type AvailabilityRestrictionChangedEvent,
   type AvailabilityRestrictionRange,
 } from '../../../../shared/events/availability-events.interface.js';
-import {
-  buildAppointmentCancelledEvent,
-  buildSlotReleasedEvent,
-} from '../services/appointment-event.builder.js';
+import { AppointmentCancellationService } from '../services/appointment-cancellation.service.js';
 
 /**
  * Cancela las citas ya reservadas que quedan invalidadas después de crear o
@@ -35,7 +30,7 @@ export class AvailabilityChangeListener {
     private readonly holidayRepository: IHolidayRepository,
     @Inject('IScheduleBlockRepository')
     private readonly scheduleBlockRepository: IScheduleBlockRepository,
-    private readonly eventEmitter: EventEmitter2,
+    private readonly appointmentCancellationService: AppointmentCancellationService,
   ) {}
 
   @OnEvent(AVAILABILITY_RESTRICTION_CHANGED_EVENT, { async: true })
@@ -156,25 +151,11 @@ export class AvailabilityChangeListener {
     let cancelled = 0;
     for (const appt of appointments) {
       try {
-        const updated = await this.appointmentRepository.update(appt.id, {
-          status: AppointmentStatus.CANCELLED,
-          cancelReason: reason,
-          updatedAt: new Date(),
-        });
-
-        this.eventEmitter.emit(
-          SLOT_RELEASED_EVENT,
-          buildSlotReleasedEvent(updated),
-        );
-
-        const cancelledEvent = buildAppointmentCancelledEvent(
-          updated,
+        await this.appointmentCancellationService.cancel({
+          appointmentId: appt.id,
           reason,
-          updated.clinicId,
-        );
-        if (cancelledEvent) {
-          this.eventEmitter.emit('appointment.cancelled', cancelledEvent);
-        }
+          cancelledBy: 'SYSTEM_AVAILABILITY_RESTRICTION',
+        });
 
         cancelled++;
       } catch (error) {

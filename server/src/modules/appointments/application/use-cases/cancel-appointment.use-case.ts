@@ -3,9 +3,7 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
-  Logger,
 } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CancelAppointmentDto } from '../dto/cancel-appointment.dto.js';
 import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
@@ -22,20 +20,13 @@ import {
   nowInTimezone,
 } from '../../../../shared/utils/date-time.utils.js';
 import { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
-import { SLOT_RELEASED_EVENT } from '../../../../shared/events/availability-events.interface.js';
-import {
-  buildAppointmentCancelledEvent,
-  buildSlotReleasedEvent,
-} from '../services/appointment-event.builder.js';
-import type { TransactionEntity } from '../../../payments/domain/entities/transaction.entity.js';
 import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
 import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
 import { AppointmentAccessPolicy } from '../../../../shared/access/appointment-access.policy.js';
+import { AppointmentCancellationService } from '../services/appointment-cancellation.service.js';
 
 @Injectable()
 export class CancelAppointmentUseCase {
-  private readonly logger = new Logger(CancelAppointmentUseCase.name);
-
   constructor(
     @Inject('IAppointmentRepository')
     private readonly appointmentRepository: IAppointmentRepository,
@@ -44,7 +35,7 @@ export class CancelAppointmentUseCase {
     @Inject('ITransactionRepository')
     private readonly transactionRepository: ITransactionRepository,
     private readonly timezoneResolver: TimezoneResolverService,
-    private readonly eventEmitter: EventEmitter2,
+    private readonly appointmentCancellationService: AppointmentCancellationService,
     private readonly appointmentAccessPolicy: AppointmentAccessPolicy,
   ) {}
 
@@ -60,8 +51,7 @@ export class CancelAppointmentUseCase {
 
     this.appointmentAccessPolicy.authorize(actor, 'CANCEL', {
       id: appointment.id,
-      clinicId:
-        appointment.schedule.doctor.clinic?.id ?? appointment.clinicId,
+      clinicId: appointment.schedule.doctor.clinic?.id ?? appointment.clinicId,
       patientUserId: appointment.patient.profile.userId,
       doctorUserId: appointment.schedule.doctor.profile.userId ?? null,
     });
@@ -101,7 +91,7 @@ export class CancelAppointmentUseCase {
 
     // Penalización: paciente que cancela tarde (<24h) una cita pagada.
     if (
-      actor.roleName === UserRole.PATIENT &&
+      actor.roleName === String(UserRole.PATIENT) &&
       hoursUntilAppointment < MIN_CANCELLATION_HOURS_PATIENT &&
       isPaid
     ) {
@@ -116,92 +106,14 @@ export class CancelAppointmentUseCase {
       }
     }
 
-    const updated = await this.appointmentRepository.update(id, {
-      status: AppointmentStatus.CANCELLED,
-      cancelReason: dto.reason,
+    const updated = await this.appointmentCancellationService.cancel({
+      appointmentId: id,
+      reason: dto.reason ?? null,
+      cancelledBy: actor.roleName,
       ...(cancellationFee !== undefined && { cancellationFee }),
-      updatedAt: new Date(),
     });
-
-    // Una cita pagada que se cancela requiere refund manual; si además hubo
-    // penalización por cancelación tardía, se marca el cobro del fee en la misma
-    // transacción para que el admin reconcilie el neto. Sin gateway automático.
-    if (isPaid && tx) {
-      await this.flagTransactionOnCancel(
-        id,
-        tx,
-        dto.reason,
-        actor.roleName,
-        cancellationFee,
-      );
-    }
-
-    const clinicId = await this.timezoneResolver.resolveClinicIdByDoctorId(
-      updated.schedule.doctor.id,
-    );
-
-    // El slot liberado se reofrece SIEMPRE a la waitlist, tenga o no usuario
-    // el paciente. Mail/notificación sí requieren usuario (builder retorna null).
-    this.eventEmitter.emit(
-      SLOT_RELEASED_EVENT,
-      buildSlotReleasedEvent(updated, clinicId),
-    );
-
-    const cancelledEvent = buildAppointmentCancelledEvent(
-      updated,
-      dto.reason ?? null,
-      clinicId,
-    );
-    if (cancelledEvent) {
-      this.eventEmitter.emit('appointment.cancelled', cancelledEvent);
-    }
 
     return this.toResponse(updated);
-  }
-
-  /**
-   * Marca la transacción PAID de una cita cancelada para revisión manual del
-   * admin: siempre `needsRefund`, y además `needsFeeCollection` cuando hubo
-   * penalización por cancelación tardía. Una sola escritura de metadata; sin
-   * refunds ni cobros automáticos vía gateway (quedan para fase posterior).
-   */
-  private async flagTransactionOnCancel(
-    appointmentId: number,
-    tx: TransactionEntity,
-    cancelReason: string | undefined,
-    cancelledBy: string,
-    cancellationFee: number | undefined,
-  ): Promise<void> {
-    const previousMetadata =
-      tx.metadata && typeof tx.metadata === 'object'
-        ? (tx.metadata as Record<string, unknown>)
-        : {};
-
-    const now = new Date().toISOString();
-
-    await this.transactionRepository.update(tx.id, {
-      metadata: {
-        ...previousMetadata,
-        needsRefund: true,
-        refundRequestedAt: now,
-        refundCancelReason: cancelReason ?? null,
-        refundCancelledBy: cancelledBy,
-        ...(cancellationFee !== undefined && {
-          needsFeeCollection: true,
-          feeAmount: cancellationFee,
-          feeReason: 'Cancelación tardía (<24h)',
-          feeRequestedAt: now,
-        }),
-      },
-    });
-
-    this.logger.warn(
-      `[REVIEW] Cita ${appointmentId} cancelada con pago PAID (txId=${tx.id})` +
-        (cancellationFee !== undefined
-          ? `; fee S/${cancellationFee} por cobrar`
-          : '') +
-        '. Refund manual pendiente.',
-    );
   }
 
   private toResponse(a: any): AppointmentResponseDto {

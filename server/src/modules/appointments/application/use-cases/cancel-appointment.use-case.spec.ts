@@ -5,6 +5,7 @@ import type { ITransactionRepository } from '../../../payments/domain/repositori
 import type { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
 import type { EventEmitter2 } from '@nestjs/event-emitter';
 import { AppointmentAccessPolicy } from '../../../../shared/access/appointment-access.policy.js';
+import { AppointmentCancellationService } from '../services/appointment-cancellation.service.js';
 import { SystemRole } from '../../../../shared/domain/enums/permission.enum.js';
 import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
 
@@ -24,7 +25,7 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
   let eventEmitter: jest.Mocked<Pick<EventEmitter2, 'emit'>>;
 
   const buildActor = (roleName: string): AuthenticatedUser => ({
-    id: roleName === SystemRole.PATIENT ? 42 : 900,
+    id: roleName === String(SystemRole.PATIENT) ? 42 : 900,
     email: 'actor@mediclick.test',
     roleId: 1,
     roleName,
@@ -88,7 +89,12 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
       specialtyRepository as any,
       transactionRepository,
       timezoneResolver as any,
-      eventEmitter as any,
+      new AppointmentCancellationService(
+        appointmentRepository as any,
+        transactionRepository,
+        timezoneResolver as any,
+        eventEmitter as any,
+      ),
       new AppointmentAccessPolicy(),
     );
   });
