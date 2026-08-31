@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { Request } from 'express';
+import type { Request } from 'express';
 import { JwtPayload } from '../../domain/interfaces/jwt-payload.interface.js';
 
 function extractTokenFromCookieOrHeader(req: Request): string | null {

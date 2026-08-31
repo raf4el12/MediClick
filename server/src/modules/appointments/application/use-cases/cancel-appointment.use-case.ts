@@ -29,6 +29,8 @@ import {
 } from '../services/appointment-event.builder.js';
 import type { TransactionEntity } from '../../../payments/domain/entities/transaction.entity.js';
 import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
+import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
+import { AppointmentAccessPolicy } from '../../../../shared/access/appointment-access.policy.js';
 
 @Injectable()
 export class CancelAppointmentUseCase {
@@ -43,17 +45,26 @@ export class CancelAppointmentUseCase {
     private readonly transactionRepository: ITransactionRepository,
     private readonly timezoneResolver: TimezoneResolverService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly appointmentAccessPolicy: AppointmentAccessPolicy,
   ) {}
 
   async execute(
     id: number,
     dto: CancelAppointmentDto,
-    userRole: string,
+    actor: AuthenticatedUser,
   ): Promise<AppointmentResponseDto> {
     const appointment = await this.appointmentRepository.findById(id);
     if (!appointment) {
       throw new NotFoundException('Cita no encontrada');
     }
+
+    this.appointmentAccessPolicy.authorize(actor, 'CANCEL', {
+      id: appointment.id,
+      clinicId:
+        appointment.schedule.doctor.clinic?.id ?? appointment.clinicId,
+      patientUserId: appointment.patient.profile.userId,
+      doctorUserId: appointment.schedule.doctor.profile.userId ?? null,
+    });
 
     const forbiddenStatuses = [
       AppointmentStatus.COMPLETED,
@@ -90,7 +101,7 @@ export class CancelAppointmentUseCase {
 
     // Penalización: paciente que cancela tarde (<24h) una cita pagada.
     if (
-      userRole === UserRole.PATIENT &&
+      actor.roleName === UserRole.PATIENT &&
       hoursUntilAppointment < MIN_CANCELLATION_HOURS_PATIENT &&
       isPaid
     ) {
@@ -120,7 +131,7 @@ export class CancelAppointmentUseCase {
         id,
         tx,
         dto.reason,
-        userRole,
+        actor.roleName,
         cancellationFee,
       );
     }

@@ -62,8 +62,8 @@ export interface AppointmentWithRelations {
     timeTo: Date;
     doctor: {
       id: number;
-      profile: { name: string; lastName: string };
-      clinic: { name: string; timezone: string } | null;
+      profile: { name: string; lastName: string; userId?: number | null };
+      clinic: { id?: number; name: string; timezone: string } | null;
     };
     specialty: { id: number; name: string };
   };

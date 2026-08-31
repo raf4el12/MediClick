@@ -9,19 +9,33 @@ import type { IAppointmentRepository } from '../../domain/repositories/appointme
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
 import { dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
 import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
+import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
+import { AppointmentAccessPolicy } from '../../../../shared/access/appointment-access.policy.js';
 
 @Injectable()
 export class CompleteAppointmentUseCase {
   constructor(
     @Inject('IAppointmentRepository')
     private readonly appointmentRepository: IAppointmentRepository,
+    private readonly appointmentAccessPolicy: AppointmentAccessPolicy,
   ) {}
 
-  async execute(id: number): Promise<AppointmentResponseDto> {
+  async execute(
+    id: number,
+    actor: AuthenticatedUser,
+  ): Promise<AppointmentResponseDto> {
     const appointment = await this.appointmentRepository.findById(id);
     if (!appointment) {
       throw new NotFoundException('Cita no encontrada');
     }
+
+    this.appointmentAccessPolicy.authorize(actor, 'COMPLETE', {
+      id: appointment.id,
+      clinicId:
+        appointment.schedule.doctor.clinic?.id ?? appointment.clinicId,
+      patientUserId: appointment.patient.profile.userId,
+      doctorUserId: appointment.schedule.doctor.profile.userId ?? null,
+    });
 
     if (appointment.status !== AppointmentStatus.IN_PROGRESS) {
       throw new BadRequestException(

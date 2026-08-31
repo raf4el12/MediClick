@@ -36,6 +36,7 @@ import { MyAppointmentsFilterDto } from '../../application/dto/my-appointments-f
 import { CreatePatientAppointmentDto } from '../../application/dto/create-patient-appointment.dto.js';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator.js';
 import { CurrentClinic } from '../../../../shared/decorators/current-clinic.decorator.js';
+import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
 
 @ApiTags('Appointments')
 @Controller('appointments')
@@ -189,8 +190,9 @@ export class AppointmentController {
   @ApiResponse({ status: 404, description: 'Cita no encontrada' })
   async checkIn(
     @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() actor: AuthenticatedUser,
   ): Promise<AppointmentResponseDto> {
-    return this.checkInAppointmentUseCase.execute(id);
+    return this.checkInAppointmentUseCase.execute(id, actor);
   }
 
   @Patch(':id/cancel')
@@ -206,9 +208,9 @@ export class AppointmentController {
   async cancel(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CancelAppointmentDto,
-    @CurrentUser('roleName') userRole: string,
+    @CurrentUser() actor: AuthenticatedUser,
   ): Promise<AppointmentResponseDto> {
-    return this.cancelAppointmentUseCase.execute(id, dto, userRole);
+    return this.cancelAppointmentUseCase.execute(id, dto, actor);
   }
 
   @Patch(':id/confirm')
@@ -220,8 +222,9 @@ export class AppointmentController {
   @ApiResponse({ status: 404, description: 'Cita no encontrada' })
   async confirm(
     @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() actor: AuthenticatedUser,
   ): Promise<AppointmentResponseDto> {
-    return this.confirmAppointmentUseCase.execute(id);
+    return this.confirmAppointmentUseCase.execute(id, actor);
   }
 
   @Patch(':id/reschedule')
@@ -235,9 +238,9 @@ export class AppointmentController {
   async reschedule(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: RescheduleAppointmentDto,
-    @CurrentClinic() clinicId: number | null,
+    @CurrentUser() actor: AuthenticatedUser,
   ): Promise<AppointmentResponseDto> {
-    return this.rescheduleAppointmentUseCase.execute(id, dto, clinicId);
+    return this.rescheduleAppointmentUseCase.execute(id, dto, actor);
   }
 
   @Patch(':id/complete')
@@ -249,8 +252,9 @@ export class AppointmentController {
   @ApiResponse({ status: 404, description: 'Cita no encontrada' })
   async complete(
     @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() actor: AuthenticatedUser,
   ): Promise<AppointmentResponseDto> {
-    return this.completeAppointmentUseCase.execute(id);
+    return this.completeAppointmentUseCase.execute(id, actor);
   }
 
   @Patch(':id/no-show')
@@ -266,7 +270,8 @@ export class AppointmentController {
   @ApiResponse({ status: 404, description: 'Cita no encontrada' })
   async markNoShow(
     @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() actor: AuthenticatedUser,
   ): Promise<AppointmentResponseDto> {
-    return this.markNoShowAppointmentUseCase.execute(id);
+    return this.markNoShowAppointmentUseCase.execute(id, actor);
   }
 }

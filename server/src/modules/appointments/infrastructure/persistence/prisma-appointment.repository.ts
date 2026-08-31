@@ -42,8 +42,8 @@ const appointmentInclude = {
       doctor: {
         select: {
           id: true,
-          profile: { select: { name: true, lastName: true } },
-          clinic: { select: { name: true, timezone: true } },
+          profile: { select: { name: true, lastName: true, userId: true } },
+          clinic: { select: { id: true, name: true, timezone: true } },
         },
       },
       specialty: { select: { id: true, name: true } },
@@ -549,38 +549,27 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
   async expirePendingPastDeadline(
     now: Date,
   ): Promise<ExpiredAppointmentSlot[]> {
-    return this.prisma.$transaction(async (tx) => {
-      const expired = await tx.appointments.findMany({
-        where: {
-          status: 'PENDING',
-          // Incluye FAILED: un pago rechazado deja la cita en PENDING/FAILED y,
-          // si el paciente no reintenta antes de pendingUntil, debe expirar igual
-          // que un PENDING/PENDING. Sin esto la cita ocupaba el slot indefinidamente.
-          paymentStatus: { in: ['PENDING', 'FAILED'] },
-          pendingUntil: { lt: now },
-          deleted: false,
-        },
-        select: {
-          id: true,
-          scheduleId: true,
-          startTime: true,
-          endTime: true,
-          clinicId: true,
-        },
-      });
-
-      if (expired.length === 0) return [];
-
-      await tx.appointments.updateMany({
-        where: { id: { in: expired.map((e) => e.id) } },
-        data: {
-          status: 'CANCELLED',
-          cancelReason: 'Pago no completado dentro del tiempo permitido',
-          updatedAt: now,
-        },
-      });
-
-      return expired;
+    return this.prisma.appointments.updateManyAndReturn({
+      where: {
+        status: 'PENDING',
+        // Incluye FAILED: el paciente puede reintentar hasta el deadline, pero
+        // después ambos estados financieros dejan de retener el cupo.
+        paymentStatus: { in: ['PENDING', 'FAILED'] },
+        pendingUntil: { lt: now },
+        deleted: false,
+      },
+      data: {
+        status: 'CANCELLED',
+        cancelReason: 'Pago no completado dentro del tiempo permitido',
+        updatedAt: now,
+      },
+      select: {
+        id: true,
+        scheduleId: true,
+        startTime: true,
+        endTime: true,
+        clinicId: true,
+      },
     });
   }
 

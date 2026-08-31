@@ -4,6 +4,9 @@ import type { ISpecialtyRepository } from '../../../specialties/domain/repositor
 import type { ITransactionRepository } from '../../../payments/domain/repositories/transaction.repository.js';
 import type { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
 import type { EventEmitter2 } from '@nestjs/event-emitter';
+import { AppointmentAccessPolicy } from '../../../../shared/access/appointment-access.policy.js';
+import { SystemRole } from '../../../../shared/domain/enums/permission.enum.js';
+import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
 
 describe('CancelAppointmentUseCase — refund flagging', () => {
   let useCase: CancelAppointmentUseCase;
@@ -19,6 +22,14 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
     >
   >;
   let eventEmitter: jest.Mocked<Pick<EventEmitter2, 'emit'>>;
+
+  const buildActor = (roleName: string): AuthenticatedUser => ({
+    id: roleName === SystemRole.PATIENT ? 42 : 900,
+    email: 'actor@mediclick.test',
+    roleId: 1,
+    roleName,
+    clinicId: null,
+  });
 
   const buildAppointment = () => ({
     id: 50,
@@ -78,6 +89,7 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
       transactionRepository,
       timezoneResolver as any,
       eventEmitter as any,
+      new AppointmentAccessPolicy(),
     );
   });
 
@@ -92,7 +104,11 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
       metadata: null,
     } as any);
 
-    await useCase.execute(50, { reason: 'Cambio de planes' }, 'ADMIN');
+    await useCase.execute(
+      50,
+      { reason: 'Cambio de planes' },
+      buildActor(SystemRole.ADMIN),
+    );
 
     expect(transactionRepository.update).toHaveBeenCalledWith(
       77,
@@ -113,7 +129,11 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
       metadata: { mpPaymentId: 'abc', original: 'data' },
     } as any);
 
-    await useCase.execute(50, { reason: 'Otro motivo' }, 'ADMIN');
+    await useCase.execute(
+      50,
+      { reason: 'Otro motivo' },
+      buildActor(SystemRole.ADMIN),
+    );
 
     const updateCall = transactionRepository.update.mock.calls[0];
     expect(updateCall[1].metadata).toMatchObject({
@@ -130,7 +150,7 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
       metadata: null,
     } as any);
 
-    await useCase.execute(50, { reason: 'x' }, 'ADMIN');
+    await useCase.execute(50, { reason: 'x' }, buildActor(SystemRole.ADMIN));
 
     expect(transactionRepository.update).not.toHaveBeenCalled();
   });
@@ -138,7 +158,7 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
   it('is a no-op when the appointment has no transactions', async () => {
     transactionRepository.findLatestByAppointmentId.mockResolvedValue(null);
 
-    await useCase.execute(50, { reason: 'x' }, 'ADMIN');
+    await useCase.execute(50, { reason: 'x' }, buildActor(SystemRole.ADMIN));
 
     expect(transactionRepository.update).not.toHaveBeenCalled();
   });
@@ -156,7 +176,11 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
       metadata: null,
     } as any);
 
-    await useCase.execute(50, { reason: 'No puedo asistir' }, 'PATIENT');
+    await useCase.execute(
+      50,
+      { reason: 'No puedo asistir' },
+      buildActor(SystemRole.PATIENT),
+    );
 
     // fee = 50% de 120 = 60, persistido en la cita
     expect(appointmentRepository.update).toHaveBeenCalledWith(
@@ -188,7 +212,11 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
       metadata: null,
     } as any);
 
-    await useCase.execute(50, { reason: 'No puedo asistir' }, 'PATIENT');
+    await useCase.execute(
+      50,
+      { reason: 'No puedo asistir' },
+      buildActor(SystemRole.PATIENT),
+    );
 
     const apptArg = appointmentRepository.update.mock.calls[0][1];
     expect(apptArg.cancellationFee).toBeUndefined();
@@ -208,7 +236,11 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
       metadata: null,
     } as any);
 
-    await useCase.execute(50, { reason: 'Cambio de planes' }, 'PATIENT');
+    await useCase.execute(
+      50,
+      { reason: 'Cambio de planes' },
+      buildActor(SystemRole.PATIENT),
+    );
 
     const apptArg = appointmentRepository.update.mock.calls[0][1];
     expect(apptArg.cancellationFee).toBeUndefined();
@@ -224,7 +256,11 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
       metadata: null,
     } as any);
 
-    await useCase.execute(50, { reason: 'Reprogramación interna' }, 'ADMIN');
+    await useCase.execute(
+      50,
+      { reason: 'Reprogramación interna' },
+      buildActor(SystemRole.ADMIN),
+    );
 
     const txArg = transactionRepository.update.mock.calls[0][1];
     expect(txArg.metadata).toMatchObject({ needsRefund: true });

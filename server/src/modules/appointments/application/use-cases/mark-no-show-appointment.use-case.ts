@@ -13,6 +13,8 @@ import {
 } from '../../../../shared/utils/date-time.utils.js';
 import { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
 import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
+import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
+import { AppointmentAccessPolicy } from '../../../../shared/access/appointment-access.policy.js';
 
 @Injectable()
 export class MarkNoShowAppointmentUseCase {
@@ -20,13 +22,25 @@ export class MarkNoShowAppointmentUseCase {
     @Inject('IAppointmentRepository')
     private readonly appointmentRepository: IAppointmentRepository,
     private readonly timezoneResolver: TimezoneResolverService,
+    private readonly appointmentAccessPolicy: AppointmentAccessPolicy,
   ) {}
 
-  async execute(id: number): Promise<AppointmentResponseDto> {
+  async execute(
+    id: number,
+    actor: AuthenticatedUser,
+  ): Promise<AppointmentResponseDto> {
     const appointment = await this.appointmentRepository.findById(id);
     if (!appointment) {
       throw new NotFoundException('Cita no encontrada');
     }
+
+    this.appointmentAccessPolicy.authorize(actor, 'MARK_NO_SHOW', {
+      id: appointment.id,
+      clinicId:
+        appointment.schedule.doctor.clinic?.id ?? appointment.clinicId,
+      patientUserId: appointment.patient.profile.userId,
+      doctorUserId: appointment.schedule.doctor.profile.userId ?? null,
+    });
 
     if (appointment.status !== AppointmentStatus.CONFIRMED) {
       throw new BadRequestException(

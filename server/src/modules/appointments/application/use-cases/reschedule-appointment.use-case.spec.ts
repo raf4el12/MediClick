@@ -10,6 +10,9 @@ import type { AppointmentSlotValidatorService } from '../services/appointment-sl
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
 import type { AppointmentWithRelations } from '../../domain/interfaces/appointment-data.interface.js';
 import type { ScheduleWithRelations } from '../../../schedules/domain/interfaces/schedule-data.interface.js';
+import { AppointmentAccessPolicy } from '../../../../shared/access/appointment-access.policy.js';
+import { SystemRole } from '../../../../shared/domain/enums/permission.enum.js';
+import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
 
 describe('RescheduleAppointmentUseCase — TDD', () => {
   let useCase: RescheduleAppointmentUseCase;
@@ -21,6 +24,15 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
     Pick<AppointmentSlotValidatorService, 'validate'>
   >;
   let eventEmitter: { emit: jest.Mock };
+
+  const globalActor: AuthenticatedUser = {
+    id: 900,
+    email: 'admin@mediclick.test',
+    roleId: 1,
+    roleName: SystemRole.SUPER_ADMIN,
+    clinicId: null,
+  };
+  const clinicActor: AuthenticatedUser = { ...globalActor, clinicId: 7 };
 
   const buildAppointment = (
     overrides: Partial<AppointmentWithRelations> = {},
@@ -127,13 +139,14 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
       scheduleRepository as any,
       slotValidator as any,
       eventEmitter as any,
+      new AppointmentAccessPolicy(),
     );
   });
 
   // ── Iteración TDD 1: Happy path ────────────────────────────────────────────
 
   it('RED→GREEN: reagenda correctamente con datos válidos', async () => {
-    const result = await useCase.execute(10, dto);
+    const result = await useCase.execute(10, dto, globalActor);
 
     expect(result.id).toBe(10);
     expect(
@@ -155,7 +168,9 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
   it('RED→GREEN: lanza NotFoundException si la cita no existe', async () => {
     appointmentRepository.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute(999, dto)).rejects.toThrow(NotFoundException);
+    await expect(useCase.execute(999, dto, globalActor)).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   // ── Iteración TDD 3: Estados terminales (máquina de estados) ──────────────
@@ -165,7 +180,9 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
       buildAppointment({ status: AppointmentStatus.COMPLETED }),
     );
 
-    await expect(useCase.execute(10, dto)).rejects.toThrow(BadRequestException);
+    await expect(useCase.execute(10, dto, globalActor)).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it('RED→GREEN: lanza BadRequestException para cita en estado CANCELLED', async () => {
@@ -173,7 +190,9 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
       buildAppointment({ status: AppointmentStatus.CANCELLED }),
     );
 
-    await expect(useCase.execute(10, dto)).rejects.toThrow(BadRequestException);
+    await expect(useCase.execute(10, dto, globalActor)).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it('permite reagendar una cita en estado CONFIRMED', async () => {
@@ -181,7 +200,7 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
       buildAppointment({ status: AppointmentStatus.CONFIRMED }),
     );
 
-    await expect(useCase.execute(10, dto)).resolves.toBeDefined();
+    await expect(useCase.execute(10, dto, globalActor)).resolves.toBeDefined();
   });
 
   it('permite reagendar una cita en estado IN_PROGRESS', async () => {
@@ -189,7 +208,7 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
       buildAppointment({ status: AppointmentStatus.IN_PROGRESS }),
     );
 
-    await expect(useCase.execute(10, dto)).resolves.toBeDefined();
+    await expect(useCase.execute(10, dto, globalActor)).resolves.toBeDefined();
   });
 
   // ── Iteración TDD 4: Validación del nuevo schedule ────────────────────────
@@ -197,13 +216,15 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
   it('RED→GREEN: lanza BadRequestException si el nuevo schedule no existe', async () => {
     scheduleRepository.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute(10, dto)).rejects.toThrow(BadRequestException);
+    await expect(useCase.execute(10, dto, globalActor)).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   // ── Iteración TDD 5: Precondiciones delegadas al slot validator ───────────
 
   it('valida las precondiciones del slot contra el NUEVO schedule (doctor, fecha, rango, sede)', async () => {
-    await useCase.execute(10, dto, 7);
+    await useCase.execute(10, dto, clinicActor);
 
     expect(slotValidator.validate).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -223,7 +244,9 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
       new BadRequestException('No se puede agendar una cita en un día feriado'),
     );
 
-    await expect(useCase.execute(10, dto)).rejects.toThrow(BadRequestException);
+    await expect(useCase.execute(10, dto, globalActor)).rejects.toThrow(
+      BadRequestException,
+    );
     expect(
       appointmentRepository.rescheduleWithOverlapCheck,
     ).not.toHaveBeenCalled();
@@ -236,7 +259,9 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
       ),
     );
 
-    await expect(useCase.execute(10, dto)).rejects.toThrow(ConflictException);
+    await expect(useCase.execute(10, dto, globalActor)).rejects.toThrow(
+      ConflictException,
+    );
   });
 
   // ── Iteración TDD 6: pendingUntil y reminderSent (huequecito #8) ──────────
@@ -250,7 +275,7 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
       }),
     );
 
-    await useCase.execute(10, dto);
+    await useCase.execute(10, dto, globalActor);
 
     expect(
       appointmentRepository.rescheduleWithOverlapCheck,
@@ -274,7 +299,7 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
       }),
     );
 
-    await useCase.execute(10, dto);
+    await useCase.execute(10, dto, globalActor);
 
     const data =
       appointmentRepository.rescheduleWithOverlapCheck.mock.calls[0][1];
@@ -284,7 +309,7 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
   });
 
   it('cita de staff (sin pago online): no se le asigna deadline de pago', async () => {
-    await useCase.execute(10, dto);
+    await useCase.execute(10, dto, globalActor);
 
     expect(
       appointmentRepository.rescheduleWithOverlapCheck,
@@ -298,7 +323,7 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
   });
 
   it('resetea reminderSent para que la nueva fecha reciba recordatorio', async () => {
-    await useCase.execute(10, dto);
+    await useCase.execute(10, dto, globalActor);
 
     expect(
       appointmentRepository.rescheduleWithOverlapCheck,
@@ -314,7 +339,7 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
   // ── Iteración TDD 7: Slot viejo liberado → waitlist (huequecito #11) ──────
 
   it('emite slot_released con los datos del slot VIEJO al reagendar', async () => {
-    await useCase.execute(10, dto);
+    await useCase.execute(10, dto, globalActor);
 
     expect(eventEmitter.emit).toHaveBeenCalledWith(
       'appointment.slot_released',
@@ -336,7 +361,7 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
       }),
     );
 
-    await useCase.execute(10, dto);
+    await useCase.execute(10, dto, globalActor);
 
     expect(eventEmitter.emit).not.toHaveBeenCalled();
   });
@@ -346,7 +371,9 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
       new ConflictException('superposición'),
     );
 
-    await expect(useCase.execute(10, dto)).rejects.toThrow(ConflictException);
+    await expect(useCase.execute(10, dto, globalActor)).rejects.toThrow(
+      ConflictException,
+    );
     expect(eventEmitter.emit).not.toHaveBeenCalled();
   });
 
@@ -357,7 +384,7 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
       buildAppointment({ status: AppointmentStatus.COMPLETED }),
     );
 
-    await expect(useCase.execute(10, dto)).rejects.toThrow();
+    await expect(useCase.execute(10, dto, globalActor)).rejects.toThrow();
     expect(
       appointmentRepository.rescheduleWithOverlapCheck,
     ).not.toHaveBeenCalled();

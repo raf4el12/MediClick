@@ -18,7 +18,7 @@ import {
   ApiCookieAuth,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import express from 'express';
+import type { Request, Response } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { LoginDto } from '../../application/dto/login.dto.js';
 import { RegisterPatientDto } from '../../application/dto/register-patient.dto.js';
@@ -84,7 +84,7 @@ export class AuthController {
   private readonly isProduction: boolean;
 
   private setTokenCookies(
-    res: express.Response,
+    res: Response,
     accessToken: string,
     refreshToken: string,
   ): void {
@@ -105,7 +105,7 @@ export class AuthController {
     });
   }
 
-  private clearTokenCookies(res: express.Response): void {
+  private clearTokenCookies(res: Response): void {
     res.clearCookie('accessToken', { path: '/' });
     res.clearCookie('refreshToken', { path: '/auth' });
   }
@@ -122,8 +122,8 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Credenciales inválidas' })
   async login(
     @Body() dto: LoginDto,
-    @Res({ passthrough: true }) res: express.Response,
-    @Req() req: express.Request,
+    @Res({ passthrough: true }) res: Response,
+    @Req() req: Request,
   ): Promise<Omit<AuthResponseDto, 'refreshToken'>> {
     let result: Awaited<ReturnType<LoginUseCase['execute']>>;
     try {
@@ -260,7 +260,7 @@ export class AuthController {
   @ApiResponse({ status: 409, description: 'Email o documento ya registrado' })
   async register(
     @Body() dto: RegisterPatientDto,
-    @Res({ passthrough: true }) res: express.Response,
+    @Res({ passthrough: true }) res: Response,
   ): Promise<Omit<AuthResponseDto, 'refreshToken'>> {
     const deviceId = 'web-register';
     const result = await this.registerPatientUseCase.execute(dto, deviceId);
@@ -292,8 +292,8 @@ export class AuthController {
   async refreshToken(
     @Body() dto: RefreshTokenDto,
     @CurrentUser('id') userId: number,
-    @Req() req: express.Request,
-    @Res({ passthrough: true }) res: express.Response,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
   ): Promise<Omit<AuthResponseDto, 'refreshToken'>> {
     const cookies = req.cookies as Record<string, string> | undefined;
     const rawRefreshToken = cookies?.refreshToken;
@@ -336,7 +336,7 @@ export class AuthController {
   async logout(
     @CurrentUser('id') userId: number,
     @Body() dto: LogoutDto,
-    @Res({ passthrough: true }) res: express.Response,
+    @Res({ passthrough: true }) res: Response,
   ): Promise<{ message: string }> {
     await this.logoutUseCase.execute(userId, dto.deviceId);
     this.clearTokenCookies(res);
@@ -352,7 +352,7 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'No autenticado' })
   async logoutAll(
     @CurrentUser('id') userId: number,
-    @Res({ passthrough: true }) res: express.Response,
+    @Res({ passthrough: true }) res: Response,
   ): Promise<{ message: string }> {
     await this.logoutAllDevicesUseCase.execute(userId);
     this.clearTokenCookies(res);
@@ -381,7 +381,7 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'No autenticado' })
   async getSessions(
     @CurrentUser('id') userId: number,
-    @Req() req: express.Request,
+    @Req() req: Request,
   ): Promise<SessionInfo[]> {
     const deviceId = (req.headers['x-device-id'] as string) ?? '';
     return this.getSessionsUseCase.execute(userId, deviceId);

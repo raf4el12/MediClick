@@ -20,6 +20,8 @@ import { getAppointmentPaymentTimeoutMs } from '../../../../shared/utils/payment
 import { SLOT_RELEASED_EVENT } from '../../../../shared/events/availability-events.interface.js';
 import { buildSlotReleasedEvent } from '../services/appointment-event.builder.js';
 import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
+import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
+import { AppointmentAccessPolicy } from '../../../../shared/access/appointment-access.policy.js';
 
 @Injectable()
 export class RescheduleAppointmentUseCase {
@@ -30,17 +32,26 @@ export class RescheduleAppointmentUseCase {
     private readonly scheduleRepository: IScheduleRepository,
     private readonly slotValidator: AppointmentSlotValidatorService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly appointmentAccessPolicy: AppointmentAccessPolicy,
   ) {}
 
   async execute(
     id: number,
     dto: RescheduleAppointmentDto,
-    jwtClinicId?: number | null,
+    actor: AuthenticatedUser,
   ): Promise<AppointmentResponseDto> {
     const appointment = await this.appointmentRepository.findById(id);
     if (!appointment) {
       throw new NotFoundException('Cita no encontrada');
     }
+
+    this.appointmentAccessPolicy.authorize(actor, 'RESCHEDULE', {
+      id: appointment.id,
+      clinicId:
+        appointment.schedule.doctor.clinic?.id ?? appointment.clinicId,
+      patientUserId: appointment.patient.profile.userId,
+      doctorUserId: appointment.schedule.doctor.profile.userId ?? null,
+    });
 
     const forbiddenStatuses = [
       AppointmentStatus.COMPLETED,
@@ -75,7 +86,7 @@ export class RescheduleAppointmentUseCase {
       slotEnd: newEndTime,
       durationMinutes: newSchedule.specialty.duration,
       bufferMinutes: newSchedule.specialty.bufferMinutes,
-      jwtClinicId,
+      jwtClinicId: actor.clinicId,
     });
 
     // Una cita pagada conserva su estado (no vuelve a PENDING sin que nadie

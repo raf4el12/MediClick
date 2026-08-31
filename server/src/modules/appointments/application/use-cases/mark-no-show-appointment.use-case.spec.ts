@@ -2,6 +2,9 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { MarkNoShowAppointmentUseCase } from './mark-no-show-appointment.use-case.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
 import type { AppointmentWithRelations } from '../../domain/interfaces/appointment-data.interface.js';
+import { AppointmentAccessPolicy } from '../../../../shared/access/appointment-access.policy.js';
+import { SystemRole } from '../../../../shared/domain/enums/permission.enum.js';
+import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
 
 describe('MarkNoShowAppointmentUseCase', () => {
   let useCase: MarkNoShowAppointmentUseCase;
@@ -10,6 +13,13 @@ describe('MarkNoShowAppointmentUseCase', () => {
 
   const PAST_DATE = new Date('2020-01-01T00:00:00.000Z');
   const FUTURE_DATE = new Date('2099-01-01T00:00:00.000Z');
+  const globalActor: AuthenticatedUser = {
+    id: 900,
+    email: 'admin@mediclick.test',
+    roleId: 1,
+    roleName: SystemRole.SUPER_ADMIN,
+    clinicId: null,
+  };
 
   const buildAppointment = (
     overrides: Partial<AppointmentWithRelations> = {},
@@ -76,11 +86,12 @@ describe('MarkNoShowAppointmentUseCase', () => {
     useCase = new MarkNoShowAppointmentUseCase(
       appointmentRepository as any,
       timezoneResolver as any,
+      new AppointmentAccessPolicy(),
     );
   });
 
   it('marca NO_SHOW una cita CONFIRMED cuya hora de inicio ya pasó', async () => {
-    const result = await useCase.execute(10);
+    const result = await useCase.execute(10, globalActor);
 
     expect(result.status).toBe(AppointmentStatus.NO_SHOW);
     expect(appointmentRepository.update).toHaveBeenCalledWith(
@@ -92,7 +103,9 @@ describe('MarkNoShowAppointmentUseCase', () => {
   it('lanza NotFoundException si la cita no existe', async () => {
     appointmentRepository.findById.mockResolvedValue(null);
 
-    await expect(useCase.execute(999)).rejects.toThrow(NotFoundException);
+    await expect(useCase.execute(999, globalActor)).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it.each([
@@ -105,7 +118,9 @@ describe('MarkNoShowAppointmentUseCase', () => {
       buildAppointment({ status }),
     );
 
-    await expect(useCase.execute(10)).rejects.toThrow(BadRequestException);
+    await expect(useCase.execute(10, globalActor)).rejects.toThrow(
+      BadRequestException,
+    );
     expect(appointmentRepository.update).not.toHaveBeenCalled();
   });
 
@@ -119,7 +134,7 @@ describe('MarkNoShowAppointmentUseCase', () => {
       }),
     );
 
-    await expect(useCase.execute(10)).rejects.toThrow(
+    await expect(useCase.execute(10, globalActor)).rejects.toThrow(
       'antes de la hora de inicio',
     );
     expect(appointmentRepository.update).not.toHaveBeenCalled();

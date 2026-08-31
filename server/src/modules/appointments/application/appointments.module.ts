@@ -24,6 +24,7 @@ import { ExpirePendingAppointmentsUseCase } from './use-cases/expire-pending-app
 import { AppointmentSlotValidatorService } from './services/appointment-slot-validator.service.js';
 import { AvailabilityChangeListener } from './listeners/availability-change.listener.js';
 import { AppointmentController } from '../interfaces/controllers/appointment.controller.js';
+import { AppointmentAccessPolicy } from '../../../shared/access/appointment-access.policy.js';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { AppointmentController } from '../interfaces/controllers/appointment.con
     ExpirePendingAppointmentsUseCase,
     AppointmentSlotValidatorService,
     AvailabilityChangeListener,
+    AppointmentAccessPolicy,
   ],
   exports: ['IAppointmentRepository'],
 })

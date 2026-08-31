@@ -14,6 +14,8 @@ import {
   DEFAULT_TIMEZONE,
   DEFAULT_CLINIC_NAME,
 } from '../../../../shared/constants/defaults.constant.js';
+import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
+import { AppointmentAccessPolicy } from '../../../../shared/access/appointment-access.policy.js';
 
 @Injectable()
 export class ConfirmAppointmentUseCase {
@@ -21,13 +23,25 @@ export class ConfirmAppointmentUseCase {
     @Inject('IAppointmentRepository')
     private readonly appointmentRepository: IAppointmentRepository,
     private readonly eventEmitter: EventEmitter2,
+    private readonly appointmentAccessPolicy: AppointmentAccessPolicy,
   ) {}
 
-  async execute(id: number): Promise<AppointmentResponseDto> {
+  async execute(
+    id: number,
+    actor: AuthenticatedUser,
+  ): Promise<AppointmentResponseDto> {
     const appointment = await this.appointmentRepository.findById(id);
     if (!appointment) {
       throw new NotFoundException('Cita no encontrada');
     }
+
+    this.appointmentAccessPolicy.authorize(actor, 'CONFIRM', {
+      id: appointment.id,
+      clinicId:
+        appointment.schedule.doctor.clinic?.id ?? appointment.clinicId,
+      patientUserId: appointment.patient.profile.userId,
+      doctorUserId: appointment.schedule.doctor.profile.userId ?? null,
+    });
 
     if (appointment.status !== AppointmentStatus.PENDING) {
       throw new BadRequestException(
