@@ -1,25 +1,60 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import type { IPatientRecordQueryPort } from '../../domain/interfaces/patient-record-query.port.js';
+import type { PatientRecordScope } from '../../domain/interfaces/patient-record-query.port.js';
 import type { PatientRecord } from '../../domain/types/patient-record.types.js';
 
 @Injectable()
 export class PrismaPatientRecordQuery implements IPatientRecordQueryPort {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getPatientRecord(patientId: number): Promise<PatientRecord | null> {
-    const patient = await this.prisma.patients.findUnique({
-      where: { id: patientId, deleted: false },
+  async getPatientRecord(
+    patientId: number,
+    scope: PatientRecordScope,
+  ): Promise<PatientRecord | null> {
+    const clinicScope = scope.kind === 'CLINIC' ? scope : null;
+    const appointmentScope = clinicScope
+      ? {
+          clinicId: clinicScope.clinicId,
+          ...(clinicScope.doctorUserId !== undefined && {
+            schedule: {
+              doctor: { profile: { userId: clinicScope.doctorUserId } },
+            },
+          }),
+        }
+      : {};
+
+    const patient = await this.prisma.patients.findFirst({
+      where: {
+        id: patientId,
+        deleted: false,
+        ...(clinicScope && {
+          appointments: {
+            some: {
+              deleted: false,
+              ...appointmentScope,
+            },
+          },
+        }),
+      },
       include: {
         profile: { include: { user: { select: { email: true } } } },
         medicalHistory: {
-          where: { deleted: false },
+          where: {
+            deleted: false,
+            ...(clinicScope && { clinicId: clinicScope.clinicId }),
+          },
         },
         appointments: {
-          where: { deleted: false },
+          where: { deleted: false, ...appointmentScope },
           orderBy: { startTime: 'desc' },
           include: {
-            clinicalNotes: { where: { deleted: false } },
+            clinicalNotes: {
+              where: {
+                deleted: false,
+                ...(clinicScope && { clinicId: clinicScope.clinicId }),
+              },
+            },
             schedule: {
               include: {
                 doctor: {

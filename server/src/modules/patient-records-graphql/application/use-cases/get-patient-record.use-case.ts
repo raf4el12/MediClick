@@ -5,9 +5,9 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import type { IPatientRecordQueryPort } from '../../domain/interfaces/patient-record-query.port.js';
+import type { PatientRecordScope } from '../../domain/interfaces/patient-record-query.port.js';
 import type { PatientRecord } from '../../domain/types/patient-record.types.js';
 import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
-import { SystemRole } from '../../../../shared/domain/enums/permission.enum.js';
 
 @Injectable()
 export class GetPatientRecordUseCase {
@@ -20,9 +20,9 @@ export class GetPatientRecordUseCase {
     patientId: number,
     currentUser: AuthenticatedUser,
   ): Promise<PatientRecord> {
-    await this.assertAccess(patientId, currentUser);
+    const scope = await this.resolveScope(patientId, currentUser);
 
-    const record = await this.queryPort.getPatientRecord(patientId);
+    const record = await this.queryPort.getPatientRecord(patientId, scope);
     if (!record) {
       throw new NotFoundException(
         'Expediente clínico no encontrado o paciente inactivo',
@@ -43,17 +43,37 @@ export class GetPatientRecordUseCase {
     return this.execute(patientId, currentUser);
   }
 
-  private async assertAccess(
+  private async resolveScope(
     patientId: number,
     user: AuthenticatedUser,
-  ): Promise<void> {
-    if (user.roleName !== SystemRole.PATIENT) return;
+  ): Promise<PatientRecordScope> {
+    if (user.roleName === 'PATIENT') {
+      const ownPatientId = await this.queryPort.getPatientIdByUserId(user.id);
+      if (ownPatientId !== patientId) {
+        throw new ForbiddenException(
+          'No tienes permiso para ver este expediente clínico',
+        );
+      }
+      return { kind: 'PATIENT' };
+    }
 
-    const ownPatientId = await this.queryPort.getPatientIdByUserId(user.id);
-    if (ownPatientId !== patientId) {
+    if (
+      user.roleName === 'SUPER_ADMIN' ||
+      (user.roleName === 'ADMIN' && user.clinicId === null)
+    ) {
+      return { kind: 'GLOBAL' };
+    }
+
+    if (user.clinicId === null) {
       throw new ForbiddenException(
-        'No tienes permiso para ver este expediente clínico',
+        'No tienes una sede asignada para consultar expedientes clínicos',
       );
     }
+
+    return {
+      kind: 'CLINIC',
+      clinicId: user.clinicId,
+      ...(user.roleName === 'DOCTOR' && { doctorUserId: user.id }),
+    };
   }
 }
