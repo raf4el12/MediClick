@@ -70,7 +70,7 @@ Run: `cd server && pnpm test -- schedule-generation-planner.service.spec.ts --ru
 
 Expected: PASS incluyendo reglas simultáneas, feriado de otra sede y feriados global/de la sede rechazados.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add server/src/modules/schedules/domain/services/schedule-generation-planner.service.ts server/src/modules/schedules/domain/services/schedule-generation-planner.service.spec.ts && git commit -m "feat(schedules): plan slots with specialty and clinic identity"
@@ -127,7 +127,7 @@ Run: `cd server && pnpm test -- generate-schedules.use-case.spec.ts schedule-gen
 
 Expected: PASS; ambas especialidades se generan y solo feriados globales/de la sede inhiben cupos.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add server/src/modules/schedules && git commit -m "fix(schedules): scope holidays and preserve specialty slots"
@@ -158,7 +158,7 @@ Run: `cd server && pnpm exec eslint src/modules/schedules/domain/services/schedu
 
 Expected: PASS.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add docs/domain/APPOINTMENT-CORE.md && git commit -m "docs(core): record schedule generation scope"

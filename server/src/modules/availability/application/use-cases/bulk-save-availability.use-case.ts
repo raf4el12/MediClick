@@ -8,6 +8,10 @@ import { BulkSaveAvailabilityDto } from '../dto/bulk-save-availability.dto.js';
 import { AvailabilityResponseDto } from '../dto/availability-response.dto.js';
 import type { IAvailabilityRepository } from '../../domain/repositories/availability.repository.js';
 import type { IDoctorRepository } from '../../../doctors/domain/repositories/doctor.repository.js';
+import type {
+  AvailabilityWithRelations,
+  CreateAvailabilityData,
+} from '../../domain/interfaces/availability-data.interface.js';
 import { ScheduleRegenerationService } from '../../../schedules/domain/services/schedule-regeneration.service.js';
 import {
   timeStringToDate,
@@ -69,47 +73,25 @@ export class BulkSaveAvailabilityUseCase {
       }
     }
 
-    // Soft-delete ALL active availability for this doctor
-    await this.availabilityRepository.softDeleteByDoctor(dto.doctorId);
+    const entries: CreateAvailabilityData[] = dto.entries.map((entry) => ({
+      doctorId: dto.doctorId,
+      specialtyId: dto.specialtyId,
+      startDate: new Date(entry.startDate),
+      endDate: new Date(entry.endDate),
+      dayOfWeek: entry.dayOfWeek,
+      timeFrom: timeStringToDate(entry.timeFrom),
+      timeTo: timeStringToDate(entry.timeTo),
+      type: entry.type,
+      reason: entry.reason,
+      clinicId: doctor.clinicId ?? null,
+    }));
 
-    // Create all new entries
-    const results: AvailabilityResponseDto[] = [];
-
-    for (const entry of dto.entries) {
-      const availability = await this.availabilityRepository.create({
-        doctorId: dto.doctorId,
-        specialtyId: dto.specialtyId,
-        startDate: new Date(entry.startDate),
-        endDate: new Date(entry.endDate),
-        dayOfWeek: entry.dayOfWeek,
-        timeFrom: timeStringToDate(entry.timeFrom),
-        timeTo: timeStringToDate(entry.timeTo),
-        type: entry.type,
-        reason: entry.reason,
-        clinicId: doctor.clinicId ?? null,
-      });
-
-      results.push({
-        id: availability.id,
-        doctorId: availability.doctorId,
-        specialtyId: availability.specialtyId,
-        startDate: availability.startDate,
-        endDate: availability.endDate,
-        dayOfWeek: availability.dayOfWeek,
-        timeFrom: dateToTimeString(availability.timeFrom),
-        timeTo: dateToTimeString(availability.timeTo),
-        isAvailable: availability.isAvailable,
-        type: availability.type,
-        reason: availability.reason,
-        doctor: {
-          id: availability.doctor.id,
-          name: availability.doctor.profile.name,
-          lastName: availability.doctor.profile.lastName,
-        },
-        specialty: availability.specialty,
-        createdAt: availability.createdAt,
-      });
-    }
+    const availabilities =
+      await this.availabilityRepository.replaceForDoctorSpecialty(
+        dto.doctorId,
+        dto.specialtyId,
+        entries,
+      );
 
     // Regenerate schedules for the affected date range
     if (dto.entries.length > 0) {
@@ -129,6 +111,31 @@ export class BulkSaveAvailabilityUseCase {
       );
     }
 
-    return results;
+    return availabilities.map((availability) => this.toResponse(availability));
+  }
+
+  private toResponse(
+    availability: AvailabilityWithRelations,
+  ): AvailabilityResponseDto {
+    return {
+      id: availability.id,
+      doctorId: availability.doctorId,
+      specialtyId: availability.specialtyId,
+      startDate: availability.startDate,
+      endDate: availability.endDate,
+      dayOfWeek: availability.dayOfWeek,
+      timeFrom: dateToTimeString(availability.timeFrom),
+      timeTo: dateToTimeString(availability.timeTo),
+      isAvailable: availability.isAvailable,
+      type: availability.type,
+      reason: availability.reason,
+      doctor: {
+        id: availability.doctor.id,
+        name: availability.doctor.profile.name,
+        lastName: availability.doctor.profile.lastName,
+      },
+      specialty: availability.specialty,
+      createdAt: availability.createdAt,
+    };
   }
 }
