@@ -120,9 +120,26 @@ Los estados financieros son `PENDING`, `PAID`, `PARTIAL`, `REFUNDED`, `FAILED` y
 
 ### Liberación de cupos
 
-- Cancelar, reagendar a otro cupo o expirar una reserva emite `appointment.slot_released`.
+- Cancelar, reagendar a otro cupo o expirar una reserva registra `appointment.slot_released` en la
+  misma transacción que libera capacidad.
 - La liberación del cupo no depende de que el paciente tenga usuario o email.
-- La lista de espera vuelve a comprobar que el cupo siga libre antes de ofrecerlo y antes de crear la cita aceptada.
+- La lista de espera consume el evento al menos una vez, reusa cualquier oferta pendiente del cupo
+  y vuelve a comprobar que siga libre antes de ofrecerlo y antes de crear la cita aceptada.
+
+### Eventos durables y proyecciones
+
+- La cancelación y confirmación asistencial, la liberación de cupos y los cambios de paciente se
+  guardan en una outbox PostgreSQL junto con la mutación que los origina.
+- La entrega es al menos una vez. Un consumidor puede recibir el mismo `eventId` más de una vez y
+  debe convertir la redelivery en un no-op; un fallo se propaga para reintento y eventualmente dead
+  letter.
+- `clinicId` del evento se deriva de la cita, agenda o médico persistido. `null` no concede acceso
+  global; los pacientes sí permanecen deliberadamente multi-sede.
+- FHIR sigue siendo una proyección: su recibo durable, recurso, `Provenance` e historial se aplican
+  en una transacción. Eventos distintos serializan versiones del mismo recurso; el mismo evento no
+  agrega otra versión.
+- No existe orden global garantizado. Encounter y Patient rehidratan el estado vigente antes de
+  proyectar, de modo que una entrega tardía no restaura un estado anterior.
 
 ## Preguntas de dominio abiertas detectadas
 

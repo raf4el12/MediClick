@@ -1,6 +1,6 @@
 # SDD — Endurecimiento de integridad, seguridad y operación de MediClick
 
-- **Estado:** P0, P1 y SDD-018 implementados; P2 restante (SDD-019 a SDD-023) y P3 pendiente (SDD-024)
+- **Estado:** P0, P1, SDD-018 y SDD-019 implementados; P2 restante (SDD-020 a SDD-023) y P3 pendiente (SDD-024)
 - **Fecha:** 2026-08-30
 - **Alcance:** backend, persistencia, workers, despliegue y gates de CI del flujo de citas
 - **Prioridad:** corrección de P0 antes de ampliar funcionalidad
@@ -395,7 +395,7 @@ Modelo propuesto:
 
 ```prisma
 model OutboxEvents {
-  id            String   @id @default(uuid()) // eventId
+  eventId       String   @id @default(uuid())
   type          String
   schemaVersion Int
   aggregateType String
@@ -433,6 +433,15 @@ La outbox afecta una decisión transversal y cara de revertir.
 es fuente de verdad y FHIR una proyección, según ADR-0001. Define el envelope versionado,
 deduplicación por operación, scope explícito de sede, leases cortos y el contrato idempotente de
 consumidores que debe aplicar SDD-019.
+
+SDD-019 quedó implementado con escritura atómica para cancelación, reagendamiento, expiración,
+confirmación por pago y cambios de paciente. El dispatcher usa nombres exactos
+`outbox.<type>.v<schemaVersion>` y conserva el evento ante tipos desconocidos. Lista de espera
+consume `appointment.slot_released` apoyándose en la oferta pendiente única; las proyecciones FHIR
+registran `(consumerName, eventId)`, recursos, `Provenance` e historial en una sola transacción. La
+redelivery del mismo evento es un no-op y los handlers propagan fallos para activar backoff o dead
+letter. Email y notificaciones locales permanecen fuera de esta primera migración, tal como limita
+ADR-0002; su durabilidad corresponde a trabajos posteriores.
 
 #### 6.5.2 Jobs con lease e idempotencia
 
@@ -654,7 +663,7 @@ diff que toque el núcleo termina con `$mediclick-core-review` antes de integrar
 | SDD-016 ✅ | P1 | Añadir harness PostgreSQL real a CI para aislamiento entre suites; corregir F-13 con reintento ante `P2034` en `replaceForDoctorSpecialty`, con test que reproduzca 30 reemplazos concurrentes sin fallos | `$tdd` + `$diagnosing-bugs` + `$mediclick-appointment-core` |
 | SDD-017 ✅ | P1 | Restaurar build/a11y del cliente incorporando Playwright y su gate de CI | `$diagnosing-bugs` + `$tdd` |
 | SDD-018 ✅ | P2 | Redactar ADR-0002 de outbox y contrato de entrega al menos una vez | `$domain-modeling` + `$codebase-design` |
-| SDD-019 | P2 | Implementar outbox, worker con `SKIP LOCKED`, backoff y dead letters; migrar primero slot release y FHIR | `$mediclick-appointment-core` + `$codebase-design` + `$tdd` |
+| SDD-019 ✅ | P2 | Implementar outbox, worker con `SKIP LOCKED`, backoff y dead letters; migrar primero slot release y FHIR | `$mediclick-appointment-core` + `$codebase-design` + `$tdd` |
 | SDD-020 | P2 | Añadir leases de jobs y entregas idempotentes para recordatorios | `$codebase-design` + `$tdd` + `$diagnosing-bugs` |
 | SDD-021 | P2 | Validar configuración al arranque y endurecer usuario, red, Redis, secretos y migraciones de producción | `$diagnosing-bugs` + `$tdd` |
 | SDD-022 | P2 | Añadir métricas, alertas y runbooks de conciliación, outbox, jobs y acceso tenant | `$mediclick-appointment-core` + `$mediclick-tenant-safety` |
