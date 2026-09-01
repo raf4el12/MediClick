@@ -44,6 +44,11 @@ describeDatabase('OutboxWorker (PostgreSQL)', () => {
 
   beforeAll(async () => {
     await prisma.$connect();
+    // Elimina únicamente fixtures abandonados por ejecuciones de integración
+    // interrumpidas; nunca toca eventos de negocio.
+    await prisma.outboxEvents.deleteMany({
+      where: { type: { startsWith: 'test.' } },
+    });
   });
 
   afterEach(async () => {

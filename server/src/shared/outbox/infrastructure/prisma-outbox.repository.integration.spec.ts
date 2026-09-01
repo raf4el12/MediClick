@@ -14,10 +14,13 @@ describeDatabase('PrismaOutboxRepository (PostgreSQL)', () => {
   const prisma = new PrismaService();
   const repository = new PrismaOutboxRepository(prisma);
   const suiteOperationPrefix = `outbox-${process.pid}-${Date.now()}`;
+  // Ventana anterior al uso real de MediClick: evita reclamar eventos ajenos
+  // cuando la suite corre contra una base local que no está vacía.
+  const testNow = new Date('2000-01-01T00:00:00.000Z');
 
   const createEvent = async (
     operationSuffix: string,
-    occurredAt = new Date(),
+    occurredAt = new Date(testNow.getTime() - 1),
   ) => {
     const event = buildDurableEvent({
       type: 'test.slot_released',
@@ -30,6 +33,10 @@ describeDatabase('PrismaOutboxRepository (PostgreSQL)', () => {
       payload: { appointmentId: operationSuffix },
     });
     await prisma.$transaction((tx) => recordOutboxEvent(tx, event));
+    await prisma.outboxEvents.update({
+      where: { eventId: event.eventId },
+      data: { availableAt: occurredAt },
+    });
     return event;
   };
 
@@ -48,7 +55,7 @@ describeDatabase('PrismaOutboxRepository (PostgreSQL)', () => {
   });
 
   it('reclama cada evento una sola vez entre dos workers concurrentes', async () => {
-    const now = new Date();
+    const now = testNow;
     await Promise.all(
       Array.from({ length: 6 }, (_, index) =>
         createEvent(`concurrent-${index}`, new Date(now.getTime() - 1000)),
@@ -66,8 +73,11 @@ describeDatabase('PrismaOutboxRepository (PostgreSQL)', () => {
   });
 
   it('permite reclamar un lease vencido e incrementa attempts', async () => {
-    const event = await createEvent('expired-lease', new Date(Date.now() - 1));
-    const firstNow = new Date();
+    const firstNow = testNow;
+    const event = await createEvent(
+      'expired-lease',
+      new Date(firstNow.getTime() - 1),
+    );
     const [first] = await repository.claimBatch(
       'crashed-worker',
       firstNow,
@@ -89,7 +99,7 @@ describeDatabase('PrismaOutboxRepository (PostgreSQL)', () => {
   });
 
   it('solo permite ack y reschedule al owner con lease vigente', async () => {
-    const now = new Date();
+    const now = testNow;
     await createEvent('owner-check', new Date(now.getTime() - 1));
     const [claimed] = await repository.claimBatch('right-owner', now, 1, 1000);
 
@@ -112,7 +122,7 @@ describeDatabase('PrismaOutboxRepository (PostgreSQL)', () => {
   });
 
   it('reprograma con backoff y conserva el evento como dead letter al agotar intentos', async () => {
-    const now = new Date();
+    const now = testNow;
     const event = await createEvent('dead-letter', new Date(now.getTime() - 1));
     const [first] = await repository.claimBatch('worker', now, 1, 1000);
 
@@ -173,7 +183,7 @@ describeDatabase('PrismaOutboxRepository (PostgreSQL)', () => {
   });
 
   it('trata mismo envelope como no-op y rechaza reutilizar la clave con contenido distinto', async () => {
-    const event = await createEvent('dedupe', new Date(Date.now() - 1));
+    const event = await createEvent('dedupe');
 
     await expect(
       prisma.$transaction((tx) => recordOutboxEvent(tx, event)),
