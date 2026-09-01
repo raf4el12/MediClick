@@ -131,34 +131,41 @@ describeDatabase(
       ]);
     });
 
-    it('deja un único conjunto activo si dos reemplazos compiten', async () => {
-      const laterStart = {
-        ...availability(specialtyAId),
-        timeFrom: new Date('1970-01-01T09:00:00.000Z'),
-        timeTo: new Date('1970-01-01T13:00:00.000Z'),
-      };
-      const results = await Promise.allSettled([
-        repository.replaceForDoctorSpecialty(doctorId, specialtyAId, [
-          availability(specialtyAId),
-        ]),
-        repository.replaceForDoctorSpecialty(doctorId, specialtyAId, [
-          laterStart,
-        ]),
-      ]);
+    it('deja un único conjunto activo tras 30 pares de reemplazos concurrentes (SDD-016, F-13)', async () => {
+      // Volumen alineado al criterio de aceptación de SDD-016: una sola
+      // corrida con 2 réplicas tiene ~3% de probabilidad de no reproducir el
+      // conflicto de serialización aunque el bug exista (confirmado en la
+      // auditoría de F-13). 30 iteraciones son la evidencia real usada para
+      // validar el fix de reintento en PrismaAvailabilityRepository.
+      for (let iteration = 0; iteration < 30; iteration++) {
+        const laterStart = {
+          ...availability(specialtyAId),
+          timeFrom: new Date('1970-01-01T09:00:00.000Z'),
+          timeTo: new Date('1970-01-01T13:00:00.000Z'),
+        };
+        const results = await Promise.allSettled([
+          repository.replaceForDoctorSpecialty(doctorId, specialtyAId, [
+            availability(specialtyAId),
+          ]),
+          repository.replaceForDoctorSpecialty(doctorId, specialtyAId, [
+            laterStart,
+          ]),
+        ]);
 
-      expect(
-        results.filter((result) => result.status === 'fulfilled'),
-      ).toHaveLength(2);
-      await expect(
-        prisma.availability.count({
-          where: { doctorId, specialtyId: specialtyAId, isAvailable: true },
-        }),
-      ).resolves.toBe(1);
-      await expect(
-        prisma.availability.count({
-          where: { doctorId, specialtyId: specialtyBId, isAvailable: true },
-        }),
-      ).resolves.toBe(1);
+        expect(
+          results.filter((result) => result.status === 'fulfilled'),
+        ).toHaveLength(2);
+        await expect(
+          prisma.availability.count({
+            where: { doctorId, specialtyId: specialtyAId, isAvailable: true },
+          }),
+        ).resolves.toBe(1);
+        await expect(
+          prisma.availability.count({
+            where: { doctorId, specialtyId: specialtyBId, isAvailable: true },
+          }),
+        ).resolves.toBe(1);
+      }
     });
   },
 );

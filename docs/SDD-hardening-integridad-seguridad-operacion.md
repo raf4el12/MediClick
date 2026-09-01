@@ -1,6 +1,6 @@
 # SDD — Endurecimiento de integridad, seguridad y operación de MediClick
 
-- **Estado:** P0 y SDD-008/009/010/011/012/013/014/015 implementados; P1 restante (SDD-016/017) y P2 propuestos
+- **Estado:** P0 y SDD-008/009/010/011/012/013/014/015/016 implementados; P1 restante (SDD-017) y P2 propuestos
 - **Fecha:** 2026-08-30
 - **Alcance:** backend, persistencia, workers, despliegue y gates de CI del flujo de citas
 - **Prioridad:** corrección de P0 antes de ampliar funcionalidad
@@ -48,6 +48,7 @@ normalizan silenciosamente.
 | F-10 | P1 | Mercado Pago envía una firma mal formada | `timingSafeEqual` lanza `RangeError`; además el controlador puede seguir procesando una firma inválida y absorber fallos transitorios con HTTP 200 | Autenticidad y reintento de webhook |
 | F-11 | P1 | Se inicializan permisos con los dos seeds disponibles | El permiso de paciente para actualizar citas difiere entre `seed.ts` y `seed-rbac.ts` | Política de acceso reproducible |
 | F-12 | P1 | Se construye el cliente o se ejecuta `test:a11y` | `playwright.config.ts` importa `@playwright/test`, ausente en `package.json` | Build reproducible |
+| F-13 | P1 | Dos reemplazos concurrentes de disponibilidad para el mismo médico y especialidad | `replaceForDoctorSpecialty` usa `pg_advisory_xact_lock` para ordenar, pero ambas transacciones siguen siendo `Serializable` completas; PostgreSQL puede abortar una con `P2034` y el código no reintenta — confirmado empíricamente en ~97% de 30 corridas aisladas | Disponibilidad de escritura bajo concurrencia real (el lock advisory ordena, no sustituye el reintento) |
 
 ### 2.2 Huecos de diseño con riesgo operativo alto
 
@@ -640,7 +641,7 @@ diff que toque el núcleo termina con `$mediclick-core-review` antes de integrar
 | SDD-013 ✅ | P1 | Hacer atómica la aceptación waitlist y agregar carreras contra reserva directa y doble aceptación | `$mediclick-appointment-core` + `$codebase-design` + `$tdd` + `$diagnosing-bugs` |
 | SDD-014 ✅ | P1 | Cambiar locks waitlist a token + compare-and-delete; demostrar que un owner no libera lock ajeno | `$mediclick-appointment-core` + `$tdd` |
 | SDD-015 ✅ | P1 | Auditar duplicados y agregar constraints de gateway, agenda y ofertas mediante migración segura | `$mediclick-appointment-core` + `$mediclick-tenant-safety` + `$tdd` |
-| SDD-016 | P1 | Añadir harness PostgreSQL real a CI para aislamiento, constraints y concurrencia | `$tdd` + `$diagnosing-bugs` |
+| SDD-016 ✅ | P1 | Añadir harness PostgreSQL real a CI para aislamiento entre suites; corregir F-13 con reintento ante `P2034` en `replaceForDoctorSpecialty`, con test que reproduzca 30 reemplazos concurrentes sin fallos | `$tdd` + `$diagnosing-bugs` + `$mediclick-appointment-core` |
 | SDD-017 | P1 | Restaurar build/a11y del cliente incorporando Playwright y su gate de CI | `$diagnosing-bugs` + `$tdd` |
 | SDD-018 | P2 | Redactar ADR-0002 de outbox y contrato de entrega al menos una vez | `$domain-modeling` + `$codebase-design` |
 | SDD-019 | P2 | Implementar outbox, worker con `SKIP LOCKED`, backoff y dead letters; migrar primero slot release y FHIR | `$mediclick-appointment-core` + `$codebase-design` + `$tdd` |
@@ -681,6 +682,7 @@ SDD-021 ────────────────────────
 | F-10 | `server/src/modules/payments/interfaces/controllers/payment-webhook.controller.ts`, `infrastructure/gateways/mercadopago-gateway.service.ts` |
 | F-11 | `server/prisma/seed.ts`, `server/prisma/seed-rbac.ts` |
 | F-12 | `client/playwright.config.ts`, `client/package.json` |
+| F-13 | `server/src/modules/availability/infrastructure/persistence/prisma-availability.repository.ts` (`replaceForDoctorSpecialty`), `server/src/modules/availability/infrastructure/persistence/prisma-availability.repository.integration.spec.ts` |
 | G-01/G-02 | `server/src/modules/waitlist/application/use-cases/accept-offer.use-case.ts`, `application/services/waitlist-lock.service.ts` |
 | G-04 | `server/src/shared/events/availability-events.interface.ts` y listeners de `appointments`, `waitlist` e `interoperability` |
 | G-05 | `server/src/modules/scheduler/domain/services/appointment-reminder.service.ts`, `application/scheduler.module.ts` |

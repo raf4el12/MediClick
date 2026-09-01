@@ -77,8 +77,11 @@ jobs:
       - name: Type-check
         run: npx tsc --noEmit
 
-      - name: Run tests
+      - name: Run unit tests
         run: pnpm test -- --passWithNoTests
+
+      - name: Run integration tests (real PostgreSQL)
+        run: pnpm run test:integration
 
       - name: Build production artifact
         run: pnpm build

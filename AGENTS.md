@@ -26,6 +26,7 @@
 
 - Backend focalizado: `cd server && pnpm test -- <patrón> --runInBand`.
 - Backend transversal: `cd server && pnpm test -- --runInBand` y `pnpm build`.
+- Backend con PostgreSQL real (constraints, concurrencia, aislamiento de sede en callbacks transaccionales): `cd server && RUN_DB_INTEGRATION=1 DATABASE_URL=... pnpm run test:integration`. Corre solo `*.integration.spec.ts`, siempre con un único worker (`jest.integration.config.cjs`) — correrlos junto a otras suites bajo el paralelismo normal de Jest reintroduce contención real de `Serializable` entre archivos no relacionados (SDD-016, F-13).
 - Lint backend sin reescritura masiva: `cd server && pnpm exec eslint <archivos-modificados>`; el script `pnpm lint` aplica `--fix`.
 - Frontend: `cd client && pnpm lint` y `pnpm build`; usa `pnpm test:a11y` cuando cambia un flujo visible.
 - Conserva los cambios no relacionados que ya existan en el worktree.

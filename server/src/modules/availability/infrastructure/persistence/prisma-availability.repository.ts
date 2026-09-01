@@ -27,6 +27,14 @@ type AvailabilityRow = Prisma.AvailabilityGetPayload<{
   include: typeof availabilityInclude;
 }>;
 
+// SDD-016 (F-13): el lock advisory de replaceForDoctorSpecialty serializa el
+// ORDEN de ejecución (una tx espera a que la otra libere el lock), pero
+// ambas siguen siendo transacciones Serializable completas. PostgreSQL
+// puede seguir detectando un conflicto de escritura real (P2034) entre
+// ellas — el lock ordena, no sustituye el reintento. Mismo patrón que
+// PrismaPaymentReconciliationRepository.
+const MAX_REPLACE_ATTEMPTS = 3;
+
 @Injectable()
 export class PrismaAvailabilityRepository implements IAvailabilityRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -156,43 +164,60 @@ export class PrismaAvailabilityRepository implements IAvailabilityRepository {
     specialtyId: number,
     entries: CreateAvailabilityData[],
   ): Promise<AvailabilityWithRelations[]> {
-    return this.prisma.$transaction(
-      async (tx) => {
-        // Serializa reemplazos del mismo médico y especialidad. Sin este lock,
-        // dos transacciones que desactivan el conjunto anterior antes de que la
-        // otra inserte podrían dejar ambos conjuntos activos.
-        await tx.$executeRaw(
-          Prisma.sql`SELECT pg_advisory_xact_lock(${doctorId}, ${specialtyId})`,
+    for (let attempt = 1; attempt <= MAX_REPLACE_ATTEMPTS; attempt++) {
+      try {
+        return await this.prisma.$transaction(
+          async (tx) => {
+            // Serializa reemplazos del mismo médico y especialidad. Sin este lock,
+            // dos transacciones que desactivan el conjunto anterior antes de que la
+            // otra inserte podrían dejar ambos conjuntos activos.
+            await tx.$executeRaw(
+              Prisma.sql`SELECT pg_advisory_xact_lock(${doctorId}, ${specialtyId})`,
+            );
+            await tx.availability.updateMany({
+              where: { doctorId, specialtyId, isAvailable: true },
+              data: { isAvailable: false, updatedAt: new Date() },
+            });
+
+            const rows: AvailabilityRow[] = [];
+            for (const entry of entries) {
+              rows.push(
+                await tx.availability.create({
+                  data: {
+                    doctorId: entry.doctorId,
+                    specialtyId: entry.specialtyId,
+                    startDate: entry.startDate,
+                    endDate: entry.endDate,
+                    dayOfWeek: entry.dayOfWeek,
+                    timeFrom: entry.timeFrom,
+                    timeTo: entry.timeTo,
+                    type: entry.type,
+                    reason: entry.reason,
+                    clinicId: entry.clinicId ?? null,
+                  },
+                  include: availabilityInclude,
+                }),
+              );
+            }
+
+            return rows.map((row) => this.toAvailabilityWithRelations(row));
+          },
+          { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
         );
-        await tx.availability.updateMany({
-          where: { doctorId, specialtyId, isAvailable: true },
-          data: { isAvailable: false, updatedAt: new Date() },
-        });
-
-        const rows: AvailabilityRow[] = [];
-        for (const entry of entries) {
-          rows.push(
-            await tx.availability.create({
-              data: {
-                doctorId: entry.doctorId,
-                specialtyId: entry.specialtyId,
-                startDate: entry.startDate,
-                endDate: entry.endDate,
-                dayOfWeek: entry.dayOfWeek,
-                timeFrom: entry.timeFrom,
-                timeTo: entry.timeTo,
-                type: entry.type,
-                reason: entry.reason,
-                clinicId: entry.clinicId ?? null,
-              },
-              include: availabilityInclude,
-            }),
-          );
+      } catch (error) {
+        if (
+          attempt < MAX_REPLACE_ATTEMPTS &&
+          this.isSerializationFailure(error)
+        ) {
+          continue;
         }
+        throw error;
+      }
+    }
 
-        return rows.map((row) => this.toAvailabilityWithRelations(row));
-      },
-      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    // Inalcanzable: el bucle siempre retorna o lanza dentro de sus iteraciones.
+    throw new Error(
+      `No se pudo reemplazar la disponibilidad del médico ${doctorId} para la especialidad ${specialtyId} después de varios intentos`,
     );
   }
 
@@ -247,6 +272,13 @@ export class PrismaAvailabilityRepository implements IAvailabilityRepository {
       doctor: row.doctor,
       specialty: row.specialty,
     };
+  }
+
+  private isSerializationFailure(error: unknown): boolean {
+    return (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2034'
+    );
   }
 
   async existsDoctorSpecialty(
