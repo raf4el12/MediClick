@@ -665,10 +665,6 @@ model WaitlistOffers {
   schedule    Schedules       @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
   appointment Appointments?   @relation(fields: [createdAppointmentId], references: [id], onDelete: SetNull)
   clinic      Clinics?        @relation(fields: [clinicId], references: [id], onDelete: SetNull)
-
-  @@index([waitlistEntryId, status])
-  @@index([status, expiresAt]) // cron de expiración de ofertas
-  @@index([scheduleId, startTime, endTime])
   // SDD-015 (G-06): dos índices únicos parciales, creados con SQL crudo en
   // la migración `add_gateway_schedule_offer_constraints` porque Prisma no
   // expresa el predicado condicional en el schema:
@@ -678,6 +674,10 @@ model WaitlistOffers {
   //    exclusiva por cupo (acceptOfferAtomically/find-next-match ya
   //    garantizan esto a nivel de aplicación; el índice es la última
   //    barrera de base de datos).
+
+  @@index([waitlistEntryId, status])
+  @@index([status, expiresAt]) // cron de expiración de ofertas
+  @@index([scheduleId, startTime, endTime])
 }
 
 // Bitácora de seguridad append-only. Sin FKs a propósito: el registro debe
@@ -726,4 +726,44 @@ model FhirResourceHistory {
   recordedAt   DateTime @default(now())
 
   @@index([resourceType, resourceId, versionId])
+}
+
+// --- TRANSACTIONAL OUTBOX (SDD-019) ---
+
+// Sin FK a Clinics a propósito: el evento es un registro durable e inmutable
+// y debe sobrevivir al borrado de la sede que lo originó.
+model OutboxEvents {
+  eventId        String    @id @default(uuid())
+  type           String
+  schemaVersion  Int
+  aggregateType  String
+  aggregateId    String
+  operationId    String
+  clinicId       Int?
+  payload        Json
+  dedupeKey      String    @unique
+  occurredAt     DateTime  @default(now())
+  availableAt    DateTime  @default(now())
+  publishedAt    DateTime?
+  deadLetteredAt DateTime?
+  attempts       Int       @default(0)
+  lastError      String?
+  lockedBy       String?
+  lockedUntil    DateTime?
+
+  @@index([publishedAt, availableAt])
+  @@index([deadLetteredAt, lockedUntil])
+  @@index([clinicId, occurredAt])
+}
+
+// Recibo durable por consumidor. No referencia la outbox para que una futura
+// política de retención de eventos publicados no borre la idempotencia.
+model OutboxConsumptions {
+  id           String   @id @default(uuid())
+  consumerName String
+  eventId      String
+  consumedAt   DateTime @default(now())
+
+  @@unique([consumerName, eventId])
+  @@index([eventId])
 }
