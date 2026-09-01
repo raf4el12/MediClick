@@ -63,6 +63,27 @@ export class FindNextMatchUseCase {
         await this.lock.release(input.scheduleId, input.startTime, searchToken);
         return null;
       }
+      const persistedClinicId =
+        schedule.clinicId ?? schedule.doctor.clinic?.id ?? null;
+      if (persistedClinicId !== input.clinicId) {
+        throw new Error(
+          `clinicId inconsistente para schedule ${input.scheduleId}`,
+        );
+      }
+
+      const existingOffer = await this.offerRepository.findPendingBySlot(
+        input.scheduleId,
+        input.clinicId,
+      );
+      if (existingOffer) {
+        await this.transferLockToOffer(
+          input.scheduleId,
+          input.startTime,
+          searchToken,
+          existingOffer.id,
+        );
+        return existingOffer;
+      }
 
       // 3. Confirmar que el slot sigue libre (la cita pudo recrearse entre medio).
       const occupied =
@@ -131,7 +152,7 @@ export class FindNextMatchUseCase {
           error instanceof Error ? error.message : String(error)
         }`,
       );
-      return null;
+      throw error;
     }
   }
 

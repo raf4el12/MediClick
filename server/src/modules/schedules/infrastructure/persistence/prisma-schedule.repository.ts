@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { IScheduleRepository } from '../../domain/repositories/schedule.repository.js';
 import {
@@ -20,7 +21,7 @@ const scheduleInclude = {
     select: {
       id: true,
       profile: { select: { name: true, lastName: true } },
-      clinic: { select: { timezone: true } },
+      clinic: { select: { id: true, timezone: true } },
     },
   },
   specialty: {
@@ -78,7 +79,7 @@ export class PrismaScheduleRepository implements IScheduleRepository {
         ? filters.dateFrom
         : todayStart;
 
-    const where: Record<string, any> = {
+    const where: Prisma.SchedulesWhereInput = {
       ...(filters.doctorId && { doctorId: filters.doctorId }),
       ...(filters.specialtyId && { specialtyId: filters.specialtyId }),
       scheduleDate: {
@@ -109,7 +110,7 @@ export class PrismaScheduleRepository implements IScheduleRepository {
 
     return {
       totalRows: count,
-      rows: rows as any,
+      rows: rows as unknown as ScheduleWithRelations[],
       totalPages: Math.ceil(count / limit),
       currentPage: Math.floor(offset / limit) + 1,
     };
@@ -229,7 +230,7 @@ export class PrismaScheduleRepository implements IScheduleRepository {
       scheduleDate: s.scheduleDate,
       timeFrom: s.timeFrom,
       timeTo: s.timeTo,
-      hasActiveAppointment: (s as any).appointments.length > 0,
+      hasActiveAppointment: s.appointments.length > 0,
     }));
   }
 
@@ -275,12 +276,10 @@ export class PrismaScheduleRepository implements IScheduleRepository {
       scheduleDate: s.scheduleDate,
       timeFrom: s.timeFrom,
       timeTo: s.timeTo,
-      bookedSlots: (s as any).appointments.map(
-        (a: { startTime: Date; endTime: Date }) => ({
-          startTime: a.startTime,
-          endTime: a.endTime,
-        }),
-      ),
+      bookedSlots: s.appointments.map((appointment) => ({
+        startTime: appointment.startTime,
+        endTime: appointment.endTime,
+      })),
     }));
   }
 }

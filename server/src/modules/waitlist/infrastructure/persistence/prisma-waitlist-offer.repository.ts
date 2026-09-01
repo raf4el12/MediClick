@@ -45,6 +45,21 @@ export class PrismaWaitlistOfferRepository implements IWaitlistOfferRepository {
     return result ? mapOffer(result) : null;
   }
 
+  async findPendingBySlot(
+    scheduleId: number,
+    clinicId: number | null,
+  ): Promise<WaitlistOfferWithEntry | null> {
+    const result = await this.prisma.waitlistOffers.findFirst({
+      where: {
+        scheduleId,
+        clinicId,
+        status: WaitlistOfferStatus.PENDING,
+      },
+      include: waitlistOfferInclude,
+    });
+    return result ? mapOffer(result) : null;
+  }
+
   async findPendingByPatient(
     patientId: number,
   ): Promise<WaitlistOfferWithEntry[]> {

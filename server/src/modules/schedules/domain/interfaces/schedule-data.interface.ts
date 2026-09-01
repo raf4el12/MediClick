@@ -2,6 +2,7 @@ export interface ScheduleWithRelations {
   id: number;
   doctorId: number;
   specialtyId: number;
+  clinicId: number | null;
   scheduleDate: Date;
   timeFrom: Date;
   timeTo: Date;
@@ -10,7 +11,7 @@ export interface ScheduleWithRelations {
   doctor: {
     id: number;
     profile: { name: string; lastName: string };
-    clinic: { timezone: string } | null;
+    clinic: { id: number; timezone: string } | null;
   };
   specialty: {
     id: number;

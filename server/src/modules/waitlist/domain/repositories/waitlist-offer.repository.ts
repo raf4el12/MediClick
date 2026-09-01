@@ -40,6 +40,10 @@ export class AcceptOfferAtomicallyError extends Error {
 export interface IWaitlistOfferRepository {
   create(data: CreateWaitlistOfferData): Promise<WaitlistOfferWithEntry>;
   findById(id: number): Promise<WaitlistOfferWithEntry | null>;
+  findPendingBySlot(
+    scheduleId: number,
+    clinicId: number | null,
+  ): Promise<WaitlistOfferWithEntry | null>;
 
   /** Ofertas PENDING vigentes de un paciente (para mostrar countdown) */
   findPendingByPatient(patientId: number): Promise<WaitlistOfferWithEntry[]>;

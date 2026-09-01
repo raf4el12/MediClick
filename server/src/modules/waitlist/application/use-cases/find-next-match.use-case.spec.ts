@@ -6,6 +6,7 @@ function buildSchedule(overrides: any = {}) {
     id: 100,
     doctorId: 7,
     specialtyId: 3,
+    clinicId: 1,
     scheduleDate: new Date(Date.UTC(2030, 5, 1)),
     timeFrom: new Date(Date.UTC(2030, 0, 1, 8, 0)),
     timeTo: new Date(Date.UTC(2030, 0, 1, 18, 0)),
@@ -14,7 +15,7 @@ function buildSchedule(overrides: any = {}) {
     doctor: {
       id: 7,
       profile: { name: 'Ana', lastName: 'García' },
-      clinic: { timezone: 'America/Lima' },
+      clinic: { id: 1, timezone: 'America/Lima' },
     },
     specialty: { id: 3, name: 'Cardiología', price: 120 },
     ...overrides,
@@ -90,7 +91,7 @@ describe('FindNextMatchUseCase', () => {
 
   beforeEach(() => {
     entryRepo = { findNextMatch: jest.fn() };
-    offerRepo = { create: jest.fn() };
+    offerRepo = { create: jest.fn(), findPendingBySlot: jest.fn() };
     scheduleRepo = { findById: jest.fn() };
     appointmentRepo = { hasOverlappingAppointment: jest.fn() };
     lock = {
@@ -99,6 +100,7 @@ describe('FindNextMatchUseCase', () => {
       createToken: jest.fn().mockReturnValue('search-token'),
     };
     eventEmitter = { emit: jest.fn() };
+    offerRepo.findPendingBySlot.mockResolvedValue(null);
     useCase = new FindNextMatchUseCase(
       entryRepo,
       offerRepo,
@@ -119,13 +121,45 @@ describe('FindNextMatchUseCase', () => {
     expect(offerRepo.create).not.toHaveBeenCalled();
   });
 
+  it('redelivery reutiliza la oferta pendiente sin crear ni volver a notificar', async () => {
+    const existing = buildOffer(buildEntry());
+    lock.acquire.mockResolvedValue(true);
+    scheduleRepo.findById.mockResolvedValue(buildSchedule());
+    offerRepo.findPendingBySlot.mockResolvedValue(existing);
+
+    await expect(useCase.execute(SLOT)).resolves.toBe(existing);
+
+    expect(offerRepo.findPendingBySlot).toHaveBeenCalledWith(100, 1);
+    expect(offerRepo.create).not.toHaveBeenCalled();
+    expect(eventEmitter.emit).not.toHaveBeenCalled();
+    expect(lock.acquire).toHaveBeenNthCalledWith(2, 100, SLOT.startTime, '777');
+  });
+
+  it('rechaza un evento cuyo clinicId no coincide con la agenda persistida', async () => {
+    lock.acquire.mockResolvedValue(true);
+    scheduleRepo.findById.mockResolvedValue(
+      buildSchedule({
+        clinicId: 2,
+        doctor: {
+          id: 7,
+          profile: { name: 'Ana', lastName: 'García' },
+          clinic: { id: 2, timezone: 'America/Lima' },
+        },
+      }),
+    );
+
+    await expect(useCase.execute(SLOT)).rejects.toThrow(
+      'clinicId inconsistente',
+    );
+    expect(offerRepo.findPendingBySlot).not.toHaveBeenCalled();
+    expect(offerRepo.create).not.toHaveBeenCalled();
+  });
+
   it('libera el lock (con el token de búsqueda) y retorna null si el schedule no existe', async () => {
     lock.acquire.mockResolvedValue(true);
     scheduleRepo.findById.mockResolvedValue(null);
 
-    const result = await useCase.execute(SLOT);
-
-    expect(result).toBeNull();
+    await expect(useCase.execute(SLOT)).resolves.toBeNull();
     expect(lock.release).toHaveBeenCalledWith(
       SLOT.scheduleId,
       SLOT.startTime,
@@ -138,9 +172,7 @@ describe('FindNextMatchUseCase', () => {
     scheduleRepo.findById.mockResolvedValue(buildSchedule());
     appointmentRepo.hasOverlappingAppointment.mockResolvedValue(true);
 
-    const result = await useCase.execute(SLOT);
-
-    expect(result).toBeNull();
+    await expect(useCase.execute(SLOT)).resolves.toBeNull();
     expect(entryRepo.findNextMatch).not.toHaveBeenCalled();
     expect(lock.release).toHaveBeenCalledWith(
       SLOT.scheduleId,
@@ -224,9 +256,7 @@ describe('FindNextMatchUseCase', () => {
     entryRepo.findNextMatch.mockResolvedValue(entry);
     offerRepo.create.mockRejectedValue(new Error('db down'));
 
-    const result = await useCase.execute(SLOT);
-
-    expect(result).toBeNull();
+    await expect(useCase.execute(SLOT)).rejects.toThrow('db down');
     expect(lock.release).toHaveBeenCalledWith(
       SLOT.scheduleId,
       SLOT.startTime,
