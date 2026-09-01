@@ -23,7 +23,6 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
   let slotValidator: jest.Mocked<
     Pick<AppointmentSlotValidatorService, 'validate'>
   >;
-  let eventEmitter: { emit: jest.Mock };
 
   const globalActor: AuthenticatedUser = {
     id: 900,
@@ -132,13 +131,10 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
     slotValidator = {
       validate: jest.fn().mockResolvedValue(7),
     };
-    eventEmitter = { emit: jest.fn() };
-
     useCase = new RescheduleAppointmentUseCase(
-      appointmentRepository as any,
-      scheduleRepository as any,
-      slotValidator as any,
-      eventEmitter as any,
+      appointmentRepository as unknown as IAppointmentRepository,
+      scheduleRepository as unknown as IScheduleRepository,
+      slotValidator as unknown as AppointmentSlotValidatorService,
       new AppointmentAccessPolicy(),
     );
   });
@@ -160,6 +156,7 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
       99,
       expect.any(Date),
       expect.any(Date),
+      expect.anything(),
     );
   });
 
@@ -288,6 +285,7 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
       99,
       expect.any(Date),
       expect.any(Date),
+      expect.anything(),
     );
   });
 
@@ -319,6 +317,7 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
       99,
       expect.any(Date),
       expect.any(Date),
+      expect.anything(),
     );
   });
 
@@ -333,26 +332,33 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
       99,
       expect.any(Date),
       expect.any(Date),
+      expect.anything(),
     );
   });
 
-  // ── Iteración TDD 7: Slot viejo liberado → waitlist (huequecito #11) ──────
+  // ── Iteración TDD 7: Slot viejo liberado durablemente ─────────────────────
 
-  it('emite slot_released con los datos del slot VIEJO al reagendar', async () => {
+  it('delega una identidad durable al repositorio que mueve el slot', async () => {
     await useCase.execute(10, dto, globalActor);
 
-    expect(eventEmitter.emit).toHaveBeenCalledWith(
-      'appointment.slot_released',
-      expect.objectContaining({
-        appointmentId: 10,
-        scheduleId: 5,
-        startTime: new Date('1970-01-01T09:00:00.000Z'),
-        endTime: new Date('1970-01-01T09:30:00.000Z'),
-      }),
+    expect(
+      appointmentRepository.rescheduleWithOverlapCheck,
+    ).toHaveBeenCalledWith(
+      10,
+      expect.any(Object),
+      99,
+      expect.any(Date),
+      expect.any(Date),
+      expect.anything(),
     );
+    const eventIdentity =
+      appointmentRepository.rescheduleWithOverlapCheck.mock.calls[0][5];
+    expect(typeof eventIdentity.operationId).toBe('string');
+    expect(typeof eventIdentity.slotReleasedEventId).toBe('string');
+    expect(eventIdentity.occurredAt).toBeInstanceOf(Date);
   });
 
-  it('no emite slot_released si el reagendamiento quedó en el mismo slot', async () => {
+  it('deja al repositorio decidir atómicamente si el slot realmente cambió', async () => {
     appointmentRepository.findById.mockResolvedValue(
       buildAppointment({
         scheduleId: 99,
@@ -363,10 +369,12 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
 
     await useCase.execute(10, dto, globalActor);
 
-    expect(eventEmitter.emit).not.toHaveBeenCalled();
+    expect(
+      appointmentRepository.rescheduleWithOverlapCheck,
+    ).toHaveBeenCalledTimes(1);
   });
 
-  it('no emite slot_released si el reagendamiento falla por superposición', async () => {
+  it('propaga el fallo atómico de reagendamiento', async () => {
     appointmentRepository.rescheduleWithOverlapCheck.mockRejectedValue(
       new ConflictException('superposición'),
     );
@@ -374,7 +382,6 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
     await expect(useCase.execute(10, dto, globalActor)).rejects.toThrow(
       ConflictException,
     );
-    expect(eventEmitter.emit).not.toHaveBeenCalled();
   });
 
   // ── Iteración TDD 8: Verificación de argumentos al repositorio ────────────

@@ -78,6 +78,34 @@ export interface ExpiredAppointmentSlot {
   clinicId: number | null;
 }
 
+export interface DurableOperationIdentity {
+  operationId: string;
+  occurredAt: Date;
+}
+
+export interface RescheduleEventIdentity extends DurableOperationIdentity {
+  slotReleasedEventId: string;
+}
+
+export interface CancellationEventIdentity extends DurableOperationIdentity {
+  cancelledEventId: string;
+  slotReleasedEventId: string;
+}
+
+export interface CancelAppointmentAtomicallyData {
+  appointmentId: number;
+  reason: string | null;
+  cancelledBy: string;
+  cancellationFee?: number;
+  eventIdentity: CancellationEventIdentity;
+}
+
+export interface CancelAppointmentAtomicallyResult {
+  appointment: AppointmentWithRelations;
+  refundReviewTransactionId: number | null;
+  transitioned: boolean;
+}
+
 export interface DashboardFilters {
   dateFrom?: Date;
   dateTo?: Date;

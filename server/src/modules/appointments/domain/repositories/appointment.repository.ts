@@ -5,6 +5,10 @@ import type {
   DashboardFilters,
   PatientAppointmentFilters,
   ExpiredAppointmentSlot,
+  DurableOperationIdentity,
+  RescheduleEventIdentity,
+  CancelAppointmentAtomicallyData,
+  CancelAppointmentAtomicallyResult,
 } from '../interfaces/appointment-data.interface.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
@@ -93,7 +97,12 @@ export interface IAppointmentRepository {
     newScheduleId: number,
     startTime: Date,
     endTime: Date,
+    eventIdentity: RescheduleEventIdentity,
   ): Promise<AppointmentWithRelations>;
+
+  cancelAtomically(
+    data: CancelAppointmentAtomicallyData,
+  ): Promise<CancelAppointmentAtomicallyResult>;
 
   /**
    * Verifica el límite de sobrecupos y crea la cita dentro de una transacción serializable.
@@ -110,5 +119,8 @@ export interface IAppointmentRepository {
    * Cancela atómicamente las citas PENDING cuyo deadline de pago venció y
    * retorna los slots liberados (para reofrecerlos a la lista de espera).
    */
-  expirePendingPastDeadline(now: Date): Promise<ExpiredAppointmentSlot[]>;
+  expirePendingPastDeadline(
+    now: Date,
+    eventIdentity: DurableOperationIdentity,
+  ): Promise<ExpiredAppointmentSlot[]>;
 }

@@ -1,10 +1,11 @@
 import { ExpirePendingAppointmentsUseCase } from './expire-pending-appointments.use-case.js';
-import { SLOT_RELEASED_EVENT } from '../../../../shared/events/availability-events.interface.js';
+import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 
 describe('ExpirePendingAppointmentsUseCase', () => {
   let useCase: ExpirePendingAppointmentsUseCase;
-  let appointmentRepository: { expirePendingPastDeadline: jest.Mock };
-  let eventEmitter: { emit: jest.Mock };
+  let appointmentRepository: jest.Mocked<
+    Pick<IAppointmentRepository, 'expirePendingPastDeadline'>
+  >;
 
   const buildExpiredSlot = (id: number) => ({
     id,
@@ -18,15 +19,12 @@ describe('ExpirePendingAppointmentsUseCase', () => {
     appointmentRepository = {
       expirePendingPastDeadline: jest.fn().mockResolvedValue([]),
     };
-    eventEmitter = { emit: jest.fn() };
-
     useCase = new ExpirePendingAppointmentsUseCase(
-      appointmentRepository as any,
-      eventEmitter as any,
+      appointmentRepository as unknown as IAppointmentRepository,
     );
   });
 
-  it('expira las citas vencidas y emite slot_released por cada slot liberado', async () => {
+  it('delega expiración y eventos durables bajo una misma identidad de job', async () => {
     appointmentRepository.expirePendingPastDeadline.mockResolvedValue([
       buildExpiredSlot(1),
       buildExpiredSlot(2),
@@ -34,22 +32,18 @@ describe('ExpirePendingAppointmentsUseCase', () => {
 
     await useCase.execute();
 
-    expect(
-      appointmentRepository.expirePendingPastDeadline,
-    ).toHaveBeenCalledWith(expect.any(Date));
-    expect(eventEmitter.emit).toHaveBeenCalledTimes(2);
-    expect(eventEmitter.emit).toHaveBeenCalledWith(SLOT_RELEASED_EVENT, {
-      appointmentId: 1,
-      scheduleId: 11,
-      startTime: new Date('1970-01-01T09:00:00.000Z'),
-      endTime: new Date('1970-01-01T09:30:00.000Z'),
-      clinicId: 7,
-    });
+    const [now, identity] =
+      appointmentRepository.expirePendingPastDeadline.mock.calls[0];
+    expect(now).toBeInstanceOf(Date);
+    expect(typeof identity.operationId).toBe('string');
+    expect(identity.occurredAt).toBe(now);
   });
 
-  it('sin citas vencidas: no emite eventos', async () => {
+  it('sin citas vencidas: finaliza sin efectos posteriores', async () => {
     await useCase.execute();
 
-    expect(eventEmitter.emit).not.toHaveBeenCalled();
+    expect(
+      appointmentRepository.expirePendingPastDeadline,
+    ).toHaveBeenCalledTimes(1);
   });
 });

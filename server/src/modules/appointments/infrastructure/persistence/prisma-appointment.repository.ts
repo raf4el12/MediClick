@@ -1,4 +1,6 @@
+import { randomUUID } from 'node:crypto';
 import { Injectable, ConflictException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type {
@@ -8,6 +10,10 @@ import type {
   DashboardFilters,
   PatientAppointmentFilters,
   ExpiredAppointmentSlot,
+  DurableOperationIdentity,
+  RescheduleEventIdentity,
+  CancelAppointmentAtomicallyData,
+  CancelAppointmentAtomicallyResult,
 } from '../../domain/interfaces/appointment-data.interface.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
@@ -21,6 +27,12 @@ import {
   buildDoctorOverlapWhere,
   buildPatientOverlapWhere,
 } from './appointment-overlap.utils.js';
+import { recordOutboxEvent } from '../../../../shared/outbox/infrastructure/prisma-outbox-writer.js';
+import {
+  APPOINTMENT_CANCELLED,
+  buildAppointmentChangedDurableEvent,
+  buildAppointmentSlotReleasedDurableEvent,
+} from '../../../../shared/events/appointment-durable-events.js';
 
 const appointmentInclude = {
   patient: {
@@ -56,6 +68,10 @@ const appointmentInclude = {
   _count: { select: { clinicalNotes: true } },
 } as const;
 
+type AppointmentRow = Prisma.AppointmentsGetPayload<{
+  include: typeof appointmentInclude;
+}>;
+
 @Injectable()
 export class PrismaAppointmentRepository implements IAppointmentRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -82,7 +98,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
   ): Promise<PaginatedResult<AppointmentWithRelations>> {
     const { limit, offset, searchValue, orderBy, orderByMode } = params;
 
-    const where: any = {
+    const where: Prisma.AppointmentsWhereInput = {
       deleted: false,
       ...(filters.status && { status: filters.status }),
       ...(filters.doctorId && {
@@ -151,7 +167,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
   ): Promise<PaginatedResult<AppointmentWithRelations>> {
     const { limit, offset, orderBy, orderByMode } = params;
 
-    const where: any = {
+    const where: Prisma.AppointmentsWhereInput = {
       patientId,
       deleted: false,
       ...(filters.status && { status: filters.status }),
@@ -423,6 +439,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     newScheduleId: number,
     startTime: Date,
     endTime: Date,
+    eventIdentity: RescheduleEventIdentity,
   ): Promise<AppointmentWithRelations> {
     return this.prisma.$transaction(
       async (tx) => {
@@ -452,7 +469,16 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
 
         const current = await tx.appointments.findUnique({
           where: { id },
-          select: { patientId: true },
+          select: {
+            patientId: true,
+            scheduleId: true,
+            startTime: true,
+            endTime: true,
+            clinicId: true,
+            schedule: {
+              select: { doctor: { select: { clinicId: true } } },
+            },
+          },
         });
         if (!current) {
           throw new ConflictException('La cita ya no existe');
@@ -492,6 +518,27 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
           include: appointmentInclude,
         });
 
+        const slotChanged =
+          current.scheduleId !== newScheduleId ||
+          current.startTime.getTime() !== startTime.getTime() ||
+          current.endTime.getTime() !== endTime.getTime();
+        if (slotChanged) {
+          await recordOutboxEvent(
+            tx,
+            buildAppointmentSlotReleasedDurableEvent({
+              eventId: eventIdentity.slotReleasedEventId,
+              operationId: eventIdentity.operationId,
+              occurredAt: eventIdentity.occurredAt,
+              appointmentId: id,
+              scheduleId: current.scheduleId,
+              startTime: current.startTime,
+              endTime: current.endTime,
+              clinicId:
+                current.clinicId ?? current.schedule.doctor.clinicId ?? null,
+            }),
+          );
+        }
+
         return this.mapToRelations(result);
       },
       { isolationLevel: 'Serializable' },
@@ -500,28 +547,176 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
 
   async expirePendingPastDeadline(
     now: Date,
+    eventIdentity: DurableOperationIdentity,
   ): Promise<ExpiredAppointmentSlot[]> {
-    return this.prisma.appointments.updateManyAndReturn({
-      where: {
-        status: 'PENDING',
-        // Incluye FAILED: el paciente puede reintentar hasta el deadline, pero
-        // después ambos estados financieros dejan de retener el cupo.
-        paymentStatus: { in: ['PENDING', 'FAILED'] },
-        pendingUntil: { lt: now },
-        deleted: false,
-      },
-      data: {
-        status: 'CANCELLED',
-        cancelReason: 'Pago no completado dentro del tiempo permitido',
-        updatedAt: now,
-      },
-      select: {
-        id: true,
-        scheduleId: true,
-        startTime: true,
-        endTime: true,
-        clinicId: true,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const expired = await tx.appointments.updateManyAndReturn({
+        where: {
+          status: 'PENDING',
+          // Incluye FAILED: el paciente puede reintentar hasta el deadline,
+          // pero después ambos estados financieros dejan de retener el cupo.
+          paymentStatus: { in: ['PENDING', 'FAILED'] },
+          pendingUntil: { lt: now },
+          deleted: false,
+        },
+        data: {
+          status: 'CANCELLED',
+          cancelReason: 'Pago no completado dentro del tiempo permitido',
+          updatedAt: now,
+        },
+        select: {
+          id: true,
+          scheduleId: true,
+          startTime: true,
+          endTime: true,
+          clinicId: true,
+        },
+      });
+
+      const scheduleIdsWithoutClinic = expired
+        .filter((slot) => slot.clinicId === null)
+        .map((slot) => slot.scheduleId);
+      const scheduleClinics =
+        scheduleIdsWithoutClinic.length === 0
+          ? []
+          : await tx.schedules.findMany({
+              where: { id: { in: scheduleIdsWithoutClinic } },
+              select: {
+                id: true,
+                clinicId: true,
+                doctor: { select: { clinicId: true } },
+              },
+            });
+      const clinicBySchedule = new Map(
+        scheduleClinics.map((schedule) => [
+          schedule.id,
+          schedule.clinicId ?? schedule.doctor.clinicId ?? null,
+        ]),
+      );
+      const scopedExpired = expired.map((slot) => ({
+        ...slot,
+        clinicId:
+          slot.clinicId ?? clinicBySchedule.get(slot.scheduleId) ?? null,
+      }));
+
+      for (const slot of scopedExpired) {
+        await recordOutboxEvent(
+          tx,
+          buildAppointmentSlotReleasedDurableEvent({
+            eventId: randomUUID(),
+            operationId: `${eventIdentity.operationId}:${slot.id}`,
+            occurredAt: eventIdentity.occurredAt,
+            appointmentId: slot.id,
+            scheduleId: slot.scheduleId,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            clinicId: slot.clinicId,
+          }),
+        );
+      }
+
+      return scopedExpired;
+    });
+  }
+
+  async cancelAtomically(
+    data: CancelAppointmentAtomicallyData,
+  ): Promise<CancelAppointmentAtomicallyResult> {
+    return this.prisma.$transaction(async (tx) => {
+      const current = await tx.appointments.findFirst({
+        where: { id: data.appointmentId, deleted: false },
+        include: appointmentInclude,
+      });
+      if (!current) {
+        throw new ConflictException('La cita ya no existe');
+      }
+
+      if (current.status === 'CANCELLED') {
+        return {
+          appointment: this.mapToRelations(current),
+          refundReviewTransactionId: null,
+          transitioned: false,
+        };
+      }
+
+      const updated = await tx.appointments.update({
+        where: { id: data.appointmentId },
+        data: {
+          status: AppointmentStatus.CANCELLED,
+          cancelReason: data.reason,
+          ...(data.cancellationFee !== undefined && {
+            cancellationFee: data.cancellationFee,
+          }),
+          updatedAt: data.eventIdentity.occurredAt,
+        },
+        include: appointmentInclude,
+      });
+
+      const paidTransaction = await tx.transactions.findFirst({
+        where: { appointmentId: data.appointmentId, status: 'PAID' },
+        orderBy: { createdAt: 'desc' },
+      });
+      if (paidTransaction) {
+        const previousMetadata =
+          paidTransaction.metadata &&
+          typeof paidTransaction.metadata === 'object' &&
+          !Array.isArray(paidTransaction.metadata)
+            ? (paidTransaction.metadata as Record<string, unknown>)
+            : {};
+        const occurredAt = data.eventIdentity.occurredAt.toISOString();
+        await tx.transactions.update({
+          where: { id: paidTransaction.id },
+          data: {
+            metadata: {
+              ...previousMetadata,
+              needsRefund: true,
+              refundRequestedAt: occurredAt,
+              refundCancelReason: data.reason,
+              refundCancelledBy: data.cancelledBy,
+              ...(data.cancellationFee !== undefined && {
+                needsFeeCollection: true,
+                feeAmount: data.cancellationFee,
+                feeReason: 'Cancelación tardía (<24h)',
+                feeRequestedAt: occurredAt,
+              }),
+            } as Prisma.InputJsonValue,
+            updatedAt: data.eventIdentity.occurredAt,
+          },
+        });
+      }
+
+      const appointment = this.mapToRelations(updated);
+      const clinicId =
+        appointment.clinicId ?? appointment.schedule.doctor.clinic?.id ?? null;
+      await recordOutboxEvent(
+        tx,
+        buildAppointmentSlotReleasedDurableEvent({
+          eventId: data.eventIdentity.slotReleasedEventId,
+          operationId: data.eventIdentity.operationId,
+          occurredAt: data.eventIdentity.occurredAt,
+          appointmentId: appointment.id,
+          scheduleId: appointment.scheduleId,
+          startTime: appointment.startTime,
+          endTime: appointment.endTime,
+          clinicId,
+        }),
+      );
+      await recordOutboxEvent(
+        tx,
+        buildAppointmentChangedDurableEvent(APPOINTMENT_CANCELLED, {
+          eventId: data.eventIdentity.cancelledEventId,
+          operationId: data.eventIdentity.operationId,
+          occurredAt: data.eventIdentity.occurredAt,
+          appointmentId: appointment.id,
+          clinicId,
+        }),
+      );
+
+      return {
+        appointment,
+        refundReviewTransactionId: paidTransaction?.id ?? null,
+        transitioned: true,
+      };
     });
   }
 
@@ -602,7 +797,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     );
   }
 
-  private mapToRelations(raw: any): AppointmentWithRelations {
+  private mapToRelations(raw: AppointmentRow): AppointmentWithRelations {
     return {
       id: raw.id,
       patientId: raw.patientId,
@@ -613,9 +808,10 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       notes: raw.notes,
       status: raw.status as AppointmentStatus,
       paymentStatus: raw.paymentStatus,
-      amount: raw.amount ? Number(raw.amount) : null,
+      amount: raw.amount === null ? null : Number(raw.amount),
       cancelReason: raw.cancelReason,
-      cancellationFee: raw.cancellationFee ? Number(raw.cancellationFee) : null,
+      cancellationFee:
+        raw.cancellationFee === null ? null : Number(raw.cancellationFee),
       isOverbook: raw.isOverbook,
       pendingUntil: raw.pendingUntil ?? null,
       clinicId: raw.clinicId ?? null,
@@ -626,7 +822,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         ...raw.patient,
         profile: {
           ...raw.patient.profile,
-          email: raw.patient.profile.user?.email ?? null,
+          email: raw.patient.profile.user?.email ?? '',
         },
       },
       schedule: raw.schedule,

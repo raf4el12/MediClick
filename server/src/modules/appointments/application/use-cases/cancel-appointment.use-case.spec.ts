@@ -12,7 +12,7 @@ import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/aut
 describe('CancelAppointmentUseCase — refund flagging', () => {
   let useCase: CancelAppointmentUseCase;
   let appointmentRepository: jest.Mocked<
-    Pick<IAppointmentRepository, 'findById' | 'update'>
+    Pick<IAppointmentRepository, 'findById' | 'cancelAtomically'>
   >;
   let specialtyRepository: jest.Mocked<Pick<ISpecialtyRepository, 'findById'>>;
   let transactionRepository: jest.Mocked<ITransactionRepository>;
@@ -65,7 +65,11 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
   beforeEach(() => {
     appointmentRepository = {
       findById: jest.fn().mockResolvedValue(buildAppointment()),
-      update: jest.fn().mockResolvedValue(buildAppointment()),
+      cancelAtomically: jest.fn().mockResolvedValue({
+        appointment: buildAppointment(),
+        refundReviewTransactionId: null,
+        transitioned: true,
+      }),
     };
     specialtyRepository = { findById: jest.fn().mockResolvedValue(null) };
     transactionRepository = {
@@ -91,8 +95,6 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
       timezoneResolver as any,
       new AppointmentCancellationService(
         appointmentRepository as any,
-        transactionRepository,
-        timezoneResolver as any,
         eventEmitter as any,
       ),
       new AppointmentAccessPolicy(),
@@ -103,7 +105,7 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
     jest.useRealTimers();
   });
 
-  it('flags the transaction as refund-pending when it was PAID', async () => {
+  it('delega la revisión financiera PAID a la cancelación atómica', async () => {
     transactionRepository.findLatestByAppointmentId.mockResolvedValue({
       id: 77,
       status: 'PAID',
@@ -116,19 +118,15 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
       buildActor(SystemRole.ADMIN),
     );
 
-    expect(transactionRepository.update).toHaveBeenCalledWith(
-      77,
+    expect(appointmentRepository.cancelAtomically).toHaveBeenCalledWith(
       expect.objectContaining({
-        metadata: expect.objectContaining({
-          needsRefund: true,
-          refundCancelReason: 'Cambio de planes',
-          refundCancelledBy: 'ADMIN',
-        }),
+        reason: 'Cambio de planes',
+        cancelledBy: 'ADMIN',
       }),
     );
   });
 
-  it('preserves existing transaction metadata when flagging refund', async () => {
+  it('no muta metadata financiera fuera de la transacción atómica', async () => {
     transactionRepository.findLatestByAppointmentId.mockResolvedValue({
       id: 77,
       status: 'PAID',
@@ -141,12 +139,8 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
       buildActor(SystemRole.ADMIN),
     );
 
-    const updateCall = transactionRepository.update.mock.calls[0];
-    expect(updateCall[1].metadata).toMatchObject({
-      mpPaymentId: 'abc',
-      original: 'data',
-      needsRefund: true,
-    });
+    expect(transactionRepository.update.mock.calls).toHaveLength(0);
+    expect(appointmentRepository.cancelAtomically).toHaveBeenCalledTimes(1);
   });
 
   it('does not touch transactions that are not PAID', async () => {
@@ -158,7 +152,8 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
 
     await useCase.execute(50, { reason: 'x' }, buildActor(SystemRole.ADMIN));
 
-    expect(transactionRepository.update).not.toHaveBeenCalled();
+    expect(transactionRepository.update.mock.calls).toHaveLength(0);
+    expect(appointmentRepository.cancelAtomically).toHaveBeenCalledTimes(1);
   });
 
   it('is a no-op when the appointment has no transactions', async () => {
@@ -166,7 +161,8 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
 
     await useCase.execute(50, { reason: 'x' }, buildActor(SystemRole.ADMIN));
 
-    expect(transactionRepository.update).not.toHaveBeenCalled();
+    expect(transactionRepository.update.mock.calls).toHaveLength(0);
+    expect(appointmentRepository.cancelAtomically).toHaveBeenCalledTimes(1);
   });
 
   it('paciente cancela tarde con pago PAID: persiste el fee y marca needsFeeCollection', async () => {
@@ -188,22 +184,11 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
       buildActor(SystemRole.PATIENT),
     );
 
-    // fee = 50% de 120 = 60, persistido en la cita
-    expect(appointmentRepository.update).toHaveBeenCalledWith(
-      50,
+    // fee = 50% de 120 = 60, delegado a la frontera atómica.
+    expect(appointmentRepository.cancelAtomically).toHaveBeenCalledWith(
       expect.objectContaining({ cancellationFee: 60 }),
     );
-    // flag de cobro (+ refund) en la transacción
-    expect(transactionRepository.update).toHaveBeenCalledWith(
-      77,
-      expect.objectContaining({
-        metadata: expect.objectContaining({
-          needsRefund: true,
-          needsFeeCollection: true,
-          feeAmount: 60,
-        }),
-      }),
-    );
+    expect(transactionRepository.update.mock.calls).toHaveLength(0);
   });
 
   it('paciente cancela tarde SIN pago PAID: no calcula fee ni toca la transacción', async () => {
@@ -224,9 +209,9 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
       buildActor(SystemRole.PATIENT),
     );
 
-    const apptArg = appointmentRepository.update.mock.calls[0][1];
-    expect(apptArg.cancellationFee).toBeUndefined();
-    expect(transactionRepository.update).not.toHaveBeenCalled();
+    const cancelArg = appointmentRepository.cancelAtomically.mock.calls[0][0];
+    expect(cancelArg.cancellationFee).toBeUndefined();
+    expect(transactionRepository.update.mock.calls).toHaveLength(0);
   });
 
   it('paciente cancela temprano (>24h) con pago PAID: sin fee, refund intacto', async () => {
@@ -248,11 +233,9 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
       buildActor(SystemRole.PATIENT),
     );
 
-    const apptArg = appointmentRepository.update.mock.calls[0][1];
-    expect(apptArg.cancellationFee).toBeUndefined();
-    const txArg = transactionRepository.update.mock.calls[0][1];
-    expect(txArg.metadata).toMatchObject({ needsRefund: true });
-    expect((txArg.metadata as any).needsFeeCollection).toBeUndefined();
+    const cancelArg = appointmentRepository.cancelAtomically.mock.calls[0][0];
+    expect(cancelArg.cancellationFee).toBeUndefined();
+    expect(transactionRepository.update.mock.calls).toHaveLength(0);
   });
 
   it('staff cancela con pago PAID: solo refund, sin fee', async () => {
@@ -268,8 +251,8 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
       buildActor(SystemRole.ADMIN),
     );
 
-    const txArg = transactionRepository.update.mock.calls[0][1];
-    expect(txArg.metadata).toMatchObject({ needsRefund: true });
-    expect((txArg.metadata as any).needsFeeCollection).toBeUndefined();
+    const cancelArg = appointmentRepository.cancelAtomically.mock.calls[0][0];
+    expect(cancelArg.cancellationFee).toBeUndefined();
+    expect(transactionRepository.update.mock.calls).toHaveLength(0);
   });
 });

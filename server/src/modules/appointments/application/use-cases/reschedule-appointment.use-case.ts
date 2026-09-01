@@ -4,21 +4,19 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { randomUUID } from 'node:crypto';
 import { RescheduleAppointmentDto } from '../dto/reschedule-appointment.dto.js';
 import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
+import type { AppointmentWithRelations } from '../../domain/interfaces/appointment-data.interface.js';
 import type { IScheduleRepository } from '../../../schedules/domain/repositories/schedule.repository.js';
 import { AppointmentSlotValidatorService } from '../services/appointment-slot-validator.service.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
 import {
   parseHHmm,
   dateToTimeString,
-  toMinutesUTC,
 } from '../../../../shared/utils/date-time.utils.js';
 import { getAppointmentPaymentTimeoutMs } from '../../../../shared/utils/payment-timeout.util.js';
-import { SLOT_RELEASED_EVENT } from '../../../../shared/events/availability-events.interface.js';
-import { buildSlotReleasedEvent } from '../services/appointment-event.builder.js';
 import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
 import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
 import { AppointmentAccessPolicy } from '../../../../shared/access/appointment-access.policy.js';
@@ -31,7 +29,6 @@ export class RescheduleAppointmentUseCase {
     @Inject('IScheduleRepository')
     private readonly scheduleRepository: IScheduleRepository,
     private readonly slotValidator: AppointmentSlotValidatorService,
-    private readonly eventEmitter: EventEmitter2,
     private readonly appointmentAccessPolicy: AppointmentAccessPolicy,
   ) {}
 
@@ -47,8 +44,7 @@ export class RescheduleAppointmentUseCase {
 
     this.appointmentAccessPolicy.authorize(actor, 'RESCHEDULE', {
       id: appointment.id,
-      clinicId:
-        appointment.schedule.doctor.clinic?.id ?? appointment.clinicId,
+      clinicId: appointment.schedule.doctor.clinic?.id ?? appointment.clinicId,
       patientUserId: appointment.patient.profile.userId,
       doctorUserId: appointment.schedule.doctor.profile.userId ?? null,
     });
@@ -116,25 +112,17 @@ export class RescheduleAppointmentUseCase {
       dto.newScheduleId,
       newStartTime,
       newEndTime,
+      {
+        operationId: randomUUID(),
+        slotReleasedEventId: randomUUID(),
+        occurredAt: new Date(),
+      },
     );
-
-    // El slot viejo quedó libre: reofrecerlo a la waitlist (salvo que el
-    // reagendamiento haya quedado en el mismo slot).
-    const slotChanged =
-      appointment.scheduleId !== dto.newScheduleId ||
-      toMinutesUTC(appointment.startTime) !== toMinutesUTC(newStartTime) ||
-      toMinutesUTC(appointment.endTime) !== toMinutesUTC(newEndTime);
-    if (slotChanged) {
-      this.eventEmitter.emit(
-        SLOT_RELEASED_EVENT,
-        buildSlotReleasedEvent(appointment),
-      );
-    }
 
     return this.toResponse(updated);
   }
 
-  private toResponse(a: any): AppointmentResponseDto {
+  private toResponse(a: AppointmentWithRelations): AppointmentResponseDto {
     return {
       id: a.id,
       patientId: a.patientId,
