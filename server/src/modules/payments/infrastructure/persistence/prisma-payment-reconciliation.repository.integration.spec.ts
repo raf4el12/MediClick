@@ -142,6 +142,12 @@ describeDatabase('PrismaPaymentReconciliationRepository (PostgreSQL)', () => {
   });
 
   afterAll(async () => {
+    await prisma.outboxEvents.deleteMany({
+      where: {
+        aggregateType: 'appointment',
+        aggregateId: { in: appointmentIds.map(String) },
+      },
+    });
     await prisma.transactions.deleteMany({
       where: { appointmentId: { in: appointmentIds } },
     });
@@ -216,6 +222,15 @@ describeDatabase('PrismaPaymentReconciliationRepository (PostgreSQL)', () => {
         },
       }),
     ).resolves.toBe(1);
+    await expect(
+      prisma.outboxEvents.count({
+        where: {
+          type: 'appointment.confirmed',
+          aggregateId: String(appointment.id),
+          operationId: snapshot.gatewayId,
+        },
+      }),
+    ).resolves.toBe(1);
   });
 
   it('enforces payment visibility for patients, doctors, clinics and global admins', async () => {
@@ -284,10 +299,7 @@ describeDatabase('PrismaPaymentReconciliationRepository (PostgreSQL)', () => {
       const appointment = await createAppointment('PENDING');
       await Promise.all([
         repository.reconcile(
-          approvedSnapshot(
-            appointment.id,
-            `mp-race-${iteration}-${suffix}`,
-          ),
+          approvedSnapshot(appointment.id, `mp-race-${iteration}-${suffix}`),
         ),
         prisma.appointments.update({
           where: { id: appointment.id },
@@ -318,6 +330,10 @@ describeDatabase('PrismaPaymentReconciliationRepository (PostgreSQL)', () => {
         ),
         appointmentRepository.expirePendingPastDeadline(
           new Date('2026-08-30T20:00:00Z'),
+          {
+            operationId: `expiry-race-${iteration}-${suffix}`,
+            occurredAt: new Date('2026-08-30T20:00:00Z'),
+          },
         ),
       ]);
 

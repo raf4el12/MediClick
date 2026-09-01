@@ -340,5 +340,23 @@ describeDatabase(
       });
       expect(persisted.status).toBe(AppointmentStatus.CANCELLED);
     });
+
+    it('confirma manualmente y registra el evento durable en el mismo commit', async () => {
+      const appointment = await createAppointment();
+      const operationId = `${operationPrefix}-manual-confirm`;
+
+      const confirmed = await repository.confirmAtomically(appointment.id, {
+        operationId,
+        eventId: randomUUID(),
+        occurredAt: new Date(),
+      });
+
+      expect(confirmed.status).toBe(AppointmentStatus.CONFIRMED);
+      const event = await prisma.outboxEvents.findFirstOrThrow({
+        where: { operationId },
+      });
+      expect(event.type).toBe('appointment.confirmed');
+      expect(event.payload).toEqual({ appointmentId: appointment.id });
+    });
   },
 );

@@ -87,6 +87,10 @@ export interface RescheduleEventIdentity extends DurableOperationIdentity {
   slotReleasedEventId: string;
 }
 
+export interface AppointmentChangedEventIdentity extends DurableOperationIdentity {
+  eventId: string;
+}
+
 export interface CancellationEventIdentity extends DurableOperationIdentity {
   cancelledEventId: string;
   slotReleasedEventId: string;

@@ -9,6 +9,7 @@ import type {
   RescheduleEventIdentity,
   CancelAppointmentAtomicallyData,
   CancelAppointmentAtomicallyResult,
+  AppointmentChangedEventIdentity,
 } from '../interfaces/appointment-data.interface.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
@@ -103,6 +104,11 @@ export interface IAppointmentRepository {
   cancelAtomically(
     data: CancelAppointmentAtomicallyData,
   ): Promise<CancelAppointmentAtomicallyResult>;
+
+  confirmAtomically(
+    id: number,
+    eventIdentity: AppointmentChangedEventIdentity,
+  ): Promise<AppointmentWithRelations>;
 
   /**
    * Verifica el límite de sobrecupos y crea la cita dentro de una transacción serializable.

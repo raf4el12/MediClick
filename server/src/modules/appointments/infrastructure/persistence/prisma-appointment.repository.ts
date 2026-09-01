@@ -14,6 +14,7 @@ import type {
   RescheduleEventIdentity,
   CancelAppointmentAtomicallyData,
   CancelAppointmentAtomicallyResult,
+  AppointmentChangedEventIdentity,
 } from '../../domain/interfaces/appointment-data.interface.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
@@ -30,6 +31,7 @@ import {
 import { recordOutboxEvent } from '../../../../shared/outbox/infrastructure/prisma-outbox-writer.js';
 import {
   APPOINTMENT_CANCELLED,
+  APPOINTMENT_CONFIRMED,
   buildAppointmentChangedDurableEvent,
   buildAppointmentSlotReleasedDurableEvent,
 } from '../../../../shared/events/appointment-durable-events.js';
@@ -717,6 +719,56 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         refundReviewTransactionId: paidTransaction?.id ?? null,
         transitioned: true,
       };
+    });
+  }
+
+  async confirmAtomically(
+    id: number,
+    eventIdentity: AppointmentChangedEventIdentity,
+  ): Promise<AppointmentWithRelations> {
+    return this.prisma.$transaction(async (tx) => {
+      const current = await tx.appointments.findFirst({
+        where: { id, deleted: false },
+        select: {
+          id: true,
+          status: true,
+          clinicId: true,
+          schedule: { select: { doctor: { select: { clinicId: true } } } },
+        },
+      });
+      if (!current) throw new ConflictException('La cita ya no existe');
+
+      const changed = await tx.appointments.updateMany({
+        where: { id, status: 'PENDING', deleted: false },
+        data: {
+          status: 'CONFIRMED',
+          pendingUntil: null,
+          updatedAt: eventIdentity.occurredAt,
+        },
+      });
+      if (changed.count !== 1) {
+        throw new ConflictException(
+          `La cita cambió durante la confirmación: ${current.status}`,
+        );
+      }
+
+      await recordOutboxEvent(
+        tx,
+        buildAppointmentChangedDurableEvent(APPOINTMENT_CONFIRMED, {
+          eventId: eventIdentity.eventId,
+          operationId: eventIdentity.operationId,
+          occurredAt: eventIdentity.occurredAt,
+          appointmentId: id,
+          clinicId:
+            current.clinicId ?? current.schedule.doctor.clinicId ?? null,
+        }),
+      );
+
+      const updated = await tx.appointments.findUniqueOrThrow({
+        where: { id },
+        include: appointmentInclude,
+      });
+      return this.mapToRelations(updated);
     });
   }
 

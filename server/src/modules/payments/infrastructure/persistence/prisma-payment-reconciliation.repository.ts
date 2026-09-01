@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { ConflictException, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
@@ -6,6 +7,11 @@ import type {
   PaymentReconciliationResult,
   VerifiedPaymentSnapshot,
 } from '../../domain/repositories/payment-reconciliation.repository.js';
+import { recordOutboxEvent } from '../../../../shared/outbox/infrastructure/prisma-outbox-writer.js';
+import {
+  APPOINTMENT_CONFIRMED,
+  buildAppointmentChangedDurableEvent,
+} from '../../../../shared/events/appointment-durable-events.js';
 
 class ReconciliationWriteConflict extends Error {}
 
@@ -18,10 +24,15 @@ export class PrismaPaymentReconciliationRepository implements IPaymentReconcilia
   async reconcile(
     snapshot: VerifiedPaymentSnapshot,
   ): Promise<PaymentReconciliationResult | null> {
+    const eventIdentity = {
+      eventId: randomUUID(),
+      operationId: snapshot.gatewayId,
+      occurredAt: new Date(),
+    };
     for (let attempt = 1; attempt <= MAX_RECONCILIATION_ATTEMPTS; attempt++) {
       try {
         return await this.prisma.$transaction(
-          (tx) => this.reconcileInTransaction(tx, snapshot),
+          (tx) => this.reconcileInTransaction(tx, snapshot, eventIdentity),
           { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
         );
       } catch (error) {
@@ -44,6 +55,11 @@ export class PrismaPaymentReconciliationRepository implements IPaymentReconcilia
   private async reconcileInTransaction(
     tx: Prisma.TransactionClient,
     snapshot: VerifiedPaymentSnapshot,
+    eventIdentity: {
+      eventId: string;
+      operationId: string;
+      occurredAt: Date;
+    },
   ): Promise<PaymentReconciliationResult | null> {
     const appointment = await tx.appointments.findUnique({
       where: { id: snapshot.appointmentId },
@@ -52,6 +68,7 @@ export class PrismaPaymentReconciliationRepository implements IPaymentReconcilia
         status: true,
         paymentStatus: true,
         clinicId: true,
+        schedule: { select: { doctor: { select: { clinicId: true } } } },
         patient: { select: { profile: { select: { userId: true } } } },
       },
     });
@@ -88,7 +105,7 @@ export class PrismaPaymentReconciliationRepository implements IPaymentReconcilia
           failureReason: snapshot.failureReason,
           paidAt: snapshot.paidAt,
           metadata: metadata as Prisma.InputJsonValue,
-          updatedAt: new Date(),
+          updatedAt: eventIdentity.occurredAt,
         },
       });
     } else {
@@ -115,7 +132,7 @@ export class PrismaPaymentReconciliationRepository implements IPaymentReconcilia
             failureReason: snapshot.failureReason,
             paidAt: snapshot.paidAt,
             metadata: metadata as Prisma.InputJsonValue,
-            updatedAt: new Date(),
+            updatedAt: eventIdentity.occurredAt,
           },
         });
       } else {
@@ -156,12 +173,25 @@ export class PrismaPaymentReconciliationRepository implements IPaymentReconcilia
           status: appointmentStatus,
           pendingUntil: null,
         }),
-        updatedAt: new Date(),
+        updatedAt: eventIdentity.occurredAt,
       },
     });
     if (updated.count !== 1) {
       throw new ReconciliationWriteConflict(
         `La cita ${appointment.id} cambió durante la conciliación`,
+      );
+    }
+
+    const clinicId =
+      appointment.clinicId ?? appointment.schedule.doctor.clinicId ?? null;
+    if (appointmentStatus !== appointment.status) {
+      await recordOutboxEvent(
+        tx,
+        buildAppointmentChangedDurableEvent(APPOINTMENT_CONFIRMED, {
+          ...eventIdentity,
+          appointmentId: appointment.id,
+          clinicId,
+        }),
       );
     }
 
@@ -174,7 +204,7 @@ export class PrismaPaymentReconciliationRepository implements IPaymentReconcilia
         snapshot.status === 'PAID' && appointment.status === 'PENDING'
           ? appointment.patient.profile.userId
           : null,
-      clinicId: appointment.clinicId,
+      clinicId,
     };
   }
 

@@ -4,9 +4,11 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
+import type { AppointmentWithRelations } from '../../domain/interfaces/appointment-data.interface.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
 import { dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
 import type { AppointmentConfirmedEvent } from '../../../../shared/mail/events/mail-events.interface.js';
@@ -37,8 +39,7 @@ export class ConfirmAppointmentUseCase {
 
     this.appointmentAccessPolicy.authorize(actor, 'CONFIRM', {
       id: appointment.id,
-      clinicId:
-        appointment.schedule.doctor.clinic?.id ?? appointment.clinicId,
+      clinicId: appointment.schedule.doctor.clinic?.id ?? appointment.clinicId,
       patientUserId: appointment.patient.profile.userId,
       doctorUserId: appointment.schedule.doctor.profile.userId ?? null,
     });
@@ -49,9 +50,10 @@ export class ConfirmAppointmentUseCase {
       );
     }
 
-    const updated = await this.appointmentRepository.update(id, {
-      status: AppointmentStatus.CONFIRMED,
-      updatedAt: new Date(),
+    const updated = await this.appointmentRepository.confirmAtomically(id, {
+      operationId: randomUUID(),
+      eventId: randomUUID(),
+      occurredAt: new Date(),
     });
 
     if (updated.patient.profile.userId) {
@@ -75,7 +77,7 @@ export class ConfirmAppointmentUseCase {
     return this.toResponse(updated);
   }
 
-  private toResponse(a: any): AppointmentResponseDto {
+  private toResponse(a: AppointmentWithRelations): AppointmentResponseDto {
     return {
       id: a.id,
       patientId: a.patientId,
