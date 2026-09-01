@@ -8,7 +8,10 @@ import { PaginationParams } from '../../../../shared/domain/interfaces/paginatio
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
 
 export interface IPatientRepository {
-  create(data: CreatePatientData): Promise<PatientWithRelations>;
+  create(
+    data: CreatePatientData,
+    eventIdentity: PatientEventIdentity,
+  ): Promise<PatientWithRelations>;
   findAllPaginated(
     params: PaginationParams & {
       isActive?: boolean;
@@ -24,8 +27,12 @@ export interface IPatientRepository {
   findById(id: number): Promise<PatientWithRelations | null>;
   findByUserId(userId: number): Promise<PatientWithRelations | null>;
   findByIdWithHistory(id: number): Promise<PatientWithHistory | null>;
-  update(id: number, data: UpdatePatientData): Promise<PatientWithRelations>;
-  softDelete(id: number): Promise<void>;
+  update(
+    id: number,
+    data: UpdatePatientData,
+    eventIdentity: PatientEventIdentity,
+  ): Promise<PatientWithRelations>;
+  softDelete(id: number, eventIdentity: PatientEventIdentity): Promise<void>;
   existsByEmail(email: string): Promise<boolean>;
   existsByDni(typeDocument: string, numberDocument: string): Promise<boolean>;
 
@@ -34,4 +41,10 @@ export interface IPatientRepository {
    * Útil para validar acceso a datos médicos sensibles.
    */
   hasRelationWithDoctor(patientId: number, doctorId: number): Promise<boolean>;
+}
+
+export interface PatientEventIdentity {
+  eventId: string;
+  operationId: string;
+  occurredAt: Date;
 }

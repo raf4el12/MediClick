@@ -16,7 +16,6 @@ describe('RegisterPatientUseCase — TDD', () => {
   let tokenService: jest.Mocked<ITokenService>;
   let refreshTokenRepository: jest.Mocked<IRefreshTokenRepository>;
   let prisma: any;
-  let eventEmitter: any;
 
   const dto = {
     name: 'Ana',
@@ -93,8 +92,6 @@ describe('RegisterPatientUseCase — TDD', () => {
       },
     };
 
-    eventEmitter = { emit: jest.fn() };
-
     useCase = new RegisterPatientUseCase(
       patientRepository as any,
       userRepository as any,
@@ -102,7 +99,6 @@ describe('RegisterPatientUseCase — TDD', () => {
       tokenService,
       refreshTokenRepository,
       prisma,
-      eventEmitter as any,
     );
   });
 
@@ -120,21 +116,17 @@ describe('RegisterPatientUseCase — TDD', () => {
   it('hashea la contraseña antes de persistir', async () => {
     await useCase.execute(dto, 'device-1');
 
-    expect(passwordService.hash).toHaveBeenCalledWith('SecurePass123!');
-    expect(patientRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        user: expect.objectContaining({ password: 'hashed_password' }),
-      }),
-    );
+    expect(passwordService.hash.mock.calls[0]).toEqual(['SecurePass123!']);
+    const [createData] = patientRepository.create.mock.calls[0];
+    expect(createData.user.password).toBe('hashed_password');
   });
 
   it('persiste el refresh token vinculado al dispositivo', async () => {
     await useCase.execute(dto, 'device-1');
 
-    expect(refreshTokenRepository.save).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: 42, deviceId: 'device-1' }),
-      604800,
-    );
+    const [refreshToken, ttl] = refreshTokenRepository.save.mock.calls[0];
+    expect(refreshToken).toMatchObject({ userId: 42, deviceId: 'device-1' });
+    expect(ttl).toBe(604800);
   });
 
   // ── Iteración TDD 2: Duplicados ────────────────────────────────────────────
@@ -184,16 +176,17 @@ describe('RegisterPatientUseCase — TDD', () => {
     patientRepository.existsByEmail.mockResolvedValue(true);
 
     await expect(useCase.execute(dto, 'device-1')).rejects.toThrow();
-    expect(passwordService.hash).not.toHaveBeenCalled();
+    expect(passwordService.hash.mock.calls).toHaveLength(0);
   });
 
-  // ── Iteración TDD 4: Evento de proyección FHIR ─────────────────────────────
+  // ── Iteración TDD 4: Evento durable de proyección FHIR ─────────────────────
 
-  it('emite patient.created con el id del paciente registrado', async () => {
+  it('persiste patient.created bajo una identidad durable', async () => {
     await useCase.execute(dto, 'device-1');
 
-    expect(eventEmitter.emit).toHaveBeenCalledWith('patient.created', {
-      patientId: 10,
-    });
+    const [, identity] = patientRepository.create.mock.calls[0];
+    expect(typeof identity.operationId).toBe('string');
+    expect(typeof identity.eventId).toBe('string');
+    expect(identity.occurredAt).toBeInstanceOf(Date);
   });
 });

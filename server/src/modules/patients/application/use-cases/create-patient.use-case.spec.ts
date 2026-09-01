@@ -1,6 +1,6 @@
 import { ConflictException } from '@nestjs/common';
 import { CreatePatientUseCase } from './create-patient.use-case.js';
-import { PATIENT_CREATED_EVENT } from '../../../../shared/events/patient-events.interface.js';
+import type { PatientEventIdentity } from '../../domain/repositories/patient.repository.js';
 
 const createdPatient = {
   id: 7,
@@ -30,19 +30,14 @@ describe('CreatePatientUseCase', () => {
     create: jest.fn(),
   };
   const passwordService = { hash: jest.fn() };
-  const eventEmitter = { emit: jest.fn() };
   let useCase: CreatePatientUseCase;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    useCase = new CreatePatientUseCase(
-      repo as any,
-      passwordService as any,
-      eventEmitter as any,
-    );
+    useCase = new CreatePatientUseCase(repo as any, passwordService as any);
   });
 
-  it('emite patient.created con el id del paciente', async () => {
+  it('delega patient.created con identidad durable al repositorio', async () => {
     repo.existsByEmail.mockResolvedValue(false);
     passwordService.hash.mockResolvedValue('hashed');
     repo.create.mockResolvedValue(createdPatient);
@@ -55,17 +50,21 @@ describe('CreatePatientUseCase', () => {
       bloodType: 'O+',
     } as any);
 
-    expect(eventEmitter.emit).toHaveBeenCalledWith(PATIENT_CREATED_EVENT, {
-      patientId: 7,
-    });
+    const [, identity] = repo.create.mock.calls[0] as [
+      unknown,
+      PatientEventIdentity,
+    ];
+    expect(typeof identity.operationId).toBe('string');
+    expect(typeof identity.eventId).toBe('string');
+    expect(identity.occurredAt).toBeInstanceOf(Date);
   });
 
-  it('no emite si el email ya existe', async () => {
+  it('no crea ni registra evento si el email ya existe', async () => {
     repo.existsByEmail.mockResolvedValue(true);
 
     await expect(
       useCase.execute({ email: 'ana@x.com' } as any),
     ).rejects.toThrow(ConflictException);
-    expect(eventEmitter.emit).not.toHaveBeenCalled();
+    expect(repo.create.mock.calls).toHaveLength(0);
   });
 });

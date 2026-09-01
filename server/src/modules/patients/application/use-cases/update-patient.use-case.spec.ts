@@ -1,6 +1,6 @@
 import { NotFoundException } from '@nestjs/common';
 import { UpdatePatientUseCase } from './update-patient.use-case.js';
-import { PATIENT_UPDATED_EVENT } from '../../../../shared/events/patient-events.interface.js';
+import type { PatientEventIdentity } from '../../domain/repositories/patient.repository.js';
 
 const patient = {
   id: 7,
@@ -25,31 +25,36 @@ const patient = {
 
 describe('UpdatePatientUseCase', () => {
   const repo = { findById: jest.fn(), update: jest.fn() };
-  const eventEmitter = { emit: jest.fn() };
   let useCase: UpdatePatientUseCase;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    useCase = new UpdatePatientUseCase(repo as any, eventEmitter as any);
+    useCase = new UpdatePatientUseCase(repo as any);
   });
 
-  it('emite patient.updated tras actualizar', async () => {
+  it('delega patient.updated con identidad durable al repositorio', async () => {
     repo.findById.mockResolvedValue(patient);
     repo.update.mockResolvedValue(patient);
 
     await useCase.execute(7, { name: 'Ana María' } as any);
 
-    expect(eventEmitter.emit).toHaveBeenCalledWith(PATIENT_UPDATED_EVENT, {
-      patientId: 7,
-    });
+    const [patientId, , identity] = repo.update.mock.calls[0] as [
+      number,
+      unknown,
+      PatientEventIdentity,
+    ];
+    expect(patientId).toBe(7);
+    expect(typeof identity.operationId).toBe('string');
+    expect(typeof identity.eventId).toBe('string');
+    expect(identity.occurredAt).toBeInstanceOf(Date);
   });
 
-  it('no emite si el paciente no existe', async () => {
+  it('no actualiza ni registra evento si el paciente no existe', async () => {
     repo.findById.mockResolvedValue(null);
 
     await expect(useCase.execute(99, {} as any)).rejects.toThrow(
       NotFoundException,
     );
-    expect(eventEmitter.emit).not.toHaveBeenCalled();
+    expect(repo.update.mock.calls).toHaveLength(0);
   });
 });

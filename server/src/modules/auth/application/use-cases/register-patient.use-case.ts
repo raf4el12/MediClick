@@ -1,5 +1,4 @@
 import { Injectable, Inject, ConflictException } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { randomUUID } from 'crypto';
 import { RegisterPatientDto } from '../dto/register-patient.dto.js';
 import { AuthResponseDto } from '../dto/auth-response.dto.js';
@@ -9,10 +8,6 @@ import type { IUserRepository } from '../../../users/domain/repositories/user.re
 import type { IPasswordService } from '../../../../shared/domain/contracts/password-service.interface.js';
 import type { ITokenService } from '../../domain/contracts/token-service.interface.js';
 import type { IRefreshTokenRepository } from '../../domain/contracts/refresh-token-repository.interface.js';
-import {
-  PATIENT_CREATED_EVENT,
-  type PatientChangedEvent,
-} from '../../../../shared/events/patient-events.interface.js';
 
 @Injectable()
 export class RegisterPatientUseCase {
@@ -28,7 +23,6 @@ export class RegisterPatientUseCase {
     @Inject('IRefreshTokenRepository')
     private readonly refreshTokenRepository: IRefreshTokenRepository,
     private readonly prisma: PrismaService,
-    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(
@@ -52,31 +46,36 @@ export class RegisterPatientUseCase {
 
     const hashedPassword = await this.passwordService.hash(dto.password);
 
-    const patient = await this.patientRepository.create({
-      user: {
-        name: dto.name,
-        email: dto.email,
-        password: hashedPassword,
+    const occurredAt = new Date();
+    const patient = await this.patientRepository.create(
+      {
+        user: {
+          name: dto.name,
+          email: dto.email,
+          password: hashedPassword,
+        },
+        profile: {
+          name: dto.name,
+          lastName: dto.lastName,
+          phone: dto.phone,
+          birthday: dto.birthday ? new Date(dto.birthday) : undefined,
+          gender: dto.gender,
+          typeDocument: dto.typeDocument,
+          numberDocument: dto.numberDocument,
+        },
+        patient: {
+          emergencyContact: dto.emergencyContact,
+          bloodType: dto.bloodType,
+          allergies: dto.allergies,
+          chronicConditions: dto.chronicConditions,
+        },
       },
-      profile: {
-        name: dto.name,
-        lastName: dto.lastName,
-        phone: dto.phone,
-        birthday: dto.birthday ? new Date(dto.birthday) : undefined,
-        gender: dto.gender,
-        typeDocument: dto.typeDocument,
-        numberDocument: dto.numberDocument,
+      {
+        operationId: randomUUID(),
+        eventId: randomUUID(),
+        occurredAt,
       },
-      patient: {
-        emergencyContact: dto.emergencyContact,
-        bloodType: dto.bloodType,
-        allergies: dto.allergies,
-        chronicConditions: dto.chronicConditions,
-      },
-    });
-
-    const patientEvent: PatientChangedEvent = { patientId: patient.id };
-    this.eventEmitter.emit(PATIENT_CREATED_EVENT, patientEvent);
+    );
 
     const userId = patient.profile.userId!;
     const user = await this.userRepository.findById(userId);

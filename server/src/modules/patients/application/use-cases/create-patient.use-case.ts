@@ -1,13 +1,10 @@
+import { randomUUID } from 'node:crypto';
 import { Injectable, Inject, ConflictException } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 import { CreatePatientDto } from '../dto/create-patient.dto.js';
 import { PatientResponseDto } from '../dto/patient-response.dto.js';
 import type { IPatientRepository } from '../../domain/repositories/patient.repository.js';
+import type { PatientWithRelations } from '../../domain/interfaces/patient-data.interface.js';
 import type { IPasswordService } from '../../../../shared/domain/contracts/password-service.interface.js';
-import {
-  PATIENT_CREATED_EVENT,
-  type PatientChangedEvent,
-} from '../../../../shared/events/patient-events.interface.js';
 
 @Injectable()
 export class CreatePatientUseCase {
@@ -16,7 +13,6 @@ export class CreatePatientUseCase {
     private readonly patientRepository: IPatientRepository,
     @Inject('IPasswordService')
     private readonly passwordService: IPasswordService,
-    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async execute(dto: CreatePatientDto): Promise<PatientResponseDto> {
@@ -39,36 +35,40 @@ export class CreatePatientUseCase {
 
     const hashedPassword = await this.passwordService.hash(dto.email);
 
-    const patient = await this.patientRepository.create({
-      user: {
-        name: dto.name,
-        email: dto.email,
-        password: hashedPassword,
+    const patient = await this.patientRepository.create(
+      {
+        user: {
+          name: dto.name,
+          email: dto.email,
+          password: hashedPassword,
+        },
+        profile: {
+          name: dto.name,
+          lastName: dto.lastName,
+          phone: dto.phone,
+          birthday: dto.birthday ? new Date(dto.birthday) : undefined,
+          gender: dto.gender,
+          typeDocument: dto.typeDocument,
+          numberDocument: dto.numberDocument,
+        },
+        patient: {
+          emergencyContact: dto.emergencyContact,
+          bloodType: dto.bloodType,
+          allergies: dto.allergies,
+          chronicConditions: dto.chronicConditions,
+        },
       },
-      profile: {
-        name: dto.name,
-        lastName: dto.lastName,
-        phone: dto.phone,
-        birthday: dto.birthday ? new Date(dto.birthday) : undefined,
-        gender: dto.gender,
-        typeDocument: dto.typeDocument,
-        numberDocument: dto.numberDocument,
+      {
+        operationId: randomUUID(),
+        eventId: randomUUID(),
+        occurredAt: new Date(),
       },
-      patient: {
-        emergencyContact: dto.emergencyContact,
-        bloodType: dto.bloodType,
-        allergies: dto.allergies,
-        chronicConditions: dto.chronicConditions,
-      },
-    });
-
-    const event: PatientChangedEvent = { patientId: patient.id };
-    this.eventEmitter.emit(PATIENT_CREATED_EVENT, event);
+    );
 
     return this.toResponse(patient);
   }
 
-  private toResponse(p: any): PatientResponseDto {
+  private toResponse(p: PatientWithRelations): PatientResponseDto {
     return {
       id: p.id,
       emergencyContact: p.emergencyContact,

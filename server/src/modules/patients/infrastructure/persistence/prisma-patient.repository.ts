@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { IPatientRepository } from '../../domain/repositories/patient.repository.js';
+import type { PatientEventIdentity } from '../../domain/repositories/patient.repository.js';
 import {
   CreatePatientData,
   UpdatePatientData,
@@ -10,6 +11,13 @@ import {
 } from '../../domain/interfaces/patient-data.interface.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
+import { recordOutboxEvent } from '../../../../shared/outbox/infrastructure/prisma-outbox-writer.js';
+import {
+  PATIENT_CREATED_EVENT,
+  PATIENT_DELETED_EVENT,
+  PATIENT_UPDATED_EVENT,
+  buildPatientChangedDurableEvent,
+} from '../../../../shared/events/patient-events.interface.js';
 const patientInclude = {
   profile: {
     select: {
@@ -27,11 +35,18 @@ const patientInclude = {
   },
 } as const;
 
+type PatientRow = Prisma.PatientsGetPayload<{
+  include: typeof patientInclude;
+}>;
+
 @Injectable()
 export class PrismaPatientRepository implements IPatientRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: CreatePatientData): Promise<PatientWithRelations> {
+  async create(
+    data: CreatePatientData,
+    eventIdentity: PatientEventIdentity,
+  ): Promise<PatientWithRelations> {
     return this.prisma.$transaction(async (tx) => {
       const patientRole = await tx.roles.findFirst({
         where: { name: 'PATIENT', isSystem: true },
@@ -69,6 +84,15 @@ export class PrismaPatientRepository implements IPatientRepository {
         },
         include: patientInclude,
       });
+
+      await recordOutboxEvent(
+        tx,
+        buildPatientChangedDurableEvent({
+          ...eventIdentity,
+          type: PATIENT_CREATED_EVENT,
+          patientId: patient.id,
+        }),
+      );
 
       return this.mapToRelations(patient);
     });
@@ -256,51 +280,75 @@ export class PrismaPatientRepository implements IPatientRepository {
     const base = this.mapToRelations(result);
     return {
       ...base,
-      appointments: (result as any).appointments,
+      appointments: result.appointments,
     };
   }
 
   async update(
     id: number,
     data: UpdatePatientData,
+    eventIdentity: PatientEventIdentity,
   ): Promise<PatientWithRelations> {
-    const patient = await this.prisma.patients.findUniqueOrThrow({
-      where: { id },
-      select: { profileId: true },
-    });
-
-    if (data.profile) {
-      await this.prisma.profiles.update({
-        where: { id: patient.profileId },
-        data: { ...data.profile, updatedAt: new Date() },
+    return this.prisma.$transaction(async (tx) => {
+      const patient = await tx.patients.findUniqueOrThrow({
+        where: { id },
+        select: { profileId: true },
       });
-    }
 
-    const updated = await this.prisma.patients.update({
-      where: { id },
-      data: {
-        ...(data.patient?.emergencyContact && {
-          emergencyContact: data.patient.emergencyContact,
+      if (data.profile) {
+        await tx.profiles.update({
+          where: { id: patient.profileId },
+          data: { ...data.profile, updatedAt: eventIdentity.occurredAt },
+        });
+      }
+
+      const updated = await tx.patients.update({
+        where: { id },
+        data: {
+          ...(data.patient?.emergencyContact && {
+            emergencyContact: data.patient.emergencyContact,
+          }),
+          ...(data.patient?.bloodType && { bloodType: data.patient.bloodType }),
+          ...(data.patient?.allergies !== undefined && {
+            allergies: data.patient.allergies,
+          }),
+          ...(data.patient?.chronicConditions !== undefined && {
+            chronicConditions: data.patient.chronicConditions,
+          }),
+          updatedAt: eventIdentity.occurredAt,
+        },
+        include: patientInclude,
+      });
+      await recordOutboxEvent(
+        tx,
+        buildPatientChangedDurableEvent({
+          ...eventIdentity,
+          type: PATIENT_UPDATED_EVENT,
+          patientId: id,
         }),
-        ...(data.patient?.bloodType && { bloodType: data.patient.bloodType }),
-        ...(data.patient?.allergies !== undefined && {
-          allergies: data.patient.allergies,
-        }),
-        ...(data.patient?.chronicConditions !== undefined && {
-          chronicConditions: data.patient.chronicConditions,
-        }),
-        updatedAt: new Date(),
-      },
-      include: patientInclude,
+      );
+
+      return this.mapToRelations(updated);
     });
-
-    return this.mapToRelations(updated);
   }
 
-  async softDelete(id: number): Promise<void> {
-    await this.prisma.patients.update({
-      where: { id },
-      data: { deleted: true, updatedAt: new Date() },
+  async softDelete(
+    id: number,
+    eventIdentity: PatientEventIdentity,
+  ): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await tx.patients.update({
+        where: { id },
+        data: { deleted: true, updatedAt: eventIdentity.occurredAt },
+      });
+      await recordOutboxEvent(
+        tx,
+        buildPatientChangedDurableEvent({
+          ...eventIdentity,
+          type: PATIENT_DELETED_EVENT,
+          patientId: id,
+        }),
+      );
     });
   }
 
@@ -336,7 +384,7 @@ export class PrismaPatientRepository implements IPatientRepository {
     return count > 0;
   }
 
-  private mapToRelations(raw: any): PatientWithRelations {
+  private mapToRelations(raw: PatientRow): PatientWithRelations {
     const { user, ...profileRest } = raw.profile;
     return {
       id: raw.id,
@@ -349,7 +397,7 @@ export class PrismaPatientRepository implements IPatientRepository {
       deleted: raw.deleted,
       createdAt: raw.createdAt,
       updatedAt: raw.updatedAt,
-      profile: { ...profileRest, email: user?.email ?? null },
+      profile: { ...profileRest, email: user?.email ?? '' },
     };
   }
 }
