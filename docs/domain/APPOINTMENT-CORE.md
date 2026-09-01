@@ -130,7 +130,7 @@ Estas conductas existen en el código, pero su intención de negocio no está re
 
 1. **Cancelación y reagendamiento tardíos**: ambos están permitidos desde `IN_PROGRESS` y `NO_SHOW` porque solo se bloquean `COMPLETED` y `CANCELLED`.
 2. **Check-in sin confirmación**: `PENDING` puede pasar directamente a `IN_PROGRESS`; el estado no distingue una cita administrativa pendiente de una reserva en línea aún no pagada.
-3. **Aceptación de oferta no completamente atómica**: la cita de lista de espera se crea primero y el precio/plazo se actualizan después; un fallo intermedio puede dejar una cita pendiente sin vencimiento.
+
 ## Matriz mínima de impacto
 
 | Si cambia… | Revisar además… |
