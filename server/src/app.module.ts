@@ -43,6 +43,7 @@ import { PermissionsModule } from './modules/permissions/application/permissions
 import { PatientRecordsGraphqlModule } from './modules/patient-records-graphql/application/patient-records-graphql.module.js';
 import { ReviewsModule } from './modules/reviews/application/reviews.module.js';
 import { InteroperabilityModule } from './modules/interoperability/application/interoperability.module.js';
+import { OutboxModule } from './shared/outbox/outbox.module.js';
 
 @Module({
   imports: [
@@ -82,6 +83,7 @@ import { InteroperabilityModule } from './modules/interoperability/application/i
     MailModule,
     SecurityAuditModule,
     HealthModule,
+    OutboxModule,
     AuthModule,
     UsersModule,
     CategoriesModule,
