@@ -1,6 +1,6 @@
 # SDD — Endurecimiento de integridad, seguridad y operación de MediClick
 
-- **Estado:** P0 y P1 (SDD-001 a SDD-017) implementados; P2 propuestos
+- **Estado:** P0, P1 y SDD-018 implementados; P2 restante (SDD-019 a SDD-023) y P3 pendiente (SDD-024)
 - **Fecha:** 2026-08-30
 - **Alcance:** backend, persistencia, workers, despliegue y gates de CI del flujo de citas
 - **Prioridad:** corrección de P0 antes de ampliar funcionalidad
@@ -26,8 +26,8 @@ las reglas y reducir las superficies donde pueden divergir:
 5. **Entrega durable de eventos y ejecución idempotente de jobs.**
 6. **Artefactos de despliegue reproducibles y gates de integración.**
 
-Las correcciones de seguridad P0 no dependen de aprobar decisiones de producto. Las cuatro
-preguntas abiertas ya registradas en `APPOINTMENT-CORE.md` sí se mantienen explícitas y no se
+Las correcciones de seguridad P0 no dependen de aprobar decisiones de producto. Las
+preguntas abiertas registradas en el núcleo sí se mantienen explícitas y no se
 normalizan silenciosamente.
 
 ## 2. Problemas confirmados
@@ -78,7 +78,7 @@ normalizan silenciosamente.
 ### 3.2 No objetivos
 
 - Automatizar reembolsos o cobros de penalización en Mercado Pago.
-- Resolver las cuatro preguntas de producto abiertas del núcleo.
+- Resolver las preguntas de producto abiertas del núcleo.
 - Convertir FHIR en fuente de verdad; la decisión de ADR-0001 se conserva.
 - Reescribir MediClick como microservicios.
 - Cambiar el diseño visual del cliente.
@@ -395,34 +395,44 @@ Modelo propuesto:
 
 ```prisma
 model OutboxEvents {
-  id            String   @id @default(uuid())
+  id            String   @id @default(uuid()) // eventId
   type          String
+  schemaVersion Int
   aggregateType String
   aggregateId   String
+  operationId   String
   clinicId      Int?
   payload       Json
   dedupeKey     String   @unique
   occurredAt    DateTime @default(now())
   availableAt   DateTime @default(now())
   publishedAt   DateTime?
+  deadLetteredAt DateTime?
   attempts      Int      @default(0)
   lastError     String?
+  lockedBy      String?
+  lockedUntil   DateTime?
 
   @@index([publishedAt, availableAt])
+  @@index([deadLetteredAt, lockedUntil])
   @@index([clinicId, occurredAt])
 }
 ```
 
-El worker reclama lotes con `FOR UPDATE SKIP LOCKED`, incrementa intentos y reintenta con
-backoff. Después de un umbral, mantiene el evento visible como dead letter; no lo elimina.
+El worker reclama lotes con `FOR UPDATE SKIP LOCKED` dentro de una transacción corta, asigna
+`lockedBy`/`lockedUntil`, incrementa intentos y hace commit antes de ejecutar I/O. Reintenta con
+backoff y solo el owner vigente puede confirmar o reprogramar. Después de un umbral, marca
+`deadLetteredAt`, mantiene el evento visible como dead letter y no lo elimina.
 
 Los consumidores guardan una clave idempotente o se apoyan en una restricción de su efecto. La
 entrega es **al menos una vez**. `EventEmitter` puede conservarse como mecanismo local no crítico,
 pero no como única entrega para lista de espera, cancelaciones, mensajes ni proyección FHIR.
 
-La outbox afecta una decisión transversal y cara de revertir. Antes de implementarla se debe
-ratificar un ADR-0002; ese ADR debe preservar que Prisma es fuente de verdad y FHIR una proyección,
-según ADR-0001.
+La outbox afecta una decisión transversal y cara de revertir.
+[ADR-0002](./adr/0002-transactional-outbox.md) fue ratificado el 2026-08-31 preservando que Prisma
+es fuente de verdad y FHIR una proyección, según ADR-0001. Define el envelope versionado,
+deduplicación por operación, scope explícito de sede, leases cortos y el contrato idempotente de
+consumidores que debe aplicar SDD-019.
 
 #### 6.5.2 Jobs con lease e idempotencia
 
@@ -643,7 +653,7 @@ diff que toque el núcleo termina con `$mediclick-core-review` antes de integrar
 | SDD-015 ✅ | P1 | Auditar duplicados y agregar constraints de gateway, agenda y ofertas mediante migración segura | `$mediclick-appointment-core` + `$mediclick-tenant-safety` + `$tdd` |
 | SDD-016 ✅ | P1 | Añadir harness PostgreSQL real a CI para aislamiento entre suites; corregir F-13 con reintento ante `P2034` en `replaceForDoctorSpecialty`, con test que reproduzca 30 reemplazos concurrentes sin fallos | `$tdd` + `$diagnosing-bugs` + `$mediclick-appointment-core` |
 | SDD-017 ✅ | P1 | Restaurar build/a11y del cliente incorporando Playwright y su gate de CI | `$diagnosing-bugs` + `$tdd` |
-| SDD-018 | P2 | Redactar ADR-0002 de outbox y contrato de entrega al menos una vez | `$domain-modeling` + `$codebase-design` |
+| SDD-018 ✅ | P2 | Redactar ADR-0002 de outbox y contrato de entrega al menos una vez | `$domain-modeling` + `$codebase-design` |
 | SDD-019 | P2 | Implementar outbox, worker con `SKIP LOCKED`, backoff y dead letters; migrar primero slot release y FHIR | `$mediclick-appointment-core` + `$codebase-design` + `$tdd` |
 | SDD-020 | P2 | Añadir leases de jobs y entregas idempotentes para recordatorios | `$codebase-design` + `$tdd` + `$diagnosing-bugs` |
 | SDD-021 | P2 | Validar configuración al arranque y endurecer usuario, red, Redis, secretos y migraciones de producción | `$diagnosing-bugs` + `$tdd` |
