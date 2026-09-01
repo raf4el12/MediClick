@@ -5,6 +5,8 @@ import type {
   FhirResourceVersion,
 } from '../../domain/entities/fhir-resource.entity.js';
 import type {
+  ApplyFhirProjectionInput,
+  ApplyFhirProjectionResult,
   IFhirResourceRepository,
   SaveFhirResourceInput,
 } from '../../domain/repositories/fhir-resource.repository.js';
@@ -54,5 +56,11 @@ export class FhirResourceService {
 
   softDelete(resourceType: string, id: string): Promise<void> {
     return this.repo.softDelete(resourceType, id);
+  }
+
+  applyProjection(
+    input: ApplyFhirProjectionInput,
+  ): Promise<ApplyFhirProjectionResult> {
+    return this.repo.applyProjection(input);
   }
 }

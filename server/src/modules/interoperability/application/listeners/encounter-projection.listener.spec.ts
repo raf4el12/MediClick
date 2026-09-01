@@ -1,8 +1,10 @@
 import { EncounterProjectionListener } from './encounter-projection.listener.js';
+import { fhirIdFor, provenanceIdFor } from '../../domain/fhir-id.logic.js';
 import {
-  fhirIdFor,
-  provenanceIdFor,
-} from '../../domain/fhir-id.logic.js';
+  APPOINTMENT_CANCELLED,
+  APPOINTMENT_CONFIRMED,
+} from '../../../../shared/events/appointment-durable-events.js';
+import { buildDurableEvent } from '../../../../shared/outbox/domain/durable-domain-event.js';
 
 const dbAppointment = {
   id: 55,
@@ -11,76 +13,119 @@ const dbAppointment = {
   endTime: new Date('2026-07-10T14:30:00Z'),
   patientId: 42,
   clinicId: 3,
+  deleted: false,
+  schedule: { clinicId: 3, doctor: { clinicId: 3 } },
 };
 
+function appointmentEvent(
+  type = APPOINTMENT_CONFIRMED,
+  clinicId: number | null = 3,
+) {
+  return buildDurableEvent({
+    eventId: 'evt-1',
+    type,
+    schemaVersion: 1,
+    aggregateType: 'appointment',
+    aggregateId: '55',
+    operationId: 'op-1',
+    clinicId,
+    occurredAt: '2026-07-10T14:00:00.000Z',
+    payload: { appointmentId: 55 },
+  });
+}
+
 describe('EncounterProjectionListener', () => {
-  const prisma = { appointments: { findUnique: jest.fn() } };
-  const fhirResourceService = { save: jest.fn() };
+  const prisma = {
+    appointments: { findFirst: jest.fn(), findUnique: jest.fn() },
+  };
+  const fhirResourceService = { applyProjection: jest.fn() };
   let listener: EncounterProjectionListener;
 
   beforeEach(() => {
     jest.clearAllMocks();
     listener = new EncounterProjectionListener(
-      prisma as any,
-      fhirResourceService as any,
+      prisma as never,
+      fhirResourceService as never,
     );
   });
 
-  it('proyecta Encounter + Provenance con el clinicId de la cita', async () => {
-    prisma.appointments.findUnique.mockResolvedValue(dbAppointment);
-    fhirResourceService.save.mockResolvedValue({});
+  it('rehidrata con scope explícito y aplica Encounter + Provenance atómicamente', async () => {
+    prisma.appointments.findFirst.mockResolvedValue(dbAppointment);
+    fhirResourceService.applyProjection.mockResolvedValue('applied');
 
-    await listener.handleConfirmed({ appointmentId: 55 });
+    await listener.handleConfirmed(appointmentEvent());
 
-    expect(fhirResourceService.save).toHaveBeenCalledTimes(2);
-    expect(fhirResourceService.save).toHaveBeenNthCalledWith(
-      1,
+    expect(prisma.appointments.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
-        id: fhirIdFor('Encounter', 55),
-        resourceType: 'Encounter',
-        clinicId: 3,
+        where: expect.objectContaining({ id: 55, deleted: false }),
       }),
     );
-    expect(fhirResourceService.save).toHaveBeenNthCalledWith(
-      2,
+    expect(fhirResourceService.applyProjection).toHaveBeenCalledWith(
       expect.objectContaining({
-        id: provenanceIdFor('Encounter', 55),
-        resourceType: 'Provenance',
-        clinicId: 3,
+        consumerName: 'fhir-encounter-projection',
+        eventId: 'evt-1',
+        upserts: [
+          expect.objectContaining({
+            id: fhirIdFor('Encounter', 55),
+            resourceType: 'Encounter',
+            clinicId: 3,
+          }),
+          expect.objectContaining({
+            id: provenanceIdFor('Encounter', 55),
+            resourceType: 'Provenance',
+            clinicId: 3,
+          }),
+        ],
       }),
     );
   });
 
-  it('cita sin clínica proyecta con clinicId null', async () => {
+  it('clinicId null solo se acepta si las relaciones persistidas también son null', async () => {
     prisma.appointments.findUnique.mockResolvedValue({
       ...dbAppointment,
       clinicId: null,
+      schedule: { clinicId: null, doctor: { clinicId: null } },
     });
-    fhirResourceService.save.mockResolvedValue({});
+    fhirResourceService.applyProjection.mockResolvedValue('applied');
 
-    await listener.handleCancelled({ appointmentId: 55 });
+    await listener.handleCancelled(
+      appointmentEvent(APPOINTMENT_CANCELLED, null),
+    );
 
-    expect(fhirResourceService.save).toHaveBeenNthCalledWith(
-      1,
-      expect.objectContaining({ resourceType: 'Encounter', clinicId: null }),
+    expect(fhirResourceService.applyProjection).toHaveBeenCalledWith(
+      expect.objectContaining({
+        upserts: [
+          expect.objectContaining({
+            resourceType: 'Encounter',
+            clinicId: null,
+          }),
+          expect.any(Object),
+        ],
+      }),
     );
   });
 
-  it('si la cita no existe, no guarda y no lanza', async () => {
-    prisma.appointments.findUnique.mockResolvedValue(null);
+  it('rechaza clinicId null cuando la cita pertenece a una sede persistida', async () => {
+    prisma.appointments.findUnique.mockResolvedValue(dbAppointment);
 
     await expect(
-      listener.handleConfirmed({ appointmentId: 99 }),
-    ).resolves.toBeUndefined();
-    expect(fhirResourceService.save).not.toHaveBeenCalled();
+      listener.handleConfirmed(appointmentEvent(APPOINTMENT_CONFIRMED, null)),
+    ).rejects.toThrow('clinicId inconsistente');
+    expect(fhirResourceService.applyProjection).not.toHaveBeenCalled();
   });
 
-  it('si el store falla, no propaga', async () => {
-    prisma.appointments.findUnique.mockResolvedValue(dbAppointment);
-    fhirResourceService.save.mockRejectedValue(new Error('boom'));
+  it('propaga cita fuera de scope y fallos del store', async () => {
+    prisma.appointments.findFirst.mockResolvedValueOnce(null);
+    await expect(listener.handleConfirmed(appointmentEvent())).rejects.toThrow(
+      'no encontrada en el alcance',
+    );
 
-    await expect(
-      listener.handleConfirmed({ appointmentId: 55 }),
-    ).resolves.toBeUndefined();
+    prisma.appointments.findFirst.mockResolvedValueOnce(dbAppointment);
+    fhirResourceService.applyProjection.mockRejectedValueOnce(
+      new Error('db caída'),
+    );
+    await expect(listener.handleConfirmed(appointmentEvent())).rejects.toThrow(
+      'db caída',
+    );
   });
 });

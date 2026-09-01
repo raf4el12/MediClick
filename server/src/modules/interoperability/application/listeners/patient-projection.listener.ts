@@ -1,89 +1,103 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import {
   PATIENT_CREATED_EVENT,
-  PATIENT_UPDATED_EVENT,
   PATIENT_DELETED_EVENT,
-  type PatientChangedEvent,
+  PATIENT_EVENT_SCHEMA_VERSION,
+  PATIENT_UPDATED_EVENT,
+  type PatientChangedPayload,
 } from '../../../../shared/events/patient-events.interface.js';
-import { FhirResourceService } from '../services/fhir-resource.service.js';
+import {
+  durableEventName,
+  type DurableDomainEvent,
+} from '../../../../shared/outbox/domain/durable-domain-event.js';
 import { toFhirPatient } from '../../domain/mappers/patient-fhir.mapper.js';
 import { buildProvenance } from '../../domain/mappers/provenance-fhir.mapper.js';
-import {
-  fhirIdFor,
-  provenanceIdFor,
-} from '../../domain/fhir-id.logic.js';
+import { fhirIdFor, provenanceIdFor } from '../../domain/fhir-id.logic.js';
+import { FhirResourceService } from '../services/fhir-resource.service.js';
+
+const CONSUMER_NAME = 'fhir-patient-projection';
+type PatientDurableEvent = DurableDomainEvent<PatientChangedPayload>;
 
 @Injectable()
 export class PatientProjectionListener {
-  private readonly logger = new Logger(PatientProjectionListener.name);
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly fhirResourceService: FhirResourceService,
   ) {}
 
-  @OnEvent(PATIENT_CREATED_EVENT, { async: true })
-  handleCreated(event: PatientChangedEvent): Promise<void> {
-    return this.project(event.patientId, PATIENT_CREATED_EVENT);
+  @OnEvent(
+    durableEventName(PATIENT_CREATED_EVENT, PATIENT_EVENT_SCHEMA_VERSION),
+    { async: true },
+  )
+  handleCreated(event: PatientDurableEvent): Promise<void> {
+    return this.project(event);
   }
 
-  @OnEvent(PATIENT_UPDATED_EVENT, { async: true })
-  handleUpdated(event: PatientChangedEvent): Promise<void> {
-    return this.project(event.patientId, PATIENT_UPDATED_EVENT);
+  @OnEvent(
+    durableEventName(PATIENT_UPDATED_EVENT, PATIENT_EVENT_SCHEMA_VERSION),
+    { async: true },
+  )
+  handleUpdated(event: PatientDurableEvent): Promise<void> {
+    return this.project(event);
   }
 
-  @OnEvent(PATIENT_DELETED_EVENT, { async: true })
-  async handleDeleted(event: PatientChangedEvent): Promise<void> {
-    try {
-      await this.fhirResourceService.softDelete(
-        'Patient',
-        fhirIdFor('Patient', event.patientId),
-      );
-    } catch (err) {
-      this.logger.error(
-        `[PROJECTION] Error al soft-borrar Patient ${event.patientId}: ${(err as Error).message}`,
-      );
+  @OnEvent(
+    durableEventName(PATIENT_DELETED_EVENT, PATIENT_EVENT_SCHEMA_VERSION),
+    { async: true },
+  )
+  handleDeleted(event: PatientDurableEvent): Promise<void> {
+    return this.project(event);
+  }
+
+  private async project(event: PatientDurableEvent): Promise<void> {
+    const patientId = event.payload.patientId;
+    const patient = await this.prisma.patients.findUnique({
+      where: { id: patientId },
+      include: { profile: true },
+    });
+    if (!patient) {
+      throw new Error(`Patient ${patientId} no encontrado para ${event.type}`);
     }
-  }
 
-  private async project(patientId: number, eventName: string): Promise<void> {
-    try {
-      const patient = await this.prisma.patients.findUnique({
-        where: { id: patientId },
-        include: { profile: true },
+    const fhirId = fhirIdFor('Patient', patientId);
+    const occurredAt = new Date(event.occurredAt);
+    if (patient.deleted) {
+      await this.fhirResourceService.applyProjection({
+        consumerName: CONSUMER_NAME,
+        eventId: event.eventId,
+        occurredAt,
+        upserts: [],
+        deletes: [{ resourceType: 'Patient', id: fhirId }],
       });
-      if (!patient) {
-        this.logger.warn(
-          `[PROJECTION] Patient ${patientId} no encontrado; se omite (${eventName})`,
-        );
-        return;
-      }
-
-      const fhirId = fhirIdFor('Patient', patientId);
-      await this.fhirResourceService.save({
-        id: fhirId,
-        resourceType: 'Patient',
-        content: toFhirPatient(patient),
-        clinicId: null,
-      });
-      await this.fhirResourceService.save({
-        id: provenanceIdFor('Patient', patientId),
-        resourceType: 'Provenance',
-        content: buildProvenance({
-          targetType: 'Patient',
-          targetFhirId: fhirId,
-          eventName,
-          internalId: patientId,
-          recordedAt: new Date(),
-        }),
-        clinicId: null,
-      });
-    } catch (err) {
-      this.logger.error(
-        `[PROJECTION] Error proyectando Patient ${patientId} (${eventName}): ${(err as Error).message}`,
-      );
+      return;
     }
+
+    await this.fhirResourceService.applyProjection({
+      consumerName: CONSUMER_NAME,
+      eventId: event.eventId,
+      occurredAt,
+      upserts: [
+        {
+          id: fhirId,
+          resourceType: 'Patient',
+          content: toFhirPatient(patient),
+          clinicId: null,
+        },
+        {
+          id: provenanceIdFor('Patient', patientId),
+          resourceType: 'Provenance',
+          content: buildProvenance({
+            targetType: 'Patient',
+            targetFhirId: fhirId,
+            eventName: event.type,
+            internalId: patientId,
+            recordedAt: occurredAt,
+          }),
+          clinicId: null,
+        },
+      ],
+    });
   }
 }

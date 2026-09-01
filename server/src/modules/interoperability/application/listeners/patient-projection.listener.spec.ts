@@ -1,9 +1,11 @@
-import { Logger } from '@nestjs/common';
 import { PatientProjectionListener } from './patient-projection.listener.js';
+import { fhirIdFor, provenanceIdFor } from '../../domain/fhir-id.logic.js';
 import {
-  fhirIdFor,
-  provenanceIdFor,
-} from '../../domain/fhir-id.logic.js';
+  PATIENT_CREATED_EVENT,
+  PATIENT_DELETED_EVENT,
+  PATIENT_UPDATED_EVENT,
+} from '../../../../shared/events/patient-events.interface.js';
+import { buildDurableEvent } from '../../../../shared/outbox/domain/durable-domain-event.js';
 
 const dbPatient = {
   id: 42,
@@ -21,88 +23,95 @@ const dbPatient = {
   },
 };
 
+function patientEvent(type = PATIENT_CREATED_EVENT, eventId = 'evt-1') {
+  return buildDurableEvent({
+    eventId,
+    type,
+    schemaVersion: 1,
+    aggregateType: 'patient',
+    aggregateId: '42',
+    operationId: 'op-1',
+    clinicId: null,
+    occurredAt: '2026-07-10T14:00:00.000Z',
+    payload: { patientId: 42 },
+  });
+}
+
 describe('PatientProjectionListener', () => {
   const prisma = { patients: { findUnique: jest.fn() } };
-  const fhirResourceService = { save: jest.fn(), softDelete: jest.fn() };
+  const fhirResourceService = { applyProjection: jest.fn() };
   let listener: PatientProjectionListener;
 
   beforeEach(() => {
     jest.clearAllMocks();
     listener = new PatientProjectionListener(
-      prisma as any,
-      fhirResourceService as any,
+      prisma as never,
+      fhirResourceService as never,
     );
   });
 
-  it('proyecta Patient + Provenance con clinicId null e id determinístico', async () => {
+  it('aplica Patient + Provenance y recibo en una sola operación', async () => {
     prisma.patients.findUnique.mockResolvedValue(dbPatient);
-    fhirResourceService.save.mockResolvedValue({});
+    fhirResourceService.applyProjection.mockResolvedValue('applied');
 
-    await listener.handleCreated({ patientId: 42 });
+    await listener.handleCreated(patientEvent());
 
-    expect(fhirResourceService.save).toHaveBeenCalledTimes(2);
-    expect(fhirResourceService.save).toHaveBeenNthCalledWith(
-      1,
+    expect(fhirResourceService.applyProjection).toHaveBeenCalledWith(
       expect.objectContaining({
-        id: fhirIdFor('Patient', 42),
-        resourceType: 'Patient',
-        clinicId: null,
-      }),
-    );
-    expect(fhirResourceService.save).toHaveBeenNthCalledWith(
-      2,
-      expect.objectContaining({
-        id: provenanceIdFor('Patient', 42),
-        resourceType: 'Provenance',
-        clinicId: null,
+        consumerName: 'fhir-patient-projection',
+        eventId: 'evt-1',
+        upserts: [
+          expect.objectContaining({
+            id: fhirIdFor('Patient', 42),
+            resourceType: 'Patient',
+            clinicId: null,
+          }),
+          expect.objectContaining({
+            id: provenanceIdFor('Patient', 42),
+            resourceType: 'Provenance',
+            clinicId: null,
+          }),
+        ],
       }),
     );
   });
 
-  it('si el paciente no existe, no guarda nada y no lanza', async () => {
+  it('propaga paciente inexistente para que el worker reintente o haga dead-letter', async () => {
     prisma.patients.findUnique.mockResolvedValue(null);
 
     await expect(
-      listener.handleUpdated({ patientId: 99 }),
-    ).resolves.toBeUndefined();
-    expect(fhirResourceService.save).not.toHaveBeenCalled();
+      listener.handleUpdated(patientEvent(PATIENT_UPDATED_EVENT)),
+    ).rejects.toThrow('Patient 42 no encontrado');
+    expect(fhirResourceService.applyProjection).not.toHaveBeenCalled();
   });
 
-  it('si el store falla, no propaga el error al emisor', async () => {
+  it('propaga el fallo del store al worker', async () => {
     prisma.patients.findUnique.mockResolvedValue(dbPatient);
-    fhirResourceService.save.mockRejectedValue(new Error('db caída'));
-
-    await expect(
-      listener.handleCreated({ patientId: 42 }),
-    ).resolves.toBeUndefined();
-  });
-
-  it('si softDelete falla, handleDeleted no propaga el error al emisor', async () => {
-    const errorSpy = jest
-      .spyOn(Logger.prototype, 'error')
-      .mockImplementation(() => undefined);
-    fhirResourceService.softDelete.mockRejectedValueOnce(
+    fhirResourceService.applyProjection.mockRejectedValue(
       new Error('db caída'),
     );
 
-    await expect(
-      listener.handleDeleted({ patientId: 42 }),
-    ).resolves.toBeUndefined();
-    expect(errorSpy).toHaveBeenCalledWith(
-      expect.stringContaining('[PROJECTION]'),
+    await expect(listener.handleCreated(patientEvent())).rejects.toThrow(
+      'db caída',
     );
-    errorSpy.mockRestore();
   });
 
-  it('patient.deleted hace softDelete del recurso en el store', async () => {
-    fhirResourceService.softDelete.mockResolvedValue(undefined);
+  it('patient.deleted aplica el recibo y el soft delete juntos', async () => {
+    prisma.patients.findUnique.mockResolvedValue({
+      ...dbPatient,
+      deleted: true,
+    });
+    fhirResourceService.applyProjection.mockResolvedValue('applied');
 
-    await listener.handleDeleted({ patientId: 42 });
+    await listener.handleDeleted(patientEvent(PATIENT_DELETED_EVENT));
 
-    expect(fhirResourceService.softDelete).toHaveBeenCalledWith(
-      'Patient',
-      fhirIdFor('Patient', 42),
+    expect(fhirResourceService.applyProjection).toHaveBeenCalledWith(
+      expect.objectContaining({
+        consumerName: 'fhir-patient-projection',
+        eventId: 'evt-1',
+        upserts: [],
+        deletes: [{ resourceType: 'Patient', id: fhirIdFor('Patient', 42) }],
+      }),
     );
-    expect(fhirResourceService.save).not.toHaveBeenCalled();
   });
 });

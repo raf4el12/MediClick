@@ -23,6 +23,16 @@ export interface PersistFhirResourceInput {
   lastUpdated: Date;
 }
 
+export interface ApplyFhirProjectionInput {
+  consumerName: string;
+  eventId: string;
+  occurredAt: Date;
+  upserts: Array<SaveFhirResourceInput & { id: string }>;
+  deletes?: Array<{ resourceType: string; id: string }>;
+}
+
+export type ApplyFhirProjectionResult = 'applied' | 'duplicate';
+
 export interface IFhirResourceRepository {
   /** Upsert del recurso + append de su versión al historial, en una transacción. */
   persist(input: PersistFhirResourceInput): Promise<FhirResourceEntity>;
@@ -33,4 +43,8 @@ export interface IFhirResourceRepository {
   /** Versiones del recurso, más nueva primero. */
   findHistory(resourceType: string, id: string): Promise<FhirResourceVersion[]>;
   softDelete(resourceType: string, id: string): Promise<void>;
+  /** Aplica recibo, recursos e historial como una única proyección idempotente. */
+  applyProjection(
+    input: ApplyFhirProjectionInput,
+  ): Promise<ApplyFhirProjectionResult>;
 }

@@ -16,6 +16,7 @@ describe('FhirResourceService', () => {
       findByTypeAndId: jest.fn(() => Promise.resolve(null)),
       findHistory: jest.fn(() => Promise.resolve([])),
       softDelete: jest.fn(() => Promise.resolve()),
+      applyProjection: jest.fn(() => Promise.resolve('applied')),
     };
     service = new FhirResourceService(repo);
   });
@@ -67,5 +68,16 @@ describe('FhirResourceService', () => {
   it('softDelete delega en el repositorio', async () => {
     await service.softDelete('Patient', 'abc-123');
     expect(repo.softDelete).toHaveBeenCalledWith('Patient', 'abc-123');
+  });
+
+  it('applyProjection delega la frontera idempotente completa', async () => {
+    const input = {
+      consumerName: 'fhir-test',
+      eventId: 'evt-1',
+      occurredAt: new Date('2026-07-10T14:00:00.000Z'),
+      upserts: [],
+    };
+    await service.applyProjection(input);
+    expect(repo.applyProjection).toHaveBeenCalledWith(input);
   });
 });
