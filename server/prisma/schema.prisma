@@ -300,6 +300,11 @@ model Schedules {
   appointments   Appointments[]
   waitlistOffers WaitlistOffers[]
 
+  // SDD-015 (G-06): la identidad de un cupo generado es médico + especialidad
+  // + sede + fecha + intervalo (coincide con ScheduleKey del planner puro,
+  // SDD-008). Sin este índice, `createMany({ skipDuplicates: true })` es un
+  // no-op: no hay nada contra qué deduplicar.
+  @@unique([doctorId, specialtyId, clinicId, scheduleDate, timeFrom, timeTo])
   @@index([doctorId, scheduleDate])
   @@index([specialtyId])
   @@index([clinicId])
@@ -415,6 +420,13 @@ model Transactions {
   clinic      Clinics?     @relation(fields: [clinicId], references: [id], onDelete: SetNull)
 
   @@index([appointmentId])
+  // SDD-015 (G-06): idempotencia financiera. `gatewayId` identifica de forma
+  // única un pago ya procesado en el proveedor (invariante de
+  // APPOINTMENT-CORE.md), pero puede ser null mientras solo existe la
+  // preference y el pago aún no fue confirmado — por eso la unicidad debe
+  // ser condicional (`WHERE "gatewayId" IS NOT NULL`), lo que Prisma no
+  // expresa en el schema. El índice único parcial real se crea con SQL
+  // crudo en la migración `add_gateway_schedule_offer_constraints`.
   @@index([gatewayId])
   @@index([preferenceId])
   @@index([externalRef])
@@ -657,6 +669,15 @@ model WaitlistOffers {
   @@index([waitlistEntryId, status])
   @@index([status, expiresAt]) // cron de expiración de ofertas
   @@index([scheduleId, startTime, endTime])
+  // SDD-015 (G-06): dos índices únicos parciales, creados con SQL crudo en
+  // la migración `add_gateway_schedule_offer_constraints` porque Prisma no
+  // expresa el predicado condicional en el schema:
+  // 1. UNIQUE ("createdAppointmentId") WHERE "createdAppointmentId" IS NOT
+  //    NULL — una cita no puede completar varias ofertas.
+  // 2. UNIQUE ("scheduleId") WHERE status = 'PENDING' — una oferta PENDING
+  //    exclusiva por cupo (acceptOfferAtomically/find-next-match ya
+  //    garantizan esto a nivel de aplicación; el índice es la última
+  //    barrera de base de datos).
 }
 
 // Bitácora de seguridad append-only. Sin FKs a propósito: el registro debe

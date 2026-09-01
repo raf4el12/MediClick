@@ -186,6 +186,15 @@ describeDatabase(
         where: { id: { in: appointmentIds }, scheduleId },
         data: { status: 'CANCELLED' },
       });
+      // Y cierra cualquier oferta PENDING que haya quedado colgando (p.ej.
+      // porque la transacción de `acceptOfferAtomically` hizo rollback tras
+      // perder la carrera contra una reserva directa). Sin esto, el índice
+      // único parcial de SDD-015 ("una oferta PENDING exclusiva por cupo")
+      // rechaza la oferta del siguiente test sobre el mismo scheduleId.
+      await prisma.waitlistOffers.updateMany({
+        where: { id: { in: offerIds }, scheduleId, status: 'PENDING' },
+        data: { status: 'EXPIRED' },
+      });
     });
 
     it('crea la cita con amount y pendingUntil, cierra la entrada y vincula la oferta — todo en una transacción', async () => {
