@@ -17,9 +17,13 @@ import { motion } from 'framer-motion';
 // ---------------------------------------------------------------------------
 const PRIMARY = '#2563EB';
 const PRIMARY_DARK = '#1D4ED8';
+const PRIMARY_TEXT = '#1746A2';
+const INDIGO_TEXT = '#4338CA';
+const AMBER_TEXT = '#92400E';
+const PINK_TEXT = '#9D174D';
 const PRIMARY_LIGHT = '#EFF6FF';
 const DARK = '#1B2537';
-const GRAY_BODY = '#64748B';
+const GRAY_BODY = '#526176';
 const GRAY_LIGHT = '#F0F4F8';
 const RADIUS = '16px';
 const RADIUS_PILL = '100px';
@@ -190,7 +194,7 @@ const EhrMockup = () => {
             <i className="ri-heart-pulse-line" style={{ fontSize: 20, color: '#fff' }} />
           </Box>
           {['Dashboard', 'Citas', 'Pacientes', 'Doctores', 'Reportes'].map((item, i) => (
-            <Box key={item} sx={{ py: 1, px: 1.5, borderRadius: 2, mb: 0.5, bgcolor: i === 1 ? alpha(PRIMARY, 0.1) : 'transparent', color: i === 1 ? PRIMARY : GRAY_BODY, fontSize: '0.8rem', fontWeight: i === 1 ? 700 : 500, cursor: 'pointer' }}>
+            <Box key={item} sx={{ py: 1, px: 1.5, borderRadius: 2, mb: 0.5, bgcolor: i === 1 ? alpha(PRIMARY, 0.1) : 'transparent', color: i === 1 ? PRIMARY_TEXT : GRAY_BODY, fontSize: '0.8rem', fontWeight: i === 1 ? 700 : 500, cursor: 'pointer' }}>
               {item}
             </Box>
           ))}
@@ -199,7 +203,7 @@ const EhrMockup = () => {
         <Box sx={{ flex: 1, p: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Box sx={{ width: 44, height: 44, borderRadius: '50%', bgcolor: alpha(PRIMARY, 0.15), display: 'flex', alignItems: 'center', justifyContent: 'center', color: PRIMARY, fontWeight: 800, fontSize: '1rem' }}>CL</Box>
+              <Box sx={{ width: 44, height: 44, borderRadius: '50%', bgcolor: alpha(PRIMARY, 0.15), display: 'flex', alignItems: 'center', justifyContent: 'center', color: PRIMARY_TEXT, fontWeight: 800, fontSize: '1rem' }}>CL</Box>
               <Box>
                 <Typography variant="subtitle2" fontWeight={700} sx={{ color: DARK }}>Clínica San Rafael</Typography>
                 <Typography variant="caption" sx={{ color: GRAY_BODY }}>Hoy — 3 citas pendientes</Typography>
@@ -209,25 +213,25 @@ const EhrMockup = () => {
           <Grid container spacing={2}>
             <Grid size={6}>
               <Box sx={{ p: 2, borderRadius: 2, bgcolor: GRAY_LIGHT }}>
-                <Typography variant="caption" color="text.secondary" fontWeight={700}>Citas Hoy</Typography>
+                <Typography variant="caption" fontWeight={700} sx={{ color: GRAY_BODY }}>Citas Hoy</Typography>
                 <Typography variant="h6" fontWeight={800} sx={{ color: DARK }}>12</Typography>
               </Box>
             </Grid>
             <Grid size={6}>
               <Box sx={{ p: 2, borderRadius: 2, bgcolor: GRAY_LIGHT }}>
-                <Typography variant="caption" color="text.secondary" fontWeight={700}>Completadas</Typography>
+                <Typography variant="caption" fontWeight={700} sx={{ color: GRAY_BODY }}>Completadas</Typography>
                 <Typography variant="h6" fontWeight={800} sx={{ color: DARK }}>8</Typography>
               </Box>
             </Grid>
             <Grid size={6}>
               <Box sx={{ p: 2, borderRadius: 2, bgcolor: GRAY_LIGHT }}>
-                <Typography variant="caption" color="text.secondary" fontWeight={700}>Doctores Activos</Typography>
+                <Typography variant="caption" fontWeight={700} sx={{ color: GRAY_BODY }}>Doctores Activos</Typography>
                 <Typography variant="h6" fontWeight={800} sx={{ color: DARK }}>5</Typography>
               </Box>
             </Grid>
             <Grid size={6}>
               <Box sx={{ p: 2, borderRadius: 2, bgcolor: GRAY_LIGHT }}>
-                <Typography variant="caption" color="text.secondary" fontWeight={700}>Ocupación</Typography>
+                <Typography variant="caption" fontWeight={700} sx={{ color: GRAY_BODY }}>Ocupación</Typography>
                 <Typography variant="h6" fontWeight={800} sx={{ color: DARK }}>87%</Typography>
               </Box>
             </Grid>
@@ -242,12 +246,12 @@ const Cie10Mockup = () => (
   <Box sx={{ p: 3, borderRadius: RADIUS, bgcolor: '#fff', border: `1px solid ${alpha('#000', 0.08)}`, boxShadow: `0 24px 48px -12px ${alpha('#000', 0.1)}` }}>
     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
       <Typography variant="subtitle2" fontWeight={800} sx={{ color: DARK }}>Citas del día — Dr. Gutiérrez</Typography>
-      <Chip label="EN PROGRESO" size="small" sx={{ bgcolor: alpha('#6366F1', 0.1), color: '#6366F1', fontWeight: 700, fontSize: '0.7rem' }} />
+      <Chip label="EN PROGRESO" size="small" sx={{ bgcolor: alpha('#6366F1', 0.1), color: INDIGO_TEXT, fontWeight: 700, fontSize: '0.7rem' }} />
     </Box>
     {[
-      { patient: 'Carlos Bravo', status: 'COMPLETADA', type: 'Consulta General', color: PRIMARY },
-      { patient: 'Sofía Méndez', status: 'EN PROGRESO', type: 'Control prenatal', color: '#6366F1' },
-      { patient: 'Roberto Carle', status: 'PENDIENTE', type: 'Ecografía', color: '#F59E0B' },
+      { patient: 'Carlos Bravo', status: 'COMPLETADA', type: 'Consulta General', color: PRIMARY_TEXT },
+      { patient: 'Sofía Méndez', status: 'EN PROGRESO', type: 'Control prenatal', color: INDIGO_TEXT },
+      { patient: 'Roberto Carle', status: 'PENDIENTE', type: 'Ecografía', color: AMBER_TEXT },
     ].map((apt, i) => (
       <Box key={i} sx={{ p: 2, borderRadius: 2, mb: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: i === 1 ? alpha('#6366F1', 0.05) : 'transparent', border: i === 1 ? `1px solid ${alpha('#6366F1', 0.15)}` : '1px solid transparent' }}>
         <Box>
@@ -264,7 +268,7 @@ const CalendarMockup = () => (
   <Box sx={{ p: 3, borderRadius: RADIUS, bgcolor: '#fff', border: `1px solid ${alpha('#000', 0.08)}`, boxShadow: `0 24px 48px -12px ${alpha('#000', 0.1)}` }}>
     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
       <Typography variant="subtitle2" fontWeight={800} sx={{ color: DARK }}>Hoy — 15 Abril</Typography>
-      <Chip label="3 citas" size="small" sx={{ bgcolor: alpha('#F59E0B', 0.1), color: '#F59E0B', fontWeight: 700 }} />
+      <Chip label="3 citas" size="small" sx={{ bgcolor: alpha('#F59E0B', 0.1), color: AMBER_TEXT, fontWeight: 700 }} />
     </Box>
     {[
       { time: '09:00', patient: 'Carlos Bravo', type: 'Consulta General', color: PRIMARY },
@@ -308,8 +312,8 @@ const PrescriptionMockup = () => (
       </Grid>
     </Box>
     <Box sx={{ display: 'flex', gap: 1 }}>
-      <Chip icon={<i className="ri-file-pdf-2-line" />} label="Descargar PDF" size="small" sx={{ bgcolor: alpha('#EC4899', 0.1), color: '#EC4899', fontWeight: 600 }} />
-      <Chip icon={<i className="ri-mail-send-line" />} label="Enviar por email" size="small" sx={{ bgcolor: alpha('#6366F1', 0.1), color: '#6366F1', fontWeight: 600 }} />
+      <Chip icon={<i className="ri-file-pdf-2-line" />} label="Descargar PDF" size="small" sx={{ bgcolor: alpha('#EC4899', 0.1), color: PINK_TEXT, fontWeight: 600 }} />
+      <Chip icon={<i className="ri-mail-send-line" />} label="Enviar por email" size="small" sx={{ bgcolor: alpha('#6366F1', 0.1), color: INDIGO_TEXT, fontWeight: 600 }} />
     </Box>
   </Box>
 );
@@ -397,7 +401,7 @@ const LandingView = () => {
 
         <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
           <motion.div variants={mFadeUp} initial="hidden" animate="visible" custom={0}>
-            <Chip icon={<i className="ri-sparkling-2-fill" style={{ color: PRIMARY, fontSize: 16 }} />} label="Sistema de Gestión de Citas Médicas" sx={{ mb: 3, bgcolor: alpha(PRIMARY, 0.1), color: PRIMARY, fontWeight: 700, fontSize: '0.85rem', px: 1, '& .MuiChip-label': { px: 1 }, '& .MuiChip-icon': { ml: 1 } }} />
+            <Chip icon={<i className="ri-sparkling-2-fill" style={{ color: PRIMARY_TEXT, fontSize: 16 }} />} label="Sistema de Gestión de Citas Médicas" sx={{ mb: 3, bgcolor: alpha(PRIMARY, 0.1), color: PRIMARY_TEXT, fontWeight: 700, fontSize: '0.85rem', px: 1, '& .MuiChip-label': { px: 1 }, '& .MuiChip-icon': { ml: 1 } }} />
           </motion.div>
 
           <motion.div variants={mFadeUp} initial="hidden" animate="visible" custom={1}>
@@ -466,7 +470,7 @@ const LandingView = () => {
         <Container maxWidth="lg">
           <Box textAlign="center" mb={{ xs: 8, md: 12 }}>
             <motion.div variants={mFadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-              <Chip label="Funcionalidades" sx={{ mb: 2, bgcolor: alpha(PRIMARY, 0.1), color: PRIMARY, fontWeight: 700, fontSize: '0.8rem' }} />
+              <Chip label="Funcionalidades" sx={{ mb: 2, bgcolor: alpha(PRIMARY, 0.1), color: PRIMARY_TEXT, fontWeight: 700, fontSize: '0.8rem' }} />
               <Typography sx={{ fontWeight: 900, fontSize: { xs: '2rem', md: '2.75rem' }, color: DARK, letterSpacing: '-1px', mb: 2 }}>
                 Todo en un mismo lugar
               </Typography>
@@ -601,7 +605,7 @@ const LandingView = () => {
 
           {/* Billing Toggle */}
           <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1.5, mb: 8 }}>
-            <Typography variant="body2" sx={{ fontWeight: billingAnnual ? 400 : 700, color: billingAnnual ? GRAY_BODY : DARK, cursor: 'pointer' }} onClick={() => setBillingAnnual(false)}>Mensual</Typography>
+            <Typography variant="body2" sx={{ fontWeight: billingAnnual ? 400 : 700, color: DARK, cursor: 'pointer' }} onClick={() => setBillingAnnual(false)}>Mensual</Typography>
             <Box
               role="switch"
               aria-checked={billingAnnual}
@@ -614,7 +618,7 @@ const LandingView = () => {
               <Box sx={{ position: 'absolute', top: 3, left: billingAnnual ? 27 : 3, width: 22, height: 22, borderRadius: '50%', bgcolor: '#fff', transition: 'left 0.3s ease', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }} />
             </Box>
             <Typography variant="body2" sx={{ fontWeight: billingAnnual ? 700 : 400, color: billingAnnual ? DARK : GRAY_BODY, cursor: 'pointer' }} onClick={() => setBillingAnnual(!billingAnnual)}>Anual</Typography>
-            {billingAnnual && <Chip label="Ahorra 10%" size="small" sx={{ bgcolor: alpha(PRIMARY, 0.1), color: PRIMARY, fontWeight: 700, fontSize: '0.75rem', ml: 1 }} />}
+            {billingAnnual && <Chip label="Ahorra 10%" size="small" sx={{ bgcolor: alpha(PRIMARY, 0.1), color: PRIMARY_TEXT, fontWeight: 700, fontSize: '0.75rem', ml: 1 }} />}
           </Box>
 
           <Grid container spacing={4} alignItems="stretch">

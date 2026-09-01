@@ -112,6 +112,7 @@ const LoginView = () => {
           <IconButton
             component={Link}
             href="/"
+            aria-label="Volver al inicio"
             sx={{
               color: 'text.secondary',
               '&:hover': {
