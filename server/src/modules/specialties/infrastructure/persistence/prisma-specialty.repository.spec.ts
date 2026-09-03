@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment */
 import { PrismaSpecialtyRepository } from './prisma-specialty.repository.js';
 import type { PrismaService } from '../../../../prisma/prisma.service.js';
 
@@ -79,5 +79,20 @@ describe('PrismaSpecialtyRepository — cancellation policy inheritance', () => 
 
     expect(result).not.toBeNull();
     expect(result!.cancellationWindowHours).toBe(12);
+  });
+
+  it('RED->GREEN: incluye especialidades globales junto con las de la sede solicitada', async () => {
+    mockPrisma.tenant.specialties.findMany.mockResolvedValue([]);
+    mockPrisma.tenant.specialties.count.mockResolvedValue(0);
+
+    await repository.findAllPaginated({ limit: 10, offset: 0 }, undefined, 7);
+
+    expect(mockPrisma.tenant.specialties.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: [{ clinicId: null }, { clinicId: 7 }],
+        }),
+      }),
+    );
   });
 });

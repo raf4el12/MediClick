@@ -43,7 +43,9 @@ export class PrismaSpecialtyRepository implements ISpecialtyRepository {
     const where = {
       deleted: false,
       ...(categoryId && { categoryId }),
-      ...(clinicId && { clinicId }),
+      ...(clinicId !== undefined && {
+        OR: [{ clinicId: null }, { clinicId }],
+      }),
       ...(searchValue && {
         AND: [
           {
