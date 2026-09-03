@@ -95,11 +95,8 @@ export class CancelAppointmentUseCase {
       const specialtyPrice = specialty?.price ?? 0;
       const specialtyWindow = specialty?.cancellationWindowHours ?? null;
       const clinicWindow =
-        (
-          appointment.schedule.doctor.clinic as {
-            defaultCancellationWindowHours?: number;
-          } | null
-        )?.defaultCancellationWindowHours ?? null;
+        appointment.schedule.doctor.clinic?.defaultCancellationWindowHours ??
+        null;
 
       const windowHours = this.cancellationPolicyService.resolveWindowHours({
         specialtyWindowHours: specialtyWindow,

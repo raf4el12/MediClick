@@ -60,7 +60,15 @@ const appointmentInclude = {
         select: {
           id: true,
           profile: { select: { name: true, lastName: true, userId: true } },
-          clinic: { select: { id: true, name: true, timezone: true } },
+          clinic: {
+            select: {
+              id: true,
+              name: true,
+              timezone: true,
+              defaultCancellationWindowHours: true,
+              noShowPenaltyPercentage: true,
+            },
+          },
         },
       },
       specialty: { select: { id: true, name: true } },
@@ -900,7 +908,25 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
           email: raw.patient.profile.user?.email ?? '',
         },
       },
-      schedule: raw.schedule,
+      schedule: {
+        ...raw.schedule,
+        doctor: {
+          ...raw.schedule.doctor,
+          clinic: raw.schedule.doctor.clinic
+            ? {
+                ...raw.schedule.doctor.clinic,
+                defaultCancellationWindowHours:
+                  raw.schedule.doctor.clinic.defaultCancellationWindowHours,
+                noShowPenaltyPercentage:
+                  raw.schedule.doctor.clinic.noShowPenaltyPercentage !== null &&
+                  raw.schedule.doctor.clinic.noShowPenaltyPercentage !==
+                    undefined
+                    ? Number(raw.schedule.doctor.clinic.noShowPenaltyPercentage)
+                    : 100,
+              }
+            : null,
+        },
+      },
       hasPrescription:
         raw.prescription !== null && raw.prescription !== undefined,
       notesCount: raw._count?.clinicalNotes ?? 0,

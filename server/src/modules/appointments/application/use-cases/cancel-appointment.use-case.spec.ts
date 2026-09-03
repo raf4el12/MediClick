@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument */
 import { CancelAppointmentUseCase } from './cancel-appointment.use-case.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type { ISpecialtyRepository } from '../../../specialties/domain/repositories/specialty.repository.js';
@@ -284,5 +285,69 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
 
     const cancelArg = appointmentRepository.cancelAtomically.mock.calls[0][0];
     expect(cancelArg.cancellationFee).toBe(45);
+  });
+
+  it('RED->GREEN: hereda la ventana de la sede cuando specialtyWindowHours es null', async () => {
+    // Cita en 2026-12-01T10:00Z. A 30 horas antes: 2026-11-30T04:00Z.
+    // Si la ventana de la sede es 48h y la especialidad tiene null, 30 horas es tardía (incurre en fee).
+    jest.useFakeTimers({ now: new Date('2026-11-30T04:00:00Z') });
+    const appt = buildAppointment();
+    appt.schedule.doctor.clinic = {
+      name: 'C',
+      timezone: 'America/Lima',
+      defaultCancellationWindowHours: 48,
+    } as any;
+    appointmentRepository.findById.mockResolvedValue(appt as any);
+    specialtyRepository.findById.mockResolvedValue({
+      id: 3,
+      price: 200,
+      cancellationWindowHours: null,
+    } as any);
+    transactionRepository.findLatestByAppointmentId.mockResolvedValue({
+      id: 77,
+      status: 'PAID',
+      metadata: null,
+    } as any);
+
+    await useCase.execute(
+      50,
+      { reason: 'Tarde bajo política de sede' },
+      buildActor(SystemRole.PATIENT),
+    );
+
+    const cancelArg = appointmentRepository.cancelAtomically.mock.calls[0][0];
+    expect(cancelArg.cancellationFee).toBe(100); // 50% de 200
+  });
+
+  it('RED->GREEN: especialidad con ventana explícita de 12h sobreescribe ventana de sede de 48h', async () => {
+    // A 20 horas antes: fuera de ventana de especialidad (12h), pero dentro de sede (48h).
+    // Con override de especialidad (12h), NO incurre en fee.
+    jest.useFakeTimers({ now: new Date('2026-11-30T14:00:00Z') });
+    const appt = buildAppointment();
+    appt.schedule.doctor.clinic = {
+      name: 'C',
+      timezone: 'America/Lima',
+      defaultCancellationWindowHours: 48,
+    } as any;
+    appointmentRepository.findById.mockResolvedValue(appt as any);
+    specialtyRepository.findById.mockResolvedValue({
+      id: 3,
+      price: 200,
+      cancellationWindowHours: 12,
+    } as any);
+    transactionRepository.findLatestByAppointmentId.mockResolvedValue({
+      id: 77,
+      status: 'PAID',
+      metadata: null,
+    } as any);
+
+    await useCase.execute(
+      50,
+      { reason: 'Cancelación 20h antes' },
+      buildActor(SystemRole.PATIENT),
+    );
+
+    const cancelArg = appointmentRepository.cancelAtomically.mock.calls[0][0];
+    expect(cancelArg.cancellationFee).toBeUndefined();
   });
 });

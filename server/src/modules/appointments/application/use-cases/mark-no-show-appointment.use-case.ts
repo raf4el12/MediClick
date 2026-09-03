@@ -74,11 +74,7 @@ export class MarkNoShowAppointmentUseCase {
         penaltyFee = Number(appointment.depositAmount);
       } else if (appointment.amount) {
         const penaltyPercentage =
-          (
-            appointment.schedule.doctor.clinic as {
-              noShowPenaltyPercentage?: number;
-            } | null
-          )?.noShowPenaltyPercentage ?? 100;
+          appointment.schedule.doctor.clinic?.noShowPenaltyPercentage ?? 100;
         penaltyFee = Math.round(
           (Number(appointment.amount) * Number(penaltyPercentage)) / 100,
         );

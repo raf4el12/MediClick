@@ -72,7 +72,13 @@ export interface AppointmentWithRelations {
     doctor: {
       id: number;
       profile: { name: string; lastName: string; userId?: number | null };
-      clinic: { id?: number; name: string; timezone: string } | null;
+      clinic: {
+        id?: number;
+        name: string;
+        timezone: string;
+        defaultCancellationWindowHours?: number;
+        noShowPenaltyPercentage?: number;
+      } | null;
     };
     specialty: { id: number; name: string };
   };

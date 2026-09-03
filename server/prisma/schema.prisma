@@ -219,7 +219,7 @@ model Specialties {
   duration                Int                  @default(30)
   bufferMinutes           Int?                 @default(0) // Minutos de descanso entre citas consecutivas
   price                   Decimal?             @db.Decimal(10, 2)
-  cancellationWindowHours Int?                 @default(24) // Horas previas para cancelar sin penalización
+  cancellationWindowHours Int?                 // Horas previas para cancelar sin penalización (null = hereda de la sede)
   depositPercentage       Decimal?             @db.Decimal(5, 2) // % requerido como seña
   depositAmount           Decimal?             @db.Decimal(10, 2) // O monto fijo de seña
   requirements            String?

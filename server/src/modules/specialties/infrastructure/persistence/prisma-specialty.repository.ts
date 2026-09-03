@@ -25,7 +25,7 @@ export class PrismaSpecialtyRepository implements ISpecialtyRepository {
       ...result,
       duration: result.duration ?? 30,
       price: result.price ? Number(result.price) : null,
-      cancellationWindowHours: result.cancellationWindowHours ?? 24,
+      cancellationWindowHours: result.cancellationWindowHours,
       depositPercentage: result.depositPercentage
         ? Number(result.depositPercentage)
         : null,
@@ -83,7 +83,7 @@ export class PrismaSpecialtyRepository implements ISpecialtyRepository {
         ...r,
         duration: r.duration ?? 30,
         price: r.price ? Number(r.price) : null,
-        cancellationWindowHours: r.cancellationWindowHours ?? 24,
+        cancellationWindowHours: r.cancellationWindowHours,
         depositPercentage: r.depositPercentage
           ? Number(r.depositPercentage)
           : null,
@@ -104,7 +104,7 @@ export class PrismaSpecialtyRepository implements ISpecialtyRepository {
       ...result,
       duration: result.duration ?? 30,
       price: result.price ? Number(result.price) : null,
-      cancellationWindowHours: result.cancellationWindowHours ?? 24,
+      cancellationWindowHours: result.cancellationWindowHours,
       depositPercentage: result.depositPercentage
         ? Number(result.depositPercentage)
         : null,
@@ -120,7 +120,7 @@ export class PrismaSpecialtyRepository implements ISpecialtyRepository {
       ...r,
       duration: r.duration ?? 30,
       price: r.price ? Number(r.price) : null,
-      cancellationWindowHours: r.cancellationWindowHours ?? 24,
+      cancellationWindowHours: r.cancellationWindowHours,
       depositPercentage: r.depositPercentage
         ? Number(r.depositPercentage)
         : null,
@@ -141,7 +141,7 @@ export class PrismaSpecialtyRepository implements ISpecialtyRepository {
       ...result,
       duration: result.duration ?? 30,
       price: result.price ? Number(result.price) : null,
-      cancellationWindowHours: result.cancellationWindowHours ?? 24,
+      cancellationWindowHours: result.cancellationWindowHours,
       depositPercentage: result.depositPercentage
         ? Number(result.depositPercentage)
         : null,

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument */
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { MarkNoShowAppointmentUseCase } from './mark-no-show-appointment.use-case.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
@@ -156,6 +157,37 @@ describe('MarkNoShowAppointmentUseCase', () => {
       expect.objectContaining({
         status: AppointmentStatus.NO_SHOW,
         cancellationFee: 40,
+      }),
+    );
+  });
+
+  it('RED->GREEN: aplica porcentaje noShowPenaltyPercentage de la sede cuando no hay depósito', async () => {
+    appointmentRepository.findById.mockResolvedValue(
+      buildAppointment({
+        paymentStatus: 'PAID',
+        amount: 200,
+        depositAmount: null,
+        schedule: {
+          ...buildAppointment().schedule,
+          doctor: {
+            ...buildAppointment().schedule.doctor,
+            clinic: {
+              name: 'Clínica',
+              timezone: 'America/Lima',
+              noShowPenaltyPercentage: 25,
+            } as any,
+          },
+        },
+      }),
+    );
+
+    await useCase.execute(10, globalActor);
+
+    expect(appointmentRepository.update).toHaveBeenCalledWith(
+      10,
+      expect.objectContaining({
+        status: AppointmentStatus.NO_SHOW,
+        cancellationFee: 50, // 25% de 200
       }),
     );
   });
