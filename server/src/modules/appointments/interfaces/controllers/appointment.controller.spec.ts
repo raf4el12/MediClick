@@ -56,6 +56,7 @@ describe('AppointmentController — reminder actions', () => {
       {} as any, // createPatientAppointmentUseCase
       respondUseCase as unknown as RespondAppointmentReminderUseCase,
       {} as any, // processQrCheckInUseCase
+      {} as any, // issueAppointmentQrUseCase
       configService,
       reminderTokenService,
     );

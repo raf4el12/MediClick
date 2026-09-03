@@ -44,10 +44,14 @@ describeDatabase('OutboxWorker (PostgreSQL)', () => {
 
   beforeAll(async () => {
     await prisma.$connect();
-    // Elimina únicamente fixtures abandonados por ejecuciones de integración
-    // interrumpidas; nunca toca eventos de negocio.
+    // Elimina fixtures de tests previos y marca como publicados los eventos
+    // pendientes dejados por otras suites para aislar la ejecución del worker.
     await prisma.outboxEvents.deleteMany({
       where: { type: { startsWith: 'test.' } },
+    });
+    await prisma.outboxEvents.updateMany({
+      where: { publishedAt: null },
+      data: { publishedAt: new Date() },
     });
   });
 
