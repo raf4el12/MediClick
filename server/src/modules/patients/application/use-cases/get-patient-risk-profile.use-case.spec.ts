@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { NotFoundException } from '@nestjs/common';
 import { GetPatientRiskProfileUseCase } from './get-patient-risk-profile.use-case.js';
 import { PatientRiskService } from '../../domain/services/patient-risk.service.js';
@@ -139,9 +140,19 @@ describe('GetPatientRiskProfileUseCase (Yield/Overbooking Controlado)', () => {
 
     expect(result.patientId).toBe(1);
     expect(prisma.appointments.findFirst).not.toHaveBeenCalled();
-    expect(prisma.appointments.count).toHaveBeenCalledWith({
-      where: { patientId: 1, deleted: false },
-    });
+    expect(prisma.appointments.count).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          patientId: 1,
+          deleted: false,
+          OR: [
+            { status: 'COMPLETED' },
+            { status: 'NO_SHOW' },
+            { status: 'CANCELLED', cancellationFee: { gt: 0 } },
+          ],
+        }),
+      }),
+    );
   });
 
   it('permite a staff de clínica si existe cita en su sede y acota estadísticas', async () => {
@@ -151,9 +162,20 @@ describe('GetPatientRiskProfileUseCase (Yield/Overbooking Controlado)', () => {
     const result = await useCase.execute(1, clinicReceptionist);
 
     expect(result.patientId).toBe(1);
-    expect(prisma.appointments.count).toHaveBeenCalledWith({
-      where: { patientId: 1, clinicId: 7, deleted: false },
-    });
+    expect(prisma.appointments.count).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          patientId: 1,
+          clinicId: 7,
+          deleted: false,
+          OR: [
+            { status: 'COMPLETED' },
+            { status: 'NO_SHOW' },
+            { status: 'CANCELLED', cancellationFee: { gt: 0 } },
+          ],
+        }),
+      }),
+    );
   });
 
   it('permite a doctor si existe cita con él y acota estadísticas a sede y doctor', async () => {
@@ -163,14 +185,21 @@ describe('GetPatientRiskProfileUseCase (Yield/Overbooking Controlado)', () => {
     const result = await useCase.execute(1, clinicDoctor);
 
     expect(result.patientId).toBe(1);
-    expect(prisma.appointments.count).toHaveBeenCalledWith({
-      where: {
-        patientId: 1,
-        clinicId: 7,
-        schedule: { doctor: { profile: { userId: 20 } } },
-        deleted: false,
-      },
-    });
+    expect(prisma.appointments.count).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          patientId: 1,
+          clinicId: 7,
+          schedule: { doctor: { profile: { userId: 20 } } },
+          deleted: false,
+          OR: [
+            { status: 'COMPLETED' },
+            { status: 'NO_SHOW' },
+            { status: 'CANCELLED', cancellationFee: { gt: 0 } },
+          ],
+        }),
+      }),
+    );
   });
 
   it('RED->GREEN: calcula estadísticas y perfil de riesgo alto para paciente con faltas', async () => {

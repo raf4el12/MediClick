@@ -57,7 +57,14 @@ export class GetPatientRiskProfileUseCase {
     const [totalAppointments, noShowCount, lateCancellationCount] =
       await Promise.all([
         this.prisma.appointments.count({
-          where: scopedBase,
+          where: {
+            ...scopedBase,
+            OR: [
+              { status: 'COMPLETED' },
+              { status: 'NO_SHOW' },
+              { status: 'CANCELLED', cancellationFee: { gt: 0 } },
+            ],
+          },
         }),
         this.prisma.appointments.count({
           where: { ...scopedBase, status: 'NO_SHOW' },

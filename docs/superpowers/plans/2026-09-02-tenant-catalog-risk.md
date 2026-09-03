@@ -144,15 +144,15 @@ git commit -m "fix(patients): scope risk profiles to actor and clinic"
 - Consumes: `PatientRiskScope` from Task 2
 - Preserves: `PatientRiskService.assessRisk({ totalAppointments, noShowCount, lateCancellationCount })`
 
-- [ ] **Step 1: Add a future-appointments regression test**
+- [x] **Step 1: Add a future-appointments regression test**
 
 Seed one `NO_SHOW`, one `COMPLETED`, one late `CANCELLED` (`cancellationFee > 0`), one early cancelled appointment, and nine future `PENDING`/`CONFIRMED` appointments. Assert `totalAppointments=3`, `noShowCount=1`, `lateCancellationCount=1`; future and early-cancelled rows do not dilute risk.
 
-- [ ] **Step 2: Add clinic and doctor aggregate tests**
+- [x] **Step 2: Add clinic and doctor aggregate tests**
 
 Give the same patient outcomes in clinics A and B. Assert clinic A staff counts only A; an A doctor counts only appointments assigned to that doctor; the patient owner and global admin count both clinics.
 
-- [ ] **Step 3: Implement one shared scoped base predicate**
+- [x] **Step 3: Implement one shared scoped base predicate**
 
 ```ts
 const scopedBase = {
@@ -167,7 +167,7 @@ const scopedBase = {
 
 Use it in all counts. Historical denominator is the union of `COMPLETED`, `NO_SHOW`, and late `CANCELLED` with `cancellationFee > 0`; no-show and late-cancel counts use their matching subsets. This keeps every weighted adverse outcome inside its denominator.
 
-- [ ] **Step 4: Run focused and integration tests**
+- [x] **Step 4: Run focused and integration tests**
 
 ```bash
 cd server && pnpm test -- get-patient-risk-profile patient-risk --runInBand
@@ -175,7 +175,7 @@ cd server && RUN_DB_INTEGRATION=1 DATABASE_URL="$DATABASE_URL" pnpm run test:int
 cd server && pnpm build
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add server/src/modules/patients server/src/shared/access
