@@ -22,6 +22,8 @@ export interface UpdateAppointmentData {
   notes?: string;
   pendingUntil?: Date | null;
   reminderSent?: boolean;
+  confirmedAt?: Date | null;
+  isAtRisk?: boolean;
   updatedAt?: Date;
 }
 
@@ -40,6 +42,8 @@ export interface AppointmentWithRelations {
   cancellationFee: number | null;
   isOverbook: boolean;
   pendingUntil: Date | null;
+  confirmedAt?: Date | null;
+  isAtRisk?: boolean;
   clinicId: number | null;
   deleted: boolean;
   createdAt: Date;

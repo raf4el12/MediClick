@@ -7,7 +7,10 @@ import {
   Param,
   Query,
   ParseIntPipe,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
+import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Auth } from '../../../../shared/decorators/index.js';
@@ -31,9 +34,14 @@ import { CompleteAppointmentUseCase } from '../../application/use-cases/complete
 import { MarkNoShowAppointmentUseCase } from '../../application/use-cases/mark-no-show-appointment.use-case.js';
 import { GetMyAppointmentsUseCase } from '../../application/use-cases/get-my-appointments.use-case.js';
 import { CreatePatientAppointmentUseCase } from '../../application/use-cases/create-patient-appointment.use-case.js';
+import {
+  RespondAppointmentReminderUseCase,
+  type ReminderResponseResult,
+} from '../../application/use-cases/respond-appointment-reminder.use-case.js';
 import { CreateOverbookAppointmentDto } from '../../application/dto/create-overbook-appointment.dto.js';
 import { MyAppointmentsFilterDto } from '../../application/dto/my-appointments-filter.dto.js';
 import { CreatePatientAppointmentDto } from '../../application/dto/create-patient-appointment.dto.js';
+import { RespondReminderDto } from '../../application/dto/respond-reminder.dto.js';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator.js';
 import { CurrentClinic } from '../../../../shared/decorators/current-clinic.decorator.js';
 import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
@@ -54,6 +62,8 @@ export class AppointmentController {
     private readonly markNoShowAppointmentUseCase: MarkNoShowAppointmentUseCase,
     private readonly getMyAppointmentsUseCase: GetMyAppointmentsUseCase,
     private readonly createPatientAppointmentUseCase: CreatePatientAppointmentUseCase,
+    private readonly respondAppointmentReminderUseCase: RespondAppointmentReminderUseCase,
+    private readonly configService: ConfigService,
   ) {}
 
   @Get('my')
@@ -273,5 +283,61 @@ export class AppointmentController {
     @CurrentUser() actor: AuthenticatedUser,
   ): Promise<AppointmentResponseDto> {
     return this.markNoShowAppointmentUseCase.execute(id, actor);
+  }
+
+  @Get('actions/respond')
+  @Throttle({ short: { ttl: 1000, limit: 10 } })
+  @ApiOperation({
+    summary:
+      'Procesar acción 1-click desde recordatorio (confirmar o cancelar asistencia)',
+  })
+  @ApiResponse({ status: 200, description: 'Acción procesada con éxito' })
+  @ApiResponse({
+    status: 400,
+    description: 'Token inválido, manipulado o expirado',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Conflicto con el estado actual de la cita',
+  })
+  async respondToReminder(
+    @Query('token') token: string,
+    @Query('redirect') redirect: string | undefined,
+    @Res() res: Response,
+  ): Promise<void> {
+    const result = await this.respondAppointmentReminderUseCase.execute(token);
+    const clientUrl =
+      this.configService.get<string>('CLIENT_URL') ?? 'http://localhost:3000';
+
+    if (redirect === 'false') {
+      res.status(200).json(result);
+      return;
+    }
+
+    const queryParams = new URLSearchParams({
+      action: result.action,
+      status: result.status,
+      appointmentId: String(result.appointmentId),
+      message: result.message,
+      ...(result.alreadyConfirmed || result.alreadyCancelled
+        ? { already: 'true' }
+        : {}),
+    });
+
+    res.redirect(
+      `${clientUrl}/appointment/action-result?${queryParams.toString()}`,
+    );
+  }
+
+  @Post('actions/respond')
+  @Throttle({ short: { ttl: 1000, limit: 10 } })
+  @ApiOperation({
+    summary: 'Procesar respuesta a recordatorio vía API REST (JSON)',
+  })
+  @ApiResponse({ status: 200, description: 'Acción procesada' })
+  async respondToReminderApi(
+    @Body() dto: RespondReminderDto,
+  ): Promise<ReminderResponseResult> {
+    return this.respondAppointmentReminderUseCase.execute(dto.token);
   }
 }

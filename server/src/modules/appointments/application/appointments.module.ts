@@ -23,6 +23,8 @@ import { CreatePatientAppointmentUseCase } from './use-cases/create-patient-appo
 import { ExpirePendingAppointmentsUseCase } from './use-cases/expire-pending-appointments.use-case.js';
 import { AppointmentSlotValidatorService } from './services/appointment-slot-validator.service.js';
 import { AppointmentCancellationService } from './services/appointment-cancellation.service.js';
+import { ReminderTokenService } from './services/reminder-token.service.js';
+import { RespondAppointmentReminderUseCase } from './use-cases/respond-appointment-reminder.use-case.js';
 import { AvailabilityChangeListener } from './listeners/availability-change.listener.js';
 import { AppointmentController } from '../interfaces/controllers/appointment.controller.js';
 import { AppointmentAccessPolicy } from '../../../shared/access/appointment-access.policy.js';
@@ -59,9 +61,15 @@ import { AppointmentAccessPolicy } from '../../../shared/access/appointment-acce
     ExpirePendingAppointmentsUseCase,
     AppointmentSlotValidatorService,
     AppointmentCancellationService,
+    ReminderTokenService,
+    RespondAppointmentReminderUseCase,
     AvailabilityChangeListener,
     AppointmentAccessPolicy,
   ],
-  exports: ['IAppointmentRepository'],
+  exports: [
+    'IAppointmentRepository',
+    ReminderTokenService,
+    RespondAppointmentReminderUseCase,
+  ],
 })
 export class AppointmentsModule {}

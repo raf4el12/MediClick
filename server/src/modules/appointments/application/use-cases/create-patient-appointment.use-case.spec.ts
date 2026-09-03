@@ -32,6 +32,7 @@ describe('CreatePatientAppointmentUseCase — TDD', () => {
     id: 20,
     doctorId: 3,
     specialtyId: 2,
+    clinicId: 1,
     scheduleDate: FUTURE_DATE,
     timeFrom: new Date('1970-01-01T08:00:00.000Z'),
     timeTo: new Date('1970-01-01T17:00:00.000Z'),
@@ -40,7 +41,7 @@ describe('CreatePatientAppointmentUseCase — TDD', () => {
     doctor: {
       id: 3,
       profile: { name: 'Dr', lastName: 'House' },
-      clinic: { timezone: 'America/Lima' },
+      clinic: { id: 1, timezone: 'America/Lima' },
     },
     specialty: {
       id: 2,

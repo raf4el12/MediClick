@@ -228,6 +228,13 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         ...(data.startTime && { startTime: data.startTime }),
         ...(data.endTime && { endTime: data.endTime }),
         ...(data.notes !== undefined && { notes: data.notes }),
+        ...(data.reminderSent !== undefined && {
+          reminderSent: data.reminderSent,
+        }),
+        ...(data.confirmedAt !== undefined && {
+          confirmedAt: data.confirmedAt,
+        }),
+        ...(data.isAtRisk !== undefined && { isAtRisk: data.isAtRisk }),
         updatedAt: data.updatedAt ?? new Date(),
       },
       include: appointmentInclude,
@@ -866,6 +873,8 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         raw.cancellationFee === null ? null : Number(raw.cancellationFee),
       isOverbook: raw.isOverbook,
       pendingUntil: raw.pendingUntil ?? null,
+      confirmedAt: raw.confirmedAt ?? null,
+      isAtRisk: raw.isAtRisk ?? false,
       clinicId: raw.clinicId ?? null,
       deleted: raw.deleted,
       createdAt: raw.createdAt,

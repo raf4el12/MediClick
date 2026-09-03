@@ -105,6 +105,11 @@ enum SecurityEventType {
   PERMISSION_DENIED
 }
 
+enum ReminderKind {
+  T24
+  T2
+}
+
 model Users {
   id            Int             @id @default(autoincrement())
   name          String
@@ -325,6 +330,8 @@ model Appointments {
   cancellationFee Decimal?          @db.Decimal(10, 2)
   isOverbook      Boolean           @default(false) // Cita de sobrecupo
   reminderSent    Boolean           @default(false)
+  confirmedAt     DateTime?
+  isAtRisk        Boolean           @default(false)
   pendingUntil    DateTime? // Deadline de pago; si status=PENDING y ahora > pendingUntil, la cita expira
   clinicId        Int?
   deleted         Boolean           @default(false)
@@ -341,6 +348,7 @@ model Appointments {
   transactions   Transactions[]
   waitlistOffers WaitlistOffers[]
   review         Reviews?
+  reminders      AppointmentReminders[]
 
   @@index([patientId, status])
   @@index([scheduleId, startTime, endTime])
@@ -476,6 +484,19 @@ model Notifications {
   @@index([userId, createdAt])
   @@index([type])
   @@index([clinicId])
+}
+
+model AppointmentReminders {
+  id            Int          @id @default(autoincrement())
+  appointmentId Int
+  kind          ReminderKind
+  sentAt        DateTime     @default(now())
+  channel       String       @default("EMAIL")
+
+  appointment Appointments @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+
+  @@unique([appointmentId, kind])
+  @@index([appointmentId])
 }
 
 model MedicalHistory {
