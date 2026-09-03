@@ -28,6 +28,8 @@ import { FindAllPatientsUseCase } from '../../application/use-cases/find-all-pat
 import { GetPatientHistoryUseCase } from '../../application/use-cases/get-patient-history.use-case.js';
 import { UpdatePatientUseCase } from '../../application/use-cases/update-patient.use-case.js';
 import { DeletePatientUseCase } from '../../application/use-cases/delete-patient.use-case.js';
+import { GetPatientRiskProfileUseCase } from '../../application/use-cases/get-patient-risk-profile.use-case.js';
+import { PatientRiskProfileDto } from '../../application/dto/patient-risk-profile.dto.js';
 
 @ApiTags('Patients')
 @Controller('patients')
@@ -38,6 +40,7 @@ export class PatientController {
     private readonly getPatientHistoryUseCase: GetPatientHistoryUseCase,
     private readonly updatePatientUseCase: UpdatePatientUseCase,
     private readonly deletePatientUseCase: DeletePatientUseCase,
+    private readonly getPatientRiskProfileUseCase: GetPatientRiskProfileUseCase,
   ) {}
 
   @Post()
@@ -97,6 +100,21 @@ export class PatientController {
     @Param('id', ParseIntPipe) id: number,
   ): Promise<PatientHistoryResponseDto> {
     return this.getPatientHistoryUseCase.execute(id);
+  }
+
+  @Get(':id/risk-profile')
+  @Auth()
+  @RequirePermissions('READ', 'PATIENTS')
+  @ApiOperation({
+    summary:
+      'Obtener perfil de riesgo de inasistencia (No-Show) y recomendación de sobrecupo',
+  })
+  @ApiResponse({ status: 200, type: PatientRiskProfileDto })
+  @ApiResponse({ status: 404, description: 'Paciente no encontrado' })
+  async getRiskProfile(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<PatientRiskProfileDto> {
+    return this.getPatientRiskProfileUseCase.execute(id);
   }
 
   @Patch(':id')

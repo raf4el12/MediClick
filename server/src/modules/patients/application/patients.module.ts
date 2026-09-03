@@ -7,6 +7,8 @@ import { FindAllPatientsUseCase } from './use-cases/find-all-patients.use-case.j
 import { GetPatientHistoryUseCase } from './use-cases/get-patient-history.use-case.js';
 import { UpdatePatientUseCase } from './use-cases/update-patient.use-case.js';
 import { DeletePatientUseCase } from './use-cases/delete-patient.use-case.js';
+import { GetPatientRiskProfileUseCase } from './use-cases/get-patient-risk-profile.use-case.js';
+import { PatientRiskService } from '../domain/services/patient-risk.service.js';
 import { PatientController } from '../interfaces/controllers/patient.controller.js';
 
 @Module({
@@ -22,7 +24,13 @@ import { PatientController } from '../interfaces/controllers/patient.controller.
     GetPatientHistoryUseCase,
     UpdatePatientUseCase,
     DeletePatientUseCase,
+    GetPatientRiskProfileUseCase,
+    PatientRiskService,
   ],
-  exports: ['IPatientRepository'],
+  exports: [
+    'IPatientRepository',
+    PatientRiskService,
+    GetPatientRiskProfileUseCase,
+  ],
 })
 export class PatientsModule {}
