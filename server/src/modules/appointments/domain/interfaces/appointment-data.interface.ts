@@ -121,6 +121,7 @@ export interface DashboardFilters {
   specialtyId?: number;
   status?: AppointmentStatus;
   clinicId?: number;
+  isAtRisk?: boolean;
 }
 
 export interface PatientAppointmentFilters {

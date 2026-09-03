@@ -65,6 +65,8 @@ export class GetMyAppointmentsUseCase {
       cancellationFee: a.cancellationFee,
       isOverbook: a.isOverbook,
       pendingUntil: a.pendingUntil ?? null,
+      confirmedAt: a.confirmedAt ?? null,
+      isAtRisk: a.isAtRisk ?? false,
       patient: {
         id: a.patient.id,
         name: a.patient.profile.name,

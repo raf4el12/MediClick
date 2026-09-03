@@ -103,6 +103,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     const where: Prisma.AppointmentsWhereInput = {
       deleted: false,
       ...(filters.status && { status: filters.status }),
+      ...(filters.isAtRisk !== undefined && { isAtRisk: filters.isAtRisk }),
       ...(filters.doctorId && {
         schedule: { doctorId: filters.doctorId },
       }),

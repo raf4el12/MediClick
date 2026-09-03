@@ -109,6 +109,19 @@ export class AppointmentResponseDto {
   })
   pendingUntil: Date | null;
 
+  @ApiPropertyOptional({
+    example: '2026-04-23T11:00:00.000Z',
+    description: 'Fecha y hora en que el paciente confirmó su asistencia.',
+  })
+  confirmedAt?: Date | null;
+
+  @ApiPropertyOptional({
+    example: false,
+    description:
+      'Indica si la cita está en riesgo de no-show (T-2h sin confirmar).',
+  })
+  isAtRisk?: boolean;
+
   @ApiProperty({ type: AppointmentPatientDto })
   patient: AppointmentPatientDto;
 

@@ -46,6 +46,7 @@ export class GetDashboardAppointmentsUseCase {
       ...(scopedDoctorId && { doctorId: scopedDoctorId }),
       ...(filterDto.specialtyId && { specialtyId: filterDto.specialtyId }),
       ...(filterDto.status && { status: filterDto.status }),
+      ...(filterDto.isAtRisk !== undefined && { isAtRisk: filterDto.isAtRisk }),
       ...(effectiveClinicId && { clinicId: effectiveClinicId }),
     };
 
@@ -75,6 +76,8 @@ export class GetDashboardAppointmentsUseCase {
       cancellationFee: a.cancellationFee,
       isOverbook: a.isOverbook,
       pendingUntil: a.pendingUntil ?? null,
+      confirmedAt: a.confirmedAt ?? null,
+      isAtRisk: a.isAtRisk ?? false,
       patient: {
         id: a.patient.id,
         name: a.patient.profile.name,

@@ -1,6 +1,12 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsDateString, IsInt, IsEnum } from 'class-validator';
-import { Type } from 'class-transformer';
+import {
+  IsOptional,
+  IsDateString,
+  IsInt,
+  IsEnum,
+  IsBoolean,
+} from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
 import { PaginationDto } from '../../../../shared/utils/dtos/pagination-dto.js';
 
@@ -49,4 +55,19 @@ export class AppointmentDashboardFilterDto extends PaginationDto {
   @IsInt()
   @IsOptional()
   clinicId?: number;
+
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Filtrar citas en riesgo de inasistencia (T-2h sin confirmar)',
+  })
+  @Transform(({ value }) =>
+    value === 'true' || value === true || value === '1' || value === 1
+      ? true
+      : value === 'false' || value === false || value === '0' || value === 0
+        ? false
+        : undefined,
+  )
+  @IsBoolean()
+  @IsOptional()
+  isAtRisk?: boolean;
 }
