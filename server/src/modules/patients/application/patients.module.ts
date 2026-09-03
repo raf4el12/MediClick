@@ -9,6 +9,7 @@ import { UpdatePatientUseCase } from './use-cases/update-patient.use-case.js';
 import { DeletePatientUseCase } from './use-cases/delete-patient.use-case.js';
 import { GetPatientRiskProfileUseCase } from './use-cases/get-patient-risk-profile.use-case.js';
 import { PatientRiskService } from '../domain/services/patient-risk.service.js';
+import { PatientRiskAccessPolicy } from '../../../shared/access/patient-risk-access.policy.js';
 import { PatientController } from '../interfaces/controllers/patient.controller.js';
 
 @Module({
@@ -26,11 +27,13 @@ import { PatientController } from '../interfaces/controllers/patient.controller.
     DeletePatientUseCase,
     GetPatientRiskProfileUseCase,
     PatientRiskService,
+    PatientRiskAccessPolicy,
   ],
   exports: [
     'IPatientRepository',
     PatientRiskService,
     GetPatientRiskProfileUseCase,
+    PatientRiskAccessPolicy,
   ],
 })
 export class PatientsModule {}

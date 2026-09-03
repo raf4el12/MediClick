@@ -91,7 +91,7 @@ git commit -m "fix(specialties): include global catalog rows by clinic"
 - Produces: `execute(patientId: number, actor: AuthenticatedUser): Promise<PatientRiskProfileDto>`
 - Produces: `PatientRiskScope { clinicId?: number; doctorUserId?: number }`
 
-- [ ] **Step 1: Add policy tests for every access-matrix branch**
+- [x] **Step 1: Add policy tests for every access-matrix branch**
 
 ```ts
 expect(() => policy.resolve(patient, ownPatientActor)).not.toThrow();
@@ -103,7 +103,7 @@ expect(policy.resolve(patient, globalAdmin)).toEqual({});
 
 Reject clinic-scoped roles with null clinic. Patient ownership is `patient.profile.userId === actor.id` and never a request `clinicId`.
 
-- [ ] **Step 2: Pass the actor from the controller**
+- [x] **Step 2: Pass the actor from the controller**
 
 ```ts
 async getRiskProfile(
@@ -114,19 +114,19 @@ async getRiskProfile(
 }
 ```
 
-- [ ] **Step 3: Verify the patient relation before returning aggregates**
+- [x] **Step 3: Verify the patient relation before returning aggregates**
 
 For clinic staff, query for at least one non-deleted appointment matching `patientId`, clinic scope, and for doctors `schedule.doctor.profile.userId = actor.id`. If no relation exists, throw `NotFoundException`. For patients, rely on ownership. Global actors need no relationship filter.
 
 Use explicit Prisma predicates; do not rely on ambient tenant context because patients/global jobs may have none and this use case must remain correct in direct calls.
 
-- [ ] **Step 4: Run policy and use-case tests**
+- [x] **Step 4: Run policy and use-case tests**
 
 ```bash
 cd server && pnpm test -- patient-risk-access.policy get-patient-risk-profile --runInBand
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add server/src/shared/access/patient-risk-access.policy.ts server/src/shared/access/patient-risk-access.policy.spec.ts server/src/modules/patients

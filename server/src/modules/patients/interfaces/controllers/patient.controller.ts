@@ -16,6 +16,7 @@ import { Auth } from '../../../../shared/decorators/index.js';
 import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator.js';
 import { CurrentClinic } from '../../../../shared/decorators/current-clinic.decorator.js';
+import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
 import { FindAllPatientsQueryDto } from '../../application/dto/find-all-patients-query.dto.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreatePatientDto } from '../../application/dto/create-patient.dto.js';
@@ -113,8 +114,9 @@ export class PatientController {
   @ApiResponse({ status: 404, description: 'Paciente no encontrado' })
   async getRiskProfile(
     @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() actor: AuthenticatedUser,
   ): Promise<PatientRiskProfileDto> {
-    return this.getPatientRiskProfileUseCase.execute(id);
+    return this.getPatientRiskProfileUseCase.execute(id, actor);
   }
 
   @Patch(':id')

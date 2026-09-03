@@ -2,6 +2,8 @@ import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import type { IPatientRepository } from '../../domain/repositories/patient.repository.js';
 import { PatientRiskService } from '../../domain/services/patient-risk.service.js';
+import { PatientRiskAccessPolicy } from '../../../../shared/access/patient-risk-access.policy.js';
+import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
 import { PatientRiskProfileDto } from '../dto/patient-risk-profile.dto.js';
 
 @Injectable()
@@ -11,28 +13,60 @@ export class GetPatientRiskProfileUseCase {
     private readonly patientRepository: IPatientRepository,
     private readonly prisma: PrismaService,
     private readonly patientRiskService: PatientRiskService,
+    private readonly accessPolicy: PatientRiskAccessPolicy,
   ) {}
 
-  async execute(patientId: number): Promise<PatientRiskProfileDto> {
+  async execute(
+    patientId: number,
+    actor: AuthenticatedUser,
+  ): Promise<PatientRiskProfileDto> {
     const patient = await this.patientRepository.findById(patientId);
     if (!patient) {
       throw new NotFoundException('Paciente no encontrado');
     }
 
+    const scope = this.accessPolicy.resolve(patient, actor);
+
+    if (scope.clinicId !== undefined) {
+      const hasRelation = await this.prisma.appointments.findFirst({
+        where: {
+          patientId,
+          clinicId: scope.clinicId,
+          deleted: false,
+          ...(scope.doctorUserId !== undefined && {
+            schedule: { doctor: { profile: { userId: scope.doctorUserId } } },
+          }),
+        },
+        select: { id: true },
+      });
+
+      if (!hasRelation) {
+        throw new NotFoundException('Paciente no encontrado');
+      }
+    }
+
+    const scopedBase = {
+      patientId,
+      deleted: false,
+      ...(scope.clinicId !== undefined && { clinicId: scope.clinicId }),
+      ...(scope.doctorUserId !== undefined && {
+        schedule: { doctor: { profile: { userId: scope.doctorUserId } } },
+      }),
+    };
+
     const [totalAppointments, noShowCount, lateCancellationCount] =
       await Promise.all([
         this.prisma.appointments.count({
-          where: { patientId, deleted: false },
+          where: scopedBase,
         }),
         this.prisma.appointments.count({
-          where: { patientId, status: 'NO_SHOW', deleted: false },
+          where: { ...scopedBase, status: 'NO_SHOW' },
         }),
         this.prisma.appointments.count({
           where: {
-            patientId,
+            ...scopedBase,
             status: 'CANCELLED',
             cancellationFee: { gt: 0 },
-            deleted: false,
           },
         }),
       ]);
