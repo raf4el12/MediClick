@@ -335,6 +335,7 @@ model Appointments {
   isOverbook      Boolean           @default(false) // Cita de sobrecupo
   reminderSent    Boolean           @default(false)
   confirmedAt     DateTime?
+  checkedInAt     DateTime?
   isAtRisk        Boolean           @default(false)
   pendingUntil    DateTime? // Deadline de pago; si status=PENDING y ahora > pendingUntil, la cita expira
   clinicId        Int?

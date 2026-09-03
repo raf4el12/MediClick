@@ -29,6 +29,8 @@ import { AvailabilityChangeListener } from './listeners/availability-change.list
 import { AppointmentController } from '../interfaces/controllers/appointment.controller.js';
 import { AppointmentAccessPolicy } from '../../../shared/access/appointment-access.policy.js';
 import { CancellationPolicyService } from '../domain/services/cancellation-policy.service.js';
+import { AppointmentQrService } from './services/appointment-qr.service.js';
+import { ProcessQrCheckInUseCase } from './use-cases/process-qr-check-in.use-case.js';
 
 @Module({
   imports: [
@@ -67,12 +69,16 @@ import { CancellationPolicyService } from '../domain/services/cancellation-polic
     AvailabilityChangeListener,
     AppointmentAccessPolicy,
     CancellationPolicyService,
+    AppointmentQrService,
+    ProcessQrCheckInUseCase,
   ],
   exports: [
     'IAppointmentRepository',
     ReminderTokenService,
     RespondAppointmentReminderUseCase,
     CancellationPolicyService,
+    AppointmentQrService,
+    ProcessQrCheckInUseCase,
   ],
 })
 export class AppointmentsModule {}

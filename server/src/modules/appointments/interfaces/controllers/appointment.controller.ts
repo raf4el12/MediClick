@@ -42,6 +42,9 @@ import { CreateOverbookAppointmentDto } from '../../application/dto/create-overb
 import { MyAppointmentsFilterDto } from '../../application/dto/my-appointments-filter.dto.js';
 import { CreatePatientAppointmentDto } from '../../application/dto/create-patient-appointment.dto.js';
 import { RespondReminderDto } from '../../application/dto/respond-reminder.dto.js';
+import { ProcessQrCheckInDto } from '../../application/dto/process-qr-check-in.dto.js';
+import { CheckInTicketResponseDto } from '../../application/dto/check-in-ticket-response.dto.js';
+import { ProcessQrCheckInUseCase } from '../../application/use-cases/process-qr-check-in.use-case.js';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator.js';
 import { CurrentClinic } from '../../../../shared/decorators/current-clinic.decorator.js';
 import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
@@ -63,6 +66,7 @@ export class AppointmentController {
     private readonly getMyAppointmentsUseCase: GetMyAppointmentsUseCase,
     private readonly createPatientAppointmentUseCase: CreatePatientAppointmentUseCase,
     private readonly respondAppointmentReminderUseCase: RespondAppointmentReminderUseCase,
+    private readonly processQrCheckInUseCase: ProcessQrCheckInUseCase,
     private readonly configService: ConfigService,
   ) {}
 
@@ -203,6 +207,20 @@ export class AppointmentController {
     @CurrentUser() actor: AuthenticatedUser,
   ): Promise<AppointmentResponseDto> {
     return this.checkInAppointmentUseCase.execute(id, actor);
+  }
+
+  @Post('actions/qr-check-in')
+  @ApiOperation({
+    summary:
+      'Auto check-in en sala de espera mediante escaneo de token QR (Tótem/Kiosco)',
+  })
+  @ApiResponse({ status: 200, type: CheckInTicketResponseDto })
+  @ApiResponse({ status: 400, description: 'Token inválido o expirado' })
+  @ApiResponse({ status: 403, description: 'Cita de otra sede' })
+  async qrCheckIn(
+    @Body() dto: ProcessQrCheckInDto,
+  ): Promise<CheckInTicketResponseDto> {
+    return this.processQrCheckInUseCase.execute(dto);
   }
 
   @Patch(':id/cancel')

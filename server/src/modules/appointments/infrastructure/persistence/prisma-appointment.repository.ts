@@ -239,6 +239,9 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         ...(data.confirmedAt !== undefined && {
           confirmedAt: data.confirmedAt,
         }),
+        ...(data.checkedInAt !== undefined && {
+          checkedInAt: data.checkedInAt,
+        }),
         ...(data.isAtRisk !== undefined && { isAtRisk: data.isAtRisk }),
         ...(data.depositAmount !== undefined && {
           depositAmount: data.depositAmount,
@@ -884,6 +887,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       isOverbook: raw.isOverbook,
       pendingUntil: raw.pendingUntil ?? null,
       confirmedAt: raw.confirmedAt ?? null,
+      checkedInAt: raw.checkedInAt ?? null,
       isAtRisk: raw.isAtRisk ?? false,
       clinicId: raw.clinicId ?? null,
       deleted: raw.deleted,
