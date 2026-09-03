@@ -101,7 +101,7 @@ git commit -m "fix(cancellation): inherit and load clinic policy"
 - Produces: preference amount equal to deposit for `PENDING`, remaining balance for `PARTIAL`
 - Preserves: `Appointments.amount` as total and `Appointments.depositAmount` as required initial deposit
 
-- [ ] **Step 1: Add failing deposit and balance tests**
+- [x] **Step 1: Add failing deposit and balance tests**
 
 ```ts
 // Initial deposit
@@ -120,13 +120,13 @@ expect(prisma.appointments.update).not.toHaveBeenCalledWith(
 
 Reject a balance preference when cumulative paid value already covers the total, and reject a second unresolved `PENDING` transaction/preference for the same appointment.
 
-- [ ] **Step 2: Run the preference spec and observe `PARTIAL` rejection**
+- [x] **Step 2: Run the preference spec and observe `PARTIAL` rejection**
 
 ```bash
 cd server && pnpm test -- create-payment-preference.use-case.spec.ts --runInBand
 ```
 
-- [ ] **Step 3: Implement phase-aware amount calculation**
+- [x] **Step 3: Implement phase-aware amount calculation**
 
 Allow `(paymentStatus=PENDING,status=PENDING)` for the initial payment and `(paymentStatus=PARTIAL,status=CONFIRMED)` for the balance. Sum appointment transactions with `status='PAID'`; calculate:
 
@@ -139,13 +139,13 @@ const amount = appointment.paymentStatus === 'PARTIAL'
 
 Set `depositAmount` only for the initial preference. Label balance checkout as `Saldo: {specialty}`. Never update `amount` here.
 
-- [ ] **Step 4: Run focused tests**
+- [x] **Step 4: Run focused tests**
 
 ```bash
 cd server && pnpm test -- create-payment-preference.use-case.spec.ts --runInBand
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add server/src/modules/payments/application/use-cases/create-payment-preference.use-case.ts server/src/modules/payments/application/use-cases/create-payment-preference.use-case.spec.ts

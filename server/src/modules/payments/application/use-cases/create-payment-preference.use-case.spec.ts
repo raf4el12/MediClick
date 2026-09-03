@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/unbound-method, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument */
 import {
   BadRequestException,
   ForbiddenException,
@@ -47,7 +48,7 @@ describe('CreatePaymentPreferenceUseCase', () => {
       findByGatewayId: jest.fn(),
       findByPreferenceId: jest.fn(),
       findLatestByAppointmentId: jest.fn(),
-      findByAppointmentId: jest.fn(),
+      findByAppointmentId: jest.fn().mockResolvedValue([]),
       findAll: jest.fn(),
     };
     gateway = {
@@ -210,5 +211,100 @@ describe('CreatePaymentPreferenceUseCase', () => {
         amount: 50,
       }),
     );
+  });
+
+  it('RED->GREEN: crea preferencia de saldo para cita PARTIAL y status CONFIRMED', async () => {
+    prisma.appointments.findUnique.mockResolvedValue(
+      buildAppointment({
+        status: 'CONFIRMED',
+        paymentStatus: 'PARTIAL',
+        amount: 200,
+        depositAmount: 50,
+      }),
+    );
+    transactionRepository.findByAppointmentId.mockResolvedValue([
+      {
+        id: 1,
+        appointmentId: 123,
+        amount: 50,
+        currency: 'PEN',
+        status: 'PAID',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any,
+    ]);
+    gateway.createPreference.mockResolvedValue({
+      preferenceId: 'pref_balance_150',
+      initPoint: 'https://mp/init_point',
+      sandboxInitPoint: 'https://mp/sandbox',
+    });
+
+    const result = await useCase.execute(42, { appointmentId: 123 });
+
+    expect(result.preferenceId).toBe('pref_balance_150');
+    expect(gateway.createPreference).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: expect.arrayContaining([
+          expect.objectContaining({
+            unitPrice: 150,
+            title: expect.stringContaining('Saldo'),
+          }),
+        ]),
+      }),
+    );
+    expect(prisma.appointments.update).not.toHaveBeenCalled();
+    expect(transactionRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        appointmentId: 123,
+        amount: 150,
+        status: 'PENDING',
+      }),
+    );
+  });
+
+  it('RED->GREEN: rechaza preferencia de saldo si el acumulado pagado ya cubre el total', async () => {
+    prisma.appointments.findUnique.mockResolvedValue(
+      buildAppointment({
+        status: 'CONFIRMED',
+        paymentStatus: 'PARTIAL',
+        amount: 200,
+      }),
+    );
+    transactionRepository.findByAppointmentId.mockResolvedValue([
+      {
+        id: 1,
+        appointmentId: 123,
+        amount: 200,
+        currency: 'PEN',
+        status: 'PAID',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any,
+    ]);
+
+    await expect(useCase.execute(42, { appointmentId: 123 })).rejects.toThrow(
+      BadRequestException,
+    );
+    expect(gateway.createPreference).not.toHaveBeenCalled();
+  });
+
+  it('RED->GREEN: rechaza si ya existe una transacción PENDING sin resolver', async () => {
+    prisma.appointments.findUnique.mockResolvedValue(buildAppointment());
+    transactionRepository.findByAppointmentId.mockResolvedValue([
+      {
+        id: 2,
+        appointmentId: 123,
+        amount: 120,
+        currency: 'PEN',
+        status: 'PENDING',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as any,
+    ]);
+
+    await expect(useCase.execute(42, { appointmentId: 123 })).rejects.toThrow(
+      BadRequestException,
+    );
+    expect(gateway.createPreference).not.toHaveBeenCalled();
   });
 });

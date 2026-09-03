@@ -61,19 +61,37 @@ export class CreatePaymentPreferenceUseCase {
     if (appointment.patient.profile.userId !== userId) {
       throw new ForbiddenException('Esta cita no te pertenece');
     }
-    if (appointment.paymentStatus !== 'PENDING') {
+
+    const existingTransactions =
+      await this.transactionRepository.findByAppointmentId(appointment.id);
+    const hasUnresolvedPending = existingTransactions.some(
+      (t) => t.status === 'PENDING',
+    );
+    if (hasUnresolvedPending) {
       throw new BadRequestException(
-        `La cita ya tiene un pago en estado ${appointment.paymentStatus}`,
+        'Ya existe una preferencia de pago pendiente para esta cita',
       );
     }
-    if (appointment.status !== 'PENDING') {
+
+    const isInitialPayment =
+      appointment.paymentStatus === 'PENDING' &&
+      appointment.status === 'PENDING';
+    const isBalancePayment =
+      appointment.paymentStatus === 'PARTIAL' &&
+      appointment.status === 'CONFIRMED';
+
+    if (!isInitialPayment && !isBalancePayment) {
       throw new BadRequestException(
-        `La cita no está en estado pagable (status=${appointment.status})`,
+        `La cita no está en un estado pagable (status=${appointment.status}, paymentStatus=${appointment.paymentStatus})`,
       );
     }
 
     const now = new Date();
-    if (appointment.pendingUntil && appointment.pendingUntil <= now) {
+    if (
+      isInitialPayment &&
+      appointment.pendingUntil &&
+      appointment.pendingUntil <= now
+    ) {
       throw new BadRequestException(
         'El tiempo para pagar esta cita ha expirado',
       );
@@ -88,32 +106,56 @@ export class CreatePaymentPreferenceUseCase {
       );
     }
 
-    const fullAmount = appointment.amount
+    const totalPrice = appointment.amount
       ? Number(appointment.amount)
       : specialtyPrice;
 
-    // Calcular seña/depósito si la especialidad lo exige para confirmar la cita
-    let depositToCharge: number | null = null;
-    if (appointment.depositAmount) {
-      depositToCharge = Number(appointment.depositAmount);
-    } else if (appointment.schedule.specialty.depositAmount) {
-      depositToCharge = Number(appointment.schedule.specialty.depositAmount);
-    } else if (appointment.schedule.specialty.depositPercentage) {
-      depositToCharge = Math.round(
-        (fullAmount *
-          Number(appointment.schedule.specialty.depositPercentage)) /
-          100,
-      );
-    }
+    const paidTotal = existingTransactions
+      .filter((t) => t.status === 'PAID')
+      .reduce((sum, t) => sum + Number(t.amount), 0);
 
-    const amount =
-      depositToCharge && depositToCharge > 0 ? depositToCharge : fullAmount;
+    let amount: number;
+    let title: string;
 
-    if (depositToCharge && !appointment.depositAmount) {
-      await this.prisma.appointments.update({
-        where: { id: appointment.id },
-        data: { depositAmount: depositToCharge },
-      });
+    if (isBalancePayment) {
+      const remaining = Math.round((totalPrice - paidTotal) * 100) / 100;
+      if (remaining <= 0) {
+        throw new BadRequestException(
+          'El saldo de esta cita ya ha sido pagado en su totalidad',
+        );
+      }
+      amount = remaining;
+      title = `Saldo: ${appointment.schedule.specialty.name}`;
+    } else {
+      let requiredDeposit: number | null = null;
+      if (appointment.depositAmount) {
+        requiredDeposit = Number(appointment.depositAmount);
+      } else if (appointment.schedule.specialty.depositAmount) {
+        requiredDeposit = Number(appointment.schedule.specialty.depositAmount);
+      } else if (appointment.schedule.specialty.depositPercentage) {
+        requiredDeposit = Math.round(
+          (totalPrice *
+            Number(appointment.schedule.specialty.depositPercentage)) /
+            100,
+        );
+      }
+
+      const depositToCharge =
+        requiredDeposit && requiredDeposit > 0
+          ? Math.min(requiredDeposit, totalPrice)
+          : null;
+
+      amount = depositToCharge ?? totalPrice;
+      title = depositToCharge
+        ? `Seña/Reserva: ${appointment.schedule.specialty.name}`
+        : `Consulta: ${appointment.schedule.specialty.name}`;
+
+      if (depositToCharge && !appointment.depositAmount) {
+        await this.prisma.appointments.update({
+          where: { id: appointment.id },
+          data: { depositAmount: depositToCharge },
+        });
+      }
     }
 
     const successUrl =
@@ -131,18 +173,17 @@ export class CreatePaymentPreferenceUseCase {
 
     const payerEmail = appointment.patient.profile.user?.email ?? null;
 
-    const expiresInMs = appointment.pendingUntil
-      ? Math.max(60_000, appointment.pendingUntil.getTime() - now.getTime())
-      : undefined;
+    const expiresInMs =
+      isInitialPayment && appointment.pendingUntil
+        ? Math.max(60_000, appointment.pendingUntil.getTime() - now.getTime())
+        : undefined;
 
     const preference = await this.gateway.createPreference({
       externalReference: String(appointment.id),
       items: [
         {
           id: String(appointment.id),
-          title: depositToCharge
-            ? `Seña/Reserva: ${appointment.schedule.specialty.name}`
-            : `Consulta: ${appointment.schedule.specialty.name}`,
+          title,
           description: `Cita #${appointment.id}`,
           quantity: 1,
           unitPrice: amount,
