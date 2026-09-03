@@ -166,3 +166,71 @@ export function scheduleDateToLocalDay(date: Date): Date {
     Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
   );
 }
+
+/**
+ * Convierte una fecha de agenda (guardada como midnight UTC) y una hora (guardada
+ * con base epoch 1970 UTC) en el instante UTC real correspondiente a la zona horaria IANA
+ * de la sede.
+ *
+ * Utiliza formatToParts para calcular el offset respecto a UTC, realiza dos iteraciones
+ * para ajustarse a cambios por horario de verano (DST) y valida que el instante resultante
+ * coincida exactamente con la hora de reloj de pared solicitada.
+ */
+export function localDateAndTimeToInstant(
+  scheduleDate: Date,
+  timeOnly: Date,
+  timezone: string,
+): Date {
+  const targetYear = scheduleDate.getUTCFullYear();
+  const targetMonth = scheduleDate.getUTCMonth(); // 0-indexed
+  const targetDay = scheduleDate.getUTCDate();
+
+  const targetHour = timeOnly.getUTCHours();
+  const targetMinute = timeOnly.getUTCMinutes();
+  const targetSecond = timeOnly.getUTCSeconds();
+
+  const targetWallMs = Date.UTC(
+    targetYear,
+    targetMonth,
+    targetDay,
+    targetHour,
+    targetMinute,
+    targetSecond,
+  );
+
+  let utcMs = targetWallMs;
+
+  // Ajustar offset iterativamente (2 pasadas para converger ante transiciones DST)
+  for (let i = 0; i < 2; i++) {
+    const parts = tzParts(timezone, new Date(utcMs));
+    const guessWallMs = Date.UTC(
+      parts.year,
+      parts.month,
+      parts.day,
+      parts.hour,
+      parts.minute,
+      parts.second,
+    );
+    const diff = guessWallMs - targetWallMs;
+    utcMs -= diff;
+  }
+
+  // Validar que el instante resultante represente exactamente el reloj de pared solicitado
+  const finalParts = tzParts(timezone, new Date(utcMs));
+  if (
+    finalParts.year !== targetYear ||
+    finalParts.month !== targetMonth ||
+    finalParts.day !== targetDay ||
+    finalParts.hour !== targetHour ||
+    finalParts.minute !== targetMinute ||
+    finalParts.second !== targetSecond
+  ) {
+    throw new Error(
+      `Hora local inexistente o inválida en la zona horaria ${timezone}: ` +
+        `${targetYear}-${String(targetMonth + 1).padStart(2, '0')}-${String(targetDay).padStart(2, '0')} ` +
+        `${String(targetHour).padStart(2, '0')}:${String(targetMinute).padStart(2, '0')}`,
+    );
+  }
+
+  return new Date(utcMs);
+}

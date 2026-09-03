@@ -8,6 +8,7 @@ import {
   nowInTimezone,
   todayStartInTimezone,
   scheduleDateToLocalDay,
+  localDateAndTimeToInstant,
 } from './date-time.utils.js';
 
 // ════════════════════════════════════════════════
@@ -305,5 +306,29 @@ describe('Multi-timezone scenarios', () => {
     expect(result.getUTCFullYear()).toBe(1970);
     expect(result.getUTCMonth()).toBe(0);
     expect(result.getUTCDate()).toBe(1);
+  });
+});
+
+// ════════════════════════════════════════════════
+// localDateAndTimeToInstant
+// ════════════════════════════════════════════════
+
+describe('localDateAndTimeToInstant', () => {
+  it('RED->GREEN: convierte fecha local UTC medianoche y hora 1970 al instante real en UTC según la zona IANA', () => {
+    expect(
+      localDateAndTimeToInstant(
+        new Date('2026-10-10T00:00:00Z'),
+        new Date('1970-01-01T09:30:00Z'),
+        'America/Lima',
+      ).toISOString(),
+    ).toBe('2026-10-10T14:30:00.000Z');
+
+    expect(
+      localDateAndTimeToInstant(
+        new Date('2026-07-10T00:00:00Z'),
+        new Date('1970-01-01T09:30:00Z'),
+        'Europe/Madrid',
+      ).toISOString(),
+    ).toBe('2026-07-10T07:30:00.000Z');
   });
 });
