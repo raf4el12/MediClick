@@ -9,6 +9,10 @@ import {
 } from '@nestjs/terminus';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { RedisService } from '../redis/redis.service.js';
+import {
+  OperationalHealthService,
+  OperationalVitalSigns,
+} from './operational-health.service.js';
 
 @ApiTags('Health')
 @Controller('health')
@@ -20,6 +24,7 @@ export class HealthController {
     private readonly health: HealthCheckService,
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
+    private readonly operationalHealth: OperationalHealthService,
   ) {}
 
   @Get()
@@ -41,5 +46,14 @@ export class HealthController {
         return { redis: { status: healthy ? 'up' : 'down' } };
       },
     ]);
+  }
+
+  @Get('operational')
+  @ApiOperation({
+    summary:
+      'Termómetro operativo y signos vitales del core de citas y waitlist',
+  })
+  async operational(): Promise<OperationalVitalSigns> {
+    return this.operationalHealth.getVitalSigns();
   }
 }
