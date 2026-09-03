@@ -13,6 +13,7 @@ import {
   DEFAULT_CLINIC_NAME,
   DEFAULT_TIMEZONE,
 } from '../../../../shared/constants/defaults.constant.js';
+import { JobLeaseService } from '../../../../shared/redis/job-lease.service.js';
 
 const reminderAppointmentInclude = {
   patient: {
@@ -57,6 +58,7 @@ export class AppointmentReminderService {
     private readonly createNotification: CreateNotificationUseCase,
     private readonly reminderTokenService: ReminderTokenService,
     private readonly configService: ConfigService,
+    private readonly jobLeaseService: JobLeaseService,
   ) {}
 
   /**
@@ -65,9 +67,15 @@ export class AppointmentReminderService {
    */
   @Cron('*/15 * * * *')
   async sendReminders(): Promise<void> {
-    const now = new Date();
-    await this.processT24Reminders(now);
-    await this.processT2Reminders(now);
+    await this.jobLeaseService.withLease(
+      'appointment-reminders',
+      840, // 14 min de lease para el intervalo de 15 min
+      async () => {
+        const now = new Date();
+        await this.processT24Reminders(now);
+        await this.processT2Reminders(now);
+      },
+    );
   }
 
   /**

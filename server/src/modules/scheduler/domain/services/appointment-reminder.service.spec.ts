@@ -4,6 +4,7 @@ import type { PrismaService } from '../../../../prisma/prisma.service.js';
 import type { MailService } from '../../../../shared/mail/mail.service.js';
 import type { CreateNotificationUseCase } from '../../../notifications/application/use-cases/create-notification.use-case.js';
 import type { ConfigService } from '@nestjs/config';
+import type { JobLeaseService } from '../../../../shared/redis/job-lease.service.js';
 
 describe('AppointmentReminderService', () => {
   let service: AppointmentReminderService;
@@ -53,12 +54,20 @@ describe('AppointmentReminderService', () => {
       execute: createNotificationExecute,
     } as unknown as CreateNotificationUseCase;
 
+    const jobLeaseService = {
+      withLease: jest.fn().mockImplementation(async (_name, _ttl, fn) => {
+        const res = await (fn as () => Promise<unknown>)();
+        return { executed: true, result: res };
+      }),
+    } as unknown as JobLeaseService;
+
     service = new AppointmentReminderService(
       prisma,
       mailService,
       createNotification,
       reminderTokenService,
       configService,
+      jobLeaseService,
     );
   });
 
