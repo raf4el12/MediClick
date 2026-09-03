@@ -1,7 +1,7 @@
 import { JobLeaseService } from './job-lease.service.js';
 import type { RedisService } from './redis.service.js';
 
-describe('JobLeaseService (SDD-020)', () => {
+describe('JobLeaseService (SDD-020: Logical-Window Leases)', () => {
   let service: JobLeaseService;
   let redisClient: {
     set: jest.Mock<
@@ -28,74 +28,78 @@ describe('JobLeaseService (SDD-020)', () => {
     service = new JobLeaseService(redisService as unknown as RedisService);
   });
 
-  it('RED->GREEN: adquiere lease, ejecuta tarea y libera el lock al finalizar', async () => {
+  it('RED->GREEN: adquiere lease con ventana lógica, ejecuta tarea y mantiene la clave viva (no llama eval en éxito)', async () => {
     redisClient.set.mockResolvedValue('OK');
-    redisClient.eval.mockResolvedValue(1);
-
     const task = jest.fn().mockResolvedValue('success-result');
 
-    const result = await service.withLease('test-job', 60, task);
+    const result = await service.withLease(
+      'test-job',
+      '2026-09-02T10:15Z',
+      900,
+      task,
+    );
 
     expect(result.executed).toBe(true);
     expect(result.result).toBe('success-result');
     expect(task).toHaveBeenCalledTimes(1);
 
     expect(redisClient.set).toHaveBeenCalledWith(
-      'job:lease:test-job',
-      expect.any(String) as unknown as string,
+      'job:lease:test-job:2026-09-02T10:15Z',
+      expect.any(String),
       'PX',
-      60000,
+      900_000,
       'NX',
     );
-
-    expect(redisClient.eval).toHaveBeenCalledWith(
-      expect.any(String) as unknown as string,
-      1,
-      'job:lease:test-job',
-      expect.any(String) as unknown as string,
-    );
+    expect(redisClient.eval).not.toHaveBeenCalled();
   });
 
-  it('RED->GREEN: no ejecuta la tarea si otra réplica ya posee el lease', async () => {
-    redisClient.set.mockResolvedValue(null); // Otra réplica ya tomó el lease
-
+  it('RED->GREEN: no ejecuta la tarea si otra réplica ya posee el lease para esa ventana (ALREADY_CLAIMED)', async () => {
+    redisClient.set.mockResolvedValue(null);
     const task = jest.fn();
 
-    const result = await service.withLease('busy-job', 60, task);
+    const result = await service.withLease('busy-job', 'window-1', 60, task);
 
-    expect(result.executed).toBe(false);
-    expect(result.result).toBeUndefined();
+    expect(result).toEqual({
+      executed: false,
+      skippedReason: 'ALREADY_CLAIMED',
+    });
     expect(task).not.toHaveBeenCalled();
     expect(redisClient.eval).not.toHaveBeenCalled();
   });
 
-  it('libera el lease incluso si la tarea arroja un error', async () => {
+  it('RED->GREEN: si la tarea arroja un error, libera el lease con eval para permitir reintento y relanza el error', async () => {
     redisClient.set.mockResolvedValue('OK');
     redisClient.eval.mockResolvedValue(1);
 
-    const task = jest.fn().mockRejectedValue(new Error('Job error'));
-
-    await expect(service.withLease('failing-job', 60, task)).rejects.toThrow(
-      'Job error',
-    );
+    await expect(
+      service.withLease('test-job', 'window-1', 60, () =>
+        Promise.reject(new Error('job failed')),
+      ),
+    ).rejects.toThrow('job failed');
 
     expect(redisClient.eval).toHaveBeenCalledWith(
-      expect.any(String) as unknown as string,
+      expect.any(String),
       1,
-      'job:lease:failing-job',
-      expect.any(String) as unknown as string,
+      'job:lease:test-job:window-1',
+      expect.any(String),
     );
   });
 
-  it('ejecuta la tarea como fallback degradado si Redis falla o arroja error de conexión', async () => {
+  it('RED->GREEN: en caso de error o indisponibilidad de Redis, actúa en modo fail-closed (LEASE_UNAVAILABLE sin ejecutar callback)', async () => {
     redisClient.set.mockRejectedValue(new Error('Connection refused'));
+    const task = jest.fn().mockResolvedValue('should-not-run');
 
-    const task = jest.fn().mockResolvedValue('fallback-done');
+    const result = await service.withLease(
+      'test-job',
+      '2026-09-02T10:15Z',
+      900,
+      task,
+    );
 
-    const result = await service.withLease('degraded-job', 60, task);
-
-    expect(result.executed).toBe(true);
-    expect(result.result).toBe('fallback-done');
-    expect(task).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({
+      executed: false,
+      skippedReason: 'LEASE_UNAVAILABLE',
+    });
+    expect(task).not.toHaveBeenCalled();
   });
 });
