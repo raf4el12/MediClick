@@ -11,11 +11,14 @@ export class SmsService implements ISmsProvider {
   private readonly accountSid?: string;
   private readonly authToken?: string;
   private readonly fromNumber?: string;
+  private readonly isProduction: boolean;
 
   constructor(private readonly configService: ConfigService) {
     this.accountSid = this.configService.get<string>('TWILIO_ACCOUNT_SID');
     this.authToken = this.configService.get<string>('TWILIO_AUTH_TOKEN');
     this.fromNumber = this.configService.get<string>('TWILIO_PHONE_NUMBER');
+    this.isProduction =
+      this.configService.get<string>('NODE_ENV') === 'production';
   }
 
   async sendSms(to: string, message: string): Promise<SendSmsResult> {
@@ -28,10 +31,18 @@ export class SmsService implements ISmsProvider {
     }
 
     if (!this.accountSid || !this.authToken || !this.fromNumber) {
+      if (this.isProduction) {
+        this.logger.error('[SMS] PROVIDER_NOT_CONFIGURED');
+        return {
+          success: false,
+          error: 'PROVIDER_NOT_CONFIGURED',
+        };
+      }
+
       // Modo Simulador para entornos de desarrollo y pruebas sin Twilio provisionado
       const simulatedId = `sms_sim_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
       this.logger.log(
-        `[SMS-SIMULATOR] SMS enviado con éxito a ${cleanTo} | ID=${simulatedId} | Contenido: "${message}"`,
+        `[SMS-SIMULATOR] SMS simulado exitosamente | ID=${simulatedId}`,
       );
       return {
         success: true,
@@ -66,7 +77,7 @@ export class SmsService implements ISmsProvider {
       };
       if (!response.ok) {
         this.logger.error(
-          `[TWILIO] Error al enviar SMS a ${cleanTo}: ${data.message || response.statusText}`,
+          `[TWILIO] Error al enviar SMS: status=${response.status} ${data.message || response.statusText}`,
         );
         return {
           success: false,
@@ -74,18 +85,14 @@ export class SmsService implements ISmsProvider {
         };
       }
 
-      this.logger.log(
-        `[TWILIO] SMS enviado exitosamente a ${cleanTo} | SID=${data.sid}`,
-      );
+      this.logger.log(`[TWILIO] SMS enviado exitosamente | SID=${data.sid}`);
       return {
         success: true,
         messageId: data.sid,
       };
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
-      this.logger.error(
-        `[TWILIO] Excepción enviando SMS a ${cleanTo}: ${errorMsg}`,
-      );
+      this.logger.error(`[TWILIO] Excepción enviando SMS: ${errorMsg}`);
       return {
         success: false,
         error: errorMsg,

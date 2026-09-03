@@ -104,7 +104,7 @@ git commit -m "fix(notifications): persist each delivery once"
 - Preserves: `ISmsProvider.sendSms` and `IWhatsAppProvider.sendWhatsApp`
 - Produces: missing production configuration returns `{ success: false, error: 'PROVIDER_NOT_CONFIGURED' }`
 
-- [ ] **Step 1: Add environment-matrix tests**
+- [x] **Step 1: Add environment-matrix tests**
 
 ```ts
 config.get.mockImplementation((key: string) => key === 'NODE_ENV' ? 'production' : undefined);
@@ -116,28 +116,28 @@ await expect(service.sendSms('+51999888777', 'secret body')).resolves.toEqual({
 
 Repeat for WhatsApp. In `development` and `test`, missing credentials may return simulated success. Spy on `Logger.prototype.log/error/warn` and assert no call string contains the phone or message body.
 
-- [ ] **Step 2: Run channel specs and observe simulated production success**
+- [x] **Step 2: Run channel specs and observe simulated production success**
 
 ```bash
 cd server && pnpm test -- sms.service.spec.ts whatsapp.service.spec.ts --runInBand
 ```
 
-- [ ] **Step 3: Gate simulation by environment**
+- [x] **Step 3: Gate simulation by environment**
 
 Read `NODE_ENV` through `ConfigService`. If credentials are incomplete and environment is `production`, log only provider/channel plus `PROVIDER_NOT_CONFIGURED`, then return failure. Non-production simulator logs only the generated ID and channel. Provider exceptions and non-2xx responses log status/provider IDs but not recipient or content.
 
-- [ ] **Step 4: Document exact variables**
+- [x] **Step 4: Document exact variables**
 
 Add these names to `.env.example`: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`, `WHATSAPP_API_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_REMINDER_TEMPLATE`, and `WHATSAPP_TEMPLATE_LANGUAGE`.
 
-- [ ] **Step 5: Pass channel tests and lint**
+- [x] **Step 5: Pass channel tests and lint**
 
 ```bash
 cd server && pnpm test -- sms.service.spec.ts whatsapp.service.spec.ts --runInBand
 cd server && pnpm exec eslint src/modules/notifications/infrastructure/channels/sms.service.ts src/modules/notifications/infrastructure/channels/whatsapp.service.ts
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add server/src/modules/notifications/infrastructure/channels server/.env.example

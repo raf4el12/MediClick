@@ -10,19 +10,18 @@ export class WhatsAppService implements IWhatsAppProvider {
   private readonly logger = new Logger(WhatsAppService.name);
   private readonly apiToken?: string;
   private readonly phoneNumberId?: string;
+  private readonly isProduction: boolean;
 
   constructor(private readonly configService: ConfigService) {
     this.apiToken = this.configService.get<string>('WHATSAPP_API_TOKEN');
     this.phoneNumberId = this.configService.get<string>(
       'WHATSAPP_PHONE_NUMBER_ID',
     );
+    this.isProduction =
+      this.configService.get<string>('NODE_ENV') === 'production';
   }
 
-  async sendWhatsApp(
-    to: string,
-    message: string,
-    parameters?: Record<string, string>,
-  ): Promise<SendWhatsAppResult> {
+  async sendWhatsApp(to: string, message: string): Promise<SendWhatsAppResult> {
     const cleanTo = to?.trim().replace(/\+/g, '');
     if (!cleanTo || cleanTo.length < 6) {
       return {
@@ -32,10 +31,18 @@ export class WhatsAppService implements IWhatsAppProvider {
     }
 
     if (!this.apiToken || !this.phoneNumberId) {
+      if (this.isProduction) {
+        this.logger.error('[WHATSAPP] PROVIDER_NOT_CONFIGURED');
+        return {
+          success: false,
+          error: 'PROVIDER_NOT_CONFIGURED',
+        };
+      }
+
       // Modo Simulador para desarrollo/pruebas locales
       const simulatedId = `wpp_sim_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
       this.logger.log(
-        `[WHATSAPP-SIMULATOR] WhatsApp enviado con éxito a +${cleanTo} | ID=${simulatedId} | Contenido: "${message}" | Parámetros=${JSON.stringify(parameters ?? {})}`,
+        `[WHATSAPP-SIMULATOR] WhatsApp simulado exitosamente | ID=${simulatedId}`,
       );
       return {
         success: true,
@@ -71,7 +78,7 @@ export class WhatsAppService implements IWhatsAppProvider {
         const errorMsg =
           data.error?.message || response.statusText || 'Error desconocido';
         this.logger.error(
-          `[WHATSAPP-META] Error enviando WhatsApp a +${cleanTo}: ${errorMsg}`,
+          `[WHATSAPP-META] Error enviando WhatsApp: status=${response.status} ${errorMsg}`,
         );
         return {
           success: false,
@@ -81,7 +88,7 @@ export class WhatsAppService implements IWhatsAppProvider {
 
       const messageId = data.messages[0].id;
       this.logger.log(
-        `[WHATSAPP-META] WhatsApp enviado exitosamente a +${cleanTo} | ID=${messageId}`,
+        `[WHATSAPP-META] WhatsApp enviado exitosamente | ID=${messageId}`,
       );
       return {
         success: true,
@@ -90,7 +97,7 @@ export class WhatsAppService implements IWhatsAppProvider {
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       this.logger.error(
-        `[WHATSAPP-META] Excepción enviando WhatsApp a +${cleanTo}: ${errorMsg}`,
+        `[WHATSAPP-META] Excepción enviando WhatsApp: ${errorMsg}`,
       );
       return {
         success: false,
