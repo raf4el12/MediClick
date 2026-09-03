@@ -67,8 +67,14 @@ export class PrismaPaymentReconciliationRepository implements IPaymentReconcilia
         id: true,
         status: true,
         paymentStatus: true,
+        amount: true,
         clinicId: true,
-        schedule: { select: { doctor: { select: { clinicId: true } } } },
+        schedule: {
+          select: {
+            specialty: { select: { price: true } },
+            doctor: { select: { clinicId: true } },
+          },
+        },
         patient: { select: { profile: { select: { userId: true } } } },
       },
     });
@@ -155,6 +161,32 @@ export class PrismaPaymentReconciliationRepository implements IPaymentReconcilia
       }
     }
 
+    // Calcular el acumulado pagado para determinar el estado financiero agregado
+    const paidTransactions = await tx.transactions.findMany({
+      where: {
+        appointmentId: appointment.id,
+        status: 'PAID',
+      },
+      select: { amount: true },
+    });
+
+    const paidTotal = paidTransactions.reduce(
+      (sum, t) => sum + Number(t.amount),
+      0,
+    );
+
+    const totalAmount =
+      appointment.amount !== null && appointment.amount !== undefined
+        ? Number(appointment.amount)
+        : Number(appointment.schedule?.specialty?.price ?? 0);
+
+    const aggregatePaymentStatus =
+      paidTotal <= 0
+        ? snapshot.status
+        : paidTotal + 0.005 < totalAmount
+          ? 'PARTIAL'
+          : 'PAID';
+
     const appointmentStatus =
       snapshot.status === 'PAID' && appointment.status === 'PENDING'
         ? 'CONFIRMED'
@@ -167,8 +199,7 @@ export class PrismaPaymentReconciliationRepository implements IPaymentReconcilia
         paymentStatus: appointment.paymentStatus,
       },
       data: {
-        paymentStatus: snapshot.status,
-        amount: snapshot.amount,
+        paymentStatus: aggregatePaymentStatus,
         ...(appointmentStatus !== appointment.status && {
           status: appointmentStatus,
           pendingUntil: null,
@@ -183,7 +214,7 @@ export class PrismaPaymentReconciliationRepository implements IPaymentReconcilia
     }
 
     const clinicId =
-      appointment.clinicId ?? appointment.schedule.doctor.clinicId ?? null;
+      appointment.clinicId ?? appointment.schedule?.doctor?.clinicId ?? null;
     if (appointmentStatus !== appointment.status) {
       await recordOutboxEvent(
         tx,
@@ -198,7 +229,7 @@ export class PrismaPaymentReconciliationRepository implements IPaymentReconcilia
     return {
       appointmentId: appointment.id,
       appointmentStatus,
-      paymentStatus: snapshot.status,
+      paymentStatus: aggregatePaymentStatus,
       financialReviewRequired,
       notificationUserId:
         snapshot.status === 'PAID' && appointment.status === 'PENDING'

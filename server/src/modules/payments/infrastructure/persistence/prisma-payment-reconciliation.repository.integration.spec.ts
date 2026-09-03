@@ -353,4 +353,127 @@ describeDatabase('PrismaPaymentReconciliationRepository (PostgreSQL)', () => {
       }
     }
   });
+
+  it('concilia una seña como PARTIAL sin sobreescribir el total, y luego concilia el saldo como PAID', async () => {
+    const appointment = await prisma.appointments.create({
+      data: {
+        patientId,
+        scheduleId,
+        clinicId,
+        startTime: new Date('1970-01-01T10:00:00Z'),
+        endTime: new Date('1970-01-01T10:30:00Z'),
+        status: 'PENDING',
+        paymentStatus: 'PENDING',
+        amount: 200,
+        depositAmount: 50,
+        pendingUntil: new Date('2026-08-30T19:00:00Z'),
+      },
+    });
+    appointmentIds.push(appointment.id);
+
+    // 1. Reconciliar seña de 50 PEN
+    const depositSnapshot: VerifiedPaymentSnapshot = {
+      appointmentId: appointment.id,
+      gatewayId: `mp-dep-${suffix}`,
+      externalRef: String(appointment.id),
+      amount: 50,
+      currency: 'PEN',
+      status: 'PAID',
+      paymentMethod: 'CREDIT_CARD',
+      payerEmail: 'patient@mediclick.test',
+      failureReason: null,
+      paidAt: new Date('2026-08-30T18:00:00Z'),
+      raw: { id: `mp-dep-${suffix}`, status: 'approved' },
+    };
+
+    const depResult = await repository.reconcile(depositSnapshot);
+    expect(depResult).toMatchObject({
+      appointmentStatus: 'CONFIRMED',
+      paymentStatus: 'PARTIAL',
+      financialReviewRequired: false,
+    });
+
+    const persistedAfterDeposit = await prisma.appointments.findUniqueOrThrow({
+      where: { id: appointment.id },
+    });
+    expect(persistedAfterDeposit).toMatchObject({
+      status: 'CONFIRMED',
+      paymentStatus: 'PARTIAL',
+    });
+    expect(Number(persistedAfterDeposit.amount)).toBe(200);
+
+    const depositTx = await prisma.transactions.findFirstOrThrow({
+      where: { gatewayId: depositSnapshot.gatewayId },
+    });
+    expect(depositTx.status).toBe('PAID');
+    expect(Number(depositTx.amount)).toBe(50);
+
+    // Evento outbox emitido una vez
+    const confirmEventsCount1 = await prisma.outboxEvents.count({
+      where: {
+        type: 'appointment.confirmed',
+        aggregateId: String(appointment.id),
+      },
+    });
+    expect(confirmEventsCount1).toBe(1);
+
+    // 2. Reconciliar saldo de 150 PEN
+    const balanceSnapshot: VerifiedPaymentSnapshot = {
+      appointmentId: appointment.id,
+      gatewayId: `mp-bal-${suffix}`,
+      externalRef: String(appointment.id),
+      amount: 150,
+      currency: 'PEN',
+      status: 'PAID',
+      paymentMethod: 'CREDIT_CARD',
+      payerEmail: 'patient@mediclick.test',
+      failureReason: null,
+      paidAt: new Date('2026-08-30T18:30:00Z'),
+      raw: { id: `mp-bal-${suffix}`, status: 'approved' },
+    };
+
+    const balResult = await repository.reconcile(balanceSnapshot);
+    expect(balResult).toMatchObject({
+      appointmentStatus: 'CONFIRMED',
+      paymentStatus: 'PAID',
+      financialReviewRequired: false,
+    });
+
+    const persistedAfterBalance = await prisma.appointments.findUniqueOrThrow({
+      where: { id: appointment.id },
+    });
+    expect(persistedAfterBalance).toMatchObject({
+      status: 'CONFIRMED',
+      paymentStatus: 'PAID',
+    });
+    expect(Number(persistedAfterBalance.amount)).toBe(200);
+
+    const paidTransactions = await prisma.transactions.findMany({
+      where: { appointmentId: appointment.id, status: 'PAID' },
+    });
+    expect(paidTransactions).toHaveLength(2);
+
+    // No se duplica el evento appointment.confirmed
+    const confirmEventsCount2 = await prisma.outboxEvents.count({
+      where: {
+        type: 'appointment.confirmed',
+        aggregateId: String(appointment.id),
+      },
+    });
+    expect(confirmEventsCount2).toBe(1);
+
+    // 3. Re-entrega de snapshots no duplica ni altera totales
+    await repository.reconcile(depositSnapshot);
+    await repository.reconcile(balanceSnapshot);
+
+    const finalTxs = await prisma.transactions.findMany({
+      where: { appointmentId: appointment.id, status: 'PAID' },
+    });
+    expect(finalTxs).toHaveLength(2);
+    const finalAppointment = await prisma.appointments.findUniqueOrThrow({
+      where: { id: appointment.id },
+    });
+    expect(Number(finalAppointment.amount)).toBe(200);
+    expect(finalAppointment.paymentStatus).toBe('PAID');
+  });
 });

@@ -164,7 +164,7 @@ git commit -m "fix(payments): charge deposits and remaining balances"
 - Produces: `PaymentReconciliationResult.paymentStatus` as aggregate `PARTIAL | PAID | ...`
 - Preserves: the individual provider transaction status from `VerifiedPaymentSnapshot.status`
 
-- [ ] **Step 1: Add real PostgreSQL deposit tests**
+- [x] **Step 1: Add real PostgreSQL deposit tests**
 
 Create a PEN 200 pending appointment. Reconcile a unique approved PEN 50 snapshot and assert:
 
@@ -180,13 +180,13 @@ expect(Number(transaction.amount)).toBe(50);
 
 Then reconcile an approved PEN 150 balance and assert aggregate `PAID`, total still 200, two paid transactions, and no duplicate confirmation event. Redeliver each gateway snapshot and assert totals do not double count.
 
-- [ ] **Step 2: Run integration tests and observe amount overwrite**
+- [x] **Step 2: Run integration tests and observe amount overwrite**
 
 ```bash
 cd server && RUN_DB_INTEGRATION=1 DATABASE_URL="$DATABASE_URL" pnpm run test:integration -- prisma-payment-reconciliation.repository.integration.spec.ts
 ```
 
-- [ ] **Step 3: Compute aggregate status inside the serializable transaction**
+- [x] **Step 3: Compute aggregate status inside the serializable transaction**
 
 After upserting the transaction, aggregate `SUM(amount)` over `Transactions` for this appointment with `status='PAID'`. With total `Number(appointment.amount)`:
 
@@ -200,16 +200,16 @@ const aggregatePaymentStatus = paidTotal <= 0
 
 Never write `amount: snapshot.amount` to `Appointments`. An approved initial or balance payment confirms only a still-`PENDING` appointment; a cancelled appointment remains cancelled and gets financial review. Emit `appointment.confirmed` only for the actual PENDING-to-CONFIRMED transition.
 
-- [ ] **Step 4: Pass integration and webhook tests**
+- [x] **Step 4: Pass integration and webhook tests**
 
 ```bash
 cd server && RUN_DB_INTEGRATION=1 DATABASE_URL="$DATABASE_URL" pnpm run test:integration -- prisma-payment-reconciliation.repository.integration.spec.ts
 cd server && pnpm test -- handle-payment-webhook.use-case.spec.ts --runInBand
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
-```bash
+```git
 git add server/src/modules/payments
 git commit -m "fix(payments): reconcile deposits as partial funding"
 ```
