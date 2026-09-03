@@ -230,7 +230,7 @@ git commit -m "fix(payments): reconcile deposits as partial funding"
 - Consumes: aggregate `Appointments.paymentStatus` semantics from Task 3
 - Produces: every paid transaction on a cancelled appointment is marked for manual refund review
 
-- [ ] **Step 1: Add PARTIAL regression tests**
+- [x] **Step 1: Add PARTIAL regression tests**
 
 Assert that PARTIAL reschedule remains confirmed and gets no new payment deadline, PARTIAL no-show retains at most the paid deposit, and cancellation marks all successful transactions for refund review rather than only the latest one.
 
@@ -239,17 +239,17 @@ expect(rescheduled).toMatchObject({ status: 'CONFIRMED', paymentStatus: 'PARTIAL
 expect(refundFlaggedTransactionIds).toEqual(expect.arrayContaining([depositTxId]));
 ```
 
-- [ ] **Step 2: Run appointment tests and observe PAID-only branches**
+- [x] **Step 2: Run appointment tests and observe PAID-only branches**
 
 ```bash
 cd server && pnpm test -- cancel-appointment mark-no-show reschedule-appointment --runInBand
 ```
 
-- [ ] **Step 3: Treat partial funding as paid value, not full payment**
+- [x] **Step 3: Treat partial funding as paid value, not full payment**
 
 Use `paymentStatus === 'PAID' || paymentStatus === 'PARTIAL'` only where the question is “has money been collected?” Do not use it where the question is “is the full balance paid?”. In `cancelAtomically`, load all `PAID` transactions and mark each with `needsRefund`; preserve cancellation fee metadata without claiming an automatic refund.
 
-- [ ] **Step 4: Run focused, integration, and build checks**
+- [x] **Step 4: Run focused, integration, and build checks**
 
 ```bash
 cd server && pnpm test -- cancel-appointment mark-no-show reschedule-appointment --runInBand
@@ -257,7 +257,7 @@ cd server && RUN_DB_INTEGRATION=1 DATABASE_URL="$DATABASE_URL" pnpm run test:int
 cd server && pnpm build
 ```
 
-- [ ] **Step 5: Update implemented behavior documentation and commit**
+- [x] **Step 5: Update implemented behavior documentation and commit**
 
 Update `docs/domain/APPOINTMENT-CORE.md` so payment confirmation says an approved required deposit confirms the appointment with aggregate `PARTIAL`, while full cumulative funding sets `PAID`.
 

@@ -430,4 +430,39 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
       expect.any(Object),
     );
   });
+
+  it('RED->GREEN: cita con paymentStatus PARTIAL conserva status CONFIRMED y no recibe pendingUntil al reagendar', async () => {
+    const partialAppt = buildAppointment({
+      status: AppointmentStatus.CONFIRMED,
+      paymentStatus: 'PARTIAL',
+      pendingUntil: null,
+    });
+    appointmentRepository.findById.mockResolvedValue(partialAppt);
+    scheduleRepository.findById.mockResolvedValue(buildSchedule());
+    appointmentRepository.rescheduleWithOverlapCheck.mockImplementation(
+      (_id, data) =>
+        Promise.resolve({
+          ...partialAppt,
+          ...data,
+        }),
+    );
+
+    const result = await useCase.execute(10, dto, globalActor);
+
+    expect(result.status).toBe(AppointmentStatus.CONFIRMED);
+    expect(result.pendingUntil).toBeNull();
+    expect(
+      appointmentRepository.rescheduleWithOverlapCheck,
+    ).toHaveBeenCalledWith(
+      10,
+      expect.objectContaining({
+        status: AppointmentStatus.CONFIRMED,
+        pendingUntil: null,
+      }),
+      99,
+      expect.any(Date),
+      expect.any(Date),
+      expect.any(Object),
+    );
+  });
 });

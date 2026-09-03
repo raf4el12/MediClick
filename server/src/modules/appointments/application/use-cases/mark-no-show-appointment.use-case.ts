@@ -69,7 +69,11 @@ export class MarkNoShowAppointmentUseCase {
     }
 
     let penaltyFee: number | undefined;
-    if (appointment.paymentStatus === 'PAID') {
+    if (appointment.paymentStatus === 'PARTIAL') {
+      penaltyFee = appointment.depositAmount
+        ? Number(appointment.depositAmount)
+        : undefined;
+    } else if (appointment.paymentStatus === 'PAID') {
       if (appointment.depositAmount) {
         penaltyFee = Number(appointment.depositAmount);
       } else if (appointment.amount) {

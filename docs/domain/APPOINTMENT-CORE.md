@@ -41,9 +41,9 @@ Una sede es el límite operativo del personal y de la agenda. El paciente es del
 3. El cupo debe pertenecer al rango del médico, durar exactamente lo configurado y estar alineado con duración más descanso.
 4. La fecha se evalúa con la zona horaria de la sede: no puede estar en el pasado, a menos de dos horas si es hoy, en feriado ni dentro de un bloqueo.
 5. La cita, el monto y el plazo de pago se crean junto con las verificaciones de solapamiento.
-6. Un pago aprobado confirma la cita y elimina el plazo. Si el plazo vence con pago pendiente o fallido, la cita se cancela y el cupo se libera.
+6. Un pago aprobado confirma la cita y elimina el plazo. Si el monto pagado cubre la seña exigida pero es menor al total, la cita queda confirmada con estado financiero agregado `PARTIAL`, conservando el precio total en `amount`. Cuando la suma acumulada de transacciones aprobadas cubre el total, el estado financiero agregado pasa a `PAID`. Si el plazo vence con pago pendiente o fallido sin confirmar, la cita se cancela y el cupo se libera.
 
-Fuentes: `create-patient-appointment.use-case.ts`, `appointment-slot-validator.service.ts`, `prisma-appointment.repository.ts`, `handle-payment-webhook.use-case.ts`.
+Fuentes: `create-patient-appointment.use-case.ts`, `appointment-slot-validator.service.ts`, `prisma-appointment.repository.ts`, `handle-payment-webhook.use-case.ts`, `prisma-payment-reconciliation.repository.ts`.
 
 ### Creación por personal
 
@@ -87,9 +87,9 @@ CONFIRMED ──después del inicio──> NO_SHOW
 cualquier estado salvo COMPLETED/CANCELLED ──cancelación──> CANCELLED
 ```
 
-El código actual permite reagendar cualquier estado salvo `COMPLETED` y `CANCELLED`. Una cita pagada conserva su estado al reagendarse; una no pagada vuelve a `PENDING` solo si ya tenía un plazo de pago.
+El código actual permite reagendar cualquier estado salvo `COMPLETED` y `CANCELLED`. Una cita con fondos cobrados (`PAID` o `PARTIAL`) conserva su estado al reagendarse y no recibe plazo de expiración; una no pagada vuelve a `PENDING` solo si ya tenía un plazo de pago.
 
-Los estados financieros son `PENDING`, `PAID`, `PARTIAL`, `REFUNDED`, `FAILED` y `CANCELLED`. Un pago tardío aprobado para una cita ya cancelada conserva la cita cancelada, marca el pago como pagado y requiere revisión financiera.
+Los estados financieros agregados son `PENDING`, `PAID`, `PARTIAL`, `REFUNDED`, `FAILED` y `CANCELLED`. Un pago tardío aprobado para una cita ya cancelada conserva la cita cancelada, marca la transacción individual como pagada y requiere revisión financiera.
 
 ## Invariantes que un cambio debe preservar
 
@@ -121,11 +121,11 @@ Los estados financieros son `PENDING`, `PAID`, `PARTIAL`, `REFUNDED`, `FAILED` y
 - El resultado publicado por el proveedor se vuelve a consultar antes de aceptarse.
 - El webhook rechaza firmas inválidas y devuelve error reintentable si falla la conciliación; solo responde éxito después de persistirla.
 - `gatewayId` identifica de forma idempotente un pago ya procesado.
-- Pago y cita se concilian en una transacción serializable: un pago aprobado solo confirma una cita todavía pendiente y nunca revive una cita cancelada.
+- Pago y cita se concilian en una transacción serializable: un pago aprobado de seña o total solo confirma una cita todavía pendiente y nunca revive una cita cancelada. El aggregate `amount` de la cita mantiene siempre el valor total de la consulta y nunca es sobreescrito por el monto del pago parcial.
 - Una reserva en línea ocupa capacidad solo hasta su plazo de pago.
 - La expiración reclama con una única escritura condicional solo reservas aún pendientes y devuelve exactamente los cupos que consiguió liberar.
-- Una cancelación manual o causada por una restricción de disponibilidad usa la misma ruta: una cita pagada queda marcada para reembolso manual, sin reembolso automático.
-- Si el paciente cancela una cita pagada con menos de 24 horas, la penalización actual es 50 % del precio de la especialidad y también requiere conciliación manual.
+- Una cancelación manual o causada por una restricción de disponibilidad usa la misma ruta: todas las transacciones pagadas (`PAID`) de la cita quedan marcadas con `needsRefund` para reembolso manual, sin reembolso automático.
+- Si el paciente cancela una cita tardíamente (fuera de la ventana configurada por la especialidad o la sede), aplica la penalización por política; en citas parcialmente pagadas (`PARTIAL`) se retiene como máximo la seña pagada.
 
 ### Liberación de cupos
 

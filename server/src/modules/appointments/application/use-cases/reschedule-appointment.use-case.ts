@@ -85,15 +85,17 @@ export class RescheduleAppointmentUseCase {
       jwtClinicId: actor.clinicId,
     });
 
-    // Una cita pagada conserva su estado (no vuelve a PENDING sin que nadie
+    // Una cita pagada o parcialmente señada conserva su estado (no vuelve a PENDING sin que nadie
     // la re-confirme) y no lleva deadline de pago.
-    const isPaid = appointment.paymentStatus === 'PAID';
+    const hasFunding =
+      appointment.paymentStatus === 'PAID' ||
+      appointment.paymentStatus === 'PARTIAL';
 
     // Solo se renueva el deadline si la cita ya tenía uno (reserva con pago
     // online). Las citas de staff tienen pendingUntil null y ponérselo aquí
     // haría que el cron de expiración las cancele.
     const pendingUntil =
-      !isPaid && appointment.pendingUntil
+      !hasFunding && appointment.pendingUntil
         ? new Date(Date.now() + getAppointmentPaymentTimeoutMs())
         : null;
 
@@ -104,7 +106,7 @@ export class RescheduleAppointmentUseCase {
         scheduleId: dto.newScheduleId,
         startTime: newStartTime,
         endTime: newEndTime,
-        status: isPaid ? appointment.status : AppointmentStatus.PENDING,
+        status: hasFunding ? appointment.status : AppointmentStatus.PENDING,
         pendingUntil,
         confirmedAt: null,
         isAtRisk: false,

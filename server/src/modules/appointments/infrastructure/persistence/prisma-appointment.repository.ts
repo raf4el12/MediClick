@@ -663,6 +663,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         return {
           appointment: this.mapToRelations(current),
           refundReviewTransactionId: null,
+          refundReviewTransactionIds: [],
           transitioned: false,
         };
       }
@@ -680,18 +681,19 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         include: appointmentInclude,
       });
 
-      const paidTransaction = await tx.transactions.findFirst({
+      const paidTransactions = await tx.transactions.findMany({
         where: { appointmentId: data.appointmentId, status: 'PAID' },
         orderBy: { createdAt: 'desc' },
       });
-      if (paidTransaction) {
+
+      const occurredAt = data.eventIdentity.occurredAt.toISOString();
+      for (const paidTransaction of paidTransactions) {
         const previousMetadata =
           paidTransaction.metadata &&
           typeof paidTransaction.metadata === 'object' &&
           !Array.isArray(paidTransaction.metadata)
             ? (paidTransaction.metadata as Record<string, unknown>)
             : {};
-        const occurredAt = data.eventIdentity.occurredAt.toISOString();
         await tx.transactions.update({
           where: { id: paidTransaction.id },
           data: {
@@ -742,7 +744,8 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
 
       return {
         appointment,
-        refundReviewTransactionId: paidTransaction?.id ?? null,
+        refundReviewTransactionId: paidTransactions[0]?.id ?? null,
+        refundReviewTransactionIds: paidTransactions.map((t) => t.id),
         transitioned: true,
       };
     });

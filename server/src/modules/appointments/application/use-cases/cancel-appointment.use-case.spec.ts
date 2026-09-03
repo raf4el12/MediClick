@@ -350,4 +350,32 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
     const cancelArg = appointmentRepository.cancelAtomically.mock.calls[0][0];
     expect(cancelArg.cancellationFee).toBeUndefined();
   });
+
+  it('RED->GREEN: paciente cancela tarde cita con paymentStatus PARTIAL: calcula fee reteniendo la seña', async () => {
+    jest.useFakeTimers({ now: new Date('2026-12-01T14:00:00Z') });
+    appointmentRepository.findById.mockResolvedValue({
+      ...buildAppointment(),
+      paymentStatus: 'PARTIAL',
+      amount: 200,
+      depositAmount: 50,
+    } as any);
+    specialtyRepository.findById.mockResolvedValue({
+      id: 3,
+      price: 200,
+    } as any);
+    transactionRepository.findLatestByAppointmentId.mockResolvedValue({
+      id: 77,
+      status: 'PAID',
+      metadata: null,
+    } as any);
+
+    await useCase.execute(
+      50,
+      { reason: 'No podré ir' },
+      buildActor(SystemRole.PATIENT),
+    );
+
+    const cancelArg = appointmentRepository.cancelAtomically.mock.calls[0][0];
+    expect(cancelArg.cancellationFee).toBe(50);
+  });
 });

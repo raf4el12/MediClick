@@ -122,6 +122,7 @@ export interface CancelAppointmentAtomicallyData {
 export interface CancelAppointmentAtomicallyResult {
   appointment: AppointmentWithRelations;
   refundReviewTransactionId: number | null;
+  refundReviewTransactionIds?: number[];
   transitioned: boolean;
 }
 

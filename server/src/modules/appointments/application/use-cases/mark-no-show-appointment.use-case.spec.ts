@@ -191,4 +191,25 @@ describe('MarkNoShowAppointmentUseCase', () => {
       }),
     );
   });
+
+  it('RED->GREEN: retiene como máximo la seña para cita con paymentStatus PARTIAL', async () => {
+    appointmentRepository.findById.mockResolvedValue(
+      buildAppointment({
+        status: AppointmentStatus.CONFIRMED,
+        paymentStatus: 'PARTIAL',
+        amount: 200,
+        depositAmount: 50,
+      }),
+    );
+
+    await useCase.execute(10, globalActor);
+
+    expect(appointmentRepository.update).toHaveBeenCalledWith(
+      10,
+      expect.objectContaining({
+        status: AppointmentStatus.NO_SHOW,
+        cancellationFee: 50,
+      }),
+    );
+  });
 });

@@ -81,14 +81,16 @@ export class CancelAppointmentUseCase {
     const hoursUntilAppointment =
       (appointmentDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
 
-    // Buscar la última transacción una sola vez: el fee solo aplica si hay un
-    // pago PAID que cobrar, y los flags de refund/fee se anclan en esa transacción.
+    // Buscar la última transacción: el fee aplica si hay fondos cobrados (PAID o PARTIAL).
     const tx = await this.transactionRepository.findLatestByAppointmentId(id);
-    const isPaid = tx?.status === 'PAID';
+    const hasFunding =
+      appointment.paymentStatus === 'PAID' ||
+      appointment.paymentStatus === 'PARTIAL' ||
+      tx?.status === 'PAID';
 
     let cancellationFee: number | undefined;
 
-    if (actor.roleName === String(UserRole.PATIENT) && isPaid) {
+    if (actor.roleName === String(UserRole.PATIENT) && hasFunding) {
       const specialty = await this.specialtyRepository.findById(
         appointment.schedule.specialty.id,
       );
@@ -108,7 +110,7 @@ export class CancelAppointmentUseCase {
         freeCancellationWindowHours: windowHours,
         appointmentPrice: specialtyPrice,
         depositAmount: appointment.depositAmount ?? null,
-        isPaid,
+        isPaid: true,
         isPatient: true,
       });
 

@@ -390,5 +390,61 @@ describeDatabase(
       expect(event.type).toBe('appointment.confirmed');
       expect(event.payload).toEqual({ appointmentId: appointment.id });
     });
+
+    it('cancela cita con múltiples pagos (seña + saldo) y marca todos para refund review', async () => {
+      const appointment = await createAppointment({
+        status: AppointmentStatus.CONFIRMED,
+        paymentStatus: 'PAID',
+        amount: 200,
+        depositAmount: 50,
+      });
+      const depositTx = await prisma.transactions.create({
+        data: {
+          appointmentId: appointment.id,
+          amount: 50,
+          currency: 'PEN',
+          status: 'PAID',
+          gatewayId: `gw-dep-${Date.now()}-${randomUUID()}`,
+          clinicId: null,
+        },
+      });
+      const balanceTx = await prisma.transactions.create({
+        data: {
+          appointmentId: appointment.id,
+          amount: 150,
+          currency: 'PEN',
+          status: 'PAID',
+          gatewayId: `gw-bal-${Date.now()}-${randomUUID()}`,
+          clinicId: null,
+        },
+      });
+
+      const result = await repository.cancelAtomically({
+        appointmentId: appointment.id,
+        reason: 'Emergencia médica',
+        cancelledBy: 'ADMIN',
+        cancellationFee: 50,
+        eventIdentity: {
+          operationId: `${operationPrefix}-multi-refund`,
+          cancelledEventId: randomUUID(),
+          slotReleasedEventId: randomUUID(),
+          occurredAt: new Date(),
+        },
+      });
+
+      expect(result.transitioned).toBe(true);
+      expect(result.refundReviewTransactionIds).toEqual(
+        expect.arrayContaining([depositTx.id, balanceTx.id]),
+      );
+
+      const tx1 = await prisma.transactions.findUniqueOrThrow({
+        where: { id: depositTx.id },
+      });
+      const tx2 = await prisma.transactions.findUniqueOrThrow({
+        where: { id: balanceTx.id },
+      });
+      expect(tx1.metadata).toMatchObject({ needsRefund: true });
+      expect(tx2.metadata).toMatchObject({ needsRefund: true });
+    });
   },
 );
