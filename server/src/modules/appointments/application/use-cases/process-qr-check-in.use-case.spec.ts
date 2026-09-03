@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import {
   BadRequestException,
+  ConflictException,
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
@@ -18,7 +20,7 @@ import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/aut
 describe('ProcessQrCheckInUseCase (Auto Check-in QR y Turno en Sala)', () => {
   let useCase: ProcessQrCheckInUseCase;
   let appointmentRepository: jest.Mocked<
-    Pick<IAppointmentRepository, 'findById' | 'update'>
+    Pick<IAppointmentRepository, 'findById' | 'update' | 'checkInAtomically'>
   >;
   let qrService: jest.Mocked<
     Pick<AppointmentQrService, 'validateCheckInQrToken'>
@@ -125,6 +127,24 @@ describe('ProcessQrCheckInUseCase (Auto Check-in QR y Turno en Sala)', () => {
         .mockImplementation((id: number, data: UpdateAppointmentData) =>
           Promise.resolve(buildAppointment({ id, ...data })),
         ),
+      checkInAtomically: jest
+        .fn()
+        .mockImplementation(
+          ({
+            appointmentId,
+            checkedInAt,
+          }: {
+            appointmentId: number;
+            checkedInAt: Date;
+          }) =>
+            Promise.resolve(
+              buildAppointment({
+                id: appointmentId,
+                status: AppointmentStatus.IN_PROGRESS,
+                checkedInAt,
+              }),
+            ),
+        ),
     };
 
     qrService = {
@@ -157,7 +177,7 @@ describe('ProcessQrCheckInUseCase (Auto Check-in QR y Turno en Sala)', () => {
     jest.useRealTimers();
   });
 
-  it('RED->GREEN: procesa auto check-in con token válido dentro de ventana, actualiza a IN_PROGRESS y emite evento', async () => {
+  it('RED->GREEN: procesa auto check-in con token válido dentro de ventana, actualiza a IN_PROGRESS vía checkInAtomically y emite evento', async () => {
     const ticket = await useCase.execute(
       { qrToken: 'mc_qr_valid.hash' },
       receptionistActor,
@@ -169,10 +189,11 @@ describe('ProcessQrCheckInUseCase (Auto Check-in QR y Turno en Sala)', () => {
     expect(ticket.doctorName).toBe('Dr. Gregory House');
     expect(ticket.status).toBe(AppointmentStatus.IN_PROGRESS);
 
-    expect(appointmentRepository.update).toHaveBeenCalledWith(
-      42,
+    expect(appointmentRepository.checkInAtomically).toHaveBeenCalledWith(
       expect.objectContaining({
-        status: AppointmentStatus.IN_PROGRESS,
+        appointmentId: 42,
+        clinicId: 1,
+        checkedInAt: expect.any(Date),
       }),
     );
     expect(eventEmitter.emit).toHaveBeenCalledWith(
@@ -183,6 +204,16 @@ describe('ProcessQrCheckInUseCase (Auto Check-in QR y Turno en Sala)', () => {
         clinicId: 1,
       }),
     );
+  });
+
+  it('RED->GREEN: rechaza con ConflictException si checkInAtomically retorna null (carrera perdida)', async () => {
+    appointmentRepository.checkInAtomically.mockResolvedValueOnce(null);
+
+    await expect(
+      useCase.execute({ qrToken: 'mc_qr_valid.hash' }, receptionistActor),
+    ).rejects.toThrow(ConflictException);
+
+    expect(eventEmitter.emit).not.toHaveBeenCalled();
   });
 
   it('RED->GREEN: rechaza check-in si el actor es un paciente o staff sin sede asignada', async () => {

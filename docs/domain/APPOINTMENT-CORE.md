@@ -135,6 +135,14 @@ Los estados financieros agregados son `PENDING`, `PAID`, `PARTIAL`, `REFUNDED`, 
 - La lista de espera consume el evento al menos una vez, reusa cualquier oferta pendiente del cupo
   y vuelve a comprobar que siga libre antes de ofrecerlo y antes de crear la cita aceptada.
 
+### Auto check-in y llegada con código QR
+
+- La ventana de llegada para check-in por código QR es local a la sede: abre 30 minutos antes y cierra 15 minutos después de la hora de inicio de la cita (`[T-30m, T+15m]`), calculada combinando `scheduleDate`, `startTime` (base 1970) y la zona horaria IANA de la sede.
+- El token QR es criptográfico (HMAC SHA-256) y expira al cerrarse la ventana de llegada.
+- La emisión del QR (`GET /appointments/:id/check-in-qr`) está autorizada para el paciente dueño, personal o médico de la misma sede, o administradores globales.
+- El consumo del QR (`POST /appointments/actions/qr-check-in`) requiere personal autenticado con sede asignada. La sede se deriva de la identidad del actor autenticado (el cliente no puede inyectar `kioskClinicId`).
+- La transición de check-in (`PENDING`/`CONFIRMED` → `IN_PROGRESS`) es condicional y atómica en base de datos (`checkInAtomically`). Si dos escaneos o una cancelación compiten concurrentemente, exactamente un ganador realiza la transición; el perdedor recibe conflicto (`ConflictException`) y no emite eventos de presencia.
+
 ### Eventos durables y proyecciones
 
 - La cancelación y confirmación asistencial, la liberación de cupos y los cambios de paciente se

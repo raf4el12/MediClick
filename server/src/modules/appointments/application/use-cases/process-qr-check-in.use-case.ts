@@ -1,10 +1,11 @@
 import {
-  Injectable,
-  Inject,
   BadRequestException,
-  NotFoundException,
+  ConflictException,
   ForbiddenException,
+  Inject,
+  Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
@@ -92,33 +93,39 @@ export class ProcessQrCheckInUseCase {
       );
     }
 
-    // 7. Registrar presencia y actualizar estado a IN_PROGRESS con timestamp de llegada
+    // 7. Transición condicional atómica a IN_PROGRESS (single-winner boundary)
     const arrivalTime = new Date();
-    const updated = await this.appointmentRepository.update(appointmentId, {
-      status: AppointmentStatus.IN_PROGRESS,
+    const updated = await this.appointmentRepository.checkInAtomically({
+      appointmentId,
+      clinicId: appointmentClinicId,
       checkedInAt: arrivalTime,
-      updatedAt: arrivalTime,
     });
 
-    const turnCode = `T-${appointment.id}`;
-    const patientFullName = `${appointment.patient.profile.name} ${appointment.patient.profile.lastName}`;
-    const doctorFullName = `${appointment.schedule.doctor.profile.name} ${appointment.schedule.doctor.profile.lastName}`;
+    if (!updated) {
+      throw new ConflictException(
+        'No se pudo realizar el check-in: la cita ya fue procesada, cancelada o no se encuentra disponible',
+      );
+    }
 
-    // 8. Emitir evento de presencia para pantallas de sala y consultorio
+    const turnCode = `T-${updated.id}`;
+    const patientFullName = `${updated.patient.profile.name} ${updated.patient.profile.lastName}`;
+    const doctorFullName = `${updated.schedule.doctor.profile.name} ${updated.schedule.doctor.profile.lastName}`;
+
+    // 8. Emitir evento de presencia únicamente tras ganar la transición atómica
     this.eventEmitter.emit('appointment.checked_in', {
-      appointmentId: appointment.id,
+      appointmentId: updated.id,
       clinicId: appointmentClinicId,
-      patientId: appointment.patientId,
+      patientId: updated.patientId,
       patientName: patientFullName,
-      doctorId: appointment.schedule.doctor.id,
+      doctorId: updated.schedule.doctor.id,
       doctorName: doctorFullName,
-      specialtyName: appointment.schedule.specialty.name,
+      specialtyName: updated.schedule.specialty.name,
       turnCode,
-      checkedInAt: arrivalTime,
+      checkedInAt: updated.checkedInAt ?? arrivalTime,
     });
 
     this.logger.log(
-      `[CHECK-IN QR] Cita #${appointment.id} registrada | Turno ${turnCode} | Sede ${appointmentClinicId}`,
+      `[CHECK-IN QR] Cita #${updated.id} registrada | Turno ${turnCode} | Sede ${appointmentClinicId}`,
     );
 
     return {
@@ -126,9 +133,9 @@ export class ProcessQrCheckInUseCase {
       turnCode,
       patientName: patientFullName,
       doctorName: doctorFullName,
-      specialtyName: appointment.schedule.specialty.name,
+      specialtyName: updated.schedule.specialty.name,
       status: updated.status,
-      checkedInAt: arrivalTime,
+      checkedInAt: updated.checkedInAt ?? arrivalTime,
     };
   }
 }

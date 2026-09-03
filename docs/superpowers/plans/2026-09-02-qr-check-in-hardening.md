@@ -197,29 +197,29 @@ git commit -m "fix(appointments): authenticate and time-bound QR check-in"
 **Interfaces:**
 - Produces: `checkInAtomically(input: { appointmentId: number; clinicId: number; checkedInAt: Date }): Promise<AppointmentWithRelations | null>`
 
-- [ ] **Step 1: Add a real cancellation/check-in race test**
+- [x] **Step 1: Add a real cancellation/check-in race test**
 
 For multiple iterations, race `AppointmentCancellationService.cancel(...)` with `checkInAtomically(...)`. Assert the final state is only `CANCELLED` or `IN_PROGRESS`, never a cancelled-then-revived write. If cancellation wins, the check-in returns null and emits no checked-in event. If check-in wins, exactly one caller receives the updated row.
 
-- [ ] **Step 2: Add a duplicate scan test**
+- [x] **Step 2: Add a duplicate scan test**
 
 Run two concurrent atomic check-ins for the same appointment and assert one non-null result, one null result, and one `checkedInAt` value.
 
-- [ ] **Step 3: Run integration tests and observe non-atomic behavior**
+- [x] **Step 3: Run integration tests and observe non-atomic behavior**
 
 ```bash
 cd server && RUN_DB_INTEGRATION=1 DATABASE_URL="$DATABASE_URL" pnpm run test:integration -- prisma-qr-check-in.integration.spec.ts
 ```
 
-- [ ] **Step 4: Implement the conditional transition**
+- [x] **Step 4: Implement the conditional transition**
 
 Inside one transaction, execute `updateMany` with explicit predicates for `id`, `deleted=false`, clinic scope, and `status in ['PENDING','CONFIRMED']`. Set `IN_PROGRESS`, `checkedInAt`, and `updatedAt`. If count is not one, return null; otherwise read the updated relation before commit. Do not use a pre-read as the concurrency guard.
 
-- [ ] **Step 5: Emit only after an atomic win**
+- [x] **Step 5: Emit only after an atomic win**
 
 The use case may pre-read for display/window validation, but it must call `checkInAtomically` and treat null as `ConflictException`. Build the ticket and emit `appointment.checked_in` from the returned row, not the stale pre-read. Redact patient name from operational logs.
 
-- [ ] **Step 6: Run all QR checks and build**
+- [x] **Step 6: Run all QR checks and build**
 
 ```bash
 cd server && pnpm test -- appointment-qr issue-appointment-qr process-qr-check-in check-in-window --runInBand
@@ -227,7 +227,7 @@ cd server && RUN_DB_INTEGRATION=1 DATABASE_URL="$DATABASE_URL" pnpm run test:int
 cd server && pnpm build
 ```
 
-- [ ] **Step 7: Update core behavior and commit**
+- [x] **Step 7: Update core behavior and commit**
 
 Document the 30/15-minute clinic-local arrival window, trusted clinic-scoped consumer, and conditional transition in `docs/domain/APPOINTMENT-CORE.md`. Keep the existing open question about PENDING check-in.
 

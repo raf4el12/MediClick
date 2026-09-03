@@ -651,25 +651,19 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     data: CancelAppointmentAtomicallyData,
   ): Promise<CancelAppointmentAtomicallyResult> {
     return this.prisma.$transaction(async (tx) => {
-      const current = await tx.appointments.findFirst({
-        where: { id: data.appointmentId, deleted: false },
-        include: appointmentInclude,
-      });
-      if (!current) {
-        throw new ConflictException('La cita ya no existe');
-      }
-
-      if (current.status === 'CANCELLED') {
-        return {
-          appointment: this.mapToRelations(current),
-          refundReviewTransactionId: null,
-          refundReviewTransactionIds: [],
-          transitioned: false,
-        };
-      }
-
-      const updated = await tx.appointments.update({
-        where: { id: data.appointmentId },
+      const cancelUpdate = await tx.appointments.updateMany({
+        where: {
+          id: data.appointmentId,
+          deleted: false,
+          status: {
+            notIn: [
+              AppointmentStatus.CANCELLED,
+              AppointmentStatus.IN_PROGRESS,
+              AppointmentStatus.COMPLETED,
+              AppointmentStatus.NO_SHOW,
+            ],
+          },
+        },
         data: {
           status: AppointmentStatus.CANCELLED,
           cancelReason: data.reason,
@@ -678,6 +672,26 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
           }),
           updatedAt: data.eventIdentity.occurredAt,
         },
+      });
+
+      if (cancelUpdate.count !== 1) {
+        const current = await tx.appointments.findFirst({
+          where: { id: data.appointmentId, deleted: false },
+          include: appointmentInclude,
+        });
+        if (!current) {
+          throw new ConflictException('La cita ya no existe');
+        }
+        return {
+          appointment: this.mapToRelations(current),
+          refundReviewTransactionId: null,
+          refundReviewTransactionIds: [],
+          transitioned: false,
+        };
+      }
+
+      const updated = await tx.appointments.findUniqueOrThrow({
+        where: { id: data.appointmentId },
         include: appointmentInclude,
       });
 
@@ -876,6 +890,47 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       },
       { isolationLevel: 'Serializable' },
     );
+  }
+
+  async checkInAtomically(input: {
+    appointmentId: number;
+    clinicId: number;
+    checkedInAt: Date;
+  }): Promise<AppointmentWithRelations | null> {
+    return this.prisma.$transaction(async (tx) => {
+      const updateResult = await tx.appointments.updateMany({
+        where: {
+          id: input.appointmentId,
+          deleted: false,
+          status: {
+            in: [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED],
+          },
+          OR: [
+            { clinicId: input.clinicId },
+            {
+              clinicId: null,
+              schedule: { doctor: { clinicId: input.clinicId } },
+            },
+          ],
+        },
+        data: {
+          status: AppointmentStatus.IN_PROGRESS,
+          checkedInAt: input.checkedInAt,
+          updatedAt: input.checkedInAt,
+        },
+      });
+
+      if (updateResult.count !== 1) {
+        return null;
+      }
+
+      const updated = await tx.appointments.findUnique({
+        where: { id: input.appointmentId },
+        include: appointmentInclude,
+      });
+
+      return updated ? this.mapToRelations(updated) : null;
+    });
   }
 
   private mapToRelations(raw: AppointmentRow): AppointmentWithRelations {

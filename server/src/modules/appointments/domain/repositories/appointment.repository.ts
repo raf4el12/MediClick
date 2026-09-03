@@ -129,4 +129,15 @@ export interface IAppointmentRepository {
     now: Date,
     eventIdentity: DurableOperationIdentity,
   ): Promise<ExpiredAppointmentSlot[]>;
+
+  /**
+   * Realiza la transición condicional atómica a IN_PROGRESS para check-in QR.
+   * Retorna la fila actualizada si ganó la transición; null si la cita fue
+   * cancelada, completada o procesada previamente.
+   */
+  checkInAtomically(input: {
+    appointmentId: number;
+    clinicId: number;
+    checkedInAt: Date;
+  }): Promise<AppointmentWithRelations | null>;
 }
