@@ -6,9 +6,7 @@ import {
   type AppointmentAccessResource,
 } from './appointment-access.policy.js';
 
-const actor = (
-  overrides: Partial<AuthenticatedUser>,
-): AuthenticatedUser => ({
+const actor = (overrides: Partial<AuthenticatedUser>): AuthenticatedUser => ({
   id: 1,
   email: 'actor@mediclick.test',
   roleId: 1,
@@ -40,16 +38,14 @@ describe('AppointmentAccessPolicy', () => {
     expect(() =>
       policy.authorize(patient, 'READ_PAYMENT', appointment()),
     ).not.toThrow();
-    expect(() => policy.authorize(patient, 'CANCEL', appointment())).not.toThrow();
+    expect(() =>
+      policy.authorize(patient, 'CANCEL', appointment()),
+    ).not.toThrow();
     expect(() =>
       policy.authorize(patient, 'RESCHEDULE', appointment()),
     ).not.toThrow();
     expect(() =>
-      policy.authorize(
-        patient,
-        'CANCEL',
-        appointment({ patientUserId: 999 }),
-      ),
+      policy.authorize(patient, 'CANCEL', appointment({ patientUserId: 999 })),
     ).toThrow(NotFoundException);
   });
 
@@ -102,11 +98,7 @@ describe('AppointmentAccessPolicy', () => {
       policy.authorize(doctor, 'COMPLETE', appointment()),
     ).not.toThrow();
     expect(() =>
-      policy.authorize(
-        doctor,
-        'COMPLETE',
-        appointment({ doctorUserId: 201 }),
-      ),
+      policy.authorize(doctor, 'COMPLETE', appointment({ doctorUserId: 201 })),
     ).toThrow(NotFoundException);
   });
 
@@ -126,5 +118,62 @@ describe('AppointmentAccessPolicy', () => {
     expect(() =>
       policy.authorize(unscopedStaff, 'READ_PAYMENT', appointment()),
     ).toThrow(ForbiddenException);
+  });
+
+  it('permite ISSUE_QR a paciente dueño, staff y médico de la misma sede, y admin global', () => {
+    const ownPatient = actor({
+      id: 100,
+      roleName: SystemRole.PATIENT,
+      clinicId: null,
+    });
+    const otherPatient = actor({
+      id: 999,
+      roleName: SystemRole.PATIENT,
+      clinicId: null,
+    });
+    const sameClinicReceptionist = actor({
+      id: 300,
+      roleName: SystemRole.RECEPTIONIST,
+      clinicId: 7,
+    });
+    const otherClinicReceptionist = actor({
+      id: 301,
+      roleName: SystemRole.RECEPTIONIST,
+      clinicId: 8,
+    });
+    const assignedDoctor = actor({
+      id: 200,
+      roleName: SystemRole.DOCTOR,
+      clinicId: 7,
+    });
+    const otherDoctor = actor({
+      id: 201,
+      roleName: SystemRole.DOCTOR,
+      clinicId: 7,
+    });
+    const globalAdmin = actor({
+      roleName: SystemRole.ADMIN,
+      clinicId: null,
+    });
+
+    const appt = appointment();
+
+    expect(() => policy.authorize(ownPatient, 'ISSUE_QR', appt)).not.toThrow();
+    expect(() => policy.authorize(otherPatient, 'ISSUE_QR', appt)).toThrow(
+      NotFoundException,
+    );
+    expect(() =>
+      policy.authorize(sameClinicReceptionist, 'ISSUE_QR', appt),
+    ).not.toThrow();
+    expect(() =>
+      policy.authorize(otherClinicReceptionist, 'ISSUE_QR', appt),
+    ).toThrow(NotFoundException);
+    expect(() =>
+      policy.authorize(assignedDoctor, 'ISSUE_QR', appt),
+    ).not.toThrow();
+    expect(() => policy.authorize(otherDoctor, 'ISSUE_QR', appt)).toThrow(
+      NotFoundException,
+    );
+    expect(() => policy.authorize(globalAdmin, 'ISSUE_QR', appt)).not.toThrow();
   });
 });

@@ -44,7 +44,9 @@ import { CreatePatientAppointmentDto } from '../../application/dto/create-patien
 import { RespondReminderDto } from '../../application/dto/respond-reminder.dto.js';
 import { ProcessQrCheckInDto } from '../../application/dto/process-qr-check-in.dto.js';
 import { CheckInTicketResponseDto } from '../../application/dto/check-in-ticket-response.dto.js';
+import { AppointmentQrResponseDto } from '../../application/dto/appointment-qr-response.dto.js';
 import { ProcessQrCheckInUseCase } from '../../application/use-cases/process-qr-check-in.use-case.js';
+import { IssueAppointmentQrUseCase } from '../../application/use-cases/issue-appointment-qr.use-case.js';
 import { ReminderTokenService } from '../../application/services/reminder-token.service.js';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator.js';
 import { CurrentClinic } from '../../../../shared/decorators/current-clinic.decorator.js';
@@ -68,6 +70,7 @@ export class AppointmentController {
     private readonly createPatientAppointmentUseCase: CreatePatientAppointmentUseCase,
     private readonly respondAppointmentReminderUseCase: RespondAppointmentReminderUseCase,
     private readonly processQrCheckInUseCase: ProcessQrCheckInUseCase,
+    private readonly issueAppointmentQrUseCase: IssueAppointmentQrUseCase,
     private readonly configService: ConfigService,
     private readonly reminderTokenService: ReminderTokenService,
   ) {}
@@ -209,6 +212,28 @@ export class AppointmentController {
     @CurrentUser() actor: AuthenticatedUser,
   ): Promise<AppointmentResponseDto> {
     return this.checkInAppointmentUseCase.execute(id, actor);
+  }
+
+  @Get(':id/check-in-qr')
+  @Auth()
+  @RequirePermissions('READ', 'APPOINTMENTS')
+  @ApiOperation({
+    summary: 'Emitir token QR para auto check-in de una cita médica',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Token QR emitido exitosamente con ventana de validez',
+    type: AppointmentQrResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Cita no encontrada o acceso no autorizado',
+  })
+  async getCheckInQr(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() actor: AuthenticatedUser,
+  ): Promise<AppointmentQrResponseDto> {
+    return this.issueAppointmentQrUseCase.execute(id, actor);
   }
 
   @Post('actions/qr-check-in')

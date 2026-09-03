@@ -28,22 +28,22 @@ export class AppointmentQrService {
 
   /**
    * Genera un token QR firmado criptográficamente para auto-checkin.
+   * La expiración es provista externamente en base a la ventana local de llegada.
    */
-  generateCheckInQrToken(appointment: {
-    id: number;
-    patientId: number;
-    clinicId?: number | null;
-    scheduleDate: Date;
-    startTime: Date;
-  }): string {
-    const expDate = new Date(appointment.scheduleDate);
-    expDate.setHours(23, 59, 59, 999);
-    const exp = Math.floor(expDate.getTime() / 1000) + 4 * 3600;
+  generateCheckInQrToken(
+    appointmentIdentity: {
+      appointmentId: number;
+      patientId: number;
+      clinicId?: number | null;
+    },
+    expiresAt: Date,
+  ): string {
+    const exp = Math.floor(expiresAt.getTime() / 1000);
 
     const payload: CheckInQrPayload = {
-      appointmentId: appointment.id,
-      patientId: appointment.patientId,
-      clinicId: appointment.clinicId ?? null,
+      appointmentId: appointmentIdentity.appointmentId,
+      patientId: appointmentIdentity.patientId,
+      clinicId: appointmentIdentity.clinicId ?? null,
       exp,
     };
 

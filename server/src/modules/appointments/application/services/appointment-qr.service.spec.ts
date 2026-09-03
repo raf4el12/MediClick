@@ -19,15 +19,14 @@ describe('AppointmentQrService (Check-in QR Criptográfico)', () => {
   });
 
   it('RED->GREEN: genera y valida un token QR legítimo para una cita médica', () => {
-    const appointment = {
-      id: 42,
+    const identity = {
+      appointmentId: 42,
       patientId: 7,
       clinicId: 1,
-      scheduleDate: new Date('2026-10-15T00:00:00Z'),
-      startTime: new Date('2026-10-15T10:00:00Z'),
     };
+    const expiresAt = new Date(Date.now() + 3600 * 1000);
 
-    const token = service.generateCheckInQrToken(appointment);
+    const token = service.generateCheckInQrToken(identity, expiresAt);
     expect(token).toMatch(/^mc_qr_[A-Za-z0-9_-]+\.[a-f0-9]+$/);
 
     const validation = service.validateCheckInQrToken(token);
@@ -35,18 +34,20 @@ describe('AppointmentQrService (Check-in QR Criptográfico)', () => {
     expect(validation.payload?.appointmentId).toBe(42);
     expect(validation.payload?.patientId).toBe(7);
     expect(validation.payload?.clinicId).toBe(1);
+    expect(validation.payload?.exp).toBe(
+      Math.floor(expiresAt.getTime() / 1000),
+    );
   });
 
   it('RED->GREEN: rechaza token adulterado o con firma incorrecta', () => {
-    const appointment = {
-      id: 42,
+    const identity = {
+      appointmentId: 42,
       patientId: 7,
       clinicId: 1,
-      scheduleDate: new Date('2026-10-15T00:00:00Z'),
-      startTime: new Date('2026-10-15T10:00:00Z'),
     };
+    const expiresAt = new Date(Date.now() + 3600 * 1000);
 
-    const token = service.generateCheckInQrToken(appointment);
+    const token = service.generateCheckInQrToken(identity, expiresAt);
     const tampered = token.slice(0, -4) + 'abcd';
 
     const validation = service.validateCheckInQrToken(tampered);

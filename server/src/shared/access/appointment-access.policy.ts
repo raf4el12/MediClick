@@ -12,7 +12,8 @@ export type AppointmentOperation =
   | 'CHECK_IN'
   | 'CONFIRM'
   | 'COMPLETE'
-  | 'MARK_NO_SHOW';
+  | 'MARK_NO_SHOW'
+  | 'ISSUE_QR';
 
 export interface AppointmentAccessResource {
   id: number;
@@ -25,6 +26,7 @@ const PATIENT_OPERATIONS = new Set<AppointmentOperation>([
   'READ_PAYMENT',
   'CANCEL',
   'RESCHEDULE',
+  'ISSUE_QR',
 ]);
 
 @Injectable()

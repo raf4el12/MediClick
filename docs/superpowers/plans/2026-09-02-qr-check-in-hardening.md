@@ -95,11 +95,11 @@ git commit -m "feat(appointments): define clinic-local check-in window"
 - Produces: `{ appointmentId: number; qrToken: string; opensAt: Date; expiresAt: Date }`
 - Produces: `generateCheckInQrToken(appointmentIdentity, expiresAt: Date): string`
 
-- [ ] **Step 1: Add issuance access tests**
+- [x] **Step 1: Add issuance access tests**
 
 Assert the patient owner can issue their QR, another patient gets 404, same-clinic receptionist can issue, another-clinic staff gets 404, a doctor can issue only for their appointment, and a global admin can issue. Reuse an `ISSUE_QR` operation in `AppointmentAccessPolicy` with the same resource shape used by other appointment operations.
 
-- [ ] **Step 2: Add expiry tests using persisted 1970 time-only data**
+- [x] **Step 2: Add expiry tests using persisted 1970 time-only data**
 
 ```ts
 const result = await useCase.execute(42, actor);
@@ -110,21 +110,21 @@ expect(qrService.generateCheckInQrToken).toHaveBeenCalledWith(
 );
 ```
 
-- [ ] **Step 3: Run focused specs and observe absent route/use case**
+- [x] **Step 3: Run focused specs and observe absent route/use case**
 
 ```bash
 cd server && pnpm test -- issue-appointment-qr appointment-qr.service appointment-access.policy --runInBand
 ```
 
-- [ ] **Step 4: Move expiry calculation out of the HMAC service**
+- [x] **Step 4: Move expiry calculation out of the HMAC service**
 
 The QR service accepts an already-computed `expiresAt` and writes `exp = Math.floor(expiresAt.getTime() / 1000)`. Remove `setHours` and the fixed four-hour offset. The issuance use case derives clinic from `appointment.schedule.doctor.clinic?.id ?? appointment.clinicId`, derives timezone from that persisted relation, computes the window, and signs the identity.
 
-- [ ] **Step 5: Register and expose the authenticated route**
+- [x] **Step 5: Register and expose the authenticated route**
 
 Decorate it with `@Auth()` and `@RequirePermissions('READ', 'APPOINTMENTS')`, pass `@CurrentUser() actor`, document 200/404, and return the DTO. Do not expose HMAC secrets or allow caller-supplied expiry/clinic/patient fields.
 
-- [ ] **Step 6: Run specs, build, and commit**
+- [x] **Step 6: Run specs, build, and commit**
 
 ```bash
 cd server && pnpm test -- issue-appointment-qr appointment-qr.service appointment-access.policy --runInBand
