@@ -14,6 +14,7 @@ import {
   DEFAULT_TIMEZONE,
 } from '../../../../shared/constants/defaults.constant.js';
 import { JobLeaseService } from '../../../../shared/redis/job-lease.service.js';
+import { logicalWindowId } from '../../../../shared/redis/job-window.js';
 
 const reminderAppointmentInclude = {
   patient: {
@@ -67,11 +68,12 @@ export class AppointmentReminderService {
    */
   @Cron('*/15 * * * *')
   async sendReminders(): Promise<void> {
+    const now = new Date();
     await this.jobLeaseService.withLease(
       'appointment-reminders',
-      840, // 14 min de lease para el intervalo de 15 min
+      logicalWindowId(now, 15 * 60_000),
+      905,
       async () => {
-        const now = new Date();
         await this.processT24Reminders(now);
         await this.processT2Reminders(now);
       },

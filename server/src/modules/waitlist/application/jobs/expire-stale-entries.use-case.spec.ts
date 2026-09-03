@@ -13,10 +13,12 @@ describe('ExpireStaleEntriesUseCase (SDD-020)', () => {
     } as unknown as jest.Mocked<Pick<IWaitlistEntryRepository, 'expireStale'>>;
 
     jobLeaseService = {
-      withLease: jest.fn().mockImplementation(async (_name, _ttl, fn) => {
-        const res = await (fn as () => Promise<unknown>)();
-        return { executed: true, result: res };
-      }),
+      withLease: jest
+        .fn()
+        .mockImplementation(async (_name, _windowId, _ttl, fn) => {
+          const res = await (fn as () => Promise<unknown>)();
+          return { executed: true, result: res };
+        }),
     } as unknown as jest.Mocked<Pick<JobLeaseService, 'withLease'>>;
 
     useCase = new ExpireStaleEntriesUseCase(
@@ -32,7 +34,8 @@ describe('ExpireStaleEntriesUseCase (SDD-020)', () => {
 
     expect(jobLeaseService.withLease).toHaveBeenCalledWith(
       'waitlist-expire-stale-entries',
-      840,
+      expect.any(String),
+      905,
       expect.any(Function) as unknown as () => Promise<void>,
     );
     expect(entryRepo.expireStale).toHaveBeenCalledWith(expect.any(Date));

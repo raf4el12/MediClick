@@ -122,7 +122,7 @@ git commit -m "fix(scheduler): claim jobs by logical window"
 - Consumes: the four-argument `JobLeaseService.withLease` from Task 1
 - Produces: `logicalWindowId(now: Date, windowMs: number): string`
 
-- [ ] **Step 1: Add deterministic helper tests**
+- [x] **Step 1: Add deterministic helper tests**
 
 ```ts
 expect(logicalWindowId(new Date('2026-09-02T10:15:29.999Z'), 30_000))
@@ -133,7 +133,7 @@ expect(logicalWindowId(new Date('2026-09-02T10:15:59.999Z'), 60_000))
 
 The value is `String(Math.floor(now.getTime() / windowMs) * windowMs)`; adjust the literal if Jest proves the fixture epoch was mistyped, but preserve the formula.
 
-- [ ] **Step 2: Run helper tests and observe missing implementation**
+- [x] **Step 2: Run helper tests and observe missing implementation**
 
 ```bash
 cd server && pnpm test -- job-window.spec.ts --runInBand
@@ -141,7 +141,7 @@ cd server && pnpm test -- job-window.spec.ts --runInBand
 
 Expected: FAIL because `job-window.ts` does not exist.
 
-- [ ] **Step 3: Implement the helper and update callers**
+- [x] **Step 3: Implement the helper and update callers**
 
 ```ts
 export function logicalWindowId(now: Date, windowMs: number): string {
@@ -162,7 +162,7 @@ withLease(name, logicalWindowId(now, 30_000), 35, fn)
 
 Callbacks must reuse that captured `now`, so operation timestamps and window identity cannot drift across a boundary.
 
-- [ ] **Step 4: Update all job mocks and assert job/window/TTL arguments**
+- [x] **Step 4: Update all job mocks and assert job/window/TTL arguments**
 
 For example:
 
@@ -175,7 +175,7 @@ expect(jobLeaseService.withLease).toHaveBeenCalledWith(
 );
 ```
 
-- [ ] **Step 5: Run all scheduled-job specs and build**
+- [x] **Step 5: Run all scheduled-job specs and build**
 
 ```bash
 cd server && pnpm test -- job-window job-lease expire-pending appointment-reminder expire-stale --runInBand
@@ -184,7 +184,7 @@ cd server && pnpm build
 
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add server/src/shared/redis/job-window.ts server/src/shared/redis/job-window.spec.ts server/src/modules/appointments/application/use-cases/expire-pending-appointments.use-case.ts server/src/modules/appointments/application/use-cases/expire-pending-appointments.use-case.spec.ts server/src/modules/scheduler/domain/services/appointment-reminder.service.ts server/src/modules/scheduler/domain/services/appointment-reminder.service.spec.ts server/src/modules/waitlist/application/jobs/expire-stale-entries.use-case.ts server/src/modules/waitlist/application/jobs/expire-stale-entries.use-case.spec.ts server/src/modules/waitlist/application/jobs/expire-stale-offers.use-case.ts server/src/modules/waitlist/application/jobs/expire-stale-offers.use-case.spec.ts

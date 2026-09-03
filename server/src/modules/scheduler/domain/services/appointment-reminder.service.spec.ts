@@ -55,10 +55,12 @@ describe('AppointmentReminderService', () => {
     } as unknown as CreateNotificationUseCase;
 
     const jobLeaseService = {
-      withLease: jest.fn().mockImplementation(async (_name, _ttl, fn) => {
-        const res = await (fn as () => Promise<unknown>)();
-        return { executed: true, result: res };
-      }),
+      withLease: jest
+        .fn()
+        .mockImplementation(async (_name, _windowId, _ttl, fn) => {
+          const res = await (fn as () => Promise<unknown>)();
+          return { executed: true, result: res };
+        }),
     } as unknown as JobLeaseService;
 
     service = new AppointmentReminderService(

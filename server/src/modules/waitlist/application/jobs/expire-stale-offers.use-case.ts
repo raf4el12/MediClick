@@ -4,6 +4,7 @@ import type { IWaitlistOfferRepository } from '../../domain/repositories/waitlis
 import { WaitlistLockService } from '../services/waitlist-lock.service.js';
 import { FindNextMatchUseCase } from '../use-cases/find-next-match.use-case.js';
 import { JobLeaseService } from '../../../../shared/redis/job-lease.service.js';
+import { logicalWindowId } from '../../../../shared/redis/job-window.js';
 
 /**
  * Cada 30s expira las ofertas vencidas (paciente no respondió) y reofrece cada
@@ -24,13 +25,13 @@ export class ExpireStaleOffersUseCase {
 
   @Cron('*/30 * * * * *')
   async execute(): Promise<void> {
+    const now = new Date();
     await this.jobLeaseService.withLease(
       'waitlist-expire-stale-offers',
-      25,
+      logicalWindowId(now, 30_000),
+      35,
       async () => {
-        const expired = await this.offerRepository.expireStaleReturning(
-          new Date(),
-        );
+        const expired = await this.offerRepository.expireStaleReturning(now);
         if (expired.length === 0) return;
 
         for (const offer of expired) {

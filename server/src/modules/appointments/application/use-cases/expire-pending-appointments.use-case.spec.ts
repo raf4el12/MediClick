@@ -25,10 +25,19 @@ describe('ExpirePendingAppointmentsUseCase', () => {
     >;
 
     jobLeaseService = {
-      withLease: jest.fn().mockImplementation(async (_name, _ttl, fn) => {
-        const res = await fn();
-        return { executed: true, result: res };
-      }),
+      withLease: jest
+        .fn()
+        .mockImplementation(
+          async (
+            _name: string,
+            _windowId: string,
+            _ttl: number,
+            fn: () => Promise<void>,
+          ) => {
+            const res = await fn();
+            return { executed: true, result: res };
+          },
+        ),
     } as unknown as jest.Mocked<Pick<JobLeaseService, 'withLease'>>;
 
     useCase = new ExpirePendingAppointmentsUseCase(
@@ -47,7 +56,8 @@ describe('ExpirePendingAppointmentsUseCase', () => {
 
     expect(jobLeaseService.withLease).toHaveBeenCalledWith(
       'expire-pending-appointments',
-      55,
+      expect.any(String),
+      65,
       expect.any(Function) as unknown as () => Promise<void>,
     );
 

@@ -3,6 +3,7 @@ import { Injectable, Inject, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import { JobLeaseService } from '../../../../shared/redis/job-lease.service.js';
+import { logicalWindowId } from '../../../../shared/redis/job-window.js';
 
 @Injectable()
 export class ExpirePendingAppointmentsUseCase {
@@ -16,11 +17,12 @@ export class ExpirePendingAppointmentsUseCase {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async execute(): Promise<void> {
+    const now = new Date();
     await this.jobLeaseService.withLease(
       'expire-pending-appointments',
-      55,
+      logicalWindowId(now, 60_000),
+      65,
       async () => {
-        const now = new Date();
         const expired =
           await this.appointmentRepository.expirePendingPastDeadline(now, {
             operationId: randomUUID(),

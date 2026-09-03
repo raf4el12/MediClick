@@ -47,10 +47,12 @@ describe('ExpireStaleOffersUseCase', () => {
       Pick<FindNextMatchUseCase, 'execute'>
     >;
     jobLeaseService = {
-      withLease: jest.fn().mockImplementation(async (_name, _ttl, fn) => {
-        const res = await (fn as () => Promise<unknown>)();
-        return { executed: true, result: res };
-      }),
+      withLease: jest
+        .fn()
+        .mockImplementation(async (_name, _windowId, _ttl, fn) => {
+          const res = await (fn as () => Promise<unknown>)();
+          return { executed: true, result: res };
+        }),
     } as unknown as jest.Mocked<Pick<JobLeaseService, 'withLease'>>;
 
     useCase = new ExpireStaleOffersUseCase(
@@ -66,6 +68,12 @@ describe('ExpireStaleOffersUseCase', () => {
 
     await useCase.execute();
 
+    expect(jobLeaseService.withLease).toHaveBeenCalledWith(
+      'waitlist-expire-stale-offers',
+      expect.any(String),
+      35,
+      expect.any(Function) as unknown as () => Promise<void>,
+    );
     expect(lock.release).not.toHaveBeenCalled();
     expect(findNextMatch.execute).not.toHaveBeenCalled();
   });
