@@ -9,6 +9,7 @@ export interface SendMailOptions {
   subject: string;
   template: string;
   context: Record<string, unknown>;
+  messageId?: string;
 }
 
 @Injectable()
@@ -53,6 +54,7 @@ export class MailService {
         to: options.to,
         subject: options.subject,
         html,
+        ...(options.messageId ? { messageId: options.messageId } : {}),
       });
 
       this.logger.log(`Email enviado a ${options.to} [${options.template}]`);

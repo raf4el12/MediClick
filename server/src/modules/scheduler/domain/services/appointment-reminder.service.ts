@@ -1,7 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
-import { Prisma } from '@prisma/client';
+import { Prisma, ReminderKind } from '@prisma/client';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { MailService } from '../../../../shared/mail/mail.service.js';
 import { CreateNotificationUseCase } from '../../../notifications/application/use-cases/create-notification.use-case.js';
@@ -15,6 +15,8 @@ import {
 } from '../../../../shared/constants/defaults.constant.js';
 import { JobLeaseService } from '../../../../shared/redis/job-lease.service.js';
 import { logicalWindowId } from '../../../../shared/redis/job-window.js';
+import { localDateAndTimeToInstant } from '../../../../shared/utils/date-time.utils.js';
+import type { IAppointmentReminderDeliveryRepository } from '../repositories/appointment-reminder-delivery.repository.js';
 
 const reminderAppointmentInclude = {
   patient: {
@@ -49,6 +51,13 @@ type ReminderAppointment = Prisma.AppointmentsGetPayload<{
   include: typeof reminderAppointmentInclude;
 }>;
 
+const CRON_INTERVAL_MS = 15 * 60_000;
+const T24_TARGET_MS = 24 * 60 * 60 * 1000;
+const T2_TARGET_MS = 2 * 60 * 60 * 1000;
+
+const inTargetWindow = (deltaMs: number, targetMs: number) =>
+  deltaMs > targetMs - CRON_INTERVAL_MS && deltaMs <= targetMs;
+
 @Injectable()
 export class AppointmentReminderService {
   private readonly logger = new Logger(AppointmentReminderService.name);
@@ -60,6 +69,8 @@ export class AppointmentReminderService {
     private readonly reminderTokenService: ReminderTokenService,
     private readonly configService: ConfigService,
     private readonly jobLeaseService: JobLeaseService,
+    @Inject('IAppointmentReminderDeliveryRepository')
+    private readonly reminderDeliveryRepo: IAppointmentReminderDeliveryRepository,
   ) {}
 
   /**
@@ -74,163 +85,217 @@ export class AppointmentReminderService {
       logicalWindowId(now, 15 * 60_000),
       905,
       async () => {
-        await this.processT24Reminders(now);
-        await this.processT2Reminders(now);
+        await this.processReminders(now);
       },
     );
   }
 
   /**
-   * T-24h: Envía recordatorio preventivo con 24 horas de antelación
-   * para citas confirmadas que aún no tienen recordatorio T24 registrado.
+   * Evalúa las citas en una sola lectura para asegurar consistencia temporal
+   * entre las ventanas disjuntas T-24h y T-2h.
    */
-  private async processT24Reminders(now: Date): Promise<void> {
-    const maxT24 = new Date(now.getTime() + 25 * 3600 * 1000);
+  private async processReminders(now: Date): Promise<void> {
+    const minDate = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1),
+    );
+    const maxDate = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 2),
+    );
 
     const appointments = await this.prisma.appointments.findMany({
       where: {
         status: 'CONFIRMED',
         deleted: false,
-        startTime: {
-          gte: now,
-          lte: maxT24,
-        },
-        reminders: {
-          none: { kind: 'T24' },
+        schedule: {
+          scheduleDate: {
+            gte: minDate,
+            lte: maxDate,
+          },
         },
       },
       include: reminderAppointmentInclude,
     });
 
     for (const appt of appointments) {
-      await this.deliverReminder(appt, 'T24', false);
-    }
-  }
+      const timezone =
+        appt.schedule.doctor.clinic?.timezone ?? DEFAULT_TIMEZONE;
 
-  /**
-   * T-2h: Envía recordatorio urgente con 2 horas de antelación para citas
-   * confirmadas que NO hayan confirmado asistencia aún (confirmedAt = null).
-   * Marca además la cita con isAtRisk = true para alertar a recepción.
-   */
-  private async processT2Reminders(now: Date): Promise<void> {
-    const maxT2 = new Date(now.getTime() + 2.5 * 3600 * 1000);
+      let scheduledFor: Date;
+      try {
+        scheduledFor = localDateAndTimeToInstant(
+          appt.schedule.scheduleDate,
+          appt.startTime,
+          timezone,
+        );
+      } catch (err: unknown) {
+        this.logger.warn(
+          `Cita ${appt.id} omitida por instante inválido: ${
+            err instanceof Error ? err.message : String(err)
+          }`,
+        );
+        continue;
+      }
 
-    const appointments = await this.prisma.appointments.findMany({
-      where: {
-        status: 'CONFIRMED',
-        deleted: false,
-        confirmedAt: null,
-        startTime: {
-          gte: now,
-          lte: maxT2,
-        },
-        reminders: {
-          none: { kind: 'T2' },
-        },
-      },
-      include: reminderAppointmentInclude,
-    });
+      const deltaMs = scheduledFor.getTime() - now.getTime();
 
-    for (const appt of appointments) {
-      await this.deliverReminder(appt, 'T2', true);
+      let kind: ReminderKind | null = null;
+      if (inTargetWindow(deltaMs, T24_TARGET_MS)) {
+        kind = ReminderKind.T24;
+      } else if (
+        inTargetWindow(deltaMs, T2_TARGET_MS) &&
+        appt.confirmedAt === null
+      ) {
+        kind = ReminderKind.T2;
+      }
+
+      if (!kind) {
+        continue;
+      }
+
+      await this.deliverReminder(appt, kind, scheduledFor, now);
     }
   }
 
   private async deliverReminder(
     appt: ReminderAppointment,
-    kind: 'T24' | 'T2',
-    isUrgent: boolean,
+    kind: ReminderKind,
+    scheduledFor: Date,
+    now: Date,
   ): Promise<void> {
-    try {
-      await this.prisma.appointmentReminders.create({
-        data: {
-          appointmentId: appt.id,
-          kind,
-          channel: 'EMAIL',
-        },
-      });
-    } catch (error: unknown) {
-      const isUniqueConstraint =
-        typeof error === 'object' &&
-        error !== null &&
-        'code' in error &&
-        (error as { code: string }).code === 'P2002';
+    const isUrgent = kind === ReminderKind.T2;
+    const patientName = `${appt.patient.profile.name} ${appt.patient.profile.lastName}`;
+    const doctorName = `${appt.schedule.doctor.profile.name} ${appt.schedule.doctor.profile.lastName}`;
+    const clinicName = appt.schedule.doctor.clinic?.name ?? DEFAULT_CLINIC_NAME;
+    const clinicTimezone =
+      appt.schedule.doctor.clinic?.timezone ?? DEFAULT_TIMEZONE;
+    const patientUserId = appt.patient.profile.userId;
+    const recipientEmail = appt.patient.profile.user?.email;
 
-      if (isUniqueConstraint) {
-        return;
+    const confirmToken = this.reminderTokenService.generateToken(
+      appt.id,
+      ReminderAction.CONFIRM,
+      86_400,
+    );
+    const cancelToken = this.reminderTokenService.generateToken(
+      appt.id,
+      ReminderAction.CANCEL,
+      86_400,
+    );
+
+    const backendUrl =
+      this.configService.get<string>('BACKEND_URL') ?? 'http://localhost:5100';
+    const confirmUrl = `${backendUrl}/appointments/actions/respond?token=${confirmToken}`;
+    const cancelUrl = `${backendUrl}/appointments/actions/respond?token=${cancelToken}`;
+
+    let atLeastOneChannelSent = false;
+
+    // 1. Canal EMAIL
+    if (recipientEmail) {
+      const claim = await this.reminderDeliveryRepo.claim({
+        appointmentId: appt.id,
+        kind,
+        channel: 'EMAIL',
+        scheduledFor,
+        now,
+      });
+
+      if (claim) {
+        const messageId = `<appointment-${appt.id}-${kind}-${scheduledFor.getTime()}@mediclick>`;
+        try {
+          const emailSent = await this.mailService.send({
+            to: recipientEmail,
+            subject: isUrgent
+              ? `⚠️ Recordatorio urgente: Tu cita médica es en 2 horas — ${clinicName}`
+              : `Recordatorio: Tu cita médica es mañana — ${clinicName}`,
+            template: 'appointment-reminder',
+            context: {
+              patientName,
+              doctorName,
+              specialty: appt.schedule.specialty.name,
+              clinicName,
+              clinicTimezone,
+              scheduleDate: appt.schedule.scheduleDate,
+              startTime: appt.startTime,
+              endTime: appt.endTime,
+              isUrgent,
+              confirmUrl,
+              cancelUrl,
+            },
+            messageId,
+          });
+
+          if (emailSent) {
+            await this.reminderDeliveryRepo.markSent(
+              claim.id,
+              claim.claimToken,
+              new Date(),
+            );
+            atLeastOneChannelSent = true;
+          } else {
+            const nextAttemptAt = new Date(now.getTime() + 5 * 60_000);
+            await this.reminderDeliveryRepo.markFailed(
+              claim.id,
+              claim.claimToken,
+              nextAttemptAt,
+              'SMTP_FAILED',
+            );
+          }
+        } catch {
+          const nextAttemptAt = new Date(now.getTime() + 5 * 60_000);
+          await this.reminderDeliveryRepo.markFailed(
+            claim.id,
+            claim.claimToken,
+            nextAttemptAt,
+            'SMTP_ERROR',
+          );
+        }
       }
-      const message = error instanceof Error ? error.message : String(error);
-      this.logger.error(
-        `Error registrando recordatorio ${kind} para cita ${appt.id}: ${message}`,
-      );
-      return;
     }
 
-    try {
-      const patientName = `${appt.patient.profile.name} ${appt.patient.profile.lastName}`;
-      const doctorName = `${appt.schedule.doctor.profile.name} ${appt.schedule.doctor.profile.lastName}`;
-      const clinicName =
-        appt.schedule.doctor.clinic?.name ?? DEFAULT_CLINIC_NAME;
-      const clinicTimezone =
-        appt.schedule.doctor.clinic?.timezone ?? DEFAULT_TIMEZONE;
-      const patientUserId = appt.patient.profile.userId;
-      const recipientEmail = appt.patient.profile.user?.email;
+    // 2. Canal IN_APP
+    if (patientUserId) {
+      const claim = await this.reminderDeliveryRepo.claim({
+        appointmentId: appt.id,
+        kind,
+        channel: 'IN_APP',
+        scheduledFor,
+        now,
+      });
 
-      const confirmToken = this.reminderTokenService.generateToken(
-        appt.id,
-        ReminderAction.CONFIRM,
-        86_400,
-      );
-      const cancelToken = this.reminderTokenService.generateToken(
-        appt.id,
-        ReminderAction.CANCEL,
-        86_400,
-      );
-
-      const backendUrl =
-        this.configService.get<string>('BACKEND_URL') ??
-        'http://localhost:5100';
-      const confirmUrl = `${backendUrl}/appointments/actions/respond?token=${confirmToken}`;
-      const cancelUrl = `${backendUrl}/appointments/actions/respond?token=${cancelToken}`;
-
-      if (recipientEmail) {
-        await this.mailService.send({
-          to: recipientEmail,
-          subject: isUrgent
-            ? `⚠️ Recordatorio urgente: Tu cita médica es en 2 horas — ${clinicName}`
-            : `Recordatorio: Tu cita médica es mañana — ${clinicName}`,
-          template: 'appointment-reminder',
-          context: {
-            patientName,
-            doctorName,
-            specialty: appt.schedule.specialty.name,
-            clinicName,
-            clinicTimezone,
-            scheduleDate: appt.schedule.scheduleDate,
-            startTime: appt.startTime,
-            endTime: appt.endTime,
-            isUrgent,
-            confirmUrl,
-            cancelUrl,
-          },
-        });
+      if (claim) {
+        try {
+          await this.createNotification.execute({
+            userId: patientUserId,
+            type: 'APPOINTMENT_REMINDER',
+            title: isUrgent
+              ? 'Recordatorio urgente de cita (2 horas)'
+              : 'Recordatorio de cita médica (mañana)',
+            message: isUrgent
+              ? `Tu cita con el Dr(a). ${doctorName} es en 2 horas. Por favor confirma tu asistencia.`
+              : `Tu cita con el Dr(a). ${doctorName} es mañana.`,
+            metadata: { appointmentId: appt.id, kind },
+            clinicId: appt.clinicId ?? null,
+          });
+          await this.reminderDeliveryRepo.markSent(
+            claim.id,
+            claim.claimToken,
+            new Date(),
+          );
+          atLeastOneChannelSent = true;
+        } catch {
+          const nextAttemptAt = new Date(now.getTime() + 5 * 60_000);
+          await this.reminderDeliveryRepo.markFailed(
+            claim.id,
+            claim.claimToken,
+            nextAttemptAt,
+            'NOTIFICATION_FAILED',
+          );
+        }
       }
+    }
 
-      if (patientUserId) {
-        await this.createNotification.execute({
-          userId: patientUserId,
-          type: 'APPOINTMENT_REMINDER',
-          title: isUrgent
-            ? 'Recordatorio urgente de cita (2 horas)'
-            : 'Recordatorio de cita médica (mañana)',
-          message: isUrgent
-            ? `Tu cita con el Dr(a). ${doctorName} es en 2 horas. Por favor confirma tu asistencia.`
-            : `Tu cita con el Dr(a). ${doctorName} es mañana.`,
-          metadata: { appointmentId: appt.id, kind },
-          clinicId: appt.clinicId ?? null,
-        });
-      }
-
+    // 3. Actualizar estado de la cita si al menos un canal fue exitoso
+    if (atLeastOneChannelSent) {
       await this.prisma.appointments.update({
         where: { id: appt.id },
         data: {
@@ -241,11 +306,6 @@ export class AppointmentReminderService {
 
       this.logger.log(
         `[REMINDER ${kind}] Enviado a cita ${appt.id} (paciente: ${patientName}).`,
-      );
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : String(error);
-      this.logger.error(
-        `Fallo al enviar recordatorio ${kind} para cita ${appt.id}: ${message}`,
       );
     }
   }

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/unbound-method */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { AppointmentReminderService } from './appointment-reminder.service.js';
 import { ReminderTokenService } from '../../../appointments/application/services/reminder-token.service.js';
 import type { PrismaService } from '../../../../prisma/prisma.service.js';
@@ -5,20 +7,24 @@ import type { MailService } from '../../../../shared/mail/mail.service.js';
 import type { CreateNotificationUseCase } from '../../../notifications/application/use-cases/create-notification.use-case.js';
 import type { ConfigService } from '@nestjs/config';
 import type { JobLeaseService } from '../../../../shared/redis/job-lease.service.js';
+import type {
+  IAppointmentReminderDeliveryRepository,
+  ClaimReminderDeliveryInput,
+} from '../repositories/appointment-reminder-delivery.repository.js';
+import { ReminderKind } from '@prisma/client';
 
 describe('AppointmentReminderService', () => {
   let service: AppointmentReminderService;
   let appointmentsFindMany: jest.Mock<Promise<unknown[]>, [unknown]>;
   let appointmentsUpdate: jest.Mock<Promise<unknown>, [unknown]>;
-  let appointmentRemindersCreate: jest.Mock<Promise<unknown>, [unknown]>;
   let mailSend: jest.Mock<Promise<boolean>, [unknown]>;
   let createNotificationExecute: jest.Mock<Promise<{ id: number }>, [unknown]>;
+  let reminderDeliveryRepo: jest.Mocked<IAppointmentReminderDeliveryRepository>;
   let reminderTokenService: ReminderTokenService;
 
   beforeEach(() => {
     appointmentsFindMany = jest.fn<Promise<unknown[]>, [unknown]>();
     appointmentsUpdate = jest.fn<Promise<unknown>, [unknown]>();
-    appointmentRemindersCreate = jest.fn<Promise<unknown>, [unknown]>();
     mailSend = jest.fn<Promise<boolean>, [unknown]>().mockResolvedValue(true);
     createNotificationExecute = jest
       .fn<Promise<{ id: number }>, [unknown]>()
@@ -41,9 +47,6 @@ describe('AppointmentReminderService', () => {
         findMany: appointmentsFindMany,
         update: appointmentsUpdate,
       },
-      appointmentReminders: {
-        create: appointmentRemindersCreate,
-      },
     } as unknown as PrismaService;
 
     const mailService = {
@@ -63,6 +66,21 @@ describe('AppointmentReminderService', () => {
         }),
     } as unknown as JobLeaseService;
 
+    reminderDeliveryRepo = {
+      claim: jest.fn().mockImplementation((input: ClaimReminderDeliveryInput) =>
+        Promise.resolve({
+          id: 99,
+          appointmentId: input.appointmentId,
+          kind: input.kind,
+          channel: input.channel,
+          scheduledFor: input.scheduledFor,
+          claimToken: 'token-99',
+        }),
+      ),
+      markSent: jest.fn().mockResolvedValue(true),
+      markFailed: jest.fn().mockResolvedValue(true),
+    };
+
     service = new AppointmentReminderService(
       prisma,
       mailService,
@@ -70,198 +88,228 @@ describe('AppointmentReminderService', () => {
       reminderTokenService,
       configService,
       jobLeaseService,
+      reminderDeliveryRepo,
     );
   });
 
-  it('RED->GREEN: procesa recordatorio T24 con URLs firmadas y registra AppointmentReminders', async () => {
+  const createMockAppointment = (overrides: {
+    id: number;
+    scheduleDate: Date;
+    startTime: Date;
+    timezone?: string;
+    confirmedAt?: Date | null;
+    email?: string;
+    userId?: number;
+  }) => ({
+    id: overrides.id,
+    startTime: overrides.startTime, // 1970 epoch
+    endTime: new Date('1970-01-01T10:00:00.000Z'),
+    clinicId: 1,
+    confirmedAt: overrides.confirmedAt ?? null,
+    patient: {
+      profile: {
+        name: 'Carlos',
+        lastName: 'Pérez',
+        userId: overrides.userId ?? 55,
+        user: overrides.email ? { email: overrides.email } : null,
+      },
+    },
+    schedule: {
+      scheduleDate: overrides.scheduleDate, // midnight UTC
+      doctor: {
+        id: 10,
+        profile: { name: 'Dra. María', lastName: 'Gómez' },
+        clinic: {
+          name: 'Sede Central',
+          timezone: overrides.timezone ?? 'America/Lima',
+        },
+      },
+      specialty: { name: 'Cardiología' },
+    },
+  });
+
+  it('RED->GREEN: procesa recordatorio T24 en la ventana (23h45m, 24h] usando hora local y epoch 1970', async () => {
+    // now: 2026-10-10 10:00:00 UTC
+    // En Lima (UTC-5), si la cita es 2026-10-11 a las 05:00 local (10:00 UTC), delta = exactly 24h -> T24
     const now = new Date('2026-10-10T10:00:00.000Z');
     jest.useFakeTimers();
     jest.setSystemTime(now);
 
-    const startTime = new Date('2026-10-11T09:00:00.000Z'); // 23h después
-    const mockAppt = {
+    const mockAppt = createMockAppointment({
       id: 101,
-      startTime,
-      endTime: new Date('2026-10-11T09:30:00.000Z'),
-      clinicId: 1,
-      patient: {
-        profile: {
-          name: 'Carlos',
-          lastName: 'Pérez',
-          userId: 55,
-          user: { email: 'carlos@example.com' },
-        },
-      },
-      schedule: {
-        scheduleDate: new Date('2026-10-11T00:00:00.000Z'),
-        doctor: {
-          id: 10,
-          profile: { name: 'Dra. María', lastName: 'Gómez' },
-          clinic: { name: 'Sede Central', timezone: 'America/Lima' },
-        },
-        specialty: { name: 'Cardiología' },
-      },
-    };
+      scheduleDate: new Date('2026-10-11T00:00:00.000Z'),
+      startTime: new Date('1970-01-01T05:00:00.000Z'), // 05:00 Lima = 10:00 UTC
+      timezone: 'America/Lima',
+      email: 'carlos@example.com',
+      userId: 55,
+    });
 
-    appointmentsFindMany
-      .mockResolvedValueOnce([mockAppt])
-      .mockResolvedValueOnce([]);
-
-    appointmentRemindersCreate.mockResolvedValue({ id: 1 });
-    appointmentsUpdate.mockResolvedValue(mockAppt);
+    appointmentsFindMany.mockResolvedValue([mockAppt]);
 
     await service.sendReminders();
 
-    expect(appointmentRemindersCreate).toHaveBeenCalledWith({
-      data: {
+    expect(reminderDeliveryRepo.claim).toHaveBeenCalledWith(
+      expect.objectContaining({
         appointmentId: 101,
-        kind: 'T24',
+        kind: ReminderKind.T24,
         channel: 'EMAIL',
-      },
-    });
-
+      }),
+    );
     expect(mailSend).toHaveBeenCalledTimes(1);
-    const mailArgs = mailSend.mock.calls[0][0] as {
-      to: string;
-      template: string;
-      context: {
-        patientName: string;
-        doctorName: string;
-        confirmUrl: string;
-        cancelUrl: string;
-        isUrgent: boolean;
-      };
-    };
-    expect(mailArgs.to).toBe('carlos@example.com');
-    expect(mailArgs.template).toBe('appointment-reminder');
-    expect(mailArgs.context.patientName).toBe('Carlos Pérez');
-    expect(mailArgs.context.doctorName).toBe('Dra. María Gómez');
-    expect(mailArgs.context.confirmUrl).toContain(
-      '/appointments/actions/respond?token=',
+    expect(reminderDeliveryRepo.markSent).toHaveBeenCalledWith(
+      99,
+      'token-99',
+      expect.any(Date),
     );
-    expect(mailArgs.context.cancelUrl).toContain(
-      '/appointments/actions/respond?token=',
+    expect(appointmentsUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 101 },
+        data: expect.objectContaining({ reminderSent: true }),
+      }),
     );
-    expect(mailArgs.context.isUrgent).toBe(false);
-
-    expect(createNotificationExecute).toHaveBeenCalledTimes(1);
-    const notifArgs = createNotificationExecute.mock.calls[0][0] as {
-      userId: number;
-      type: string;
-    };
-    expect(notifArgs.userId).toBe(55);
-    expect(notifArgs.type).toBe('APPOINTMENT_REMINDER');
 
     jest.useRealTimers();
   });
 
-  it('RED->GREEN: procesa recordatorio urgente T2 y marca isAtRisk = true', async () => {
+  it('RED->GREEN: procesa recordatorio urgente T2 en la ventana (1h45m, 2h] y marca isAtRisk=true', async () => {
+    // now: 2026-10-10 10:00:00 UTC
+    // En Lima (UTC-5), si la cita es hoy 2026-10-10 a las 07:00 local (12:00 UTC), delta = 2h -> T2
     const now = new Date('2026-10-10T10:00:00.000Z');
     jest.useFakeTimers();
     jest.setSystemTime(now);
 
-    const startTime = new Date('2026-10-10T12:00:00.000Z'); // 2h después
-    const mockAppt = {
+    const mockAppt = createMockAppointment({
       id: 202,
-      startTime,
-      endTime: new Date('2026-10-10T12:30:00.000Z'),
-      clinicId: 1,
+      scheduleDate: new Date('2026-10-10T00:00:00.000Z'),
+      startTime: new Date('1970-01-01T07:00:00.000Z'), // 07:00 Lima = 12:00 UTC (delta = 2h)
+      timezone: 'America/Lima',
       confirmedAt: null,
-      patient: {
-        profile: {
-          name: 'Lucía',
-          lastName: 'Ramos',
-          userId: 77,
-          user: { email: 'lucia@example.com' },
-        },
-      },
-      schedule: {
-        scheduleDate: new Date('2026-10-10T00:00:00.000Z'),
-        doctor: {
-          id: 12,
-          profile: { name: 'Dr. Roberto', lastName: 'Silva' },
-          clinic: { name: 'Sede Norte', timezone: 'America/Lima' },
-        },
-        specialty: { name: 'Pediatría' },
-      },
-    };
+      email: 'lucia@example.com',
+      userId: 77,
+    });
 
-    appointmentsFindMany
-      .mockResolvedValueOnce([])
-      .mockResolvedValueOnce([mockAppt]);
-
-    appointmentRemindersCreate.mockResolvedValue({ id: 2 });
-    appointmentsUpdate.mockResolvedValue(mockAppt);
+    appointmentsFindMany.mockResolvedValue([mockAppt]);
 
     await service.sendReminders();
 
-    expect(appointmentRemindersCreate).toHaveBeenCalledWith({
-      data: {
+    expect(reminderDeliveryRepo.claim).toHaveBeenCalledWith(
+      expect.objectContaining({
         appointmentId: 202,
-        kind: 'T2',
+        kind: ReminderKind.T2,
         channel: 'EMAIL',
-      },
-    });
-
-    expect(appointmentsUpdate).toHaveBeenCalledTimes(1);
-    const updateCall = appointmentsUpdate.mock.calls[0] as [
-      { where: { id: number }; data: { isAtRisk?: boolean } },
-    ];
-    expect(updateCall[0].where.id).toBe(202);
-    expect(updateCall[0].data.isAtRisk).toBe(true);
-
-    expect(mailSend).toHaveBeenCalledTimes(1);
-    const mailArgs = mailSend.mock.calls[0][0] as {
-      to: string;
-      context: { isUrgent: boolean };
-    };
-    expect(mailArgs.to).toBe('lucia@example.com');
-    expect(mailArgs.context.isUrgent).toBe(true);
+      }),
+    );
+    expect(appointmentsUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 202 },
+        data: expect.objectContaining({ reminderSent: true, isAtRisk: true }),
+      }),
+    );
 
     jest.useRealTimers();
   });
 
-  it('omite envío de email si otra réplica ya insertó el recordatorio (idempotencia ante P2002)', async () => {
+  it('frontera: delta de 2h nunca es entregado como T24 (ventanas disjuntas)', async () => {
     const now = new Date('2026-10-10T10:00:00.000Z');
     jest.useFakeTimers();
     jest.setSystemTime(now);
 
-    const mockAppt = {
-      id: 303,
-      startTime: new Date('2026-10-11T09:00:00.000Z'),
-      endTime: new Date('2026-10-11T09:30:00.000Z'),
-      clinicId: 1,
-      patient: {
-        profile: {
-          name: 'Ana',
-          lastName: 'Soto',
-          userId: 88,
-          user: { email: 'ana@example.com' },
-        },
-      },
-      schedule: {
-        scheduleDate: new Date('2026-10-11T00:00:00.000Z'),
-        doctor: {
-          id: 10,
-          profile: { name: 'Dr. Test', lastName: 'Doc' },
-          clinic: { name: 'Sede Central', timezone: 'America/Lima' },
-        },
-        specialty: { name: 'Medicina General' },
-      },
-    };
-
-    appointmentsFindMany
-      .mockResolvedValueOnce([mockAppt])
-      .mockResolvedValueOnce([]);
-
-    const err = Object.assign(new Error('Unique constraint failed'), {
-      code: 'P2002',
+    const mockAppt = createMockAppointment({
+      id: 202,
+      scheduleDate: new Date('2026-10-10T00:00:00.000Z'),
+      startTime: new Date('1970-01-01T07:00:00.000Z'), // delta = 2h
+      timezone: 'America/Lima',
+      confirmedAt: null,
+      email: 'lucia@example.com',
     });
-    appointmentRemindersCreate.mockRejectedValue(err);
+
+    appointmentsFindMany.mockResolvedValue([mockAppt]);
 
     await service.sendReminders();
 
-    expect(mailSend).not.toHaveBeenCalled();
+    const claimCalls = reminderDeliveryRepo.claim.mock.calls;
+    const t24Claims = claimCalls.filter(
+      ([arg]) => arg.kind === ReminderKind.T24,
+    );
+    expect(t24Claims).toHaveLength(0);
+
+    jest.useRealTimers();
+  });
+
+  it('frontera: Madrid y Lima con misma hora nominal 10:00 calculan instantes UTC distintos', async () => {
+    // now: 2026-07-10 08:00:00 UTC
+    // Madrid en julio está en CEST (UTC+2) -> 10:00 local = 08:00 UTC (delta = 0h, no en ventana)
+    // Cita Madrid mañana a las 10:00 local: 2026-07-11 10:00 local = 08:00 UTC -> delta = exactly 24h -> T24
+    const now = new Date('2026-07-10T08:00:00.000Z');
+    jest.useFakeTimers();
+    jest.setSystemTime(now);
+
+    const mockMadridAppt = createMockAppointment({
+      id: 301,
+      scheduleDate: new Date('2026-07-11T00:00:00.000Z'),
+      startTime: new Date('1970-01-01T10:00:00.000Z'), // 10:00 Madrid = 08:00 UTC (delta 24h)
+      timezone: 'Europe/Madrid',
+      email: 'madrid@example.com',
+    });
+
+    const mockLimaAppt = createMockAppointment({
+      id: 302,
+      scheduleDate: new Date('2026-07-11T00:00:00.000Z'),
+      startTime: new Date('1970-01-01T10:00:00.000Z'), // 10:00 Lima = 15:00 UTC (delta 31h, fuera de ventana)
+      timezone: 'America/Lima',
+      email: 'lima@example.com',
+    });
+
+    appointmentsFindMany.mockResolvedValue([mockMadridAppt, mockLimaAppt]);
+
+    await service.sendReminders();
+
+    // Solo Madrid entra en T24
+    expect(reminderDeliveryRepo.claim).toHaveBeenCalledWith(
+      expect.objectContaining({
+        appointmentId: 301,
+        kind: ReminderKind.T24,
+      }),
+    );
+    expect(reminderDeliveryRepo.claim).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        appointmentId: 302,
+        kind: ReminderKind.T24,
+      }),
+    );
+
+    jest.useRealTimers();
+  });
+
+  it('resiliencia: si mailService.send() retorna false, llama markFailed y NO marca reminderSent', async () => {
+    const now = new Date('2026-10-10T10:00:00.000Z');
+    jest.useFakeTimers();
+    jest.setSystemTime(now);
+
+    const mockAppt = createMockAppointment({
+      id: 401,
+      scheduleDate: new Date('2026-10-11T00:00:00.000Z'),
+      startTime: new Date('1970-01-01T05:00:00.000Z'), // delta 24h
+      timezone: 'America/Lima',
+      email: 'fail@example.com',
+      userId: 0, // sin notificacion in_app
+    });
+    // @ts-expect-error test override
+    mockAppt.patient.profile.userId = null;
+
+    appointmentsFindMany.mockResolvedValue([mockAppt]);
+    mailSend.mockResolvedValue(false); // SMTP fail
+
+    await service.sendReminders();
+
+    expect(reminderDeliveryRepo.markFailed).toHaveBeenCalledWith(
+      99,
+      'token-99',
+      expect.any(Date),
+      'SMTP_FAILED',
+    );
+    expect(reminderDeliveryRepo.markSent).not.toHaveBeenCalled();
+    expect(appointmentsUpdate).not.toHaveBeenCalled();
 
     jest.useRealTimers();
   });

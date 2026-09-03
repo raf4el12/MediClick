@@ -163,7 +163,7 @@ git commit -m "fix(reminders): persist retryable delivery claims"
 - Consumes: reminder delivery repository from Task 2
 - Produces: optional `SendMailOptions.messageId?: string` mapped to Nodemailer `messageId`
 
-- [ ] **Step 1: Replace unrealistic start-time fixtures and add boundary tests**
+- [x] **Step 1: Replace unrealistic start-time fixtures and add boundary tests**
 
 All appointment fixtures must use `startTime: new Date('1970-01-01T...Z')`. Freeze `now` and assert:
 
@@ -175,13 +175,13 @@ All appointment fixtures must use `startTime: new Date('1970-01-01T...Z')`. Free
 // mailService.send() === false calls markFailed, never markSent.
 ```
 
-- [ ] **Step 2: Run the scheduler spec and observe selection/delivery failures**
+- [x] **Step 2: Run the scheduler spec and observe selection/delivery failures**
 
 ```bash
 cd server && pnpm test -- appointment-reminder.service.spec.ts --runInBand
 ```
 
-- [ ] **Step 3: Query by calendar date, then filter by the computed instant**
+- [x] **Step 3: Query by calendar date, then filter by the computed instant**
 
 Query confirmed, non-deleted appointments whose `schedule.scheduleDate` is between UTC midnight yesterday and two days ahead. Do not compare `startTime` to `now`. Compute `deltaMs = scheduledFor.getTime() - now.getTime()` and use:
 
@@ -193,20 +193,20 @@ const inTargetWindow = (deltaMs: number, targetMs: number) =>
 
 Process T24 and T2 from one candidate read so an appointment cannot enter inconsistent snapshots. T2 still requires `confirmedAt === null`; T24 and T2 have no overlap.
 
-- [ ] **Step 4: Claim and mark each channel around real I/O**
+- [x] **Step 4: Claim and mark each channel around real I/O**
 
 Claim `EMAIL` only when an address exists and `IN_APP` only when a user exists. Use a deterministic email Message-ID such as `<appointment-{id}-{kind}-{scheduledForEpoch}@mediclick>` as the provider idempotency hint. A delivery succeeds only when `MailService.send()` returns `true` or the in-app use case resolves. On failure call `markFailed` with bounded error codes and exponential backoff; do not store message bodies or recipient PII in `lastError`.
 
 Set `reminderSent=true` and, for T2, `isAtRisk=true` only if at least one channel was marked sent.
 
-- [ ] **Step 5: Run focused tests and lint modified files**
+- [x] **Step 5: Run focused tests and lint modified files**
 
 ```bash
 cd server && pnpm test -- appointment-reminder.service.spec.ts mail.service.spec.ts --runInBand
 cd server && pnpm exec eslint src/modules/scheduler/domain/services/appointment-reminder.service.ts src/shared/mail/mail.service.ts
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add server/src/modules/scheduler server/src/shared/mail
