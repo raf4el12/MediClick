@@ -99,7 +99,7 @@ git commit -m "fix(time): derive appointment instants from clinic timezone"
 - Produces: `markSent(id: number, claimToken: string, sentAt: Date): Promise<boolean>`
 - Produces: `markFailed(id: number, claimToken: string, nextAttemptAt: Date, errorCode: string): Promise<boolean>`
 
-- [ ] **Step 1: Add an integration spec for one winner and retry-after-failure**
+- [x] **Step 1: Add an integration spec for one winner and retry-after-failure**
 
 ```ts
 const claims = await Promise.all([
@@ -113,7 +113,7 @@ await expect(repository.claim({ ...input, now: later })).resolves.not.toBeNull()
 
 Also assert that the same appointment/kind/channel with a different `scheduledFor` can be claimed after rescheduling.
 
-- [ ] **Step 2: Run the integration spec and observe missing schema/repository**
+- [x] **Step 2: Run the integration spec and observe missing schema/repository**
 
 ```bash
 cd server && RUN_DB_INTEGRATION=1 DATABASE_URL="$DATABASE_URL" pnpm run test:integration -- prisma-appointment-reminder-delivery.repository.integration.spec.ts
@@ -121,7 +121,7 @@ cd server && RUN_DB_INTEGRATION=1 DATABASE_URL="$DATABASE_URL" pnpm run test:int
 
 Expected: FAIL before implementation.
 
-- [ ] **Step 3: Replace the delivery schema and migrate existing rows**
+- [x] **Step 3: Replace the delivery schema and migrate existing rows**
 
 Add `ReminderDeliveryStatus { PROCESSING SENT FAILED }` and fields `scheduledFor DateTime`, `status`, `attemptCount`, `claimToken`, `lockedUntil`, `nextAttemptAt`, `lastError`, with nullable `sentAt`. Change uniqueness to:
 
@@ -132,18 +132,18 @@ Add `ReminderDeliveryStatus { PROCESSING SENT FAILED }` and fields `scheduledFor
 
 The SQL migration must backfill existing `scheduledFor` from appointment `scheduleDate` + `startTime` + clinic timezone, set existing rows to `SENT`, then make the column non-null. Do not use `sentAt` as the scheduled instant because it would make an unchanged appointment eligible again.
 
-- [ ] **Step 4: Implement atomic claim ownership**
+- [x] **Step 4: Implement atomic claim ownership**
 
 Create a row as `PROCESSING` with a random claim token and five-minute `lockedUntil`. On unique conflict, use one conditional `updateMany` to reclaim only `FAILED` rows whose `nextAttemptAt <= now` or expired `PROCESSING` rows. `markSent` and `markFailed` must predicate on both `id` and `claimToken`; stale owners return `false`.
 
-- [ ] **Step 5: Register the repository provider and pass the integration spec**
+- [x] **Step 5: Register the repository provider and pass the integration spec**
 
 ```bash
 cd server && pnpm exec prisma generate
 cd server && RUN_DB_INTEGRATION=1 DATABASE_URL="$DATABASE_URL" pnpm run test:integration -- prisma-appointment-reminder-delivery.repository.integration.spec.ts
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add server/prisma server/src/modules/scheduler

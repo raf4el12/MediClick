@@ -110,6 +110,12 @@ enum ReminderKind {
   T2
 }
 
+enum ReminderDeliveryStatus {
+  PROCESSING
+  SENT
+  FAILED
+}
+
 model Users {
   id            Int             @id @default(autoincrement())
   name          String
@@ -492,15 +498,25 @@ model Notifications {
 }
 
 model AppointmentReminders {
-  id            Int          @id @default(autoincrement())
+  id            Int                    @id @default(autoincrement())
   appointmentId Int
   kind          ReminderKind
-  sentAt        DateTime     @default(now())
-  channel       String       @default("EMAIL")
+  channel       String                 @default("EMAIL")
+  scheduledFor  DateTime
+  status        ReminderDeliveryStatus @default(PROCESSING)
+  attemptCount  Int                    @default(1)
+  claimToken    String?
+  lockedUntil   DateTime?
+  nextAttemptAt DateTime?
+  lastError     String?                @db.Text
+  sentAt        DateTime?
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime?
 
   appointment Appointments @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
 
-  @@unique([appointmentId, kind])
+  @@unique([appointmentId, kind, channel, scheduledFor])
+  @@index([status, nextAttemptAt])
   @@index([appointmentId])
 }
 
