@@ -210,10 +210,13 @@ model Specialties {
   categoryId      Int
   name            String
   description     String?
-  duration        Int                  @default(30)
-  bufferMinutes   Int?                 @default(0) // Minutos de descanso entre citas consecutivas
-  price           Decimal?             @db.Decimal(10, 2)
-  requirements    String?
+  duration                Int                  @default(30)
+  bufferMinutes           Int?                 @default(0) // Minutos de descanso entre citas consecutivas
+  price                   Decimal?             @db.Decimal(10, 2)
+  cancellationWindowHours Int?                 @default(24) // Horas previas para cancelar sin penalización
+  depositPercentage       Decimal?             @db.Decimal(5, 2) // % requerido como seña
+  depositAmount           Decimal?             @db.Decimal(10, 2) // O monto fijo de seña
+  requirements            String?
   icon            String?
   isActive        Boolean              @default(true)
   deleted         Boolean              @default(false)
@@ -326,6 +329,7 @@ model Appointments {
   status          AppointmentStatus @default(PENDING)
   paymentStatus   PaymentStatus     @default(PENDING)
   amount          Decimal?          @db.Decimal(10, 2)
+  depositAmount   Decimal?          @db.Decimal(10, 2)
   cancelReason    String?
   cancellationFee Decimal?          @db.Decimal(10, 2)
   isOverbook      Boolean           @default(false) // Cita de sobrecupo
@@ -564,9 +568,11 @@ model Clinics {
   address   String?
   phone     String?
   email     String?   @unique
-  timezone  String    @default("America/Lima")
-  currency  String    @default("PEN")
-  isActive  Boolean   @default(true)
+  timezone                        String    @default("America/Lima")
+  currency                        String    @default("PEN")
+  defaultCancellationWindowHours Int       @default(24)
+  noShowPenaltyPercentage        Decimal   @default(100.00) @db.Decimal(5, 2)
+  isActive                        Boolean   @default(true)
   deleted   Boolean   @default(false)
   createdAt DateTime  @default(now())
   updatedAt DateTime?

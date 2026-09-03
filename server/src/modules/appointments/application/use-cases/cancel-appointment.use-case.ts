@@ -11,10 +11,7 @@ import type { ISpecialtyRepository } from '../../../specialties/domain/repositor
 import type { ITransactionRepository } from '../../../payments/domain/repositories/transaction.repository.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
-import {
-  MIN_CANCELLATION_HOURS_PATIENT,
-  CANCELLATION_FEE_PERCENTAGE,
-} from '../../domain/constants/cancellation-policy.constants.js';
+import type { AppointmentWithRelations } from '../../domain/interfaces/appointment-data.interface.js';
 import {
   dateToTimeString,
   nowInTimezone,
@@ -24,6 +21,7 @@ import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant
 import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
 import { AppointmentAccessPolicy } from '../../../../shared/access/appointment-access.policy.js';
 import { AppointmentCancellationService } from '../services/appointment-cancellation.service.js';
+import { CancellationPolicyService } from '../../domain/services/cancellation-policy.service.js';
 
 @Injectable()
 export class CancelAppointmentUseCase {
@@ -37,6 +35,7 @@ export class CancelAppointmentUseCase {
     private readonly timezoneResolver: TimezoneResolverService,
     private readonly appointmentCancellationService: AppointmentCancellationService,
     private readonly appointmentAccessPolicy: AppointmentAccessPolicy,
+    private readonly cancellationPolicyService: CancellationPolicyService,
   ) {}
 
   async execute(
@@ -89,20 +88,35 @@ export class CancelAppointmentUseCase {
 
     let cancellationFee: number | undefined;
 
-    // Penalización: paciente que cancela tarde (<24h) una cita pagada.
-    if (
-      actor.roleName === String(UserRole.PATIENT) &&
-      hoursUntilAppointment < MIN_CANCELLATION_HOURS_PATIENT &&
-      isPaid
-    ) {
+    if (actor.roleName === String(UserRole.PATIENT) && isPaid) {
       const specialty = await this.specialtyRepository.findById(
         appointment.schedule.specialty.id,
       );
       const specialtyPrice = specialty?.price ?? 0;
-      if (specialtyPrice > 0) {
-        cancellationFee = Math.round(
-          (specialtyPrice * CANCELLATION_FEE_PERCENTAGE) / 100,
-        );
+      const specialtyWindow = specialty?.cancellationWindowHours ?? null;
+      const clinicWindow =
+        (
+          appointment.schedule.doctor.clinic as {
+            defaultCancellationWindowHours?: number;
+          } | null
+        )?.defaultCancellationWindowHours ?? null;
+
+      const windowHours = this.cancellationPolicyService.resolveWindowHours({
+        specialtyWindowHours: specialtyWindow,
+        clinicDefaultWindowHours: clinicWindow,
+      });
+
+      const calculation = this.cancellationPolicyService.calculateFee({
+        hoursUntilAppointment,
+        freeCancellationWindowHours: windowHours,
+        appointmentPrice: specialtyPrice,
+        depositAmount: appointment.depositAmount ?? null,
+        isPaid,
+        isPatient: true,
+      });
+
+      if (calculation.fee > 0) {
+        cancellationFee = calculation.fee;
       }
     }
 
@@ -116,7 +130,7 @@ export class CancelAppointmentUseCase {
     return this.toResponse(updated);
   }
 
-  private toResponse(a: any): AppointmentResponseDto {
+  private toResponse(a: AppointmentWithRelations): AppointmentResponseDto {
     return {
       id: a.id,
       patientId: a.patientId,
@@ -128,6 +142,7 @@ export class CancelAppointmentUseCase {
       status: a.status,
       paymentStatus: a.paymentStatus,
       amount: a.amount,
+      depositAmount: a.depositAmount ?? null,
       cancelReason: a.cancelReason,
       cancellationFee: a.cancellationFee,
       isOverbook: a.isOverbook,

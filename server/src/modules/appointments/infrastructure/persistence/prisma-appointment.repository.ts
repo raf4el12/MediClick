@@ -88,6 +88,10 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
         reason: data.reason,
         ...(data.isOverbook && { isOverbook: true }),
         clinicId: data.clinicId ?? null,
+        ...(data.amount !== undefined && { amount: data.amount }),
+        ...(data.depositAmount !== undefined && {
+          depositAmount: data.depositAmount,
+        }),
       },
       include: appointmentInclude,
     });
@@ -236,6 +240,9 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
           confirmedAt: data.confirmedAt,
         }),
         ...(data.isAtRisk !== undefined && { isAtRisk: data.isAtRisk }),
+        ...(data.depositAmount !== undefined && {
+          depositAmount: data.depositAmount,
+        }),
         updatedAt: data.updatedAt ?? new Date(),
       },
       include: appointmentInclude,
@@ -869,6 +876,8 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       status: raw.status as AppointmentStatus,
       paymentStatus: raw.paymentStatus,
       amount: raw.amount === null ? null : Number(raw.amount),
+      depositAmount:
+        raw.depositAmount === null ? null : Number(raw.depositAmount),
       cancelReason: raw.cancelReason,
       cancellationFee:
         raw.cancellationFee === null ? null : Number(raw.cancellationFee),

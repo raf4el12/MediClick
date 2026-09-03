@@ -6,6 +6,7 @@ import type { TimezoneResolverService } from '../../../../shared/services/timezo
 import type { EventEmitter2 } from '@nestjs/event-emitter';
 import { AppointmentAccessPolicy } from '../../../../shared/access/appointment-access.policy.js';
 import { AppointmentCancellationService } from '../services/appointment-cancellation.service.js';
+import { CancellationPolicyService } from '../../domain/services/cancellation-policy.service.js';
 import { SystemRole } from '../../../../shared/domain/enums/permission.enum.js';
 import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
 
@@ -98,6 +99,7 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
         eventEmitter as any,
       ),
       new AppointmentAccessPolicy(),
+      new CancellationPolicyService(),
     );
   });
 
@@ -254,5 +256,33 @@ describe('CancelAppointmentUseCase — refund flagging', () => {
     const cancelArg = appointmentRepository.cancelAtomically.mock.calls[0][0];
     expect(cancelArg.cancellationFee).toBeUndefined();
     expect(transactionRepository.update.mock.calls).toHaveLength(0);
+  });
+
+  it('RED->GREEN: retiene la seña si el paciente cancela dentro de la ventana de penalización', async () => {
+    // 2 horas antes de la cita (dentro de la ventana de 24h)
+    jest.useFakeTimers({ now: new Date('2026-12-01T08:00:00Z') });
+    appointmentRepository.findById.mockResolvedValue({
+      ...buildAppointment(),
+      depositAmount: 45,
+    } as any);
+    specialtyRepository.findById.mockResolvedValue({
+      id: 3,
+      price: 150,
+      cancellationWindowHours: 12,
+    } as any);
+    transactionRepository.findLatestByAppointmentId.mockResolvedValue({
+      id: 77,
+      status: 'PAID',
+      metadata: null,
+    } as any);
+
+    await useCase.execute(
+      50,
+      { reason: 'Cancelación tardía de emergencia' },
+      buildActor(SystemRole.PATIENT),
+    );
+
+    const cancelArg = appointmentRepository.cancelAtomically.mock.calls[0][0];
+    expect(cancelArg.cancellationFee).toBe(45);
   });
 });

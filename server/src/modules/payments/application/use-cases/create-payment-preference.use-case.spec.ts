@@ -9,7 +9,12 @@ import type { IPaymentGatewayService } from '../../domain/services/payment-gatew
 
 describe('CreatePaymentPreferenceUseCase', () => {
   let useCase: CreatePaymentPreferenceUseCase;
-  let prisma: { appointments: { findUnique: jest.Mock } };
+  let prisma: {
+    appointments: {
+      findUnique: jest.Mock<Promise<unknown>, [unknown]>;
+      update: jest.Mock<Promise<unknown>, [unknown]>;
+    };
+  };
   let transactionRepository: jest.Mocked<ITransactionRepository>;
   let gateway: jest.Mocked<IPaymentGatewayService>;
 
@@ -34,7 +39,7 @@ describe('CreatePaymentPreferenceUseCase', () => {
   });
 
   beforeEach(() => {
-    prisma = { appointments: { findUnique: jest.fn() } };
+    prisma = { appointments: { findUnique: jest.fn(), update: jest.fn() } };
     transactionRepository = {
       create: jest.fn(),
       update: jest.fn(),
@@ -162,5 +167,48 @@ describe('CreatePaymentPreferenceUseCase', () => {
       BadRequestException,
     );
     expect(gateway.createPreference).not.toHaveBeenCalled();
+  });
+
+  it('RED->GREEN: cobra solo la seña/depósito si la especialidad tiene depositPercentage configurado', async () => {
+    prisma.appointments.findUnique.mockResolvedValue(
+      buildAppointment({
+        amount: 200,
+        schedule: {
+          scheduleDate: new Date(),
+          specialty: {
+            name: 'Cardiología',
+            price: 200,
+            depositPercentage: 25, // 25% de 200 = 50 PEN
+            depositAmount: null,
+          },
+        },
+      }),
+    );
+    prisma.appointments.update.mockResolvedValue({ id: 123 });
+    gateway.createPreference.mockResolvedValue({
+      preferenceId: 'pref_deposit_50',
+      initPoint: 'https://mp/init_point',
+      sandboxInitPoint: 'https://mp/sandbox',
+    });
+
+    const result = await useCase.execute(42, { appointmentId: 123 });
+
+    expect(result.preferenceId).toBe('pref_deposit_50');
+    expect(gateway.createPreference).toHaveBeenCalledWith(
+      expect.objectContaining({
+        items: expect.arrayContaining([
+          expect.objectContaining({
+            unitPrice: 50,
+            title: expect.stringContaining('Seña'),
+          }),
+        ]),
+      }),
+    );
+    expect(transactionRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        appointmentId: 123,
+        amount: 50,
+      }),
+    );
   });
 });

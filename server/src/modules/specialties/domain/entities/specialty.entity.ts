@@ -6,6 +6,9 @@ export class SpecialtyEntity {
   duration: number;
   bufferMinutes: number | null;
   price: number | null;
+  cancellationWindowHours?: number | null;
+  depositPercentage?: number | null;
+  depositAmount?: number | null;
   requirements: string | null;
   icon: string | null;
   clinicId: number | null;

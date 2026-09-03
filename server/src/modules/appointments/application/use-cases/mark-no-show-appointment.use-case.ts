@@ -15,6 +15,7 @@ import { TimezoneResolverService } from '../../../../shared/services/timezone-re
 import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
 import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
 import { AppointmentAccessPolicy } from '../../../../shared/access/appointment-access.policy.js';
+import type { AppointmentWithRelations } from '../../domain/interfaces/appointment-data.interface.js';
 
 @Injectable()
 export class MarkNoShowAppointmentUseCase {
@@ -36,8 +37,7 @@ export class MarkNoShowAppointmentUseCase {
 
     this.appointmentAccessPolicy.authorize(actor, 'MARK_NO_SHOW', {
       id: appointment.id,
-      clinicId:
-        appointment.schedule.doctor.clinic?.id ?? appointment.clinicId,
+      clinicId: appointment.schedule.doctor.clinic?.id ?? appointment.clinicId,
       patientUserId: appointment.patient.profile.userId,
       doctorUserId: appointment.schedule.doctor.profile.userId ?? null,
     });
@@ -68,15 +68,33 @@ export class MarkNoShowAppointmentUseCase {
       );
     }
 
+    let penaltyFee: number | undefined;
+    if (appointment.paymentStatus === 'PAID') {
+      if (appointment.depositAmount) {
+        penaltyFee = Number(appointment.depositAmount);
+      } else if (appointment.amount) {
+        const penaltyPercentage =
+          (
+            appointment.schedule.doctor.clinic as {
+              noShowPenaltyPercentage?: number;
+            } | null
+          )?.noShowPenaltyPercentage ?? 100;
+        penaltyFee = Math.round(
+          (Number(appointment.amount) * Number(penaltyPercentage)) / 100,
+        );
+      }
+    }
+
     const updated = await this.appointmentRepository.update(id, {
       status: AppointmentStatus.NO_SHOW,
+      ...(penaltyFee !== undefined && { cancellationFee: penaltyFee }),
       updatedAt: new Date(),
     });
 
     return this.toResponse(updated);
   }
 
-  private toResponse(a: any): AppointmentResponseDto {
+  private toResponse(a: AppointmentWithRelations): AppointmentResponseDto {
     return {
       id: a.id,
       patientId: a.patientId,
@@ -88,6 +106,7 @@ export class MarkNoShowAppointmentUseCase {
       status: a.status,
       paymentStatus: a.paymentStatus,
       amount: a.amount,
+      depositAmount: a.depositAmount ?? null,
       cancelReason: a.cancelReason,
       cancellationFee: a.cancellationFee,
       isOverbook: a.isOverbook,

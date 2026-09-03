@@ -28,6 +28,7 @@ import { RespondAppointmentReminderUseCase } from './use-cases/respond-appointme
 import { AvailabilityChangeListener } from './listeners/availability-change.listener.js';
 import { AppointmentController } from '../interfaces/controllers/appointment.controller.js';
 import { AppointmentAccessPolicy } from '../../../shared/access/appointment-access.policy.js';
+import { CancellationPolicyService } from '../domain/services/cancellation-policy.service.js';
 
 @Module({
   imports: [
@@ -65,11 +66,13 @@ import { AppointmentAccessPolicy } from '../../../shared/access/appointment-acce
     RespondAppointmentReminderUseCase,
     AvailabilityChangeListener,
     AppointmentAccessPolicy,
+    CancellationPolicyService,
   ],
   exports: [
     'IAppointmentRepository',
     ReminderTokenService,
     RespondAppointmentReminderUseCase,
+    CancellationPolicyService,
   ],
 })
 export class AppointmentsModule {}

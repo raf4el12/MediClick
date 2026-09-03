@@ -41,7 +41,14 @@ export class CreatePaymentPreferenceUseCase {
         },
         schedule: {
           select: {
-            specialty: { select: { name: true, price: true } },
+            specialty: {
+              select: {
+                name: true,
+                price: true,
+                depositPercentage: true,
+                depositAmount: true,
+              },
+            },
             scheduleDate: true,
           },
         },
@@ -81,9 +88,33 @@ export class CreatePaymentPreferenceUseCase {
       );
     }
 
-    const amount = appointment.amount
+    const fullAmount = appointment.amount
       ? Number(appointment.amount)
       : specialtyPrice;
+
+    // Calcular seña/depósito si la especialidad lo exige para confirmar la cita
+    let depositToCharge: number | null = null;
+    if (appointment.depositAmount) {
+      depositToCharge = Number(appointment.depositAmount);
+    } else if (appointment.schedule.specialty.depositAmount) {
+      depositToCharge = Number(appointment.schedule.specialty.depositAmount);
+    } else if (appointment.schedule.specialty.depositPercentage) {
+      depositToCharge = Math.round(
+        (fullAmount *
+          Number(appointment.schedule.specialty.depositPercentage)) /
+          100,
+      );
+    }
+
+    const amount =
+      depositToCharge && depositToCharge > 0 ? depositToCharge : fullAmount;
+
+    if (depositToCharge && !appointment.depositAmount) {
+      await this.prisma.appointments.update({
+        where: { id: appointment.id },
+        data: { depositAmount: depositToCharge },
+      });
+    }
 
     const successUrl =
       process.env.MP_SUCCESS_URL || 'http://localhost:3000/payment/success';
@@ -109,7 +140,9 @@ export class CreatePaymentPreferenceUseCase {
       items: [
         {
           id: String(appointment.id),
-          title: `Consulta: ${appointment.schedule.specialty.name}`,
+          title: depositToCharge
+            ? `Seña/Reserva: ${appointment.schedule.specialty.name}`
+            : `Consulta: ${appointment.schedule.specialty.name}`,
           description: `Cita #${appointment.id}`,
           quantity: 1,
           unitPrice: amount,

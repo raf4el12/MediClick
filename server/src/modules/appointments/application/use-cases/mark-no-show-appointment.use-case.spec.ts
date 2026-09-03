@@ -139,4 +139,24 @@ describe('MarkNoShowAppointmentUseCase', () => {
     );
     expect(appointmentRepository.update).not.toHaveBeenCalled();
   });
+
+  it('RED->GREEN: retiene el monto de la seña/penalización al marcar NO_SHOW de una cita pagada', async () => {
+    appointmentRepository.findById.mockResolvedValue(
+      buildAppointment({
+        paymentStatus: 'PAID',
+        amount: 120,
+        depositAmount: 40,
+      }),
+    );
+
+    await useCase.execute(10, globalActor);
+
+    expect(appointmentRepository.update).toHaveBeenCalledWith(
+      10,
+      expect.objectContaining({
+        status: AppointmentStatus.NO_SHOW,
+        cancellationFee: 40,
+      }),
+    );
+  });
 });

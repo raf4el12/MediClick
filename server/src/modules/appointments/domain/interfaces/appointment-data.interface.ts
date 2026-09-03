@@ -9,6 +9,7 @@ export interface CreateAppointmentData {
   isOverbook?: boolean;
   clinicId?: number | null;
   amount?: number | null;
+  depositAmount?: number | null;
   pendingUntil?: Date | null;
 }
 
@@ -24,6 +25,7 @@ export interface UpdateAppointmentData {
   reminderSent?: boolean;
   confirmedAt?: Date | null;
   isAtRisk?: boolean;
+  depositAmount?: number | null;
   updatedAt?: Date;
 }
 
@@ -38,6 +40,7 @@ export interface AppointmentWithRelations {
   status: AppointmentStatus;
   paymentStatus: string;
   amount: number | null;
+  depositAmount?: number | null;
   cancelReason: string | null;
   cancellationFee: number | null;
   isOverbook: boolean;

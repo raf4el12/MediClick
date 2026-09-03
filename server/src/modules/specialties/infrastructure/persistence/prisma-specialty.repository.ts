@@ -25,6 +25,11 @@ export class PrismaSpecialtyRepository implements ISpecialtyRepository {
       ...result,
       duration: result.duration ?? 30,
       price: result.price ? Number(result.price) : null,
+      cancellationWindowHours: result.cancellationWindowHours ?? 24,
+      depositPercentage: result.depositPercentage
+        ? Number(result.depositPercentage)
+        : null,
+      depositAmount: result.depositAmount ? Number(result.depositAmount) : null,
     };
   }
 
@@ -38,6 +43,7 @@ export class PrismaSpecialtyRepository implements ISpecialtyRepository {
     const where = {
       deleted: false,
       ...(categoryId && { categoryId }),
+      ...(clinicId && { clinicId }),
       ...(searchValue && {
         AND: [
           {
@@ -77,6 +83,11 @@ export class PrismaSpecialtyRepository implements ISpecialtyRepository {
         ...r,
         duration: r.duration ?? 30,
         price: r.price ? Number(r.price) : null,
+        cancellationWindowHours: r.cancellationWindowHours ?? 24,
+        depositPercentage: r.depositPercentage
+          ? Number(r.depositPercentage)
+          : null,
+        depositAmount: r.depositAmount ? Number(r.depositAmount) : null,
       })),
       totalPages: Math.ceil(count / limit),
       currentPage: Math.floor(offset / limit) + 1,
@@ -93,6 +104,11 @@ export class PrismaSpecialtyRepository implements ISpecialtyRepository {
       ...result,
       duration: result.duration ?? 30,
       price: result.price ? Number(result.price) : null,
+      cancellationWindowHours: result.cancellationWindowHours ?? 24,
+      depositPercentage: result.depositPercentage
+        ? Number(result.depositPercentage)
+        : null,
+      depositAmount: result.depositAmount ? Number(result.depositAmount) : null,
     };
   }
 
@@ -104,6 +120,11 @@ export class PrismaSpecialtyRepository implements ISpecialtyRepository {
       ...r,
       duration: r.duration ?? 30,
       price: r.price ? Number(r.price) : null,
+      cancellationWindowHours: r.cancellationWindowHours ?? 24,
+      depositPercentage: r.depositPercentage
+        ? Number(r.depositPercentage)
+        : null,
+      depositAmount: r.depositAmount ? Number(r.depositAmount) : null,
     }));
   }
 
@@ -120,6 +141,11 @@ export class PrismaSpecialtyRepository implements ISpecialtyRepository {
       ...result,
       duration: result.duration ?? 30,
       price: result.price ? Number(result.price) : null,
+      cancellationWindowHours: result.cancellationWindowHours ?? 24,
+      depositPercentage: result.depositPercentage
+        ? Number(result.depositPercentage)
+        : null,
+      depositAmount: result.depositAmount ? Number(result.depositAmount) : null,
     };
   }
 

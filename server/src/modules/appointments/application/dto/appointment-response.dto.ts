@@ -87,6 +87,12 @@ export class AppointmentResponseDto {
   @ApiPropertyOptional()
   amount: number | null;
 
+  @ApiPropertyOptional({
+    example: 30.0,
+    description: 'Monto de seña/anticipo pagado para confirmar la cita',
+  })
+  depositAmount?: number | null;
+
   @ApiPropertyOptional()
   cancelReason: string | null;
 
