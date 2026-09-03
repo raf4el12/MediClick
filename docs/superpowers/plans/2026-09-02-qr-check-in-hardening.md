@@ -147,7 +147,7 @@ git commit -m "feat(appointments): expose authorized check-in QR"
 - Consumes: `CheckInWindowService` from Task 1
 - Removes: `ProcessQrCheckInDto.kioskClinicId`
 
-- [ ] **Step 1: Add authentication and tenant tests**
+- [x] **Step 1: Add authentication and tenant tests**
 
 ```ts
 await expect(useCase.execute(dto, patientActor)).rejects.toThrow(ForbiddenException);
@@ -158,25 +158,25 @@ await expect(useCase.execute(dto, sameClinicReceptionist)).resolves.toBeDefined(
 
 Assert the controller has auth/permission behavior and passes the full current actor. Assert DTO validation rejects/strips `kioskClinicId` instead of trusting it.
 
-- [ ] **Step 2: Add arrival-window rejection tests**
+- [x] **Step 2: Add arrival-window rejection tests**
 
 Freeze time at one millisecond before open and after close; both reject without repository update/event. Test exact open and close boundaries as allowed. Use an appointment `startTime` with the 1970 base.
 
-- [ ] **Step 3: Run focused tests and observe body-trusted clinic/no time check**
+- [x] **Step 3: Run focused tests and observe body-trusted clinic/no time check**
 
 ```bash
 cd server && pnpm test -- process-qr-check-in appointment-qr.controller --runInBand
 ```
 
-- [ ] **Step 4: Authenticate the route and scope the use case**
+- [x] **Step 4: Authenticate the route and scope the use case**
 
 Add `@Auth()` plus `@RequirePermissions('UPDATE', 'APPOINTMENTS')` to POST `actions/qr-check-in`. Reject patient actors and actors without a clinic. Compare `actor.clinicId` to the persisted appointment clinic; return 404 for a different clinic. Ignore the signed payload clinic for authorization—it is an integrity hint only.
 
-- [ ] **Step 5: Recompute and enforce the persisted window**
+- [x] **Step 5: Recompute and enforce the persisted window**
 
 Use the persisted schedule date, appointment start time, and clinic timezone. Check `isOpen(..., now)` before mutation; the error should state that check-in is outside the arrival window without leaking another clinic’s appointment details.
 
-- [ ] **Step 6: Pass tests and commit**
+- [x] **Step 6: Pass tests and commit**
 
 ```bash
 cd server && pnpm test -- process-qr-check-in appointment-qr.controller --runInBand

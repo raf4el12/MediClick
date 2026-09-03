@@ -9,9 +9,11 @@ import {
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import { AppointmentQrService } from '../services/appointment-qr.service.js';
+import { CheckInWindowService } from '../../domain/services/check-in-window.service.js';
 import { ProcessQrCheckInDto } from '../dto/process-qr-check-in.dto.js';
 import { CheckInTicketResponseDto } from '../dto/check-in-ticket-response.dto.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
+import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
 
 @Injectable()
 export class ProcessQrCheckInUseCase {
@@ -21,11 +23,22 @@ export class ProcessQrCheckInUseCase {
     @Inject('IAppointmentRepository')
     private readonly appointmentRepository: IAppointmentRepository,
     private readonly qrService: AppointmentQrService,
+    private readonly checkInWindowService: CheckInWindowService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
-  async execute(dto: ProcessQrCheckInDto): Promise<CheckInTicketResponseDto> {
-    // 1. Validar firma y vigencia del token QR
+  async execute(
+    dto: ProcessQrCheckInDto,
+    actor: AuthenticatedUser,
+  ): Promise<CheckInTicketResponseDto> {
+    // 1. Autorización: sólo personal autenticado con sede asignada puede consumir QR
+    if (actor.roleName === 'PATIENT' || !actor.clinicId) {
+      throw new ForbiddenException(
+        'El check-in por QR requiere personal autenticado con sede asignada',
+      );
+    }
+
+    // 2. Validar firma criptográfica y vigencia básica del token QR
     const validation = this.qrService.validateCheckInQrToken(dto.qrToken);
     if (!validation.valid || !validation.payload) {
       throw new BadRequestException(
@@ -35,27 +48,21 @@ export class ProcessQrCheckInUseCase {
 
     const { appointmentId } = validation.payload;
 
-    // 2. Obtener cita y verificar existencia
+    // 3. Obtener cita y verificar existencia
     const appointment =
       await this.appointmentRepository.findById(appointmentId);
     if (!appointment || appointment.deleted) {
       throw new NotFoundException('Cita no encontrada en el sistema');
     }
 
-    // 3. Verificar aislamiento de sede (si el kiosco pertenece a una sede específica)
+    // 4. Verificar aislamiento estricto de sede respecto al personal autenticado
     const appointmentClinicId =
       appointment.schedule.doctor.clinic?.id ?? appointment.clinicId;
-    if (
-      dto.kioskClinicId &&
-      appointmentClinicId &&
-      appointmentClinicId !== dto.kioskClinicId
-    ) {
-      throw new ForbiddenException(
-        'Esta cita médica pertenece a otra sede de la clínica',
-      );
+    if (!appointmentClinicId || appointmentClinicId !== actor.clinicId) {
+      throw new NotFoundException('Cita no encontrada en el sistema');
     }
 
-    // 4. Validar estado de la cita
+    // 5. Validar estado asistencial permitido para check-in
     const allowedStatuses = [
       AppointmentStatus.PENDING,
       AppointmentStatus.CONFIRMED,
@@ -66,7 +73,26 @@ export class ProcessQrCheckInUseCase {
       );
     }
 
-    // 5. Registrar presencia y actualizar estado a IN_PROGRESS con timestamp de llegada
+    // 6. Validar ventana de llegada en la zona horaria local de la sede [T-30m, T+15m]
+    const timezone =
+      appointment.schedule.doctor.clinic?.timezone ?? 'America/Lima';
+    const now = new Date();
+    if (
+      !this.checkInWindowService.isOpen(
+        {
+          scheduleDate: appointment.schedule.scheduleDate,
+          startTime: appointment.startTime,
+          timezone,
+        },
+        now,
+      )
+    ) {
+      throw new BadRequestException(
+        'La cita se encuentra fuera de la ventana permitida de check-in',
+      );
+    }
+
+    // 7. Registrar presencia y actualizar estado a IN_PROGRESS con timestamp de llegada
     const arrivalTime = new Date();
     const updated = await this.appointmentRepository.update(appointmentId, {
       status: AppointmentStatus.IN_PROGRESS,
@@ -78,7 +104,7 @@ export class ProcessQrCheckInUseCase {
     const patientFullName = `${appointment.patient.profile.name} ${appointment.patient.profile.lastName}`;
     const doctorFullName = `${appointment.schedule.doctor.profile.name} ${appointment.schedule.doctor.profile.lastName}`;
 
-    // 6. Emitir evento de presencia para pantalla de llamado en sala y consultorio
+    // 8. Emitir evento de presencia para pantallas de sala y consultorio
     this.eventEmitter.emit('appointment.checked_in', {
       appointmentId: appointment.id,
       clinicId: appointmentClinicId,
@@ -92,7 +118,7 @@ export class ProcessQrCheckInUseCase {
     });
 
     this.logger.log(
-      `[CHECK-IN QR] Paciente ${patientFullName} llegó a sala | Cita #${appointment.id} | Turno ${turnCode} | Sede ${appointmentClinicId}`,
+      `[CHECK-IN QR] Cita #${appointment.id} registrada | Turno ${turnCode} | Sede ${appointmentClinicId}`,
     );
 
     return {

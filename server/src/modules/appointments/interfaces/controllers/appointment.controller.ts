@@ -237,17 +237,24 @@ export class AppointmentController {
   }
 
   @Post('actions/qr-check-in')
+  @Auth()
+  @RequirePermissions('UPDATE', 'APPOINTMENTS')
   @ApiOperation({
     summary:
       'Auto check-in en sala de espera mediante escaneo de token QR (Tótem/Kiosco)',
   })
   @ApiResponse({ status: 200, type: CheckInTicketResponseDto })
-  @ApiResponse({ status: 400, description: 'Token inválido o expirado' })
-  @ApiResponse({ status: 403, description: 'Cita de otra sede' })
+  @ApiResponse({
+    status: 400,
+    description: 'Token inválido, expirado o fuera de ventana',
+  })
+  @ApiResponse({ status: 403, description: 'Actor no autorizado o sin sede' })
+  @ApiResponse({ status: 404, description: 'Cita no encontrada' })
   async qrCheckIn(
     @Body() dto: ProcessQrCheckInDto,
+    @CurrentUser() actor: AuthenticatedUser,
   ): Promise<CheckInTicketResponseDto> {
-    return this.processQrCheckInUseCase.execute(dto);
+    return this.processQrCheckInUseCase.execute(dto, actor);
   }
 
   @Patch(':id/cancel')

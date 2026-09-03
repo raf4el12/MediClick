@@ -1,6 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, IsInt } from 'class-validator';
-import { Type } from 'class-transformer';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class ProcessQrCheckInDto {
   @ApiProperty({
@@ -10,13 +9,4 @@ export class ProcessQrCheckInDto {
   @IsString()
   @IsNotEmpty({ message: 'El token QR es obligatorio' })
   qrToken: string;
-
-  @ApiPropertyOptional({
-    example: 1,
-    description: 'ID de la sede donde se encuentra el kiosco/tótem de escaneo',
-  })
-  @Type(() => Number)
-  @IsInt()
-  @IsOptional()
-  kioskClinicId?: number;
 }
