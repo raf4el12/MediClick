@@ -1,6 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsEnum,
   IsInt,
   IsNotEmpty,
   IsObject,
@@ -33,11 +32,27 @@ export class CreateNotificationDto {
 
   @ApiPropertyOptional({
     example: 'IN_APP',
-    enum: ['IN_APP', 'EMAIL', 'SMS', 'PUSH'],
+    enum: ['IN_APP', 'EMAIL', 'SMS', 'WHATSAPP', 'PUSH'],
   })
   @IsString()
   @IsOptional()
   channel?: string;
+
+  @ApiPropertyOptional({
+    example: '+51999888777',
+    description: 'Teléfono para canales SMS o WHATSAPP',
+  })
+  @IsString()
+  @IsOptional()
+  recipientPhone?: string;
+
+  @ApiPropertyOptional({
+    example: 'paciente@example.com',
+    description: 'Email para canal EMAIL',
+  })
+  @IsString()
+  @IsOptional()
+  recipientEmail?: string;
 
   @ApiProperty({
     example: 'Cita confirmada',
@@ -62,7 +77,7 @@ export class CreateNotificationDto {
   })
   @IsObject()
   @IsOptional()
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 
   @ApiPropertyOptional({ example: 1, description: 'ID de la sede (opcional)' })
   @Type(() => Number)

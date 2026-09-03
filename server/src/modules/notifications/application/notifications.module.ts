@@ -6,6 +6,9 @@ import { MarkNotificationReadUseCase } from './use-cases/mark-notification-read.
 import { MarkAllReadUseCase } from './use-cases/mark-all-read.use-case.js';
 import { CountUnreadUseCase } from './use-cases/count-unread.use-case.js';
 import { DeleteNotificationUseCase } from './use-cases/delete-notification.use-case.js';
+import { SmsService } from '../infrastructure/channels/sms.service.js';
+import { WhatsAppService } from '../infrastructure/channels/whatsapp.service.js';
+import { NotificationDispatcherService } from './services/notification-dispatcher.service.js';
 import { NotificationController } from '../interfaces/controllers/notification.controller.js';
 
 @Module({
@@ -15,6 +18,17 @@ import { NotificationController } from '../interfaces/controllers/notification.c
       provide: 'INotificationRepository',
       useClass: PrismaNotificationRepository,
     },
+    {
+      provide: 'ISmsProvider',
+      useClass: SmsService,
+    },
+    {
+      provide: 'IWhatsAppProvider',
+      useClass: WhatsAppService,
+    },
+    SmsService,
+    WhatsAppService,
+    NotificationDispatcherService,
     CreateNotificationUseCase,
     FindUserNotificationsUseCase,
     MarkNotificationReadUseCase,
@@ -22,6 +36,13 @@ import { NotificationController } from '../interfaces/controllers/notification.c
     CountUnreadUseCase,
     DeleteNotificationUseCase,
   ],
-  exports: [CreateNotificationUseCase],
+  exports: [
+    CreateNotificationUseCase,
+    NotificationDispatcherService,
+    'ISmsProvider',
+    'IWhatsAppProvider',
+    SmsService,
+    WhatsAppService,
+  ],
 })
 export class NotificationsModule {}
