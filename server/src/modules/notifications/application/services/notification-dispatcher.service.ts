@@ -1,5 +1,4 @@
 import { Injectable, Inject, Logger } from '@nestjs/common';
-import type { INotificationRepository } from '../../domain/repositories/notification.repository.js';
 import type {
   ISmsProvider,
   IWhatsAppProvider,
@@ -13,8 +12,6 @@ export class NotificationDispatcherService {
   private readonly logger = new Logger(NotificationDispatcherService.name);
 
   constructor(
-    @Inject('INotificationRepository')
-    private readonly notificationRepository: INotificationRepository,
     @Inject('ISmsProvider')
     private readonly smsProvider: ISmsProvider,
     @Inject('IWhatsAppProvider')
@@ -26,13 +23,12 @@ export class NotificationDispatcherService {
     options: DispatchNotificationOptions,
   ): Promise<DispatchNotificationResult> {
     const {
-      userId,
       recipientPhone,
       recipientEmail,
       channel,
       title,
       message,
-      metadata,
+      metadata: _metadata,
       enableFallbackToSms = true,
     } = options;
 
@@ -44,13 +40,6 @@ export class NotificationDispatcherService {
           message,
         );
         if (wppResult.success) {
-          await this.persistNotificationLog({
-            userId,
-            channel: 'WHATSAPP',
-            title,
-            message,
-            metadata: { ...metadata, messageId: wppResult.messageId },
-          });
           return {
             channel: 'WHATSAPP',
             delivered: true,
@@ -59,7 +48,7 @@ export class NotificationDispatcherService {
         }
 
         this.logger.warn(
-          `[DISPATCHER] Falló envío WhatsApp a ${recipientPhone}: ${wppResult.error}. ${enableFallbackToSms ? 'Intentando fallback SMS...' : ''}`,
+          `[DISPATCHER] Falló envío WhatsApp. ${enableFallbackToSms ? 'Intentando fallback SMS...' : ''}`,
         );
 
         if (enableFallbackToSms) {
@@ -68,17 +57,6 @@ export class NotificationDispatcherService {
             message,
           );
           if (smsFallbackResult.success) {
-            await this.persistNotificationLog({
-              userId,
-              channel: 'SMS',
-              title,
-              message,
-              metadata: {
-                ...metadata,
-                messageId: smsFallbackResult.messageId,
-                fallbackFrom: 'WHATSAPP',
-              },
-            });
             return {
               channel: 'SMS',
               delivered: true,
@@ -104,13 +82,6 @@ export class NotificationDispatcherService {
           message,
         );
         if (smsResult.success) {
-          await this.persistNotificationLog({
-            userId,
-            channel: 'SMS',
-            title,
-            message,
-            metadata: { ...metadata, messageId: smsResult.messageId },
-          });
           return {
             channel: 'SMS',
             delivered: true,
@@ -135,15 +106,8 @@ export class NotificationDispatcherService {
           context: {
             title,
             message,
-            ...metadata,
+            ..._metadata,
           },
-        });
-        await this.persistNotificationLog({
-          userId,
-          channel: 'EMAIL',
-          title,
-          message,
-          metadata,
         });
         return {
           channel: 'EMAIL',
@@ -153,35 +117,9 @@ export class NotificationDispatcherService {
     }
 
     // 4. Canal IN_APP (default o base)
-    const inAppNotification = await this.persistNotificationLog({
-      userId,
-      channel: 'IN_APP',
-      title,
-      message,
-      metadata,
-    });
-
     return {
       channel: 'IN_APP',
       delivered: true,
-      messageId: String(inAppNotification.id),
     };
-  }
-
-  private async persistNotificationLog(data: {
-    userId: number;
-    channel: string;
-    title: string;
-    message: string;
-    metadata?: Record<string, unknown> | null;
-  }) {
-    return this.notificationRepository.create({
-      userId: data.userId,
-      type: 'GENERAL',
-      channel: data.channel,
-      title: data.title,
-      message: data.message,
-      metadata: data.metadata ?? null,
-    });
   }
 }

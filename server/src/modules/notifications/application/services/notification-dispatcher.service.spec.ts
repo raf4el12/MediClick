@@ -1,31 +1,13 @@
 import { NotificationDispatcherService } from './notification-dispatcher.service.js';
-import type { INotificationRepository } from '../../domain/repositories/notification.repository.js';
 import type { MailService } from '../../../../shared/mail/mail.service.js';
 
 describe('NotificationDispatcherService (Enrutador Multicanal Inteligente)', () => {
   let dispatcher: NotificationDispatcherService;
-  let notificationRepository: { create: jest.Mock };
   let smsService: { sendSms: jest.Mock };
   let whatsAppService: { sendWhatsApp: jest.Mock };
   let mailService: { send: jest.Mock };
 
   beforeEach(() => {
-    notificationRepository = {
-      create: jest.fn().mockResolvedValue({
-        id: 1,
-        userId: 10,
-        type: 'APPOINTMENT_REMINDER',
-        channel: 'IN_APP',
-        title: 'Recordatorio',
-        message: 'Tu cita es mañana',
-        isRead: false,
-        metadata: null,
-        sentAt: new Date(),
-        deleted: false,
-        createdAt: new Date(),
-      }),
-    };
-
     smsService = {
       sendSms: jest
         .fn()
@@ -43,14 +25,13 @@ describe('NotificationDispatcherService (Enrutador Multicanal Inteligente)', () 
     };
 
     dispatcher = new NotificationDispatcherService(
-      notificationRepository as unknown as INotificationRepository,
       smsService,
       whatsAppService,
       mailService as unknown as MailService,
     );
   });
 
-  it('RED->GREEN: despacha por IN_APP creando el registro en base de datos', async () => {
+  it('RED->GREEN: despacha por IN_APP retornando resultado lógico sin I/O ni persistencia', async () => {
     const result = await dispatcher.dispatch({
       userId: 10,
       channel: 'IN_APP',
@@ -60,10 +41,9 @@ describe('NotificationDispatcherService (Enrutador Multicanal Inteligente)', () 
 
     expect(result.delivered).toBe(true);
     expect(result.channel).toBe('IN_APP');
-    expect(notificationRepository.create).toHaveBeenCalled();
   });
 
-  it('RED->GREEN: despacha por WHATSAPP exitosamente', async () => {
+  it('RED->GREEN: despacha por WHATSAPP exitosamente sin persistir', async () => {
     const result = await dispatcher.dispatch({
       userId: 10,
       recipientPhone: '+51999888777',
@@ -99,26 +79,55 @@ describe('NotificationDispatcherService (Enrutador Multicanal Inteligente)', () 
     expect(result.delivered).toBe(true);
     expect(result.channel).toBe('SMS');
     expect(result.fallbackUsed).toBe(true);
-    expect(smsService.sendSms).toHaveBeenCalledWith(
-      '+51999888777',
-      'Tu cita con el Dr. es mañana a las 10:00',
-    );
+    expect(result.messageId).toBe('sms_123');
   });
 
-  it('RED->GREEN: despacha por SMS directamente cuando el canal solicitado es SMS', async () => {
+  it('RED->GREEN: no hace fallback si está deshabilitado', async () => {
+    whatsAppService.sendWhatsApp.mockResolvedValueOnce({
+      success: false,
+      error: 'Rate limit exceeded',
+    });
+
     const result = await dispatcher.dispatch({
       userId: 10,
       recipientPhone: '+51999888777',
-      channel: 'SMS',
-      title: 'Código de confirmación',
-      message: 'Tu código es 123456',
+      channel: 'WHATSAPP',
+      title: 'Recordatorio',
+      message: 'Tu cita con el Dr. es mañana a las 10:00',
+      enableFallbackToSms: false,
+    });
+
+    expect(result.delivered).toBe(false);
+    expect(result.channel).toBe('WHATSAPP');
+    expect(smsService.sendSms).not.toHaveBeenCalled();
+  });
+
+  it('RED->GREEN: despacha por EMAIL y refleja si el correo fue enviado', async () => {
+    const result = await dispatcher.dispatch({
+      userId: 10,
+      recipientEmail: 'paciente@test.com',
+      channel: 'EMAIL',
+      title: 'Confirmación de Cita',
+      message: 'Detalle de la cita',
     });
 
     expect(result.delivered).toBe(true);
-    expect(result.channel).toBe('SMS');
-    expect(smsService.sendSms).toHaveBeenCalledWith(
-      '+51999888777',
-      'Tu código es 123456',
-    );
+    expect(result.channel).toBe('EMAIL');
+    expect(mailService.send).toHaveBeenCalled();
+  });
+
+  it('RED->GREEN: reporta delivered: false si mailService falla', async () => {
+    mailService.send.mockResolvedValueOnce(false);
+
+    const result = await dispatcher.dispatch({
+      userId: 10,
+      recipientEmail: 'paciente@test.com',
+      channel: 'EMAIL',
+      title: 'Confirmación de Cita',
+      message: 'Detalle de la cita',
+    });
+
+    expect(result.delivered).toBe(false);
+    expect(result.channel).toBe('EMAIL');
   });
 });

@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+import { ServiceUnavailableException } from '@nestjs/common';
 import { CreateNotificationUseCase } from './create-notification.use-case.js';
 import type { INotificationRepository } from '../../domain/repositories/notification.repository.js';
 import type { NotificationDispatcherService } from '../services/notification-dispatcher.service.js';
@@ -40,35 +42,79 @@ describe('CreateNotificationUseCase (Multicanal)', () => {
     );
   });
 
-  it('RED->GREEN: persiste notificación IN_APP en base de datos', async () => {
+  it('persiste notificación IN_APP en base de datos una sola vez con tipo y sede', async () => {
     const result = await useCase.execute({
       userId: 10,
-      type: 'GENERAL',
+      type: 'APPOINTMENT_REMINDER',
       title: 'Aviso',
       message: 'Notificación del sistema',
       channel: 'IN_APP',
+      clinicId: 7,
     });
 
     expect(result.id).toBe(1);
-    expect(notificationRepository.create).toHaveBeenCalled();
+    expect(dispatcher.dispatch).not.toHaveBeenCalled();
+    expect(notificationRepository.create).toHaveBeenCalledTimes(1);
+    expect(notificationRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 10,
+        type: 'APPOINTMENT_REMINDER',
+        channel: 'IN_APP',
+        clinicId: 7,
+      }),
+    );
   });
 
-  it('RED->GREEN: despacha mediante NotificationDispatcherService cuando el canal es externo (WHATSAPP o SMS)', async () => {
-    const result = await useCase.execute({
+  it('RED->GREEN: persiste exactamente una vez con metadatos de fallback si WHATSAPP cayó a SMS', async () => {
+    dispatcher.dispatch.mockResolvedValue({
+      channel: 'SMS',
+      delivered: true,
+      messageId: 'sms-1',
+      fallbackUsed: true,
+    });
+
+    await useCase.execute({
       userId: 10,
       type: 'APPOINTMENT_REMINDER',
       title: 'Recordatorio',
       message: 'Cita en 2 horas',
       channel: 'WHATSAPP',
       recipientPhone: '+51999888777',
+      metadata: { appointmentId: 45 },
     });
 
-    expect(dispatcher.dispatch).toHaveBeenCalledWith(
+    expect(notificationRepository.create).toHaveBeenCalledTimes(1);
+    expect(notificationRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
+        type: 'APPOINTMENT_REMINDER',
+        channel: 'SMS',
+        metadata: expect.objectContaining({
+          appointmentId: 45,
+          messageId: 'sms-1',
+          fallbackFrom: 'WHATSAPP',
+        }),
+      }),
+    );
+  });
+
+  it('RED->GREEN: no persiste nada y lanza ServiceUnavailableException si el despacho externo falla', async () => {
+    dispatcher.dispatch.mockResolvedValue({
+      channel: 'WHATSAPP',
+      delivered: false,
+      error: 'Provider down',
+    });
+
+    await expect(
+      useCase.execute({
+        userId: 10,
+        type: 'APPOINTMENT_REMINDER',
+        title: 'Recordatorio',
+        message: 'Cita en 2 horas',
         channel: 'WHATSAPP',
         recipientPhone: '+51999888777',
       }),
-    );
-    expect(result).toBeDefined();
+    ).rejects.toThrow(ServiceUnavailableException);
+
+    expect(notificationRepository.create).not.toHaveBeenCalled();
   });
 });
