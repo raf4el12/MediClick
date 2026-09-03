@@ -1,10 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
+  IsArray,
+  IsBoolean,
   IsInt,
   IsNotEmpty,
   IsObject,
   IsOptional,
   IsString,
+  ValidateIf,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -84,4 +87,54 @@ export class CreateNotificationDto {
   @IsInt()
   @IsOptional()
   clinicId?: number | null;
+
+  @ApiPropertyOptional({
+    description:
+      'Bandera explícita para mensajes dentro de sesión libre de WhatsApp',
+  })
+  @IsBoolean()
+  @IsOptional()
+  whatsAppSessionText?: boolean;
+
+  @ApiPropertyOptional({
+    example: 'appointment_reminder',
+    description: 'Nombre de la plantilla aprobada en WhatsApp Meta',
+  })
+  @ValidateIf(
+    (o: CreateNotificationDto) =>
+      o.channel === 'WHATSAPP' && !o.whatsAppSessionText,
+  )
+  @IsString()
+  @IsNotEmpty({
+    message: 'whatsAppTemplateName es requerido para plantillas de WhatsApp',
+  })
+  whatsAppTemplateName?: string;
+
+  @ApiPropertyOptional({
+    example: 'es_PE',
+    description: 'Código de idioma de la plantilla WhatsApp',
+  })
+  @ValidateIf(
+    (o: CreateNotificationDto) =>
+      o.channel === 'WHATSAPP' && !o.whatsAppSessionText,
+  )
+  @IsString()
+  @IsNotEmpty({
+    message:
+      'whatsAppTemplateLanguage es requerido para plantillas de WhatsApp',
+  })
+  whatsAppTemplateLanguage?: string;
+
+  @ApiPropertyOptional({
+    example: ['Carlos', '10:00 AM'],
+    description: 'Parámetros ordenados del cuerpo de la plantilla WhatsApp',
+    type: [String],
+  })
+  @ValidateIf(
+    (o: CreateNotificationDto) =>
+      o.channel === 'WHATSAPP' && !o.whatsAppSessionText,
+  )
+  @IsArray()
+  @IsString({ each: true })
+  whatsAppBodyParameters?: string[];
 }

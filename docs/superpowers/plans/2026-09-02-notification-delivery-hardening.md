@@ -158,7 +158,7 @@ git commit -m "fix(notifications): fail closed for unconfigured providers"
 - Produces: `WhatsAppContent = { kind: 'TEMPLATE'; name: string; languageCode: string; bodyParameters: string[] } | { kind: 'SESSION_TEXT'; body: string }`
 - Produces: `sendWhatsApp(to: string, content: WhatsAppContent): Promise<SendWhatsAppResult>`
 
-- [ ] **Step 1: Add exact Meta payload tests**
+- [x] **Step 1: Add exact Meta payload tests**
 
 Mock `fetch` and assert proactive content produces:
 
@@ -181,28 +181,28 @@ expect(JSON.parse(fetchInit.body as string)).toEqual({
 
 Add a separate `SESSION_TEXT` test that preserves the existing text payload. Reject a WhatsApp dispatch lacking either a template or the explicit `SESSION_TEXT` discriminator.
 
-- [ ] **Step 2: Run WhatsApp/dispatcher tests and observe text-only API**
+- [x] **Step 2: Run WhatsApp/dispatcher tests and observe text-only API**
 
 ```bash
 cd server && pnpm test -- whatsapp.service.spec.ts notification-dispatcher.service.spec.ts --runInBand
 ```
 
-- [ ] **Step 3: Implement the discriminated content type**
+- [x] **Step 3: Implement the discriminated content type**
 
 Map `TEMPLATE` to Meta’s `type: 'template'` payload and `SESSION_TEXT` to `type: 'text'`. The dispatcher must accept `whatsAppContent` and pass it unchanged to the provider. For `APPOINTMENT_REMINDER`, callers must supply the configured approved template name/language and ordered non-sensitive template values.
 
-- [ ] **Step 4: Validate DTO input**
+- [x] **Step 4: Validate DTO input**
 
 Expose explicit optional fields `whatsAppTemplateName`, `whatsAppTemplateLanguage`, and `whatsAppBodyParameters`; require them together when channel is `WHATSAPP` unless `whatsAppSessionText=true`. Do not infer session eligibility from current time.
 
-- [ ] **Step 5: Run focused tests and build**
+- [x] **Step 5: Run focused tests and build**
 
 ```bash
 cd server && pnpm test -- notifications --runInBand
 cd server && pnpm build
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add server/src/modules/notifications

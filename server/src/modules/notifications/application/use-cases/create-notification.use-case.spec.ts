@@ -80,9 +80,22 @@ describe('CreateNotificationUseCase (Multicanal)', () => {
       message: 'Cita en 2 horas',
       channel: 'WHATSAPP',
       recipientPhone: '+51999888777',
+      whatsAppTemplateName: 'appointment_reminder',
+      whatsAppTemplateLanguage: 'es_PE',
+      whatsAppBodyParameters: ['Carlos', '10:00'],
       metadata: { appointmentId: 45 },
     });
 
+    expect(dispatcher.dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        whatsAppContent: {
+          kind: 'TEMPLATE',
+          name: 'appointment_reminder',
+          languageCode: 'es_PE',
+          bodyParameters: ['Carlos', '10:00'],
+        },
+      }),
+    );
     expect(notificationRepository.create).toHaveBeenCalledTimes(1);
     expect(notificationRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -95,6 +108,22 @@ describe('CreateNotificationUseCase (Multicanal)', () => {
         }),
       }),
     );
+  });
+
+  it('RED->GREEN: rechaza con BadRequestException si WHATSAPP no especifica plantilla ni sesión libre', async () => {
+    await expect(
+      useCase.execute({
+        userId: 10,
+        type: 'APPOINTMENT_REMINDER',
+        title: 'Recordatorio',
+        message: 'Cita en 2 horas',
+        channel: 'WHATSAPP',
+        recipientPhone: '+51999888777',
+      }),
+    ).rejects.toThrow('plantilla aprobada');
+
+    expect(dispatcher.dispatch).not.toHaveBeenCalled();
+    expect(notificationRepository.create).not.toHaveBeenCalled();
   });
 
   it('RED->GREEN: no persiste nada y lanza ServiceUnavailableException si el despacho externo falla', async () => {
@@ -112,6 +141,7 @@ describe('CreateNotificationUseCase (Multicanal)', () => {
         message: 'Cita en 2 horas',
         channel: 'WHATSAPP',
         recipientPhone: '+51999888777',
+        whatsAppSessionText: true,
       }),
     ).rejects.toThrow(ServiceUnavailableException);
 

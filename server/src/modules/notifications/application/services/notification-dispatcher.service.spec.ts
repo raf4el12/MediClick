@@ -1,11 +1,19 @@
 import { NotificationDispatcherService } from './notification-dispatcher.service.js';
 import type { MailService } from '../../../../shared/mail/mail.service.js';
+import type { WhatsAppContent } from '../../domain/interfaces/notification-channel.interface.js';
 
 describe('NotificationDispatcherService (Enrutador Multicanal Inteligente)', () => {
   let dispatcher: NotificationDispatcherService;
   let smsService: { sendSms: jest.Mock };
   let whatsAppService: { sendWhatsApp: jest.Mock };
   let mailService: { send: jest.Mock };
+
+  const validTemplateContent: WhatsAppContent = {
+    kind: 'TEMPLATE',
+    name: 'appointment_reminder',
+    languageCode: 'es_PE',
+    bodyParameters: ['Carlos', '10:00'],
+  };
 
   beforeEach(() => {
     smsService = {
@@ -43,7 +51,26 @@ describe('NotificationDispatcherService (Enrutador Multicanal Inteligente)', () 
     expect(result.channel).toBe('IN_APP');
   });
 
-  it('RED->GREEN: despacha por WHATSAPP exitosamente sin persistir', async () => {
+  it('RED->GREEN: despacha por WHATSAPP exitosamente pasando whatsAppContent', async () => {
+    const result = await dispatcher.dispatch({
+      userId: 10,
+      recipientPhone: '+51999888777',
+      channel: 'WHATSAPP',
+      title: 'Recordatorio',
+      message: 'Tu cita con el Dr. es mañana a las 10:00',
+      whatsAppContent: validTemplateContent,
+    });
+
+    expect(result.delivered).toBe(true);
+    expect(result.channel).toBe('WHATSAPP');
+    expect(result.messageId).toBe('wpp_123');
+    expect(whatsAppService.sendWhatsApp).toHaveBeenCalledWith(
+      '+51999888777',
+      validTemplateContent,
+    );
+  });
+
+  it('RED->GREEN: rechaza despacho de WHATSAPP si falta whatsAppContent', async () => {
     const result = await dispatcher.dispatch({
       userId: 10,
       recipientPhone: '+51999888777',
@@ -52,13 +79,10 @@ describe('NotificationDispatcherService (Enrutador Multicanal Inteligente)', () 
       message: 'Tu cita con el Dr. es mañana a las 10:00',
     });
 
-    expect(result.delivered).toBe(true);
+    expect(result.delivered).toBe(false);
     expect(result.channel).toBe('WHATSAPP');
-    expect(result.messageId).toBe('wpp_123');
-    expect(whatsAppService.sendWhatsApp).toHaveBeenCalledWith(
-      '+51999888777',
-      'Tu cita con el Dr. es mañana a las 10:00',
-    );
+    expect(result.error).toBe('MISSING_WHATSAPP_CONTENT');
+    expect(whatsAppService.sendWhatsApp).not.toHaveBeenCalled();
   });
 
   it('RED->GREEN: hace fallback automático a SMS si WHATSAPP falla y fallback está habilitado', async () => {
@@ -73,6 +97,7 @@ describe('NotificationDispatcherService (Enrutador Multicanal Inteligente)', () 
       channel: 'WHATSAPP',
       title: 'Recordatorio',
       message: 'Tu cita con el Dr. es mañana a las 10:00',
+      whatsAppContent: validTemplateContent,
       enableFallbackToSms: true,
     });
 
@@ -80,6 +105,10 @@ describe('NotificationDispatcherService (Enrutador Multicanal Inteligente)', () 
     expect(result.channel).toBe('SMS');
     expect(result.fallbackUsed).toBe(true);
     expect(result.messageId).toBe('sms_123');
+    expect(smsService.sendSms).toHaveBeenCalledWith(
+      '+51999888777',
+      'Tu cita con el Dr. es mañana a las 10:00',
+    );
   });
 
   it('RED->GREEN: no hace fallback si está deshabilitado', async () => {
@@ -94,6 +123,7 @@ describe('NotificationDispatcherService (Enrutador Multicanal Inteligente)', () 
       channel: 'WHATSAPP',
       title: 'Recordatorio',
       message: 'Tu cita con el Dr. es mañana a las 10:00',
+      whatsAppContent: validTemplateContent,
       enableFallbackToSms: false,
     });
 

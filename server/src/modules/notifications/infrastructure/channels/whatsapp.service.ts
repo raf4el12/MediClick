@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import {
   IWhatsAppProvider,
   SendWhatsAppResult,
+  WhatsAppContent,
 } from '../../domain/interfaces/notification-channel.interface.js';
 
 @Injectable()
@@ -21,12 +22,25 @@ export class WhatsAppService implements IWhatsAppProvider {
       this.configService.get<string>('NODE_ENV') === 'production';
   }
 
-  async sendWhatsApp(to: string, message: string): Promise<SendWhatsAppResult> {
+  async sendWhatsApp(
+    to: string,
+    content: WhatsAppContent,
+  ): Promise<SendWhatsAppResult> {
     const cleanTo = to?.trim().replace(/\+/g, '');
     if (!cleanTo || cleanTo.length < 6) {
       return {
         success: false,
         error: 'Número de teléfono inválido o vacío para envío WhatsApp',
+      };
+    }
+
+    if (
+      !content ||
+      (content.kind !== 'TEMPLATE' && content.kind !== 'SESSION_TEXT')
+    ) {
+      return {
+        success: false,
+        error: 'Contenido WhatsApp inválido o no especificado',
       };
     }
 
@@ -52,13 +66,37 @@ export class WhatsAppService implements IWhatsAppProvider {
 
     try {
       const url = `https://graph.facebook.com/v19.0/${this.phoneNumberId}/messages`;
-      const payload = {
-        messaging_product: 'whatsapp',
-        recipient_type: 'individual',
-        to: cleanTo,
-        type: 'text',
-        text: { preview_url: false, body: message },
-      };
+      let payload: Record<string, unknown>;
+
+      if (content.kind === 'TEMPLATE') {
+        payload = {
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: cleanTo,
+          type: 'template',
+          template: {
+            name: content.name,
+            language: { code: content.languageCode },
+            components: [
+              {
+                type: 'body',
+                parameters: content.bodyParameters.map((text) => ({
+                  type: 'text',
+                  text,
+                })),
+              },
+            ],
+          },
+        };
+      } else {
+        payload = {
+          messaging_product: 'whatsapp',
+          recipient_type: 'individual',
+          to: cleanTo,
+          type: 'text',
+          text: { preview_url: false, body: content.body },
+        };
+      }
 
       const response = await fetch(url, {
         method: 'POST',

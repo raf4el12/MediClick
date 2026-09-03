@@ -15,6 +15,18 @@ export interface ISmsProvider {
   sendSms(to: string, message: string): Promise<SendSmsResult>;
 }
 
+export type WhatsAppContent =
+  | {
+      kind: 'TEMPLATE';
+      name: string;
+      languageCode: string;
+      bodyParameters: string[];
+    }
+  | {
+      kind: 'SESSION_TEXT';
+      body: string;
+    };
+
 export interface SendWhatsAppResult {
   success: boolean;
   messageId?: string;
@@ -24,8 +36,7 @@ export interface SendWhatsAppResult {
 export interface IWhatsAppProvider {
   sendWhatsApp(
     to: string,
-    message: string,
-    parameters?: Record<string, string>,
+    content: WhatsAppContent,
   ): Promise<SendWhatsAppResult>;
 }
 
@@ -36,6 +47,7 @@ export interface DispatchNotificationOptions {
   channel: NotificationChannelType;
   title: string;
   message: string;
+  whatsAppContent?: WhatsAppContent;
   metadata?: Record<string, unknown> | null;
   enableFallbackToSms?: boolean;
 }

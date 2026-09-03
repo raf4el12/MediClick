@@ -35,9 +35,17 @@ export class NotificationDispatcherService {
     // 1. Canal WHATSAPP
     if (channel === 'WHATSAPP') {
       if (recipientPhone) {
+        if (!options.whatsAppContent) {
+          return {
+            channel: 'WHATSAPP',
+            delivered: false,
+            error: 'MISSING_WHATSAPP_CONTENT',
+          };
+        }
+
         const wppResult = await this.whatsAppProvider.sendWhatsApp(
           recipientPhone,
-          message,
+          options.whatsAppContent,
         );
         if (wppResult.success) {
           return {

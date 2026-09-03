@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   Inject,
   Logger,
@@ -8,7 +9,10 @@ import { CreateNotificationDto } from '../dto/create-notification.dto.js';
 import { NotificationResponseDto } from '../dto/notification-response.dto.js';
 import type { INotificationRepository } from '../../domain/repositories/notification.repository.js';
 import { NotificationDispatcherService } from '../services/notification-dispatcher.service.js';
-import type { NotificationChannelType } from '../../domain/interfaces/notification-channel.interface.js';
+import type {
+  NotificationChannelType,
+  WhatsAppContent,
+} from '../../domain/interfaces/notification-channel.interface.js';
 
 @Injectable()
 export class CreateNotificationUseCase {
@@ -27,6 +31,31 @@ export class CreateNotificationUseCase {
     let finalChannel = requestedChannel;
     let providerMetadata: Record<string, unknown> = {};
 
+    let whatsAppContent: WhatsAppContent | undefined;
+    if (requestedChannel === 'WHATSAPP') {
+      if (dto.whatsAppSessionText) {
+        whatsAppContent = {
+          kind: 'SESSION_TEXT',
+          body: dto.message,
+        };
+      } else if (
+        dto.whatsAppTemplateName &&
+        dto.whatsAppTemplateLanguage &&
+        dto.whatsAppBodyParameters
+      ) {
+        whatsAppContent = {
+          kind: 'TEMPLATE',
+          name: dto.whatsAppTemplateName,
+          languageCode: dto.whatsAppTemplateLanguage,
+          bodyParameters: dto.whatsAppBodyParameters,
+        };
+      } else {
+        throw new BadRequestException(
+          'Para envíos proactivos por WhatsApp se requiere una plantilla aprobada (whatsAppTemplateName, whatsAppTemplateLanguage, whatsAppBodyParameters) o habilitar whatsAppSessionText',
+        );
+      }
+    }
+
     // Si es un canal externo (SMS, WHATSAPP, EMAIL), despachar a través del dispatcher multicanal
     if (
       requestedChannel === 'SMS' ||
@@ -40,6 +69,7 @@ export class CreateNotificationUseCase {
         channel: requestedChannel,
         title: dto.title,
         message: dto.message,
+        whatsAppContent,
         metadata: dto.metadata ?? null,
       });
 
