@@ -232,7 +232,7 @@ git commit -m "fix(reminders): send by clinic-local cadence windows"
 - Produces: `GET /appointments/actions/respond?token=...` preview redirect only
 - Preserves: `POST /appointments/actions/respond { token }` as the only mutation route
 
-- [ ] **Step 1: Add controller and use-case regression tests**
+- [x] **Step 1: Add controller and use-case regression tests**
 
 ```ts
 await controller.respondToReminder(token, response);
@@ -250,17 +250,17 @@ expect(cancellationService.cancel).not.toHaveBeenCalled();
 
 Add a reschedule integration assertion that `confirmedAt` becomes null, `isAtRisk` becomes false, and a new scheduled instant can claim T24/T2 without deleting historical sent rows.
 
-- [ ] **Step 2: Run tests and observe failures**
+- [x] **Step 2: Run tests and observe failures**
 
 ```bash
 cd server && pnpm test -- appointment.controller.spec.ts respond-appointment-reminder reschedule-appointment --runInBand
 ```
 
-- [ ] **Step 3: Remove all mutation from GET**
+- [x] **Step 3: Remove all mutation from GET**
 
 GET may validate only the token shape/signature and redirect to `${CLIENT_URL}/appointment/respond?token=${encodeURIComponent(token)}`. Remove the `redirect=false` mutation escape hatch. POST continues to call `execute(dto.token)`. Update email links to target GET previews. Create the client page so it displays the decoded action as a confirmation prompt and calls a new `appointmentsService.respondToReminder(token)` POST method only after the user presses the confirm/cancel button; mounting/rendering the page must perform no mutation.
 
-- [ ] **Step 4: Reject completed cancellation and reset reminder state atomically on reschedule**
+- [x] **Step 4: Reject completed cancellation and reset reminder state atomically on reschedule**
 
 In the CANCEL branch, reject `COMPLETED` before invoking `AppointmentCancellationService`. In `rescheduleWithOverlapCheck`, set the following in the same transaction as the slot move:
 
@@ -272,7 +272,7 @@ reminderSent: false,
 
 Do not delete delivery history; Task 2's `scheduledFor` uniqueness makes the new appointment instant independently eligible.
 
-- [ ] **Step 5: Run focused and database tests**
+- [x] **Step 5: Run focused and database tests**
 
 ```bash
 cd server && pnpm test -- appointment.controller.spec.ts respond-appointment-reminder reschedule-appointment --runInBand
@@ -283,7 +283,7 @@ cd client && pnpm build
 cd client && pnpm test:a11y
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 Before committing, document the implemented T-24/T-2 cadence, POST-only mutation, retryable delivery claims, and reschedule reset in `docs/domain/APPOINTMENT-CORE.md`.
 

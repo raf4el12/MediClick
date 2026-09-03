@@ -92,6 +92,9 @@ export class RespondAppointmentReminderUseCase {
     }
 
     if (action === ReminderAction.CANCEL) {
+      if (appointment.status === AppointmentStatus.COMPLETED) {
+        throw new ConflictException('No se puede cancelar una cita completada');
+      }
       if (appointment.status === AppointmentStatus.CANCELLED) {
         return {
           appointmentId,

@@ -530,9 +530,9 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
             ...(data.pendingUntil !== undefined && {
               pendingUntil: data.pendingUntil,
             }),
-            ...(data.reminderSent !== undefined && {
-              reminderSent: data.reminderSent,
-            }),
+            confirmedAt: null,
+            isAtRisk: false,
+            reminderSent: false,
             updatedAt: data.updatedAt ?? new Date(),
           },
           include: appointmentInclude,

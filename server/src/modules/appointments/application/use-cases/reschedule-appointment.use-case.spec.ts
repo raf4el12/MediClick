@@ -397,4 +397,37 @@ describe('RescheduleAppointmentUseCase — TDD', () => {
       appointmentRepository.rescheduleWithOverlapCheck,
     ).not.toHaveBeenCalled();
   });
+
+  it('RED->GREEN: reinicia atómicamente confirmedAt=null, isAtRisk=false y reminderSent=false al reagendar', async () => {
+    const appt = buildAppointment({
+      confirmedAt: new Date(),
+      isAtRisk: true,
+      reminderSent: true,
+    });
+    appointmentRepository.findById.mockResolvedValue(appt);
+    scheduleRepository.findById.mockResolvedValue(buildSchedule());
+    appointmentRepository.rescheduleWithOverlapCheck.mockResolvedValue({
+      ...appt,
+      confirmedAt: null,
+      isAtRisk: false,
+      reminderSent: false,
+    });
+
+    await useCase.execute(10, dto, globalActor);
+
+    expect(
+      appointmentRepository.rescheduleWithOverlapCheck,
+    ).toHaveBeenCalledWith(
+      10,
+      expect.objectContaining({
+        confirmedAt: null,
+        isAtRisk: false,
+        reminderSent: false,
+      }),
+      99,
+      expect.any(Date),
+      expect.any(Date),
+      expect.any(Object),
+    );
+  });
 });

@@ -106,6 +106,8 @@ export class RescheduleAppointmentUseCase {
         endTime: newEndTime,
         status: isPaid ? appointment.status : AppointmentStatus.PENDING,
         pendingUntil,
+        confirmedAt: null,
+        isAtRisk: false,
         reminderSent: false,
         updatedAt: new Date(),
       },

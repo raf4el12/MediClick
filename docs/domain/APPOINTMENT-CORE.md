@@ -67,6 +67,15 @@ Un sobrecupo se agrega después del final de la capacidad regular o de la últim
 
 Fuente: `create-overbook-appointment.use-case.ts`.
 
+### Recordatorios y confirmación asistencial
+
+1. **Cadencia T-24h y T-2h**: el job cron evalúa las citas cada 15 minutos en ventanas temporales disjuntas (`(23h45m, 24h]` para T-24h y `(1h45m, 2h]` para T-2h) derivando el instante UTC real a partir de la fecha de la agenda, hora de inicio y zona horaria IANA de la sede. T-2h requiere `confirmedAt === null` y marca la cita con `isAtRisk = true`.
+2. **Claims atómicos y reintentos**: cada entrega por canal (`EMAIL`, `IN_APP`) se reclama atómicamente en `AppointmentReminders` bajo la clave única `[appointmentId, kind, channel, scheduledFor]`. Un fallo en el proveedor marca el registro como `FAILED` con backoff en `nextAttemptAt` para posibilitar reintentos.
+3. **Mutación solo por POST**: los accesos vía `GET /appointments/actions/respond` son de solo lectura y redirigen a la vista de confirmación interactiva en el cliente (`/appointment/respond?token=...`). La confirmación o cancelación se efectúa exclusivamente mediante `POST /appointments/actions/respond`, previniendo que prefetchers o analizadores de links en clientes de email muten el estado asistencial.
+4. **Reinicio al reagendar**: mover una cita a un nuevo slot reinicia atómicamente `confirmedAt = null`, `isAtRisk = false` y `reminderSent = false` dentro de la transacción serializable, conservando el historial de entregas previas para auditoría mientras hace elegible al nuevo instante `scheduledFor`.
+
+Fuentes: `appointment-reminder.service.ts`, `prisma-appointment-reminder-delivery.repository.ts`, `appointment.controller.ts`, `reschedule-appointment.use-case.ts`.
+
 ## Estados independientes
 
 El estado asistencial de la cita y el estado financiero deben razonarse por separado.

@@ -279,8 +279,29 @@ describeDatabase(
       ).resolves.toBe(0);
     });
 
-    it('reagenda y registra el slot viejo dentro de la transacción serializable', async () => {
-      const appointment = await createAppointment();
+    it('reagenda y registra el slot viejo dentro de la transacción serializable, reseteando estado de recordatorios', async () => {
+      const appointment = await createAppointment({
+        status: AppointmentStatus.CONFIRMED,
+      });
+      await prisma.appointments.update({
+        where: { id: appointment.id },
+        data: {
+          confirmedAt: new Date(),
+          isAtRisk: true,
+          reminderSent: true,
+        },
+      });
+      const oldReminder = await prisma.appointmentReminders.create({
+        data: {
+          appointmentId: appointment.id,
+          kind: 'T24',
+          channel: 'EMAIL',
+          scheduledFor: new Date('2099-08-31T14:00:00.000Z'),
+          status: 'SENT',
+          sentAt: new Date(),
+        },
+      });
+
       const operationId = `${operationPrefix}-reschedule`;
       const newStart = new Date('1970-01-01T14:00:00.000Z');
       const newEnd = new Date('1970-01-01T14:30:00.000Z');
@@ -291,7 +312,7 @@ describeDatabase(
           scheduleId: scheduleBId,
           startTime: newStart,
           endTime: newEnd,
-          status: AppointmentStatus.PENDING,
+          status: AppointmentStatus.CONFIRMED,
         },
         scheduleBId,
         newStart,
@@ -307,6 +328,17 @@ describeDatabase(
         where: { id: appointment.id },
       });
       expect(persisted.scheduleId).toBe(scheduleBId);
+      expect(persisted.confirmedAt).toBeNull();
+      expect(persisted.isAtRisk).toBe(false);
+      expect(persisted.reminderSent).toBe(false);
+
+      // Historial conservado
+      const reminderExists = await prisma.appointmentReminders.findUnique({
+        where: { id: oldReminder.id },
+      });
+      expect(reminderExists).not.toBeNull();
+      expect(reminderExists!.status).toBe('SENT');
+
       const event = await prisma.outboxEvents.findFirstOrThrow({
         where: { operationId },
       });

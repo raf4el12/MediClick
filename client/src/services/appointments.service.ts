@@ -141,4 +141,16 @@ export const appointmentsService = {
 
     return response.data;
   },
+
+  respondToReminder: async (token: string): Promise<{
+    appointmentId: number;
+    action: 'CONFIRM' | 'CANCEL';
+    status: string;
+    alreadyConfirmed?: boolean;
+    alreadyCancelled?: boolean;
+    message: string;
+  }> => {
+    const response = await api.post('/appointments/actions/respond', { token });
+    return response.data;
+  },
 };

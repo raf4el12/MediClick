@@ -171,5 +171,18 @@ describe('RespondAppointmentReminderUseCase', () => {
       expect(result.alreadyCancelled).toBe(true);
       expect(cancellationService.cancel).not.toHaveBeenCalled();
     });
+
+    it('RED->GREEN: rechaza si la cita ya fue completada (COMPLETED)', async () => {
+      const token = tokenService.generateToken(20, ReminderAction.CANCEL, 3600);
+
+      appointmentRepo.findById.mockResolvedValue({
+        id: 20,
+        status: AppointmentStatus.COMPLETED,
+        deleted: false,
+      } as unknown as AppointmentWithRelations);
+
+      await expect(useCase.execute(token)).rejects.toThrow(ConflictException);
+      expect(cancellationService.cancel).not.toHaveBeenCalled();
+    });
   });
 });
