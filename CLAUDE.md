@@ -44,9 +44,13 @@ docker compose up               # Levanta postgres + redis
 
 ## Verificación previa al commit
 
-`.githooks/pre-commit` valida cada commit sobre lo que está en el índice: tipos
-y pruebas relacionadas detienen el commit, el lint es informativo. Se activa
-sola en cada `pnpm install`. Detalle en `docs/verificacion-previa-al-commit.md`.
+`.githooks/` valida cada commit juzgando el cambio, no el repositorio: detienen
+el commit los errores de tipos en tus archivos (y las regresiones que tu cambio
+provoque en otros), los hallazgos de ESLint en las líneas que agregas, las
+pruebas relacionadas en rojo, los secretos y el formato del mensaje. La deuda
+previa se reporta aparte y no molesta. Se activa sola en cada `pnpm install`.
+El mismo motor corre fuera del hook: `node scripts/pre-commit.mjs --base
+origin/main`. Detalle en `docs/verificacion-previa-al-commit.md`.
 
 ## Convenciones
 - Módulos NestJS: resolver → service → repository pattern con Prisma.

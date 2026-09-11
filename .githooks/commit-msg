@@ -1,0 +1,16 @@
+#!/bin/sh
+#
+# Valida el mensaje del commit. La logica vive en scripts/commit-msg.mjs.
+
+if [ "$MEDICLICK_SKIP_HOOKS" = "1" ]; then
+  exit 0
+fi
+
+if ! command -v node >/dev/null 2>&1; then
+  [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" >/dev/null 2>&1
+  command -v fnm >/dev/null 2>&1 && eval "$(fnm env)" >/dev/null 2>&1
+fi
+
+command -v node >/dev/null 2>&1 || exit 0
+
+exec node "$(git rev-parse --show-toplevel)/scripts/commit-msg.mjs" "$1"
