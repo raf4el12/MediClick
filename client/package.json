@@ -4,6 +4,7 @@
   "private": true,
   "packageManager": "pnpm@10.28.0",
   "scripts": {
+    "prepare": "node ../scripts/setup-hooks.mjs || true",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
