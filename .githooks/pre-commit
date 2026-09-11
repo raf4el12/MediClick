@@ -1,0 +1,22 @@
+#!/bin/sh
+#
+# Punto de entrada de la compuerta de calidad. La logica vive en
+# scripts/pre-commit.mjs; aqui solo resolvemos node y delegamos.
+
+if [ "$MEDICLICK_SKIP_HOOKS" = "1" ]; then
+  exit 0
+fi
+
+# Los clientes graficos (IDE, GUI de git) lanzan el hook con un PATH minimo que
+# no incluye los gestores de versiones de node.
+if ! command -v node >/dev/null 2>&1; then
+  [ -s "$HOME/.nvm/nvm.sh" ] && . "$HOME/.nvm/nvm.sh" >/dev/null 2>&1
+  command -v fnm >/dev/null 2>&1 && eval "$(fnm env)" >/dev/null 2>&1
+fi
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "No se encontro node en el PATH; se omite la verificacion previa al commit."
+  exit 0
+fi
+
+exec node "$(git rev-parse --show-toplevel)/scripts/pre-commit.mjs"

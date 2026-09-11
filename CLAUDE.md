@@ -42,6 +42,12 @@ cd client && pnpm dev           # Next.js dev server
 docker compose up               # Levanta postgres + redis
 ```
 
+## Verificación previa al commit
+
+`.githooks/pre-commit` valida cada commit sobre lo que está en el índice: tipos
+y pruebas relacionadas detienen el commit, el lint es informativo. Se activa
+sola en cada `pnpm install`. Detalle en `docs/verificacion-previa-al-commit.md`.
+
 ## Convenciones
 - Módulos NestJS: resolver → service → repository pattern con Prisma.
 - Mutations GraphQL siempre retornan el objeto completo actualizado.
