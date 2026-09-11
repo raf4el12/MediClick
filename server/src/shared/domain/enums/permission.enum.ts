@@ -33,6 +33,7 @@ export enum PermissionSubject {
   ROLES = 'ROLES',
   PAYMENTS = 'PAYMENTS',
   REVIEWS = 'REVIEWS',
+  SECURITY_AUDIT = 'SECURITY_AUDIT',
 }
 
 /**
