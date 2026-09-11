@@ -22,6 +22,7 @@ export const SUBJECT_LABELS: Record<string, string> = {
   ROLES: 'Roles',
   SCHEDULES: 'Horarios',
   SCHEDULE_BLOCKS: 'Bloqueos',
+  SECURITY_AUDIT: 'Bitácora de Seguridad',
   SPECIALTIES: 'Especialidades',
   USERS: 'Usuarios',
 };
@@ -46,6 +47,7 @@ export const SUBJECT_ICONS: Record<string, string> = {
   ROLES: 'ri-shield-keyhole-line',
   SCHEDULES: 'ri-calendar-2-line',
   SCHEDULE_BLOCKS: 'ri-calendar-close-line',
+  SECURITY_AUDIT: 'ri-shield-check-line',
   SPECIALTIES: 'ri-medicine-bottle-line',
   USERS: 'ri-group-line',
 };
@@ -135,7 +137,7 @@ export const PERMISSION_DOMAINS: PermissionDomain[] = [
     key: 'admin',
     label: 'Administración',
     icon: 'ri-admin-line',
-    subjects: ['ALL', 'USERS', 'ROLES'],
+    subjects: ['ALL', 'USERS', 'ROLES', 'SECURITY_AUDIT'],
   },
 ];
 
