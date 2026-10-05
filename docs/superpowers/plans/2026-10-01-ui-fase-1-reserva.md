@@ -55,7 +55,7 @@ UI-06 (prototipo) ──► UI-07 (núcleo, TDD) ──┴──► UI-08 (panta
 
 ## UI-05 — Días con cupos por rango (backend)
 
-**Rama:** `feat/ui-05-dias-con-cupos` · **PR:** contra `staging`
+**Rama:** `feat/ui-05-dias-con-cupos` · **PR:** contra `staging` · **Estado:** ✅
 
 **Skills:** `mediclick-appointment-core` (leer `CONTEXT.md` y `APPOINTMENT-CORE.md` completos;
 mismas reglas de feriado, bloqueo y anticipación en hora local de la sede), `mediclick-tenant-safety`

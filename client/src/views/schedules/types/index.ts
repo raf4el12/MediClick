@@ -61,6 +61,20 @@ export interface GetTimeSlotsParams {
   date: string;           // YYYY-MM-DD
 }
 
+export interface GetAvailableDaysParams {
+  doctorId: number;
+  specialtyId: number;
+  dateFrom: string;       // YYYY-MM-DD, día local de la sede, inclusive
+  dateTo: string;         // YYYY-MM-DD, inclusive; máximo 62 días
+}
+
+export interface AvailableDaysResponse {
+  doctorId: number;
+  specialtyId: number;
+  timezone: string;
+  days: { date: string; availableCount: number }[];   // solo días con cupos libres
+}
+
 // ── Calendar helpers ──
 
 export const MONTH_NAMES = [
