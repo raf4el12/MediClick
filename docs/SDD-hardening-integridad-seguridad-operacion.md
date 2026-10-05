@@ -1,6 +1,6 @@
 # SDD — Endurecimiento de integridad, seguridad y operación de MediClick
 
-- **Estado:** P0, P1, SDD-018 y SDD-019 implementados; P2 restante (SDD-020 a SDD-023) y P3 pendiente (SDD-024)
+- **Estado:** P0, P1, SDD-018, SDD-019 y SDD-025 implementados; P2 restante (SDD-020 a SDD-023) y P3 pendiente (SDD-024)
 - **Fecha:** 2026-08-30
 - **Alcance:** backend, persistencia, workers, despliegue y gates de CI del flujo de citas
 - **Prioridad:** corrección de P0 antes de ampliar funcionalidad
@@ -49,6 +49,7 @@ normalizan silenciosamente.
 | F-11 | P1 | Se inicializan permisos con los dos seeds disponibles | El permiso de paciente para actualizar citas difiere entre `seed.ts` y `seed-rbac.ts` | Política de acceso reproducible |
 | F-12 | P1 | Se construye el cliente o se ejecuta `test:a11y` | `playwright.config.ts` importa `@playwright/test`, ausente en `package.json` | Build reproducible |
 | F-13 | P1 | Dos reemplazos concurrentes de disponibilidad para el mismo médico y especialidad | `replaceForDoctorSpecialty` usa `pg_advisory_xact_lock` para ordenar, pero ambas transacciones siguen siendo `Serializable` completas; PostgreSQL puede abortar una con `P2034` y el código no reintenta — confirmado empíricamente en ~97% de 30 corridas aisladas | Disponibilidad de escritura bajo concurrencia real (el lock advisory ordena, no sustituye el reintento) |
+| F-14 | P0 | Un paciente lista citas con `GET /appointments` | Recibe citas de todos los pacientes y de todas las sedes: su JWT trae `clinicId` nulo, el filtro de sede no lo acota y el caso de uso solo restringía al médico | Confidencialidad clínica y alcance del paciente a sus propios datos |
 
 ### 2.2 Huecos de diseño con riesgo operativo alto
 
@@ -669,6 +670,7 @@ diff que toque el núcleo termina con `$mediclick-core-review` antes de integrar
 | SDD-022 | P2 | Añadir métricas, alertas y runbooks de conciliación, outbox, jobs y acceso tenant | `$mediclick-appointment-core` + `$mediclick-tenant-safety` |
 | SDD-023 | P2 | Establecer presupuesto de lint por módulo y bloquear regresiones sin aplicar un fix masivo | `$code-review` |
 | SDD-024 | P3 | Resolver las preguntas de producto y actualizar el núcleo/glosario solo donde cambie lenguaje canónico | `$domain-modeling` + `$mediclick-appointment-core` |
+| SDD-025 ✅ | P0 | Acotar `GET /appointments` del paciente a sus propias citas en todas sus sedes; un usuario paciente sin perfil no recibe ninguna | `$mediclick-tenant-safety` + `$tdd` |
 
 ### Orden recomendado de ejecución
 
@@ -702,6 +704,7 @@ SDD-021 ────────────────────────
 | F-11 | `server/prisma/seed.ts`, `server/prisma/seed-rbac.ts` |
 | F-12 | `client/playwright.config.ts`, `client/package.json` |
 | F-13 | `server/src/modules/availability/infrastructure/persistence/prisma-availability.repository.ts` (`replaceForDoctorSpecialty`), `server/src/modules/availability/infrastructure/persistence/prisma-availability.repository.integration.spec.ts` |
+| F-14 | `server/src/modules/appointments/application/use-cases/get-dashboard-appointments.use-case.ts`, `infrastructure/persistence/prisma-appointment.repository.ts` (`findAllPaginated`), `prisma-appointment-patient-scope.integration.spec.ts` |
 | G-01/G-02 | `server/src/modules/waitlist/application/use-cases/accept-offer.use-case.ts`, `application/services/waitlist-lock.service.ts` |
 | G-04 | `server/src/shared/events/availability-events.interface.ts` y listeners de `appointments`, `waitlist` e `interoperability` |
 | G-05 | `server/src/modules/scheduler/domain/services/appointment-reminder.service.ts`, `application/scheduler.module.ts` |
