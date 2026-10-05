@@ -1,12 +1,14 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { AppointmentResponseDto } from '../dto/appointment-response.dto.js';
 import { PaginatedAppointmentResponseDto } from '../dto/paginated-appointment-response.dto.js';
 import { AppointmentDashboardFilterDto } from '../dto/appointment-dashboard-filter.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type { IDoctorRepository } from '../../../doctors/domain/repositories/doctor.repository.js';
+import type { IPatientRepository } from '../../../patients/domain/repositories/patient.repository.js';
 import type { DashboardFilters } from '../../domain/interfaces/appointment-data.interface.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
+import { SystemRole } from '../../../../shared/domain/enums/permission.enum.js';
 import { dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
 import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
 
@@ -17,6 +19,8 @@ export class GetDashboardAppointmentsUseCase {
     private readonly appointmentRepository: IAppointmentRepository,
     @Inject('IDoctorRepository')
     private readonly doctorRepository: IDoctorRepository,
+    @Inject('IPatientRepository')
+    private readonly patientRepository: IPatientRepository,
   ) {}
 
   async execute(
@@ -37,6 +41,21 @@ export class GetDashboardAppointmentsUseCase {
       }
     }
 
+    // El paciente es multi-sede y su JWT no trae clinicId, así que el filtro
+    // de sede no lo acota: se limita a sus propias citas.
+    let scopedPatientId: number | undefined;
+    if (role === SystemRole.PATIENT) {
+      const patient = userId
+        ? await this.patientRepository.findByUserId(userId)
+        : null;
+      if (!patient) {
+        throw new NotFoundException(
+          'No se encontró un perfil de paciente asociado a tu cuenta',
+        );
+      }
+      scopedPatientId = patient.id;
+    }
+
     // JWT clinicId prevails over client-supplied for staff
     const effectiveClinicId = jwtClinicId ?? filterDto.clinicId;
 
@@ -48,6 +67,7 @@ export class GetDashboardAppointmentsUseCase {
       ...(filterDto.status && { status: filterDto.status }),
       ...(filterDto.isAtRisk !== undefined && { isAtRisk: filterDto.isAtRisk }),
       ...(effectiveClinicId && { clinicId: effectiveClinicId }),
+      ...(scopedPatientId && { patientId: scopedPatientId }),
     };
 
     const result = await this.appointmentRepository.findAllPaginated(

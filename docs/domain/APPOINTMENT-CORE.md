@@ -110,7 +110,7 @@ Los estados financieros agregados son `PENDING`, `PAID`, `PARTIAL`, `REFUNDED`, 
 
 - Pacientes y administradores globales pueden operar entre sedes según sus permisos.
 - Personal con sede solo opera sobre médicos y datos de esa sede.
-- Un paciente solo puede consultar pagos, cancelar o reagendar sus propias citas; las transiciones asistenciales quedan reservadas al personal autorizado.
+- Un paciente solo puede listar sus propias citas (de cualquier sede), consultar sus pagos, cancelarlas o reagendarlas; las transiciones asistenciales quedan reservadas al personal autorizado.
 - Un médico solo opera citas asignadas a su propio perfil. Otro personal de sede solo opera citas de esa sede.
 - El expediente asistencial expone al paciente su propio historial, al personal únicamente datos de su sede y al médico únicamente pacientes con citas asignadas a él en esa sede.
 - Datos de catálogo globales son visibles junto con los específicos de la sede; datos asistenciales estrictos se filtran a la sede.

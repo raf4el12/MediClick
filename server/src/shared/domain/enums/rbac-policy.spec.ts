@@ -155,6 +155,16 @@ describe('rbac-policy (fuente única declarativa)', () => {
       ).toBe(false);
     });
 
+    it('PATIENT no puede leer el listado de transacciones (READ:PAYMENTS, SDD-026)', () => {
+      const granted = grantedPermissionsFor(SystemRole.PATIENT);
+      expect(
+        hasPermission(granted, {
+          action: PermissionAction.READ,
+          subject: PermissionSubject.PAYMENTS,
+        }),
+      ).toBe(false);
+    });
+
     it('RECEPTIONIST no puede gestionar CLINICAL_NOTES (fuera de su matriz)', () => {
       const granted = grantedPermissionsFor(SystemRole.RECEPTIONIST);
       expect(

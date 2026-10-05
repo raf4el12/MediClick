@@ -10,7 +10,6 @@ import {
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Auth } from '../../../../shared/decorators/auth.decorator.js';
 import { CurrentUser } from '../../../../shared/decorators/current-user.decorator.js';
-import { CurrentClinic } from '../../../../shared/decorators/current-clinic.decorator.js';
 import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
 import { CreatePreferenceDto } from '../../application/dto/create-preference.dto.js';
 import { PreferenceResponseDto } from '../../application/dto/preference-response.dto.js';
@@ -63,10 +62,10 @@ export class PaymentController {
   })
   @ApiResponse({ status: 200 })
   async listPayments(
-    @CurrentClinic() clinicId: number | null,
+    @CurrentUser() user: AuthenticatedUser,
     @Query() query: ListPaymentsQueryDto,
   ) {
-    return this.listPaymentsUseCase.execute(clinicId, query);
+    return this.listPaymentsUseCase.execute(user, query);
   }
 
   @Get('appointment/:id')
