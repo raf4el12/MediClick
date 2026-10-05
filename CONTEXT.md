@@ -24,6 +24,14 @@ _Evitar_: Usuario, proveedor
 Usuario que administra la operación de una sede, como un administrador, médico o recepcionista con permisos asignados.
 _Evitar_: Admin como término genérico
 
+**Portal del paciente**:
+Acceso a MediClick de un paciente con usuario, desde el que reserva y gestiona sus propias citas, pagos y reseñas.
+_Evitar_: App del paciente, panel del paciente
+
+**Perfil público del médico**:
+Presentación de un médico consultable sin usuario, limitada a su información profesional y a sus reseñas visibles.
+_Evitar_: Ficha del médico, perfil del médico cuando se habla de sus datos internos
+
 ## Oferta asistencial
 
 **Especialidad**:
@@ -53,6 +61,14 @@ _Evitar_: Cancelación, feriado
 **Feriado**:
 Día no laborable que afecta a una sede o a todas las sedes y en el que no se ofrecen cupos.
 _Evitar_: Bloqueo de agenda
+
+**Agenda**:
+Organización en el tiempo de la capacidad asistencial de un médico en una sede: sus cupos, sus citas, sus bloqueos de agenda y los feriados que la afectan.
+_Evitar_: Calendario, horario
+
+**Jornada**:
+Agenda de un médico para una fecha concreta en una sede.
+_Evitar_: Turno, día laboral
 
 ## Citas y atención
 
@@ -128,6 +144,10 @@ _Evitar_: Vencimiento de la cita
 Registro de un intento o resultado financiero asociado a una cita.
 _Evitar_: Cita, preferencia de checkout
 
+**Comprobante de pago**:
+Constancia imprimible de una transacción de pago aprobada de una cita; no es un documento fiscal.
+_Evitar_: Factura, recibo fiscal
+
 **Estado de pago**:
 Situación financiera de una cita, independiente de su estado asistencial.
 _Evitar_: Estado de la cita
@@ -139,3 +159,13 @@ _Evitar_: Reembolso, precio de consulta
 **Revisión financiera**:
 Trabajo manual requerido cuando el estado de una cita y el resultado del pago no pueden reconciliarse automáticamente.
 _Evitar_: Reembolso completado
+
+## Reseñas
+
+**Reseña**:
+Valoración de uno a cinco que un paciente deja sobre el médico de una cita propia completada; existe a lo sumo una por cita.
+_Evitar_: Calificación, comentario
+
+**Reseña oculta**:
+Reseña retirada de la vista pública por moderación del personal autorizado; no cuenta en la valoración del médico.
+_Evitar_: Reseña eliminada, reseña rechazada
