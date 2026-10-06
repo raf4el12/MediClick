@@ -6,6 +6,7 @@ import { CreatePaymentPreferenceUseCase } from './use-cases/create-payment-prefe
 import { HandlePaymentWebhookUseCase } from './use-cases/handle-payment-webhook.use-case.js';
 import { GetPaymentByAppointmentUseCase } from './use-cases/get-payment-by-appointment.use-case.js';
 import { ListPaymentsUseCase } from './use-cases/list-payments.use-case.js';
+import { ListAppointmentReceiptsUseCase } from './use-cases/list-appointment-receipts.use-case.js';
 import { PaymentController } from '../interfaces/controllers/payment.controller.js';
 import { PaymentWebhookController } from '../interfaces/controllers/payment-webhook.controller.js';
 import { AppointmentAccessPolicy } from '../../../shared/access/appointment-access.policy.js';
@@ -31,6 +32,7 @@ import { PrismaPaymentReconciliationRepository } from '../infrastructure/persist
     HandlePaymentWebhookUseCase,
     GetPaymentByAppointmentUseCase,
     ListPaymentsUseCase,
+    ListAppointmentReceiptsUseCase,
     AppointmentAccessPolicy,
   ],
   exports: ['ITransactionRepository'],
