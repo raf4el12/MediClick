@@ -30,3 +30,11 @@ export interface DoctorRatingAggregate {
   ratingAvg: number | null;
   ratingCount: number;
 }
+
+export interface ReviewModerationFilters {
+  /** Sede de los médicos; `null` no acota (actor global). */
+  clinicId: number | null;
+  isVisible?: boolean;
+  rating?: number;
+  doctorId?: number;
+}

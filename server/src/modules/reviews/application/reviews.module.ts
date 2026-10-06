@@ -6,6 +6,7 @@ import { CreateReviewUseCase } from './use-cases/create-review.use-case.js';
 import { GetDoctorReviewsUseCase } from './use-cases/get-doctor-reviews.use-case.js';
 import { GetMyReviewsUseCase } from './use-cases/get-my-reviews.use-case.js';
 import { SetReviewVisibilityUseCase } from './use-cases/set-review-visibility.use-case.js';
+import { ListReviewsForModerationUseCase } from './use-cases/list-reviews-for-moderation.use-case.js';
 import { ReviewController } from '../interfaces/controllers/review.controller.js';
 
 @Module({
@@ -20,6 +21,7 @@ import { ReviewController } from '../interfaces/controllers/review.controller.js
     GetDoctorReviewsUseCase,
     GetMyReviewsUseCase,
     SetReviewVisibilityUseCase,
+    ListReviewsForModerationUseCase,
   ],
 })
 export class ReviewsModule {}

@@ -166,7 +166,9 @@ Estado verificado: existen `GET /reviews/doctor/:doctorId/all` y `PATCH /reviews
 está en `STRICT_TENANT_MODELS`. Un ADMIN con `clinicId` (tiene `MANAGE:ALL`) puede ocultar reseñas de
 médicos de otra sede. Tampoco hay un listado de reseñas de toda la sede para la tabla de moderación.
 
-### Task 1: Backend — alcance de sede y listado de moderación (TDD)
+### Task 1: Backend — alcance de sede y listado de moderación (TDD) ✅
+
+Hecho en la rama `feat/ui-24-moderacion-resenas-backend`, antes que la pantalla (que depende de UI-03).
 
 **Files:**
 - Modify: `server/src/modules/reviews/application/use-cases/set-review-visibility.use-case.ts`
