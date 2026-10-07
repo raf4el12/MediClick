@@ -1,7 +1,9 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { DoctorReviewsResponseDto } from '../dto/review-response.dto.js';
 import { toReviewResponse } from '../mappers/review.mapper.js';
+import { moderationScope } from '../moderation-scope.js';
 import type { IReviewRepository } from '../../domain/repositories/review.repository.js';
+import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
 
 @Injectable()
 export class GetDoctorReviewsUseCase {
@@ -10,15 +12,17 @@ export class GetDoctorReviewsUseCase {
     private readonly reviewRepository: IReviewRepository,
   ) {}
 
-  // includeHidden = vista de moderación (admin); el promedio/conteo siempre
-  // se calcula solo sobre las visibles, aunque se devuelvan también las ocultas.
+  // Sin `moderator`: reseñas visibles, iguales para cualquiera. Con
+  // `moderator`: también las ocultas, solo de médicos de su sede. El promedio
+  // y el conteo siempre se calculan sobre las visibles.
   async execute(
     doctorId: number,
-    includeHidden = false,
+    moderator?: Pick<AuthenticatedUser, 'roleName' | 'clinicId'>,
   ): Promise<DoctorReviewsResponseDto> {
     const reviews = await this.reviewRepository.findByDoctorId(
       doctorId,
-      !includeHidden,
+      !moderator,
+      moderator ? moderationScope(moderator) : null,
     );
 
     const visible = reviews.filter((r) => r.isVisible);

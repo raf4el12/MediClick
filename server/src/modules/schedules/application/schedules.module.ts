@@ -9,6 +9,7 @@ import { PrismaScheduleRepository } from '../infrastructure/persistence/prisma-s
 import { GenerateSchedulesUseCase } from './use-cases/generate-schedules.use-case.js';
 import { FindAllSchedulesUseCase } from './use-cases/find-all-schedules.use-case.js';
 import { GetAvailableTimeSlotsUseCase } from './use-cases/get-available-time-slots.use-case.js';
+import { GetAvailableDaysUseCase } from './use-cases/get-available-days.use-case.js';
 import { ScheduleRegenerationService } from '../domain/services/schedule-regeneration.service.js';
 import { ScheduleController } from '../interfaces/controllers/schedule.controller.js';
 
@@ -30,6 +31,7 @@ import { ScheduleController } from '../interfaces/controllers/schedule.controlle
     GenerateSchedulesUseCase,
     FindAllSchedulesUseCase,
     GetAvailableTimeSlotsUseCase,
+    GetAvailableDaysUseCase,
     ScheduleRegenerationService,
   ],
   exports: ['IScheduleRepository', ScheduleRegenerationService],

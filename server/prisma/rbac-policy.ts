@@ -162,7 +162,6 @@ export const ROLE_PERMISSIONS: Readonly<Record<SystemRole, readonly string[]>> =
       permissionKey(PermissionAction.READ, PermissionSubject.MEDICAL_HISTORY),
       permissionKey(PermissionAction.READ, PermissionSubject.NOTIFICATIONS),
       permissionKey(PermissionAction.UPDATE, PermissionSubject.NOTIFICATIONS),
-      permissionKey(PermissionAction.READ, PermissionSubject.PAYMENTS),
       permissionKey(PermissionAction.CREATE, PermissionSubject.REVIEWS),
       permissionKey(PermissionAction.READ, PermissionSubject.REVIEWS),
     ],

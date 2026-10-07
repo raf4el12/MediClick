@@ -105,12 +105,13 @@ Los estados financieros agregados son `PENDING`, `PAID`, `PARTIAL`, `REFUNDED`, 
 - Al generar cupos, solo un feriado global o de la sede del médico bloquea la fecha; un feriado de otra sede no afecta su agenda.
 - Crear o actualizar un feriado o bloqueo publica `availability.restriction_changed` con la sede, actor y rangos anterior/nuevo. El listener consulta la unión de los rangos y vuelve a comprobar `isHoliday` o `isBlocked` contra el estado final antes de cancelar una cita.
 - Crear o reagendar combina la comprobación de solapamiento y la escritura en una transacción serializable.
+- Un cupo se ofrece libre solo si no se solapa con ninguna cita activa del médico en esa fecha, de cualquier especialidad, ni con un bloqueo, ni cae dentro de la anticipación mínima. `time-slots`, `available-days` (días con cupos por rango, máximo 62 días) y la agenda comparten ese cálculo (`computeSlots`); antes, `time-slots` solo descontaba las citas del propio bloque de agenda y ofrecía libres cupos que la creación luego rechazaba.
 
 ### Sedes y acceso
 
 - Pacientes y administradores globales pueden operar entre sedes según sus permisos.
 - Personal con sede solo opera sobre médicos y datos de esa sede.
-- Un paciente solo puede consultar pagos, cancelar o reagendar sus propias citas; las transiciones asistenciales quedan reservadas al personal autorizado.
+- Un paciente solo puede listar sus propias citas (de cualquier sede), consultar sus pagos, cancelarlas o reagendarlas; las transiciones asistenciales quedan reservadas al personal autorizado.
 - Un médico solo opera citas asignadas a su propio perfil. Otro personal de sede solo opera citas de esa sede.
 - El expediente asistencial expone al paciente su propio historial, al personal únicamente datos de su sede y al médico únicamente pacientes con citas asignadas a él en esa sede.
 - Datos de catálogo globales son visibles junto con los específicos de la sede; datos asistenciales estrictos se filtran a la sede.

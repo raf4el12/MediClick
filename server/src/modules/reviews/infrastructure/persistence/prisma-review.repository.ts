@@ -5,8 +5,10 @@ import { tenantStorage } from '../../../../prisma/tenant-context.js';
 import { IReviewRepository } from '../../domain/repositories/review.repository.js';
 import {
   CreateReviewData,
+  ReviewModerationFilters,
   ReviewWithRelations,
 } from '../../domain/interfaces/review-data.interface.js';
+import type { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
 
 const reviewInclude = {
   patient: {
@@ -22,6 +24,9 @@ const reviewInclude = {
     },
   },
 } as const;
+
+const doctorClinicScope = (clinicId: number | null) =>
+  clinicId === null ? {} : { doctor: { clinicId } };
 
 @Injectable()
 export class PrismaReviewRepository implements IReviewRepository {
@@ -57,9 +62,14 @@ export class PrismaReviewRepository implements IReviewRepository {
   async findByDoctorId(
     doctorId: number,
     onlyVisible: boolean,
+    scopeClinicId: number | null,
   ): Promise<ReviewWithRelations[]> {
-    return this.prisma.tenant.reviews.findMany({
-      where: { doctorId, ...(onlyVisible ? { isVisible: true } : {}) },
+    return this.prisma.reviews.findMany({
+      where: {
+        doctorId,
+        ...(onlyVisible ? { isVisible: true } : {}),
+        ...doctorClinicScope(scopeClinicId),
+      },
       include: reviewInclude,
       orderBy: { createdAt: 'desc' },
     }) as unknown as Promise<ReviewWithRelations[]>;
@@ -76,24 +86,54 @@ export class PrismaReviewRepository implements IReviewRepository {
   async setVisibility(
     id: number,
     isVisible: boolean,
+    scopeClinicId: number | null,
   ): Promise<ReviewWithRelations | null> {
-    const existing = await this.prisma.reviews.findUnique({
-      where: { id },
-      select: { id: true, doctorId: true },
-    });
-    if (!existing) return null;
-
+    // El callback de $transaction no hereda el tenant: el alcance de sede se
+    // aplica explícitamente, por la sede del médico de la reseña.
     return this.prisma.$transaction(async (tx) => {
+      const existing = await tx.reviews.findFirst({
+        where: { id, ...doctorClinicScope(scopeClinicId) },
+        select: { id: true, doctorId: true },
+      });
+      if (!existing) return null;
+
       const review = await tx.reviews.update({
         where: { id },
         data: { isVisible },
         include: reviewInclude,
       });
-
       await this.recalculateDoctorRating(tx, existing.doctorId);
-
       return review as unknown as ReviewWithRelations;
     });
+  }
+
+  async findForModeration(
+    filters: ReviewModerationFilters,
+    page: { offset: number; limit: number },
+  ): Promise<PaginatedResult<ReviewWithRelations>> {
+    const where: Prisma.ReviewsWhereInput = {
+      ...doctorClinicScope(filters.clinicId),
+      ...(filters.isVisible !== undefined && { isVisible: filters.isVisible }),
+      ...(filters.rating !== undefined && { rating: filters.rating }),
+      ...(filters.doctorId !== undefined && { doctorId: filters.doctorId }),
+    };
+    const [rows, totalRows] = await Promise.all([
+      this.prisma.reviews.findMany({
+        where,
+        include: reviewInclude,
+        orderBy: { createdAt: 'desc' },
+        skip: page.offset,
+        take: page.limit,
+      }),
+      this.prisma.reviews.count({ where }),
+    ]);
+
+    return {
+      totalRows,
+      totalPages: Math.ceil(totalRows / page.limit),
+      currentPage: Math.floor(page.offset / page.limit) + 1,
+      rows: rows as unknown as ReviewWithRelations[],
+    };
   }
 
   // Promedio y conteo sobre reseñas VISIBLES (una oculta no cuenta).

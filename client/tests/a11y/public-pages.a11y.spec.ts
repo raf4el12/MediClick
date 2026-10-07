@@ -1,5 +1,6 @@
-import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '../support/fixtures';
+import { expectAccessible } from '../support/accessible';
+import type { Page } from '@playwright/test';
 
 type PublicPage = {
   name: string;
@@ -29,31 +30,12 @@ const publicPages: PublicPage[] = [
   },
 ];
 
-function formatViolations(
-  violations: Awaited<ReturnType<AxeBuilder['analyze']>>['violations'],
-): string {
-  return violations
-    .map((violation) => {
-      const targets = violation.nodes
-        .flatMap((node) => node.target)
-        .map(String)
-        .join(', ');
-
-      return `[${violation.impact ?? 'unknown'}] ${violation.id}: ${violation.help} (${targets})`;
-    })
-    .join('\n');
-}
-
 for (const publicPage of publicPages) {
   test(`${publicPage.name} cumple WCAG 2.1 AA`, async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto(publicPage.path, { waitUntil: 'domcontentloaded' });
     await publicPage.ready(page);
 
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-      .analyze();
-
-    expect(results.violations, formatViolations(results.violations)).toEqual([]);
+    await expectAccessible(page);
   });
 }

@@ -10,18 +10,14 @@ import type { IScheduleRepository } from '../../domain/repositories/schedule.rep
 import type { ISpecialtyRepository } from '../../../specialties/domain/repositories/specialty.repository.js';
 import type { IHolidayRepository } from '../../../holidays/domain/repositories/holiday.repository.js';
 import type { IScheduleBlockRepository } from '../../../schedule-blocks/domain/repositories/schedule-block.repository.js';
-import type { ScheduleBlockEntity } from '../../../schedule-blocks/domain/entities/schedule-block.entity.js';
-import { TimeSlotCalculatorService } from '../../domain/services/time-slot-calculator.service.js';
-import type { ScheduleWithBookedSlots } from '../../domain/interfaces/schedule-data.interface.js';
 import {
-  dateToTimeString,
-  normalizeToTimeOnly,
-  timeRangesOverlap,
-  toMinutesUTC,
+  computeSlots,
+  todayMinStartMsOfDay,
+} from '../../domain/services/slot-availability.js';
+import {
   nowInTimezone,
   todayStartInTimezone,
   scheduleDateToLocalDay,
-  MIN_BOOKING_ANTICIPATION_MS,
 } from '../../../../shared/utils/date-time.utils.js';
 import { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
 
@@ -82,18 +78,24 @@ export class GetAvailableTimeSlotsUseCase {
       return [];
     }
 
-    // 3. Buscar los horarios del doctor para esa fecha y especialidad,
-    //    junto con las citas activas ya agendadas
-    const schedules =
-      await this.scheduleRepository.findByDoctorDateWithBookedSlots(
-        dto.doctorId,
-        date,
-        dto.specialtyId,
-      );
+    // 3. Bloques de agenda del doctor para esa fecha y especialidad
+    const schedules = await this.scheduleRepository.findByDoctorRange(
+      dto.doctorId,
+      date,
+      date,
+      dto.specialtyId,
+    );
 
     if (schedules.length === 0) {
       return [];
     }
+
+    const doctorBookings =
+      await this.scheduleRepository.findDoctorBookingsInRange(
+        dto.doctorId,
+        date,
+        date,
+      );
 
     const blocks =
       await this.scheduleBlockRepository.findActiveByDoctorAndDateRange(
@@ -103,84 +105,26 @@ export class GetAvailableTimeSlotsUseCase {
       );
 
     // Para hoy, los slots dentro de la ventana de anticipación no son reservables
-    let minStartMsOfDay = 0;
-    if (dayStart.getTime() === todayStart.getTime()) {
-      const now = nowInTimezone(tz);
-      const nowMsOfDay =
-        (now.getHours() * 60 + now.getMinutes()) * 60 * 1000 +
-        now.getSeconds() * 1000;
-      minStartMsOfDay = nowMsOfDay + MIN_BOOKING_ANTICIPATION_MS;
-    }
+    const minStartMsOfDay =
+      dayStart.getTime() === todayStart.getTime()
+        ? todayMinStartMsOfDay(nowInTimezone(tz))
+        : 0;
 
-    // 4. Generar slots y cruzar con citas, bloqueos y anticipación
+    // 4. Generar slots y cruzar con las citas del médico, bloqueos y anticipación
     const result: TimeSlotResponseDto[] = [];
-    const bufferMinutes = specialty.bufferMinutes ?? 0;
-
     for (const schedule of schedules) {
-      const slots = this.generateSlotsForSchedule(
-        schedule,
-        specialty.duration,
-        bufferMinutes,
-        blocks,
-        minStartMsOfDay,
+      result.push(
+        ...computeSlots({
+          schedule,
+          durationMinutes: specialty.duration,
+          bufferMinutes: specialty.bufferMinutes ?? 0,
+          doctorBookings,
+          blocks,
+          minStartMsOfDay,
+        }),
       );
-      result.push(...slots);
     }
 
     return result;
-  }
-
-  /**
-   * Genera los time slots para un bloque horario y marca como no disponibles
-   * los que se superponen con citas existentes o bloqueos del doctor, y los
-   * que caen dentro de la ventana de anticipación mínima.
-   */
-  private generateSlotsForSchedule(
-    schedule: ScheduleWithBookedSlots,
-    durationMinutes: number,
-    bufferMinutes: number,
-    blocks: ScheduleBlockEntity[],
-    minStartMsOfDay: number,
-  ): TimeSlotResponseDto[] {
-    const theoreticalSlots = TimeSlotCalculatorService.generate(
-      normalizeToTimeOnly(schedule.timeFrom),
-      normalizeToTimeOnly(schedule.timeTo),
-      durationMinutes,
-      bufferMinutes,
-    );
-
-    return theoreticalSlots.map((slot) => {
-      const isOccupied = schedule.bookedSlots.some((booked) =>
-        timeRangesOverlap(
-          slot.startTime,
-          slot.endTime,
-          booked.startTime,
-          booked.endTime,
-        ),
-      );
-
-      const isBlocked = blocks.some(
-        (block) =>
-          block.type === 'FULL_DAY' ||
-          (block.timeFrom !== null &&
-            block.timeTo !== null &&
-            timeRangesOverlap(
-              slot.startTime,
-              slot.endTime,
-              block.timeFrom,
-              block.timeTo,
-            )),
-      );
-
-      const isTooSoon =
-        toMinutesUTC(slot.startTime) * 60 * 1000 < minStartMsOfDay;
-
-      return {
-        scheduleId: schedule.id,
-        startTime: dateToTimeString(slot.startTime),
-        endTime: dateToTimeString(slot.endTime),
-        available: !isOccupied && !isBlocked && !isTooSoon,
-      };
-    });
   }
 }

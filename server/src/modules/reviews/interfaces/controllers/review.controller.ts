@@ -6,6 +6,7 @@ import {
   Body,
   Param,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -18,11 +19,15 @@ import { SetReviewVisibilityDto } from '../../application/dto/set-review-visibil
 import {
   ReviewResponseDto,
   DoctorReviewsResponseDto,
+  PaginatedReviewResponseDto,
 } from '../../application/dto/review-response.dto.js';
+import { ListReviewsQueryDto } from '../../application/dto/list-reviews-query.dto.js';
 import { CreateReviewUseCase } from '../../application/use-cases/create-review.use-case.js';
 import { GetDoctorReviewsUseCase } from '../../application/use-cases/get-doctor-reviews.use-case.js';
 import { GetMyReviewsUseCase } from '../../application/use-cases/get-my-reviews.use-case.js';
 import { SetReviewVisibilityUseCase } from '../../application/use-cases/set-review-visibility.use-case.js';
+import { ListReviewsForModerationUseCase } from '../../application/use-cases/list-reviews-for-moderation.use-case.js';
+import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
 
 @ApiTags('Reviews')
 @Controller('reviews')
@@ -32,6 +37,7 @@ export class ReviewController {
     private readonly getDoctorReviewsUseCase: GetDoctorReviewsUseCase,
     private readonly getMyReviewsUseCase: GetMyReviewsUseCase,
     private readonly setReviewVisibilityUseCase: SetReviewVisibilityUseCase,
+    private readonly listReviewsForModerationUseCase: ListReviewsForModerationUseCase,
   ) {}
 
   @Post()
@@ -50,6 +56,23 @@ export class ReviewController {
     @Body() dto: CreateReviewDto,
   ): Promise<ReviewResponseDto> {
     return this.createReviewUseCase.execute(userId, dto, clinicId);
+  }
+
+  @Get()
+  @Auth()
+  @RequirePermissions('UPDATE', 'REVIEWS')
+  @ApiOperation({
+    summary: 'Reseñas para moderar (visibles y ocultas) de la sede del actor',
+    description:
+      'Un administrador con sede ve solo reseñas de médicos de su sede; ' +
+      'SUPER_ADMIN y ADMIN sin sede ven todas.',
+  })
+  @ApiResponse({ status: 200, type: PaginatedReviewResponseDto })
+  async listForModeration(
+    @Query() query: ListReviewsQueryDto,
+    @CurrentUser() actor: AuthenticatedUser,
+  ): Promise<PaginatedReviewResponseDto> {
+    return this.listReviewsForModerationUseCase.execute(query, actor);
   }
 
   @Get('my')
@@ -84,8 +107,9 @@ export class ReviewController {
   @ApiResponse({ status: 200, type: DoctorReviewsResponseDto })
   async doctorReviewsForModeration(
     @Param('doctorId', ParseIntPipe) doctorId: number,
+    @CurrentUser() actor: AuthenticatedUser,
   ): Promise<DoctorReviewsResponseDto> {
-    return this.getDoctorReviewsUseCase.execute(doctorId, true);
+    return this.getDoctorReviewsUseCase.execute(doctorId, actor);
   }
 
   @Patch(':id/visibility')
@@ -97,7 +121,8 @@ export class ReviewController {
   async setVisibility(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: SetReviewVisibilityDto,
+    @CurrentUser() actor: AuthenticatedUser,
   ): Promise<ReviewResponseDto> {
-    return this.setReviewVisibilityUseCase.execute(id, dto.isVisible);
+    return this.setReviewVisibilityUseCase.execute(id, dto.isVisible, actor);
   }
 }

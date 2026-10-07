@@ -59,3 +59,17 @@ export class DoctorReviewsResponseDto {
   @ApiProperty({ type: [ReviewResponseDto] })
   reviews: ReviewResponseDto[];
 }
+
+export class PaginatedReviewResponseDto {
+  @ApiProperty({ example: 12 })
+  totalRows: number;
+
+  @ApiProperty({ example: 2 })
+  totalPages: number;
+
+  @ApiProperty({ example: 1 })
+  currentPage: number;
+
+  @ApiProperty({ type: [ReviewResponseDto] })
+  rows: ReviewResponseDto[];
+}
