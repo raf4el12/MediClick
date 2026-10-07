@@ -55,7 +55,7 @@ Vitest prueba la lógica pura; Playwright prueba pantallas contra REST simulado 
 
 ## UI-01 — Fundación Materio v6
 
-**Rama:** `feat/ui-01-fundacion-materio` · **Skills:** `codebase-design`
+**Rama:** `feat/ui-01-fundacion-materio` · **Skills:** `codebase-design` · **Depende de:** UI-02
 
 ### Task 1: Dependencias fijadas
 
@@ -115,8 +115,7 @@ Vitest prueba la lógica pura; Playwright prueba pantallas contra REST simulado 
 - Produces: `createTheme({ cssVariables: { colorSchemeSelector: 'data' }, colorSchemes, … })` y
   `ThemeProvider forceThemeRerender` (investigación §1, punto 4); variables `--mui-*` disponibles.
 
-- [ ] **Step 1 (RED):** escribir `primaryColorConfig.test.ts` (Vitest, se ejecuta tras UI-02; en
-  este PR correrlo con `pnpm dlx vitest run src/configs`): para cada preset, contraste WCAG del
+- [ ] **Step 1 (RED):** escribir `primaryColorConfig.test.ts` (Vitest, ya disponible por UI-02: `pnpm test`): para cada preset, contraste WCAG del
   `main` con `#FFFFFF` ≥ 4,5 y como texto sobre `#F4F5FA` y sobre `background.paper` ≥ 4,5. Con
   los presets de Materio (`#8C57FF` 4,27; `#0D9394` 3,74; `#EB3D63` 3,90; `#FFAB1D` 1,89;
   `#2092EC` 3,29) falla.
@@ -171,7 +170,7 @@ Vitest prueba la lógica pura; Playwright prueba pantallas contra REST simulado 
 
 ## UI-02 — Vitest y arnés de pruebas de navegador
 
-**Rama:** `feat/ui-02-arnes-pruebas` · **Skills:** `tdd` · **Depende de:** UI-01
+**Rama:** `feat/ui-02-arnes-pruebas` · **Skills:** `tdd` · **Depende de:** — (se adelantó a UI-01) · **Estado:** ✅
 
 ### Task 1: Vitest
 
@@ -184,7 +183,7 @@ Vitest prueba la lógica pura; Playwright prueba pantallas contra REST simulado 
   lo pide).
 - [ ] **Step 2:** `vitest.config.ts` con alias `@/*`, `include: ['src/**/*.test.ts']` y exclusión de
   `tests/**` (Playwright).
-- [ ] **Step 3:** `pnpm test` → corre `primaryColorConfig.test.ts` de UI-01 en verde.
+- [x] **Step 3:** `pnpm test` → corre `src/utils/timezone.test.ts` (fecha en la zona de la sede) en verde; la prueba de colores llega con UI-01.
 
 ### Task 2: Arnés Playwright (§5.3)
 
