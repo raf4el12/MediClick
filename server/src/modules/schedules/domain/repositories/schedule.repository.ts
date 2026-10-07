@@ -1,8 +1,9 @@
 import {
   ScheduleWithRelations,
   ScheduleWithAvailability,
-  ScheduleWithBookedSlots,
+  ScheduleWindow,
   CreateScheduleData,
+  DoctorBooking,
 } from '../interfaces/schedule-data.interface.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
@@ -65,12 +66,24 @@ export interface IScheduleRepository {
   ): Promise<ScheduleWithAvailability[]>;
 
   /**
-   * Devuelve los horarios de un doctor para una fecha y especialidad,
-   * junto con los rangos exactos (startTime, endTime) de las citas activas.
+   * Bloques de agenda del médico para una especialidad entre dos días de
+   * agenda inclusive, ordenados por fecha y hora de inicio.
    */
-  findByDoctorDateWithBookedSlots(
+  findByDoctorRange(
     doctorId: number,
-    date: Date,
+    from: Date,
+    to: Date,
     specialtyId: number,
-  ): Promise<ScheduleWithBookedSlots[]>;
+  ): Promise<ScheduleWindow[]>;
+
+  /**
+   * Citas activas (no eliminadas, ni canceladas ni inasistencias) del médico
+   * entre dos días de agenda inclusive, de cualquier especialidad: un médico
+   * no puede tener citas solapadas aunque sean de especialidades distintas.
+   */
+  findDoctorBookingsInRange(
+    doctorId: number,
+    from: Date,
+    to: Date,
+  ): Promise<DoctorBooking[]>;
 }

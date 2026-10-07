@@ -1,6 +1,6 @@
 # SDD — Migración de la interfaz de MediClick a Materio v6
 
-- **Estado:** En implementación; backend de UI-24 implementado
+- **Estado:** En implementación; los ítems terminados llevan ✅ en la tabla del §7
 - **Fecha:** 2026-10-01
 - **Alcance:** cliente Next.js completo y los endpoints de backend que piden los flujos rediseñados
 - **Decisión de base:** [ADR-0003](./adr/0003-materio-v6-sistema-de-diseno.md)
@@ -200,11 +200,11 @@ expectAccessible(page)                          // axe WCAG 2.0/2.1 A y AA
 
 | ID | Fase | Entrega y criterio de aceptación | Backend | Depende de | Skills |
 |---|---|---|---|---|---|
-| UI-01 | 0 Base | Fundación Materio v6: dependencias, Tailwind 4, tema con `colorSchemes` + `cssVariables` y `#7E4EE6` (el modo alto contraste pasa a ser una transformación de ambos esquemas), 37 overrides, `@core`/`@layouts`/`@menu`, `libs/styles`; `CLAUDE.md` refleja el stack real | — | — | `codebase-design` |
-| UI-02 | 0 Base | Vitest en el cliente y arnés Playwright (§5.3); CI corre ambos | — | UI-01 | `tdd` |
+| UI-01 | 0 Base | Fundación Materio v6: dependencias, Tailwind 4, tema con `colorSchemes` + `cssVariables` y `#7E4EE6` (el modo alto contraste pasa a ser una transformación de ambos esquemas), 37 overrides, `@core`/`@layouts`/`@menu`, `libs/styles`; `CLAUDE.md` refleja el stack real | — | UI-02 | `codebase-design` |
+| UI-02 ✅ | 0 Base | Vitest en el cliente y arnés Playwright (§5.3) con puerto propio (3100); CI corre ambos. Va antes que UI-01 para que el cambio de base visual ya tenga pruebas | — | — | `tdd` |
 | UI-03 | 0 Base | Layout por actor (§5.4), dropdowns de navbar, toastify en lugar de `SuccessSnackbar`, customizer Materio con sección de accesibilidad | — | UI-01, UI-02 | `codebase-design` + `tdd` |
 | UI-04 | 0 Base | Login, recuperar y restablecer contraseña en versión v2; respuesta al recordatorio (`/appointment/respond`); páginas 401/404/500 (la 500 se adapta desde la 404; `RoleGuard` deja de redirigir en silencio y muestra 401) | — | UI-03 | `tdd` |
-| UI-05 | 1 Reserva | `GET` de días con cupos por rango (médico, especialidad, desde/hasta) que descuenta feriados, bloqueos y todas las citas del médico; extrae o reutiliza el cálculo de cupos compartido (§5.2) | Sí | — | `mediclick-appointment-core` + `tdd` |
+| UI-05 ✅ | 1 Reserva | `GET` de días con cupos por rango (médico, especialidad, desde/hasta) que descuenta feriados, bloqueos y todas las citas del médico; extrae o reutiliza el cálculo de cupos compartido (§5.2) | Sí | — | `mediclick-appointment-core` + `tdd` |
 | UI-06 | 1 Reserva | Prototipo del flujo de reserva en ambos modos y decisiones de UX registradas | — | UI-03 | `prototype` |
 | UI-07 | 1 Reserva | Núcleo del flujo de reserva (§5.1) con Vitest | — | UI-02, UI-06 | `tdd` |
 | UI-08 | 1 Reserva | Pantalla de reserva con wizard, custom inputs, datepicker con días disponibles, pago y confirmación; reemplaza `patient/book` y `CreateAppointmentDialog` | — | UI-05, UI-07 | `tdd` |
@@ -232,7 +232,8 @@ expectAccessible(page)                          // axe WCAG 2.0/2.1 A y AA
 | UI-26 | 7 Público | Endpoints públicos del perfil del médico: solo campos profesionales y reseñas visibles, con throttle; bloqueado hasta corregir el throttle evadible (§9) | Sí | — | `mediclick-tenant-safety` + `tdd` |
 | UI-27 | 7 Público | Landing de Materio y perfil público del médico | — | UI-26, UI-04, UI-08 (médico preseleccionado) | `tdd` |
 
-La tabla se ordena por fase; los ID UI-28 a UI-31 se agregaron al revisar las pantallas sin
+UI-02 se adelantó a UI-01: no usa nada de Materio y deja cubierto por pruebas el cambio de base
+visual. La tabla se ordena por fase; los ID UI-28 a UI-31 se agregaron al revisar las pantallas sin
 flujo asignado. Los ítems de backend no dependen de la base visual y pueden avanzar en paralelo a
 su fase.
 

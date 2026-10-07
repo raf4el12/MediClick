@@ -7,6 +7,8 @@ import type {
   GenerateSchedulesResponse,
   TimeSlot,
   GetTimeSlotsParams,
+  GetAvailableDaysParams,
+  AvailableDaysResponse,
 } from '@/views/schedules/types';
 
 export const schedulesService = {
@@ -60,6 +62,17 @@ export const schedulesService = {
         date: params.date,
       },
     });
+
+    return response.data;
+  },
+
+  getAvailableDays: async (
+    params: GetAvailableDaysParams,
+  ): Promise<AvailableDaysResponse> => {
+    const response = await api.get<AvailableDaysResponse>(
+      '/schedules/available-days',
+      { params },
+    );
 
     return response.data;
   },

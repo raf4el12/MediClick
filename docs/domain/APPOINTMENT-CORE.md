@@ -105,6 +105,7 @@ Los estados financieros agregados son `PENDING`, `PAID`, `PARTIAL`, `REFUNDED`, 
 - Al generar cupos, solo un feriado global o de la sede del médico bloquea la fecha; un feriado de otra sede no afecta su agenda.
 - Crear o actualizar un feriado o bloqueo publica `availability.restriction_changed` con la sede, actor y rangos anterior/nuevo. El listener consulta la unión de los rangos y vuelve a comprobar `isHoliday` o `isBlocked` contra el estado final antes de cancelar una cita.
 - Crear o reagendar combina la comprobación de solapamiento y la escritura en una transacción serializable.
+- Un cupo se ofrece libre solo si no se solapa con ninguna cita activa del médico en esa fecha, de cualquier especialidad, ni con un bloqueo, ni cae dentro de la anticipación mínima. `time-slots`, `available-days` (días con cupos por rango, máximo 62 días) y la agenda comparten ese cálculo (`computeSlots`); antes, `time-slots` solo descontaba las citas del propio bloque de agenda y ofrecía libres cupos que la creación luego rechazaba.
 
 ### Sedes y acceso
 

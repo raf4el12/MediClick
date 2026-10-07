@@ -12,6 +12,9 @@ import { TimeSlotResponseDto } from '../../application/dto/time-slot-response.dt
 import { GenerateSchedulesUseCase } from '../../application/use-cases/generate-schedules.use-case.js';
 import { FindAllSchedulesUseCase } from '../../application/use-cases/find-all-schedules.use-case.js';
 import { GetAvailableTimeSlotsUseCase } from '../../application/use-cases/get-available-time-slots.use-case.js';
+import { GetAvailableDaysUseCase } from '../../application/use-cases/get-available-days.use-case.js';
+import { GetAvailableDaysQueryDto } from '../../application/dto/get-available-days-query.dto.js';
+import { AvailableDaysResponseDto } from '../../application/dto/available-days-response.dto.js';
 
 @ApiTags('Schedules')
 @Controller('schedules')
@@ -20,6 +23,7 @@ export class ScheduleController {
     private readonly generateSchedulesUseCase: GenerateSchedulesUseCase,
     private readonly findAllSchedulesUseCase: FindAllSchedulesUseCase,
     private readonly getAvailableTimeSlotsUseCase: GetAvailableTimeSlotsUseCase,
+    private readonly getAvailableDaysUseCase: GetAvailableDaysUseCase,
   ) {}
 
   @Post('generate')
@@ -118,5 +122,29 @@ export class ScheduleController {
     @Query() queryDto: GetTimeSlotsQueryDto,
   ): Promise<TimeSlotResponseDto[]> {
     return this.getAvailableTimeSlotsUseCase.execute(queryDto);
+  }
+
+  @Get('available-days')
+  @Auth()
+  @RequirePermissions('READ', 'SCHEDULES')
+  @ApiOperation({
+    summary: 'Días con cupos libres de un médico en un rango',
+    description:
+      'Para marcar el calendario de reserva: devuelve, por día local de la sede del ' +
+      'médico, cuántos cupos libres tiene la especialidad. Usa el mismo cálculo que ' +
+      'time-slots (feriados, bloqueos, citas del médico de cualquier especialidad y ' +
+      'anticipación mínima). Rango máximo: 62 días.',
+  })
+  @ApiResponse({ status: 200, type: AvailableDaysResponseDto })
+  @ApiResponse({ status: 400, description: 'Parámetros o rango inválidos' })
+  @ApiResponse({
+    status: 404,
+    description: 'Especialidad o médico no encontrado',
+  })
+  async getAvailableDays(
+    @Query() queryDto: GetAvailableDaysQueryDto,
+    @CurrentClinic() clinicId: number | null,
+  ): Promise<AvailableDaysResponseDto> {
+    return this.getAvailableDaysUseCase.execute(queryDto, clinicId);
   }
 }
