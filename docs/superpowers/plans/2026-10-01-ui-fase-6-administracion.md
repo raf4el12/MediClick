@@ -17,12 +17,12 @@ gráficos se escriben con recharts 3 y `libs/styles/AppRecharts` (ADR-0003: sin 
 React Query, React Hook Form + Zod; backend NestJS + Prisma para UI-24.
 
 **Spec:** [`docs/SDD-migracion-ui-materio.md`](../../SDD-migracion-ui-materio.md) — §7 (UI-22 a UI-25, UI-28, UI-30),
-§5.3, §5.4, §6 y §9 (`GET /payments`); [ADR-0003](../../adr/0003-materio-v6-sistema-de-diseno.md).
+§5.3, §5.4, §6 y §9 (`GET /payments`); [ADR-0003](../../adr/0003-materio-sistema-de-diseno.md).
 
 ## Restricciones globales
 
 - Rama por ítem desde `origin/staging` actualizado; PR contra `staging`.
-- Rutas de Materio citadas desde la v5 local; **confirmar en `~/materio-v6/` antes de copiar**.
+- Rutas de Materio citadas desde la v5 local; **(v5 local, con la adaptación del Paso 0 de la Fase 0) antes de copiar**.
 - Paginación, búsqueda (`searchValue`) y orden siguen en el servidor; no se trae
   `@tanstack/match-sorter-utils` ni filtrado en cliente sobre páginas parciales.
 - Vocabulario de `CONTEXT.md`: transacción de pago, comprobante de pago, reseña oculta; nunca "factura".
@@ -32,7 +32,7 @@ React Query, React Hook Form + Zod; backend NestJS + Prisma para UI-24.
 
 ## Inventario y destino
 
-| Pantalla | Ruta | Vista actual | Patrón Materio (v5, confirmar en v6) | Ítem |
+| Pantalla | Ruta | Vista actual | Patrón Materio (v5 local) | Ítem |
 |---|---|---|---|---|
 | Pacientes | `/patients` | `views/patients` (Table 427, Add 370, Edit 341, Detail 258, Filters 150) | `views/apps/user/list/*` | UI-22 |
 | Médicos | `/doctors` | `views/doctors` (Table 373, Add 338, Edit 350, Detail 155) | `views/apps/user/list/*` | UI-22 |

@@ -1,6 +1,6 @@
-# ADR-0003 — Materio v6 como sistema de diseño del cliente
+# ADR-0003 — Materio como sistema de diseño del cliente
 
-- **Estado:** Aceptado
+- **Estado:** Aceptado (enmendado el 2026-10-06: base v5 + Tailwind 3.4)
 - **Fecha:** 2026-10-01
 - **Decisores:** Equipo MediClick
 
@@ -17,7 +17,23 @@ que el cliente ya usa MUI 7, React 19 y Next 16. Además, la plantilla resuelve 
 primario que no cumple el contraste que exige el gate de accesibilidad del CI. La evidencia está
 en [`docs/research/2026-10-01-materio-stack-compatibility.md`](../research/2026-10-01-materio-stack-compatibility.md).
 
-## Decisión
+## Enmienda del 2026-10-06: base v5 y Tailwind 3.4
+
+La v6 no está disponible en el entorno del equipo; sí la v5.0.0 local
+(`~/materio-mui-nextjs-admin-template-ts/full-version`), del mismo producto licenciado. Se
+reemplazan dos puntos de la decisión original:
+
+- **Base Materio v5.0.0**, adaptada a MUI 7 / React 19 al copiar cada archivo: `Grid2` → `Grid`,
+  `Grid2Props` → `GridProps`, sin `[lang]`/i18n, next-auth ni valibot. Solo se copia lo que usa
+  cada pantalla, así que la adaptación es proporcional a lo migrado, no a la plantilla entera.
+- **Tailwind 3.4 (LTS)** con `tailwindcss-logical@3` y el plugin propio de Materio tal cual
+  (`preflight: false`, `important: '#__next'`). Funciona con Next 16 sin cambiar la configuración.
+
+Trade-off aceptado: quedar una versión mayor atrás en Tailwind. Pasar a Tailwind 4 (reescribir el
+plugin como `@theme`) es un trabajo aparte, fuera de la migración. El resto de la decisión
+(primario `#7E4EE6`, recharts, exclusiones, dos layouts) no cambia.
+
+## Decisión original
 
 - **Base Materio v6.0.2** (Next 16, React 19, MUI 7, Tailwind 4), no la v5. Elimina la migración
   de framework sobre código ajeno.

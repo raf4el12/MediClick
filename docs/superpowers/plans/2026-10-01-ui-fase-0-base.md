@@ -1,32 +1,32 @@
-# UI Fase 0 — Base Materio v6: plan de implementación
+# UI Fase 0 — Base Materio: plan de implementación
 
 > **Para agentes:** cada ítem UI-NN es un PR independiente contra `staging`. Ejecutá las tareas en
 > orden con las skills indicadas; los pasos usan checkbox (`- [ ]`) para seguimiento.
 
-**Objetivo:** dejar el cliente sobre la base visual de Materio v6 (tema, Tailwind 4, menú, layouts
+**Objetivo:** dejar el cliente sobre la base visual de Materio v5 adaptada (tema, Tailwind 3.4, menú, layouts
 por actor, customizer con accesibilidad, páginas de acceso) y con un arnés de pruebas que permita
 verificar cada pantalla de las fases siguientes sin backend real.
 
-**Arquitectura:** Materio v6 aporta `@core`, `@layouts`, `@menu`, `libs/styles` y el tema MUI con
-`colorSchemes` + `cssVariables`. Tailwind 4 se carga sin preflight y con utilidades `!important`,
-como hace Materio v6, para que MUI conserve su orden de inyección. Dos grupos de rutas eligen el
+**Arquitectura:** Materio v5 (adaptada a MUI 7 / React 19 al copiar) aporta `@core`, `@layouts`, `@menu`, `libs/styles` y el tema MUI con
+`colorSchemes` + `cssVariables`. Tailwind 3.4 se carga sin preflight y con `important: '#__next'`,
+como hace Materio, para que MUI conserve su orden de inyección. Dos grupos de rutas eligen el
 layout por actor sin cambiar URLs; el menú sale de una función pura `navigationFor(actor, can)`.
 Vitest prueba la lógica pura; Playwright prueba pantallas contra REST simulado con `page.route`.
 
-**Stack:** Next 16.1, React 19.2, MUI 7.3 (`@mui/lab@7.0.1-beta.21`), Tailwind ≥4.2 +
-`tailwindcss-logical@5`, Emotion 11, Vitest, Playwright + `@axe-core/playwright`, pnpm 10.28.
+**Stack:** Next 16.1, React 19.2, MUI 7.3 (`@mui/lab@7.0.1-beta.21`), Tailwind 3.4 +
+`tailwindcss-logical@3`, Emotion 11, Vitest, Playwright + `@axe-core/playwright`, pnpm 10.28.
 
 **Spec:** [`docs/SDD-migracion-ui-materio.md`](../../SDD-migracion-ui-materio.md) §5.3, §5.4, §6 y
-§7 (UI-01 a UI-04); [ADR-0003](../../adr/0003-materio-v6-sistema-de-diseno.md);
+§7 (UI-01 a UI-04); [ADR-0003](../../adr/0003-materio-sistema-de-diseno.md);
 [investigación](../../research/2026-10-01-materio-stack-compatibility.md) §1, §3 y §4.
 
 ## Restricciones globales
 
 - Rama por ítem: `git fetch origin && git switch -c feat/ui-NN-<tema> origin/staging`; PR contra
   `staging`. Nunca desde el `main` local.
-- Rutas de Materio: se citan desde la v5 local
-  (`/home/rafael/materio-mui-nextjs-admin-template-ts/full-version/src/…`) y se **confirman en
-  `~/materio-v6/`** antes de copiar; si una ruta cambió en v6, se usa la de v6 y se anota en el PR.
+- Rutas de Materio: v5 local
+  (`/home/rafael/materio-mui-nextjs-admin-template-ts/full-version/src/…`), con la adaptación del
+  Paso 0 en cada archivo copiado.
 - Nunca `@latest` para `@mui/*` (apunta a 9.x). Versiones según la investigación.
 - Tailwind solo para layout y espaciado; color, tipografía y estados por el tema MUI.
 - Texto visible con el vocabulario de `CONTEXT.md`; nada de "slot", "turno" ni "invoice".
@@ -37,23 +37,20 @@ Vitest prueba la lógica pura; Playwright prueba pantallas contra REST simulado 
   El `pnpm lint` completo arrastra deuda previa (SDD-023) y no es criterio de este plan.
 - Lo que un ítem reemplaza se borra en el mismo PR.
 
-## Paso 0 (una vez, antes de UI-01): confirmar Materio v6
+## Paso 0 (una vez, antes de UI-01): plantilla de origen
 
-- [ ] `ls ~/materio-v6/*/package.json` y `grep '"version"' ~/materio-v6/*/package.json` → existe
-  la variante TypeScript `full-version` con versión `6.0.2`.
-- [ ] `grep -E '"(next|react|@mui/material|tailwindcss|@tailwindcss/postcss|tailwindcss-logical)"' ~/materio-v6/full-version/package.json`
-  → Next 16, React 19, MUI 7, Tailwind 4. Anotar las versiones exactas en el PR de UI-01.
-- [ ] Ubicar en v6 los equivalentes de: `src/components/theme/index.tsx`, `src/@core/theme/**`,
-  `src/configs/{themeConfig,primaryColorConfig}.ts`, `src/app/globals.css`,
-  `src/@core/components/customizer/`, `src/@menu/`, `src/@layouts/`,
-  `src/components/layout/{vertical,horizontal,shared}/`, `src/components/GenerateMenu.tsx`,
-  `src/libs/styles/AppReactToastify.tsx`, `src/views/pages/auth/{LoginV2,ForgotPasswordV2,ResetPasswordV2}.tsx`,
-  `src/views/{NotFound,NotAuthorized}.tsx`, `src/views/pages/misc/`. Si falta v6, detener la
-  fase: el SDD (D1) no admite portar desde v5.
+Base: Materio **v5.0.0** en `~/materio-mui-nextjs-admin-template-ts/full-version` (ADR-0003, enmienda
+del 2026-10-06). Las rutas `src/...` de este plan son relativas a esa carpeta.
+
+**Adaptación obligatoria al copiar cada archivo** (la v5 es MUI 6 / React 18 / Next 15):
+- `@mui/material/Grid2` → `@mui/material/Grid`; `Grid2Props` → `GridProps`.
+- Quitar `[lang]`, `getDictionary`/i18n, `next-auth` (`useSession`) y `valibot` (el cliente valida con Zod).
+- Gráficos ApexCharts no se copian: se rehacen con recharts 3.
+- Sin `@latest` de `@mui/*` (apunta a 9.x).
 
 ---
 
-## UI-01 — Fundación Materio v6
+## UI-01 — Fundación Materio (v5 adaptada)
 
 **Rama:** `feat/ui-01-fundacion-materio` · **Skills:** `codebase-design` · **Depende de:** UI-02
 
@@ -64,11 +61,13 @@ Vitest prueba la lógica pura; Playwright prueba pantallas contra REST simulado 
 - Create: `client/postcss.config.mjs`
 
 **Interfaces:**
-- Produces: Tailwind 4 por PostCSS y las dependencias que los componentes de Materio importan.
+- Produces: Tailwind 3.4 por PostCSS y las dependencias que los componentes de Materio importan.
 
 - [ ] **Step 1:** `cd client && pnpm add @mui/lab@7.0.1-beta.21 classnames react-use @floating-ui/react @mui/utils@^7.3 react-toastify@^10 react-perfect-scrollbar`
-- [ ] **Step 2:** `pnpm add -D tailwindcss@^4.2 @tailwindcss/postcss tailwindcss-logical@^5`
-- [ ] **Step 3:** crear `postcss.config.mjs` con `plugins: ['@tailwindcss/postcss']` (copiar de v6).
+- [ ] **Step 2:** `pnpm add -D tailwindcss@~3.4 tailwindcss-logical@^3 postcss autoprefixer`
+- [ ] **Step 3:** copiar de la v5 `tailwind.config.ts` (`preflight: false`, `important: '#__next'`,
+  plugins `tailwindcss-logical` y `src/@core/tailwind/plugin.ts`) y `postcss.config.mjs`; agregar
+  `id='__next'` al `<html>` de `app/layout.tsx`.
 - [ ] **Step 4:** `pnpm ls @mui/material @mui/lab react react-dom` → material 7.3.x, lab
   7.0.1-beta.21, React 19.2.x; ninguna advertencia de peer de React 18.
 
@@ -76,25 +75,23 @@ Vitest prueba la lógica pura; Playwright prueba pantallas contra REST simulado 
 
 **Files:**
 - Modify: `client/src/app/globals.css`, `client/src/app/layout.tsx`
-- Create: `client/src/@core/tailwind/` (solo si v6 conserva un plugin propio)
+- Create: `client/src/@core/tailwind/plugin.ts` (copiado de la v5)
 
 **Interfaces:**
-- Consumes: `globals.css` de Materio v6 (`@layer theme, base, components, utilities;`,
-  `@import "tailwindcss/theme.css" layer(theme) important;`,
-  `@import "tailwindcss/utilities.css" layer(utilities) important;`,
-  `@plugin 'tailwindcss-logical';`, bloque `@theme` con `var(--mui-…)`).
+- Consumes: `globals.css` de Materio v5 (`@tailwind components; @tailwind utilities;` sin
+  `@tailwind base`) y el plugin propio que mapea colores a `var(--mui-…)`.
 - Produces: utilidades Tailwind disponibles sin preflight y sin pisar a MUI.
 
-- [ ] **Step 1:** reemplazar la cabecera de `globals.css` por la de v6. No importar
-  `tailwindcss/preflight.css` (así se desactiva preflight en v4).
+- [ ] **Step 1:** reemplazar la cabecera de `globals.css` por la de la v5, sin `@tailwind base`
+  (preflight ya está desactivado en la config).
 - [ ] **Step 2:** borrar el reset sin capa actual (`*, *::before, *::after { margin: 0; padding: 0 }`,
   líneas 11-18): MUI `CssBaseline` ya normaliza y ese reset le ganaría a los componentes si
   algún día se activa `enableCssLayer` (investigación §3.5). Conservar las reglas propias de
   accesibilidad (`[data-high-contrast]`, `[data-large-targets]`, `[data-reduce-motion]`, foco
   visible) y moverlas a `@layer base`.
 - [ ] **Step 3:** mantener `AppRouterCacheProvider` de `@mui/material-nextjs/v16-appRouter` en
-  `app/layout.tsx` **sin** `enableCssLayer` (enfoque de Materio v6: MUI sin capa + utilidades
-  `!important`). Documentar la elección en un comentario de una línea en `globals.css`.
+  `app/layout.tsx` **sin** `enableCssLayer` (enfoque de Materio: MUI sin capa + utilidades con
+  `important: '#__next'`). Documentar la elección en un comentario de una línea en `globals.css`.
 - [ ] **Step 4:** verificación visual rápida: `pnpm dev`, abrir `/login` y `/dashboard` en claro y
   oscuro; botones, inputs y cards conservan padding y radio de MUI.
 
@@ -111,7 +108,7 @@ Vitest prueba la lógica pura; Playwright prueba pantallas contra REST simulado 
 - Create: `client/src/configs/primaryColorConfig.test.ts`
 
 **Interfaces:**
-- Consumes: `src/@core/theme/**` y `src/components/theme/index.tsx` de Materio (confirmar en v6).
+- Consumes: `src/@core/theme/**` y `src/components/theme/index.tsx` de Materio v5.
 - Produces: `createTheme({ cssVariables: { colorSchemeSelector: 'data' }, colorSchemes, … })` y
   `ThemeProvider forceThemeRerender` (investigación §1, punto 4); variables `--mui-*` disponibles.
 
@@ -144,10 +141,9 @@ Vitest prueba la lógica pura; Playwright prueba pantallas contra REST simulado 
 **Interfaces:**
 - Produces: piezas de layout listas para UI-03; todavía no se conectan a las rutas.
 
-- [ ] **Step 1:** copiar desde v6 sin `[lang]`, sin `next-auth`, sin diccionarios: en cada archivo
-  copiado, quitar `getDictionary`/`i18n` y `useSession`.
-- [ ] **Step 2:** `grep -rln "@mui/material/Grid2\|Grid2Props" src` → vacío (si v6 aún los usa,
-  renombrar a `@mui/material/Grid` / `GridProps`).
+- [ ] **Step 1:** copiar desde la v5 aplicando la adaptación del Paso 0: en cada archivo copiado,
+  quitar `getDictionary`/`i18n` y `useSession`.
+- [ ] **Step 2:** `grep -rln "@mui/material/Grid2\|Grid2Props" src` → vacío.
 - [ ] **Step 3:** `pnpm exec tsc --noEmit && pnpm build` → verde con las piezas aún sin usar.
 
 ### Task 5: `CLAUDE.md` refleja el stack real
@@ -156,7 +152,7 @@ Vitest prueba la lógica pura; Playwright prueba pantallas contra REST simulado 
 - Modify: `CLAUDE.md`
 
 - [ ] **Step 1:** corregir "Stack": API REST (GraphQL solo para `patientRecord`), MUI 7, Next 16,
-  React 19, Tailwind 4 + Materio v6 (link a ADR-0003). Quitar "GraphQL: única API pública" y
+  React 19, Tailwind 3.4 + Materio v5 adaptada (link a ADR-0003). Quitar "GraphQL: única API pública" y
   "Mutations GraphQL siempre retornan…"; mantener lo vigente.
 
 ### Task 6: Verificación y cierre de UI-01

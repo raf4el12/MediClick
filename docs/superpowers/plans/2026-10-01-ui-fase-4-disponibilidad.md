@@ -20,7 +20,7 @@
 - El reemplazo de reglas usa `bulk-save` (transacción serializable por médico y especialidad con reintento, SDD-009/F-13) y regenera cupos con `ScheduleRegenerationService`.
 - Fechas y horas en la zona horaria de la sede.
 - Verificación por PR como en la Fase 3 (servidor: `pnpm test -- <patrón> --runInBand`, `pnpm build`, eslint por archivos; cliente: Vitest, `tsc`, eslint por archivos, `build`, `test:a11y`).
-- Rutas de Materio citadas desde la v5 local: **confirmar en `~/materio-v6/` antes de copiar**.
+- Rutas de Materio citadas desde la v5 local: **(v5 local, con la adaptación del Paso 0 de la Fase 0) antes de copiar**.
 
 ## Comportamiento actual que la fase reemplaza
 

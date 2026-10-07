@@ -18,14 +18,14 @@ presenta con el patrón "resumen a la izquierda + pestañas a la derecha" de `vi
 
 **Spec:** [`docs/SDD-migracion-ui-materio.md`](../../SDD-migracion-ui-materio.md) — §7 (UI-20, UI-21,
 UI-31), §5.3 (arnés de pruebas), §5.4 (grupo `(shared)`), §6 (restricciones globales);
-[ADR-0003](../../adr/0003-materio-v6-sistema-de-diseno.md).
+[ADR-0003](../../adr/0003-materio-sistema-de-diseno.md).
 
 ## Restricciones globales
 
 - Rama por ítem desde `origin/staging` actualizado; PR contra `staging`.
 - Vocabulario de `CONTEXT.md`: paciente, cita, expediente; ningún texto visible dice "turno" ni "slot".
 - Rutas de Materio citadas desde la v5 local (`~/materio-mui-nextjs-admin-template-ts/full-version/src`);
-  **confirmar cada una en `~/materio-v6/` antes de copiar**.
+  **confirmar cada una en `~/materio-mui-nextjs-admin-template-ts/full-version/` antes de copiar**.
 - Tailwind solo para layout y espaciado; color, tipografía y estado por el tema MUI.
 - Cada pantalla pasa axe WCAG 2.0/2.1 A y AA y conserva el customizer de accesibilidad.
 - Lo reemplazado se borra en el mismo PR. Sin features nuevas fuera del ítem.
@@ -50,7 +50,7 @@ de 4 pasos (`Identificación`, `Datos Personales`, `Inf. Médica`, `Credenciales
 **Files:** ninguno.
 
 - [ ] **Step 1:** Crear la rama con el comando de arriba.
-- [ ] **Step 2:** Confirmar en `~/materio-v6/` los equivalentes de
+- [ ] **Step 2:** Confirmar en `~/materio-mui-nextjs-admin-template-ts/full-version/` los equivalentes de
   `views/pages/auth/register-multi-steps/{index,StepAccountDetails,StepPersonalInfo,StepBillingDetails}.tsx`,
   `components/stepper-dot/index.tsx` y `@core/styles/stepper.ts`. Si UI-01 ya trajo `stepper-dot` y
   `stepper.ts`, reutilizarlos sin duplicar.
@@ -142,7 +142,7 @@ El alcance por sede lo aplica el servidor (`PatientRecordQuery`, SDD-001); este 
 ### Task 1: Rama y rutas de la plantilla
 
 - [ ] **Step 1:** Crear la rama.
-- [ ] **Step 2:** Confirmar en `~/materio-v6/` `views/apps/user/view/index.tsx`,
+- [ ] **Step 2:** Confirmar en `~/materio-mui-nextjs-admin-template-ts/full-version/` `views/apps/user/view/index.tsx`,
   `user-left-overview/{index,UserDetails}.tsx`, `user-right/index.tsx` y
   `user-right/overview/UserActivityTimeline.tsx`. `UserPlan.tsx` y las pestañas de billing,
   connections y notifications no se copian.
@@ -242,7 +242,7 @@ Decisión del ítem: una sola pantalla de cuenta, `/settings/account` en el grup
 ### Task 1: Rama y rutas de la plantilla
 
 - [ ] **Step 1:** Crear la rama.
-- [ ] **Step 2:** Confirmar en `~/materio-v6/` `views/pages/account-settings/index.tsx`,
+- [ ] **Step 2:** Confirmar en `~/materio-mui-nextjs-admin-template-ts/full-version/` `views/pages/account-settings/index.tsx`,
   `account/{index,AccountDetails}.tsx` y `security/{index,ChangePasswordCard,RecentDevicesTable}.tsx`.
   No se copian `AccountDelete`, `TwoFactorAuthenticationCard` (2FA tiene SDD propio), `ApiKeyList`,
   `CreateApiKey`, `billing-plans` ni `connections`.

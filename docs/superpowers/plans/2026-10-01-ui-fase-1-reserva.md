@@ -6,7 +6,7 @@
 **Objetivo:** reemplazar las dos implementaciones de reserva (`patient/book` del paciente y
 `CreateAppointmentDialog` del personal) por un único flujo de reserva con dos modos —reserva en
 línea y creación administrativa—, con un núcleo puro probado con Vitest, un calendario que solo
-ofrece días con cupos y la estética de Materio v6.
+ofrece días con cupos y la estética de Materio.
 
 **Arquitectura:** el backend extrae el cálculo de cupos a un módulo de dominio puro (que cuenta
 todas las citas activas del médico y que UI-13 reutilizará) y agrega `GET /schedules/available-days`,
@@ -15,7 +15,7 @@ concentra estado, pasos, invalidación en cascada y armado del comando (§5.1 de
 `useBooking(mode)` lo conecta a React Query y a los servicios REST; las pantallas de Materio
 (custom inputs, wizard, datepicker) son adaptadores visuales sobre esa interfaz.
 
-**Stack:** NestJS + Prisma + PostgreSQL (backend); Next.js 16, React 19, MUI 7, Materio v6.0.2,
+**Stack:** NestJS + Prisma + PostgreSQL (backend); Next.js 16, React 19, MUI 7, Materio.0.2,
 Tailwind 4, TanStack Query 5, Zod 4, `react-datepicker@^7.6`, Vitest y Playwright + axe (cliente).
 
 **Spec:** [`docs/SDD-migracion-ui-materio.md`](../../SDD-migracion-ui-materio.md) — §2, §5.1, §5.3,
@@ -335,7 +335,7 @@ para mantener `useBooking` como única interfaz de las pantallas.
 ### Componentes de Materio
 
 Rutas de la v5 local (`/home/rafael/materio-mui-nextjs-admin-template-ts/full-version/src/`);
-**confirmar cada una en `~/materio-v6/full-version/src/` antes de copiar**:
+**v5 local (`~/materio-mui-nextjs-admin-template-ts/full-version/src/`), con la adaptación del Paso 0 de la Fase 0**:
 
 | Uso | Ruta en la plantilla |
 |---|---|
