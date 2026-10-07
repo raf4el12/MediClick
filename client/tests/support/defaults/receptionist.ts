@@ -14,5 +14,6 @@ export const receptionist: ActorProfile = {
   clinicId: 1,
   routes: {
     'GET /notifications/unread-count': { count: 0 },
+    'GET /notifications': { data: [], total: 0, page: 1, limit: 10, totalPages: 0 },
   },
 };

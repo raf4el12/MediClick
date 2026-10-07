@@ -16,11 +16,18 @@ function formatViolations(violations: Violations): string {
     .join('\n');
 }
 
-/** Falla con la lista de violaciones WCAG 2.0/2.1 A y AA que encuentre axe. */
-export async function expectAccessible(page: Page): Promise<void> {
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-    .analyze();
+/**
+ * Falla con la lista de violaciones WCAG 2.0/2.1 A y AA que encuentre axe.
+ * `exclude` deja fuera zonas que todavía no se migraron (p. ej. el contenido de
+ * una pantalla vieja al probar solo el shell).
+ */
+export async function expectAccessible(
+  page: Page,
+  options: { exclude?: string[] } = {},
+): Promise<void> {
+  let builder = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']);
+  for (const selector of options.exclude ?? []) builder = builder.exclude(selector);
+  const results = await builder.analyze();
 
   expect(results.violations, formatViolations(results.violations)).toEqual([]);
 }

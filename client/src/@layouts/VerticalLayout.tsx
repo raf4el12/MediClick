@@ -1,94 +1,44 @@
-'use client';
+// React Imports
+import type { ReactNode } from 'react'
 
-import { useState, useCallback } from 'react';
-import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import { useSettings } from '@/@core/hooks/useSettings';
-import themeConfig from '@/configs/themeConfig';
+// Third-party Imports
+import classnames from 'classnames'
 
-interface VerticalLayoutProps {
-  navbar?: React.ReactNode;
-  navigation?: React.ReactElement<{ mobileOpen?: boolean; onMobileClose?: () => void }>;
-  footer?: React.ReactNode;
-  children: React.ReactNode;
+// Type Imports
+import type { ChildrenType } from '@core/types'
+
+// Component Imports
+import LayoutContent from './components/vertical/LayoutContent'
+
+// Util Imports
+import { verticalLayoutClasses } from './utils/layoutClasses'
+
+// Styled Component Imports
+import StyledContentWrapper from './styles/vertical/StyledContentWrapper'
+
+type VerticalLayoutProps = ChildrenType & {
+  navigation?: ReactNode
+  navbar?: ReactNode
+  footer?: ReactNode
 }
 
-const VerticalLayout = ({ navbar, navigation, footer, children }: VerticalLayoutProps) => {
-  const { settings } = useSettings();
-  const [mobileOpen, setMobileOpen] = useState(false);
-
-  const handleMobileToggle = useCallback(() => {
-    setMobileOpen((prev) => !prev);
-  }, []);
-
-  const handleMobileClose = useCallback(() => {
-    setMobileOpen(false);
-  }, []);
-
-  const contentMaxWidth =
-    settings.contentWidth === 'compact' ? themeConfig.compactContentWidth : '100%';
-
-  // Clone navigation element to inject mobileOpen and onMobileClose props
-  const navigationWithProps = navigation
-    ? (() => {
-      const { type, props } = navigation;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dynamic component from layout config; props vary per navigation type
-      const Component = type as React.ComponentType<any>;
-      return <Component {...props} mobileOpen={mobileOpen} onMobileClose={handleMobileClose} />;
-    })()
-    : null;
+const VerticalLayout = (props: VerticalLayoutProps) => {
+  // Props
+  const { navbar, footer, navigation, children } = props
 
   return (
-    <Box sx={{ display: 'flex', flex: '1 1 auto', minHeight: '100vh' }}>
-      {navigationWithProps}
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          minWidth: 0,
-          flex: 1,
-          overflow: 'hidden',
-        }}
+    <div className={classnames(verticalLayoutClasses.root, 'flex flex-auto')}>
+      {navigation || null}
+      <StyledContentWrapper
+        className={classnames(verticalLayoutClasses.contentWrapper, 'flex flex-col min-is-0 is-full')}
       >
-        {/* Mobile hamburger + navbar wrapper */}
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
-          <IconButton
-            aria-label="Abrir menú de navegación"
-            onClick={handleMobileToggle}
-            sx={{
-              display: { xs: 'flex', md: 'none' },
-              ml: 1,
-              mt: 0.5,
-              color: 'text.primary',
-              width: 40,
-              height: 40,
-            }}
-          >
-            <i className="ri-menu-line" style={{ fontSize: 22 }} />
-          </IconButton>
-          <Box sx={{ flex: 1 }}>{navbar || null}</Box>
-        </Box>
-        <Box
-          component="main"
-          id="main-content"
-          tabIndex={-1}
-          className="cb-target"
-          sx={{
-            flexGrow: 1,
-            p: { xs: 2, md: `${themeConfig.layoutPadding}px` },
-            maxWidth: contentMaxWidth,
-            mx: 'auto',
-            width: '100%',
-            minHeight: 0,
-            overflow: 'auto',
-          }}
-        >
-          {children}
-        </Box>
+        {navbar || null}
+        {/* Content */}
+        <LayoutContent>{children}</LayoutContent>
         {footer || null}
-      </Box>
-    </Box>
-  );
-};
+      </StyledContentWrapper>
+    </div>
+  )
+}
 
-export default VerticalLayout;
+export default VerticalLayout

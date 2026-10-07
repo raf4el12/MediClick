@@ -5,17 +5,15 @@ import Grid from '@mui/material/Grid';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { useClinics } from './hooks/useClinics';
 import { ClinicsTable } from './components/ClinicsTable';
-import { useSnackbar } from '@/hooks/useSnackbar';
-import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
+import { notify } from '@/utils/notify';
 
 export default function ClinicsView() {
   const controller = useClinics();
-  const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
 
   const handleSuccess = useCallback(() => {
     controller.refreshData();
-    showSnackbar('Operación realizada exitosamente', 'success');
-  }, [controller.refreshData, showSnackbar]);
+    notify('Operación realizada exitosamente', 'success');
+  }, [controller.refreshData, notify]);
 
   return (
     <Grid container spacing={3}>
@@ -23,7 +21,6 @@ export default function ClinicsView() {
         <PageHeader title="Clínicas" subtitle="Administra las sedes y sucursales" />
         <ClinicsTable {...controller} refreshData={handleSuccess} />
       </Grid>
-      <SuccessSnackbar snackbar={snackbar} onClose={closeSnackbar} />
     </Grid>
   );
 }

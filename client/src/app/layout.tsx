@@ -17,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html id="__next" lang="es" suppressHydrationWarning>
-      <body suppressHydrationWarning>
+      <body className="flex is-full min-bs-full flex-auto flex-col" suppressHydrationWarning>
         <InitColorSchemeScript attribute="data" />
         <AppRouterCacheProvider options={{ key: 'mui' }}>
           <Providers>{children}</Providers>

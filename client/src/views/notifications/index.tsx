@@ -17,8 +17,7 @@ import Fade from '@mui/material/Fade';
 import { alpha } from '@mui/material/styles';
 
 import { notificationsService } from '@/services/notifications.service';
-import { useSnackbar } from '@/hooks/useSnackbar';
-import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
+import { notify } from '@/utils/notify';
 import type { PaginatedNotifications } from './types';
 import { NotificationType } from './types';
 
@@ -67,7 +66,6 @@ export default function NotificationsView() {
     const [data, setData] = useState<PaginatedNotifications | null>(null);
     const [loading, setLoading] = useState(true);
     const [unreadCount, setUnreadCount] = useState(0);
-    const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
 
     const fetchNotifications = useCallback(async () => {
         setLoading(true);
@@ -118,7 +116,7 @@ export default function NotificationsView() {
             });
             setUnreadCount((prev) => Math.max(0, prev - 1));
         } catch {
-            showSnackbar('Error al marcar la notificación como leída', 'error');
+            notify('Error al marcar la notificación como leída', 'error');
         }
     };
 
@@ -134,7 +132,7 @@ export default function NotificationsView() {
             });
             setUnreadCount(0);
         } catch {
-            showSnackbar('Error al marcar todas como leídas', 'error');
+            notify('Error al marcar todas como leídas', 'error');
         }
     };
 
@@ -149,7 +147,7 @@ export default function NotificationsView() {
             });
             void fetchUnread();
         } catch {
-            showSnackbar('Error al eliminar la notificación', 'error');
+            notify('Error al eliminar la notificación', 'error');
         }
     };
 
@@ -447,7 +445,6 @@ export default function NotificationsView() {
                 )}
             </Card>
 
-            <SuccessSnackbar snackbar={snackbar} onClose={closeSnackbar} />
         </Box>
     );
 }

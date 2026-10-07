@@ -1,51 +1,51 @@
-'use client';
+'use client'
 
-import { forwardRef } from 'react';
-import MuiAvatar, { type AvatarProps } from '@mui/material/Avatar';
-import { styled, lighten } from '@mui/material/styles';
+// React Imports
+import { forwardRef } from 'react'
 
-type AvatarSkin = 'filled' | 'light' | 'light-static';
-type AvatarColor = 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success';
+// MUI Imports
+import MuiAvatar from '@mui/material/Avatar'
+import { lighten, styled } from '@mui/material/styles'
+import type { AvatarProps } from '@mui/material/Avatar'
 
-interface CustomAvatarProps extends AvatarProps {
-  skin?: AvatarSkin;
-  color?: AvatarColor;
-  size?: number;
+// Type Imports
+import type { ThemeColor } from '@core/types'
+
+export type CustomAvatarProps = AvatarProps & {
+  color?: ThemeColor
+  skin?: 'filled' | 'light' | 'light-static'
+  size?: number
 }
 
-const StyledAvatar = styled(MuiAvatar, {
-  shouldForwardProp: (prop) => prop !== 'skin' && prop !== 'color' && prop !== 'size',
-})<{ skin?: AvatarSkin; color?: AvatarColor; size?: number }>(
-  ({ skin, color, size, theme }) => ({
+const Avatar = styled(MuiAvatar)<CustomAvatarProps>(({ skin, color, size, theme }) => {
+  return {
     ...(color &&
       skin === 'light' && {
-        backgroundColor: lighten(theme.palette[color].main, 0.84),
-        color: theme.palette[color].main,
+        backgroundColor: `var(--mui-palette-${color}-lightOpacity)`,
+        color: `var(--mui-palette-${color}-main)`
       }),
     ...(color &&
       skin === 'light-static' && {
-        backgroundColor: lighten(theme.palette[color].main, 0.84),
-        color: theme.palette[color].main,
+        backgroundColor: lighten(theme.palette[color as ThemeColor].main, 0.84),
+        color: `var(--mui-palette-${color}-main)`
       }),
     ...(color &&
       skin === 'filled' && {
-        backgroundColor: theme.palette[color].main,
-        color: theme.palette[color].contrastText,
+        backgroundColor: `var(--mui-palette-${color}-main)`,
+        color: `var(--mui-palette-${color}-contrastText)`
       }),
     ...(size && {
       height: size,
-      width: size,
-      fontSize: size * 0.4,
-    }),
-  }),
-);
+      width: size
+    })
+  }
+})
 
-const CustomAvatar = forwardRef<HTMLDivElement, CustomAvatarProps>(
-  ({ color, skin = 'filled', ...rest }, ref) => (
-    <StyledAvatar color={color} skin={skin} ref={ref} {...rest} />
-  ),
-);
+const CustomAvatar = forwardRef<HTMLDivElement, CustomAvatarProps>((props: CustomAvatarProps, ref) => {
+  // Props
+  const { color, skin = 'filled', ...rest } = props
 
-CustomAvatar.displayName = 'CustomAvatar';
+  return <Avatar color={color} skin={skin} ref={ref} {...rest} />
+})
 
-export default CustomAvatar;
+export default CustomAvatar

@@ -203,6 +203,21 @@ export function actorFor(role: string | null | undefined): Actor {
 }
 
 /** `can` con el mismo criterio que PermissionsGuard: MANAGE y ALL son comodines. */
+const HOME_BY_ACTOR: Record<Actor, string> = {
+  PATIENT: '/patient',
+  DOCTOR: '/doctor',
+  STAFF: '/dashboard',
+};
+
+export function homePathFor(actor: Actor): string {
+  return HOME_BY_ACTOR[actor];
+}
+
+/** Destino de "Mi perfil": el paciente tiene su propia página. */
+export function profilePathFor(actor: Actor): string {
+  return actor === 'PATIENT' ? '/patient/profile' : '/profile';
+}
+
 export function canFrom(permissions: string[]): Can {
   return (action, subject) =>
     permissions.some((p) => {

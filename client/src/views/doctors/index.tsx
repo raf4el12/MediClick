@@ -11,8 +11,7 @@ import dynamic from 'next/dynamic';
 import CircularProgress from '@mui/material/CircularProgress';
 import Box from '@mui/material/Box';
 import { PageHeader } from '@/components/shared/PageHeader';
-import { useSnackbar } from '@/hooks/useSnackbar';
-import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
+import { notify } from '@/utils/notify';
 
 const DynamicLoading = () => (
   <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
@@ -27,25 +26,24 @@ const DoctorDetailDialog = dynamic(
 
 export default function DoctorsView() {
   const controller = useDoctors();
-  const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
 
   const handleCreateSuccess = useCallback(() => {
     controller.refreshData();
-    showSnackbar('Doctor registrado exitosamente', 'success');
-  }, [controller.refreshData, showSnackbar]);
+    notify('Doctor registrado exitosamente', 'success');
+  }, [controller.refreshData, notify]);
 
   const handleEditSuccess = useCallback(() => {
     controller.closeEditDrawer();
     controller.refreshData();
-    showSnackbar('Doctor actualizado exitosamente', 'success');
-  }, [controller.closeEditDrawer, controller.refreshData, showSnackbar]);
+    notify('Doctor actualizado exitosamente', 'success');
+  }, [controller.closeEditDrawer, controller.refreshData, notify]);
 
   const handleDelete = async () => {
     const success = await controller.confirmDelete();
     if (success) {
-      showSnackbar('Doctor eliminado exitosamente', 'success');
+      notify('Doctor eliminado exitosamente', 'success');
     } else {
-      showSnackbar('Error al eliminar el doctor', 'error');
+      notify('Error al eliminar el doctor', 'error');
     }
   };
 
@@ -97,7 +95,6 @@ export default function DoctorsView() {
         onCancel={controller.closeDeleteDialog}
       />
 
-      <SuccessSnackbar snackbar={snackbar} onClose={closeSnackbar} />
     </Grid>
   );
 }

@@ -20,6 +20,8 @@ import { SettingsProvider } from '@/@core/contexts/settingsContext';
 import { useSettings } from '@/@core/hooks/useSettings';
 import SessionValidator from '@/components/SessionValidator';
 import ColorBlindFilters from '@/@core/components/accessibility/ColorBlindFilters';
+import { VerticalNavProvider } from '@menu/contexts/verticalNavContext';
+import AppReactToastify from '@/libs/styles/AppReactToastify';
 interface ProvidersProps {
   children: React.ReactNode;
 }
@@ -105,6 +107,7 @@ function ThemeWrapper({ children }: { children: React.ReactNode }) {
       <CssBaseline />
       <ColorBlindFilters />
       {children}
+      <AppReactToastify direction='ltr' hideProgressBar />
     </MuiThemeProvider>
   );
 }
@@ -113,12 +116,14 @@ export default function Providers({ children }: ProvidersProps) {
   return (
     <QueryProvider>
       <StoreProvider>
-        <SettingsProvider>
-          <ThemeWrapper>
-            <SessionValidator />
-            {children}
-          </ThemeWrapper>
-        </SettingsProvider>
+        <VerticalNavProvider>
+          <SettingsProvider>
+            <ThemeWrapper>
+              <SessionValidator />
+              {children}
+            </ThemeWrapper>
+          </SettingsProvider>
+        </VerticalNavProvider>
       </StoreProvider>
     </QueryProvider>
   );

@@ -12,6 +12,7 @@ export const patient: ActorProfile = {
   clinicId: null,
   routes: {
     'GET /notifications/unread-count': { count: 0 },
+    'GET /notifications': { data: [], total: 0, page: 1, limit: 10, totalPages: 0 },
     'GET /appointments/my': { totalRows: 0, totalPages: 0, currentPage: 1, rows: [] },
   },
 };

@@ -4,13 +4,9 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppSelector } from '@/redux-store/hooks';
 import { useSettings } from '@/@core/hooks/useSettings';
-import Box from '@mui/material/Box';
 
-interface LayoutWrapperProps {
-  verticalLayout: React.ReactNode;
-}
-
-export default function LayoutWrapper({ verticalLayout }: LayoutWrapperProps) {
+/** Exige sesión antes de mostrar un shell autenticado. */
+export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   const { settings } = useSettings();
@@ -29,11 +25,8 @@ export default function LayoutWrapper({ verticalLayout }: LayoutWrapperProps) {
   if (!mounted || !isAuthenticated) return null;
 
   return (
-    <Box
-      sx={{ display: 'flex', flexDirection: 'column', flex: '1 1 auto' }}
-      data-skin={settings.skin}
-    >
-      {verticalLayout}
-    </Box>
+    <div className="flex flex-col flex-auto" data-skin={settings.skin}>
+      {children}
+    </div>
   );
 }

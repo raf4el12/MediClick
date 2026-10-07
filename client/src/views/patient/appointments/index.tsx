@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useSnackbar } from '@/hooks/useSnackbar';
-import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
+import { notify } from '@/utils/notify';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { PageHeader } from '@/components/shared/PageHeader';
@@ -55,7 +54,6 @@ type TabValue = 'upcoming' | 'all' | 'past';
 export default function PatientAppointmentsView() {
   const router = useRouter();
   const theme = useTheme();
-  const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
   const [tab, setTab] = useState<TabValue>('upcoming');
   const [page, setPage] = useState(1);
   const [data, setData] = useState<PaginatedResponse<Appointment> | null>(null);
@@ -138,7 +136,7 @@ export default function PatientAppointmentsView() {
       setDetailOpen(false);
       setSelectedApt(null);
       fetchAppointments();
-      showSnackbar('Cita cancelada exitosamente', 'success');
+      notify('Cita cancelada exitosamente', 'success');
     } catch {
       setActionError('No se pudo cancelar la cita. Intenta de nuevo.');
     } finally {
@@ -160,7 +158,7 @@ export default function PatientAppointmentsView() {
     setReviewedApptIds((prev) => new Set(prev).add(appointmentId));
     setReviewOpen(false);
     setDetailOpen(false);
-    showSnackbar('¡Gracias por tu reseña!', 'success');
+    notify('¡Gracias por tu reseña!', 'success');
   };
 
   const openPrescription = async (apt: Appointment) => {
@@ -740,7 +738,6 @@ export default function PatientAppointmentsView() {
         />
       )}
 
-      <SuccessSnackbar snackbar={snackbar} onClose={closeSnackbar} />
     </Box>
   );
 }
