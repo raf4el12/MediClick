@@ -24,7 +24,7 @@ del médico", "Reseña oculta".
 ## Restricciones globales
 
 - Rama por ítem desde `origin/staging` actualizado; PR contra `staging`.
-- Rutas de Materio citadas desde la v5 local; **confirmar en `~/materio-v6/` antes de copiar**.
+- Rutas de Materio citadas desde la v5 local; **(v5 local, con la adaptación del Paso 0 de la Fase 0) antes de copiar**.
 - Ningún dato personal ni clínico sale por un endpoint público: ni del médico (email, teléfono,
   dirección, documento, fecha de nacimiento) ni del paciente autor de una reseña.
 - UI-26 está bloqueado hasta que el fix del tracker de throttle (registrado fuera de la migración) esté
@@ -140,7 +140,7 @@ la landing no se renderiza en el servidor. `client/src/middleware.ts` declara `P
 ### Task 1: Rutas y layout públicos
 
 **Files:**
-- Confirmar en `~/materio-v6/`: `app/front-pages/layout.tsx`, `components/layout/front-pages/{index,Header,FrontMenu,DropdownMenu,Footer}.tsx`,
+- Confirmar en `~/materio-mui-nextjs-admin-template-ts/full-version/`: `app/front-pages/layout.tsx`, `components/layout/front-pages/{index,Header,FrontMenu,DropdownMenu,Footer}.tsx`,
   `views/front-pages/landing-page/*`, `views/pages/user-profile/{index,UserProfileHeader}.tsx`,
   `views/pages/user-profile/profile/AboutOverview.tsx`
 - Move: `client/src/app/(landing)/` → `client/src/app/(public)/` con `layout.tsx` sobre `components/layout/front-pages`

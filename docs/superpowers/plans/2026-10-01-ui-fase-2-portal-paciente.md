@@ -3,7 +3,7 @@
 > **Para agentes:** ejecutar un ítem por vez respetando dependencias. Cada ítem es una rama y un
 > PR contra `staging`. Los pasos usan checkbox (`- [ ]`) para seguimiento.
 
-**Objetivo:** rediseñar el portal del paciente con Materio v6: Inicio con indicadores propios,
+**Objetivo:** rediseñar el portal del paciente con Materio: Inicio con indicadores propios,
 Mis citas con todas las acciones permitidas por estado (cancelar, reagendar, pagar, reseñar, ver
 receta y comprobante), comprobante de pago y receta imprimibles, y la lista de espera del paciente
 con sus ofertas de cupo.
@@ -15,7 +15,7 @@ acciones ofrece cada cita (probada con Vitest); las pantallas usan las vistas de
 dashboard, listas, factura y timeline como adaptadores visuales; reagendar reutiliza el paso de cupo
 del flujo de reserva (UI-08).
 
-**Stack:** NestJS + Prisma + PostgreSQL (backend); Next.js 16, React 19, MUI 7, Materio v6.0.2,
+**Stack:** NestJS + Prisma + PostgreSQL (backend); Next.js 16, React 19, MUI 7, Materio.0.2,
 Tailwind 4, TanStack Query 5, Zod 4, recharts 3 si un indicador lo necesita, Vitest y Playwright + axe.
 
 **Spec:** [`docs/SDD-migracion-ui-materio.md`](../../SDD-migracion-ui-materio.md) — §2, §5.3, §5.4,
@@ -209,7 +209,7 @@ Una prueba por ciclo (`cd server && pnpm test -- get-my-appointments-summary --r
 ### Componentes de Materio
 
 Rutas de la v5 local (`/home/rafael/materio-mui-nextjs-admin-template-ts/full-version/src/`);
-**confirmar en `~/materio-v6/full-version/src/`** y elegir según las decisiones de UI-10:
+**v5 local, con la adaptación del Paso 0 de la Fase 0** y elegir según las decisiones de UI-10:
 
 | Uso | Ruta en la plantilla |
 |---|---|
@@ -323,7 +323,7 @@ Comando: `cd server && pnpm test -- list-appointment-receipts --runInBand` (FAIL
 
 ### Task 2: Vistas imprimibles
 
-**Componentes de Materio** (confirmar en `~/materio-v6/`): `views/apps/invoice/preview/{index,PreviewCard,PreviewActions}.tsx`
+**Componentes de Materio** ((v5 local, con la adaptación del Paso 0 de la Fase 0)): `views/apps/invoice/preview/{index,PreviewCard,PreviewActions}.tsx`
 y `views/apps/invoice/preview/print.css`; ruta de referencia `app/[lang]/(dashboard)/(private)/apps/invoice/preview/[id]/page.tsx`.
 
 **Files:**
@@ -384,7 +384,7 @@ Pasa a `client/src/app/(patient)/patient/waitlist/page.tsx`. La vista del person
 
 ### Task 2: Pantalla
 
-**Componentes de Materio** (confirmar en `~/materio-v6/`): tarjetas con cuenta regresiva sobre
+**Componentes de Materio** ((v5 local, con la adaptación del Paso 0 de la Fase 0)): tarjetas con cuenta regresiva sobre
 `components/card-statistics/HorizontalWithSubtitle.tsx`, `@core/components/option-menu/index.tsx`
 para acciones de la entrada y `components/dialogs/confirmation-dialog/index.tsx` para salir de la lista.
 

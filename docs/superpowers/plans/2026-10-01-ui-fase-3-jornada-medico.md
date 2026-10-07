@@ -8,7 +8,7 @@
 
 **Stack:** NestJS 11 + Prisma/PostgreSQL + Jest (servidor); Next.js 16 + React 19 + MUI 7 + Tailwind 4 + `@fullcalendar/*@6.1.21` + React Query + Vitest + Playwright (cliente).
 
-**Spec:** [`docs/SDD-migracion-ui-materio.md`](../../SDD-migracion-ui-materio.md) §5.2 (capa de agenda), §6 (restricciones globales), §7 (UI-13 a UI-16). Base visual: [ADR-0003](../../adr/0003-materio-v6-sistema-de-diseno.md).
+**Spec:** [`docs/SDD-migracion-ui-materio.md`](../../SDD-migracion-ui-materio.md) §5.2 (capa de agenda), §6 (restricciones globales), §7 (UI-13 a UI-16). Base visual: [ADR-0003](../../adr/0003-materio-sistema-de-diseno.md).
 
 ## Restricciones globales
 
@@ -19,7 +19,7 @@
 - `GET /agenda` es solo lectura: no cambia ninguna regla del núcleo. Si un prototipo pide cambiar una regla (D7), se enumera en la spec del ítem y se actualiza [`APPOINTMENT-CORE.md`](../../domain/APPOINTMENT-CORE.md) en el mismo PR.
 - Verificación por PR: servidor `pnpm test -- <patrón> --runInBand`, `pnpm build`, `pnpm exec eslint <archivos>` (nunca `pnpm lint`, que aplica `--fix` a todo); cliente `pnpm test` (Vitest), `pnpm exec tsc --noEmit`, `pnpm exec eslint <archivos>`, `pnpm build`, `pnpm test:a11y`.
 - Prerrequisitos de fase: UI-02 (Vitest + arnés Playwright `client/tests/support`) y UI-03 (grupos de rutas `(staff)`/`(patient)` y `navigationFor`). Las rutas del cliente se citan ya movidas a `app/(staff)/…`; hoy viven en `app/(menu)/…`.
-- Rutas de Materio citadas desde la v5 local (`/home/rafael/materio-mui-nextjs-admin-template-ts/full-version/src/…`): **confirmar en `~/materio-v6/` antes de copiar**.
+- Rutas de Materio citadas desde la v5 local (`/home/rafael/materio-mui-nextjs-admin-template-ts/full-version/src/…`): **(v5 local, con la adaptación del Paso 0 de la Fase 0) antes de copiar**.
 
 ---
 
@@ -291,7 +291,7 @@ Comportamientos:
 
 **Files:**
 - Create: `client/src/views/agenda/hooks/useAgenda.ts`
-- Create: `client/src/libs/styles/AppFullCalendar.ts` (desde Materio `libs/styles/AppFullCalendar.ts`; confirmar en `~/materio-v6/`)
+- Create: `client/src/libs/styles/AppFullCalendar.ts` (desde Materio `libs/styles/AppFullCalendar.ts`; (v5 local, con la adaptación del Paso 0 de la Fase 0))
 - Create: `client/src/views/agenda/components/AgendaCalendar.tsx`
 - Create: `client/src/views/agenda/components/AgendaFilters.tsx` (patrón `views/apps/calendar/SidebarLeft.tsx` de Materio)
 
