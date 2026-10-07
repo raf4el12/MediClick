@@ -1,3 +1,4 @@
+import rolePermissions from '../../fixtures/role-permissions.json';
 import type { ActorProfile } from '../session';
 
 const emptyPage = { totalRows: 0, totalPages: 0, currentPage: 1, rows: [] };
@@ -8,7 +9,7 @@ export const admin: ActorProfile = {
     name: 'Alba Administración',
     email: 'alba.admin@test.local',
     role: 'ADMIN',
-    permissions: ['MANAGE:ALL'],
+    permissions: rolePermissions.ADMIN,
     clinicName: 'Sede Central',
     clinicTimezone: 'America/Lima',
   },
