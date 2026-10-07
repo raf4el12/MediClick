@@ -1,9 +1,19 @@
 'use client';
 
 import { useMemo, useEffect } from 'react';
-import { ThemeProvider as MuiThemeProvider, createTheme } from '@mui/material/styles';
+import {
+  ThemeProvider as MuiThemeProvider,
+  createTheme,
+  darken,
+  lighten,
+  useColorScheme,
+} from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import { deepmerge } from '@mui/utils';
+import { useMedia } from 'react-use';
 import coreTheme from '@/@core/theme';
+import primaryColorConfig from '@/configs/primaryColorConfig';
+import type { Settings } from '@/@core/contexts/settingsTypes';
 import { StoreProvider } from '@/redux-store/StoreProvider';
 import { QueryProvider } from '@/components/QueryProvider';
 import { SettingsProvider } from '@/@core/contexts/settingsContext';
@@ -16,37 +26,52 @@ interface ProvidersProps {
 
 const fontFamily = '"Inter", "Roboto", "Helvetica", "Arial", sans-serif';
 
+// Con variables CSS, MUI elige el esquema por el atributo data-light/data-dark
+// de <html>; este componente lo sincroniza con el modo de los ajustes.
+function ModeChanger({ mode }: { mode: Settings['mode'] }) {
+  const { setMode } = useColorScheme();
+
+  useEffect(() => {
+    setMode(mode);
+  }, [mode, setMode]);
+
+  return null;
+}
+
+function primaryShades(main: string) {
+  const preset = primaryColorConfig.find((color) => color.main === main);
+  return {
+    main,
+    light: preset?.light ?? lighten(main, 0.2),
+    dark: preset?.dark ?? darken(main, 0.1),
+  };
+}
+
 function ThemeWrapper({ children }: { children: React.ReactNode }) {
   const { settings } = useSettings();
+  const prefersDark = useMedia('(prefers-color-scheme: dark)', false);
+  const currentMode =
+    settings.mode === 'system' ? (prefersDark ? 'dark' : 'light') : settings.mode;
 
-  const theme = useMemo(
-    () =>
-      createTheme(
+  const theme = useMemo(() => {
+    const primary = primaryShades(settings.primaryColor);
+    return createTheme(
+      deepmerge(
         coreTheme(
-          {
-            mode: settings.mode,
-            skin: settings.skin,
-            primaryColor: settings.primaryColor,
-            highContrast: settings.highContrast,
-          },
+          { skin: settings.skin, highContrast: settings.highContrast },
+          currentMode,
           fontFamily,
         ),
+        {
+          colorSchemes: {
+            light: { palette: { primary } },
+            dark: { palette: { primary } },
+          },
+          cssVariables: { colorSchemeSelector: 'data' },
+        },
       ),
-    [settings.mode, settings.skin, settings.primaryColor, settings.highContrast],
-  );
-
-  // Sync CSS custom properties with current theme
-  useEffect(() => {
-    const root = document.documentElement;
-    root.style.setProperty('--primary-color', theme.palette.primary.main);
-    root.style.setProperty('--border-color', theme.palette.divider);
-    root.style.setProperty('--border-radius', `${theme.shape.borderRadius}px`);
-    root.style.setProperty('--background-paper', theme.palette.background.paper);
-    root.style.setProperty('--background-default', theme.palette.background.default);
-    root.style.setProperty('--text-primary', theme.palette.text.primary);
-    root.style.setProperty('--text-secondary', theme.palette.text.secondary);
-    root.style.setProperty('--action-active', theme.palette.action.active);
-  }, [theme]);
+    );
+  }, [settings.skin, settings.primaryColor, settings.highContrast, currentMode]);
 
   // Apply accessibility settings as attributes/CSS vars on <html>
   useEffect(() => {
@@ -75,7 +100,8 @@ function ThemeWrapper({ children }: { children: React.ReactNode }) {
   }, [settings.colorBlindMode, settings.fontSize, settings.largeTargets]);
 
   return (
-    <MuiThemeProvider theme={theme}>
+    <MuiThemeProvider theme={theme} defaultMode={settings.mode} forceThemeRerender>
+      <ModeChanger mode={settings.mode} />
       <CssBaseline />
       <ColorBlindFilters />
       {children}

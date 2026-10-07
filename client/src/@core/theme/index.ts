@@ -1,79 +1,83 @@
 import type { ThemeOptions } from '@mui/material/styles';
+import type {} from '@mui/material/themeCssVarsAugmentation';
+import type {} from '@mui/lab/themeAugmentation';
+import './types';
 import overrides from './overrides';
 import colorSchemes from './colorSchemes';
 import spacing from './spacing';
 import shadows from './shadows';
 import customShadows from './customShadows';
-import typographyConfig from './typography';
-import type { Settings } from '@/@core/contexts/settingsTypes';
+import typography from './typography';
+import type { Skin, SystemMode } from '@core/types';
 
 interface ThemeSettings {
-  mode: Settings['mode'];
-  skin: Settings['skin'];
-  primaryColor: string;
+  skin: Skin;
   highContrast?: boolean;
+}
+
+type SchemePalette = Record<string, unknown>;
+
+// Alto contraste (WCAG 1.4.6): texto, fondos y bordes puros en ambos esquemas.
+// Con variables CSS el esquema activo lo elige el atributo data-light/data-dark,
+// así que la transformación se aplica a los dos antes de crear el tema.
+function highContrastPalette(palette: SchemePalette, isDark: boolean): SchemePalette {
+  const pureText = isDark ? '#ffffff' : '#000000';
+  return {
+    ...palette,
+    text: {
+      primary: pureText,
+      secondary: pureText,
+      disabled: isDark ? '#9ca3af' : '#525252',
+    },
+    background: {
+      default: isDark ? '#000000' : '#ffffff',
+      paper: isDark ? '#0a0a0a' : '#ffffff',
+    },
+    divider: pureText,
+    action: {
+      ...((palette.action as Record<string, unknown> | undefined) ?? {}),
+      active: pureText,
+      hover: isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.12)',
+      selected: isDark ? 'rgba(255,255,255,0.24)' : 'rgba(0,0,0,0.16)',
+      disabled: isDark ? '#6b7280' : '#525252',
+    },
+  };
 }
 
 const coreTheme = (
   settings: ThemeSettings,
+  mode: SystemMode,
   fontFamily: string,
 ): ThemeOptions => {
-  const resolvedMode = settings.mode === 'system' ? 'light' : settings.mode;
-  const colors = colorSchemes();
-  const basePalette =
-    resolvedMode === 'dark' ? colors.dark.palette : colors.light.palette;
-
-  // Override primary color from settings
-  const paletteObj = basePalette as Record<string, unknown>;
-  const basePrimary = (paletteObj.primary ?? {}) as Record<string, string>;
-  let palette: Record<string, unknown> = {
-    ...paletteObj,
-    primary: {
-      ...basePrimary,
-      main: settings.primaryColor,
-    },
+  const schemes = colorSchemes(settings.skin) as unknown as {
+    light: { palette: SchemePalette };
+    dark: { palette: SchemePalette };
   };
 
-  // Alto contraste — override palette para cumplir WCAG 1.4.6 (AAA contrast)
-  if (settings.highContrast) {
-    const isDark = resolvedMode === 'dark';
-    const pureText = isDark ? '#ffffff' : '#000000';
-    const pureBg = isDark ? '#000000' : '#ffffff';
-    const paperBg = isDark ? '#0a0a0a' : '#ffffff';
-    const strongBorder = isDark ? '#ffffff' : '#000000';
-
-    palette = {
-      ...palette,
-      text: {
-        primary: pureText,
-        secondary: pureText,
-        disabled: isDark ? '#9ca3af' : '#525252',
-      },
-      background: {
-        default: pureBg,
-        paper: paperBg,
-      },
-      divider: strongBorder,
-      action: {
-        ...(palette.action as Record<string, unknown> ?? {}),
-        active: pureText,
-        hover: isDark ? 'rgba(255,255,255,0.16)' : 'rgba(0,0,0,0.12)',
-        selected: isDark ? 'rgba(255,255,255,0.24)' : 'rgba(0,0,0,0.16)',
-        disabled: isDark ? '#6b7280' : '#525252',
-      },
-    };
-  }
+  const resolvedSchemes = settings.highContrast
+    ? {
+        light: { ...schemes.light, palette: highContrastPalette(schemes.light.palette, false) },
+        dark: { ...schemes.dark, palette: highContrastPalette(schemes.dark.palette, true) },
+      }
+    : schemes;
 
   return {
-    palette: palette as ThemeOptions['palette'],
     components: overrides(settings.skin),
+    colorSchemes: resolvedSchemes as ThemeOptions['colorSchemes'],
     ...spacing,
     shape: {
-      borderRadius: 10,
+      borderRadius: 6,
+      customBorderRadius: { xs: 2, sm: 4, md: 6, lg: 8, xl: 10 },
     },
-    shadows: shadows(resolvedMode) as ThemeOptions['shadows'],
-    typography: typographyConfig(fontFamily),
-    customShadows: customShadows(resolvedMode),
+    shadows: shadows(mode),
+    typography: typography(fontFamily),
+    customShadows: customShadows(mode),
+    mainColorChannels: {
+      light: '46 38 61',
+      dark: '231 227 252',
+      lightShadow: '46 38 61',
+      darkShadow: '19 17 32',
+    },
   } as ThemeOptions;
 };
 

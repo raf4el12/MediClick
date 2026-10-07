@@ -1,13 +1,17 @@
-const customShadows = (mode: string) => {
-  const opacity = mode === 'dark' ? 0.2 : 0.16;
+// MUI Imports
+import type { Theme } from '@mui/material/styles'
 
+// Type Imports
+import type { SystemMode } from '@core/types'
+
+const customShadows = (mode: SystemMode): Theme['customShadows'] => {
   return {
-    xs: `0 2px 4px rgba(0, 0, 0, ${opacity})`,
-    sm: `0 4px 8px rgba(0, 0, 0, ${opacity})`,
-    md: `0 6px 16px rgba(0, 0, 0, ${opacity})`,
-    lg: `0 8px 24px rgba(0, 0, 0, ${opacity})`,
-    xl: `0 12px 32px rgba(0, 0, 0, ${opacity + 0.04})`,
-  };
-};
+    xs: `0px 2px 4px rgb(var(--mui-mainColorChannels-${mode}Shadow) / ${mode === 'light' ? 0.16 : 0.2})`,
+    sm: `0px 3px 6px rgb(var(--mui-mainColorChannels-${mode}Shadow) / ${mode === 'light' ? 0.18 : 0.22})`,
+    md: `0px 4px 10px rgb(var(--mui-mainColorChannels-${mode}Shadow) / ${mode === 'light' ? 0.2 : 0.24})`,
+    lg: `0px 6px 16px rgb(var(--mui-mainColorChannels-${mode}Shadow) / ${mode === 'light' ? 0.22 : 0.26})`,
+    xl: `0px 8px 28px rgb(var(--mui-mainColorChannels-${mode}Shadow) / ${mode === 'light' ? 0.24 : 0.28})`
+  }
+}
 
-export default customShadows;
+export default customShadows

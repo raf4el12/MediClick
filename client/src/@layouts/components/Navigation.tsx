@@ -405,9 +405,12 @@ export default function Navigation({ mobileOpen = false, onMobileClose }: Naviga
                           justifyContent: showText ? 'flex-start' : 'center',
                           color: textColor,
                           transition: 'all 200ms ease',
+                          // Los overrides de Materio fijan el color del texto de la lista; este
+                          // menú oscuro hereda el del botón (hasta reemplazarlo en UI-03).
                           '&.Mui-selected': {
                             bgcolor: 'primary.main',
                             color: 'primary.contrastText',
+                            '& .MuiTypography-root': { color: 'inherit' },
                             boxShadow: '0 2px 6px rgba(0, 0, 0, 0.16)',
                             '&:hover': {
                               bgcolor: 'primary.dark',
@@ -434,6 +437,7 @@ export default function Navigation({ mobileOpen = false, onMobileClose }: Naviga
                         {showText && (
                           <ListItemText
                             primary={item.title}
+                            sx={{ '& .MuiListItemText-primary': { color: 'inherit' } }}
                             primaryTypographyProps={{
                               fontSize: '0.875rem',
                               fontWeight: isActive ? 600 : 400,
