@@ -1,69 +1,88 @@
-const typography = (fontFamily: string) => ({
-  fontFamily,
-  fontSize: 14,
-  h1: {
-    fontSize: '2.5rem',
-    fontWeight: 700,
-    lineHeight: 1.2,
-  },
-  h2: {
-    fontSize: '2rem',
-    fontWeight: 700,
-    lineHeight: 1.3,
-  },
-  h3: {
-    fontSize: '1.75rem',
-    fontWeight: 600,
-    lineHeight: 1.3,
-  },
-  h4: {
-    fontSize: '1.5rem',
-    fontWeight: 600,
-    lineHeight: 1.4,
-  },
-  h5: {
-    fontSize: '1.25rem',
-    fontWeight: 600,
-    lineHeight: 1.4,
-  },
-  h6: {
-    fontSize: '1rem',
-    fontWeight: 600,
-    lineHeight: 1.5,
-  },
-  subtitle1: {
-    fontSize: '1rem',
-    fontWeight: 500,
-    lineHeight: 1.5,
-  },
-  subtitle2: {
-    fontSize: '0.875rem',
-    fontWeight: 500,
-    lineHeight: 1.57,
-  },
-  body1: {
-    fontSize: '1rem',
-    lineHeight: 1.5,
-  },
-  body2: {
-    fontSize: '0.875rem',
-    lineHeight: 1.57,
-  },
-  button: {
-    fontSize: '0.875rem',
-    fontWeight: 600,
-    textTransform: 'none' as const,
-  },
-  caption: {
-    fontSize: '0.75rem',
-    lineHeight: 1.5,
-  },
-  overline: {
-    fontSize: '0.75rem',
-    fontWeight: 600,
-    letterSpacing: '0.08em',
-    textTransform: 'uppercase' as const,
-  },
-});
+// MUI Imports
+import type { Theme } from '@mui/material/styles'
 
-export default typography;
+const typography = (fontFamily: string): Theme['typography'] =>
+  ({
+    fontFamily:
+      typeof fontFamily === 'undefined' || fontFamily === ''
+        ? [
+            'Inter',
+            'sans-serif',
+            '-apple-system',
+            'BlinkMacSystemFont',
+            '"Segoe UI"',
+            'Roboto',
+            '"Helvetica Neue"',
+            'Arial',
+            'sans-serif',
+            '"Apple Color Emoji"',
+            '"Segoe UI Emoji"',
+            '"Segoe UI Symbol"'
+          ].join(',')
+        : fontFamily,
+    fontSize: 13.125,
+    h1: {
+      fontSize: '2.875rem',
+      fontWeight: 500,
+      lineHeight: 1.478261
+    },
+    h2: {
+      fontSize: '2.375rem',
+      fontWeight: 500,
+      lineHeight: 1.47368421
+    },
+    h3: {
+      fontSize: '1.75rem',
+      fontWeight: 500,
+      lineHeight: 1.5
+    },
+    h4: {
+      fontSize: '1.5rem',
+      fontWeight: 500,
+      lineHeight: 1.58334
+    },
+    h5: {
+      fontSize: '1.125rem',
+      fontWeight: 500,
+      lineHeight: 1.5556
+    },
+    h6: {
+      fontSize: '0.9375rem',
+      fontWeight: 500,
+      lineHeight: 1.46667
+    },
+    subtitle1: {
+      fontSize: '0.9375rem',
+      lineHeight: 1.46667
+    },
+    subtitle2: {
+      fontSize: '0.8125rem',
+      fontWeight: 400,
+      lineHeight: 1.53846154
+    },
+    body1: {
+      fontSize: '0.9375rem',
+      lineHeight: 1.46667
+    },
+    body2: {
+      fontSize: '0.8125rem',
+      lineHeight: 1.53846154
+    },
+    button: {
+      fontSize: '0.9375rem',
+      lineHeight: 1.46667,
+      textTransform: 'none'
+    },
+    caption: {
+      fontSize: '0.8125rem',
+      lineHeight: 1.38462,
+      letterSpacing: '0.4px'
+    },
+    overline: {
+      fontSize: '0.75rem',
+      lineHeight: 1.16667,
+      letterSpacing: '0.8px'
+    }
+  }) as Theme['typography']
+
+export default typography

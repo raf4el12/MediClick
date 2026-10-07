@@ -50,7 +50,16 @@ del 2026-10-06). Las rutas `src/...` de este plan son relativas a esa carpeta.
 
 ---
 
-## UI-01 — Fundación Materio (v5 adaptada)
+## UI-01 — Fundación Materio (v5 adaptada) ✅
+
+**Resultado (2026-10-06):** tema de Materio con `cssVariables` y primario `#7E4EE6`, presets AA
+probados, Tailwind 3.4 con el plugin de Materio, `CLAUDE.md` al día. Desviaciones registradas:
+(1) `MuiTypography` y `MuiCardContent` no fuerzan color —Materio lo fija por variante y pisaba el
+texto blanco heredado en banners y paneles de 15 pantallas aún no migradas; `caption` con
+`text.disabled` además no cumple AA—; (2) la Task 4 (copiar `@menu`, `@layouts` y `@core`
+restantes) pasa a UI-03, donde se conectan, para no dejar código muerto que depende del contexto
+de ajustes de Materio; (3) se corrigió que el modo oscuro no sobreviviera a una recarga (el
+estado inicial pisaba la cookie de ajustes), con prueba `tests/e2e/theme-mode.spec.ts`.
 
 **Rama:** `feat/ui-01-fundacion-materio` · **Skills:** `codebase-design` · **Depende de:** UI-02
 
@@ -248,6 +257,10 @@ del 2026-10-06). Las rutas `src/...` de este plan son relativas a esa carpeta.
 ---
 
 ## UI-03 — Layout por actor, navbar, avisos y customizer
+
+> Incluye la antigua Task 4 de UI-01: copiar desde la v5 `@menu/**`, `@layouts/{HorizontalLayout,components,styles,utils}`,
+> `@core/{hooks,styles,utils,components/{mui,option-menu,scroll-to-top}}` y `libs/styles/AppReactToastify.tsx`,
+> con la adaptación del Paso 0, al mismo tiempo que se conectan a las rutas.
 
 **Rama:** `feat/ui-03-layout-por-actor` · **Skills:** `codebase-design` + `tdd` · **Depende de:** UI-01, UI-02
 

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v16-appRouter';
+import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 import Providers from '@/components/Providers';
 import 'remixicon/fonts/remixicon.css';
 import './globals.css';
@@ -15,8 +16,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html id="__next" lang="es" suppressHydrationWarning>
       <body suppressHydrationWarning>
+        <InitColorSchemeScript attribute="data" />
         <AppRouterCacheProvider options={{ key: 'mui' }}>
           <Providers>{children}</Providers>
         </AppRouterCacheProvider>

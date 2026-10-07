@@ -200,7 +200,7 @@ expectAccessible(page)                          // axe WCAG 2.0/2.1 A y AA
 
 | ID | Fase | Entrega y criterio de aceptación | Backend | Depende de | Skills |
 |---|---|---|---|---|---|
-| UI-01 | 0 Base | Fundación Materio (v5 adaptada): dependencias, Tailwind 3.4, tema con `colorSchemes` + `cssVariables` y `#7E4EE6` (el modo alto contraste pasa a ser una transformación de ambos esquemas), 37 overrides, `@core`/`@layouts`/`@menu`, `libs/styles`; `CLAUDE.md` refleja el stack real | — | UI-02 | `codebase-design` |
+| UI-01 ✅ | 0 Base | Fundación Materio (v5 adaptada): dependencias, Tailwind 3.4, tema con `colorSchemes` + `cssVariables` y `#7E4EE6` (el modo alto contraste pasa a ser una transformación de ambos esquemas), 37 overrides, `@core`/`@layouts`/`@menu`, `libs/styles`; `CLAUDE.md` refleja el stack real | — | UI-02 | `codebase-design` |
 | UI-02 ✅ | 0 Base | Vitest en el cliente y arnés Playwright (§5.3) con puerto propio (3100); CI corre ambos. Va antes que UI-01 para que el cambio de base visual ya tenga pruebas | — | — | `tdd` |
 | UI-03 | 0 Base | Layout por actor (§5.4), dropdowns de navbar, toastify en lugar de `SuccessSnackbar`, customizer Materio con sección de accesibilidad | — | UI-01, UI-02 | `codebase-design` + `tdd` |
 | UI-04 | 0 Base | Login, recuperar y restablecer contraseña en versión v2; respuesta al recordatorio (`/appointment/respond`); páginas 401/404/500 (la 500 se adapta desde la 404; `RoleGuard` deja de redirigir en silencio y muestra 401) | — | UI-03 | `tdd` |

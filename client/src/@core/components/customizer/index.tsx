@@ -171,13 +171,13 @@ const Customizer = () => {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
                   <div
-                    className={`${styles.itemWrapper} ${settings.skin === 'shadow' ? styles.active : ''}`}
-                    onClick={() => handleChange('skin', 'shadow')}
+                    className={`${styles.itemWrapper} ${settings.skin === 'bordered' ? styles.active : ''}`}
+                    onClick={() => handleChange('skin', 'bordered')}
                   >
                     <SkinBordered />
                   </div>
-                  <p className={styles.itemLabel} onClick={() => handleChange('skin', 'shadow')}>
-                    Shadow
+                  <p className={styles.itemLabel} onClick={() => handleChange('skin', 'bordered')}>
+                    Bordered
                   </p>
                 </div>
               </div>
