@@ -33,7 +33,7 @@ del médico", "Reseña oculta".
 
 ---
 
-## UI-26 — Endpoints públicos del perfil del médico
+## UI-26 — Endpoints públicos del perfil del médico ✅
 
 **Rama:** `git fetch origin && git switch -c feat/ui-26-perfil-publico-api origin/staging`
 **Skills:** `mediclick-tenant-safety`, `mattpocock-skills:tdd`, `mediclick-core-review`
