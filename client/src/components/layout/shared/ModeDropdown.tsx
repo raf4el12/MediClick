@@ -1,7 +1,7 @@
 'use client'
 
 // React Imports
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 
 // MUI Imports
 import Tooltip from '@mui/material/Tooltip'
@@ -25,7 +25,7 @@ const ModeDropdown = () => {
   const [tooltipOpen, setTooltipOpen] = useState(false)
 
   // Refs
-  const anchorRef = useRef<HTMLButtonElement>(null)
+  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null)
 
   // Hooks
   const { settings, updateSettings } = useSettings()
@@ -68,7 +68,7 @@ const ModeDropdown = () => {
         open={open ? false : tooltipOpen ? true : false}
       >
         <IconButton
-          ref={anchorRef}
+          ref={setAnchorEl}
           onClick={handleToggle}
           className='!text-textPrimary'
           aria-label={`Cambiar tema (${modeLabel})`}
@@ -81,7 +81,7 @@ const ModeDropdown = () => {
         transition
         disablePortal
         placement='bottom-start'
-        anchorEl={anchorRef.current}
+        anchorEl={anchorEl}
         className='min-is-[160px] !mbs-4 z-[1]'
       >
         {({ TransitionProps, placement }) => (

@@ -1,7 +1,7 @@
+'use client'
+
 // MUI Imports
 import IconButton from '@mui/material/IconButton'
-
-'use client'
 
 // Hook Imports
 import useVerticalNav from '@menu/hooks/useVerticalNav'

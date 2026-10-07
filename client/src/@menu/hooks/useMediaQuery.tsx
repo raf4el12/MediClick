@@ -1,29 +1,29 @@
 'use client'
 
 // React Imports
-import { useEffect, useState } from 'react'
+import { useCallback, useSyncExternalStore } from 'react'
 
+// Suscripción al tamaño de ventana sin setState dentro de un efecto.
 const useMediaQuery = (breakpoint?: string): boolean => {
-  // States
-  const [matches, setMatches] = useState(breakpoint === 'always')
+  const query = breakpoint && breakpoint !== 'always' ? `(max-width: ${breakpoint})` : null
 
-  useEffect(() => {
-    if (breakpoint && breakpoint !== 'always') {
-      const media = window.matchMedia(`(max-width: ${breakpoint})`)
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      if (!query) return () => {}
+      const media = window.matchMedia(query)
 
-      if (media.matches !== matches) {
-        setMatches(media.matches)
-      }
+      media.addEventListener('change', onChange)
 
-      const listener = () => setMatches(media.matches)
+      return () => media.removeEventListener('change', onChange)
+    },
+    [query]
+  )
 
-      window.addEventListener('resize', listener)
-
-      return () => window.removeEventListener('resize', listener)
-    }
-  }, [matches, breakpoint])
-
-  return matches
+  return useSyncExternalStore(
+    subscribe,
+    () => (query ? window.matchMedia(query).matches : breakpoint === 'always'),
+    () => breakpoint === 'always'
+  )
 }
 
 export default useMediaQuery

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppSelector } from '@/redux-store/hooks';
 import { useSettings } from '@/@core/hooks/useSettings';
@@ -10,11 +10,13 @@ export default function LayoutWrapper({ children }: { children: React.ReactNode 
   const router = useRouter();
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   const { settings } = useSettings();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // false en el servidor y en la hidratación, true después: evita mostrar el
+  // shell antes de conocer la sesión persistida.
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   useEffect(() => {
     if (mounted && !isAuthenticated) {

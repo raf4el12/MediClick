@@ -1,7 +1,7 @@
 'use client'
 
 // React Imports
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { MouseEvent, ReactNode } from 'react'
 
 // Next Imports
@@ -88,7 +88,7 @@ const NotificationsDropdown = () => {
   const [loading, setLoading] = useState(false)
 
   // Refs
-  const anchorRef = useRef<HTMLButtonElement>(null)
+  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null)
 
   // Hooks
   const router = useRouter()
@@ -168,7 +168,7 @@ const NotificationsDropdown = () => {
     <>
       <Tooltip title='Notificaciones'>
         <IconButton
-          ref={anchorRef}
+          ref={setAnchorEl}
           onClick={handleToggle}
           className='!text-textPrimary'
           aria-label={unreadCount > 0 ? `Notificaciones, ${unreadCount} sin leer` : 'Notificaciones'}
@@ -191,7 +191,7 @@ const NotificationsDropdown = () => {
         transition
         disablePortal
         placement='bottom-end'
-        anchorEl={anchorRef.current}
+        anchorEl={anchorEl}
         {...(isSmallScreen
           ? {
               className: 'is-full !mbs-4 z-[1] max-bs-[550px]',

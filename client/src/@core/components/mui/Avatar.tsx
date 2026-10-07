@@ -48,4 +48,6 @@ const CustomAvatar = forwardRef<HTMLDivElement, CustomAvatarProps>((props: Custo
   return <Avatar color={color} skin={skin} ref={ref} {...rest} />
 })
 
+CustomAvatar.displayName = 'CustomAvatar'
+
 export default CustomAvatar

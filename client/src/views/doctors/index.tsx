@@ -30,13 +30,13 @@ export default function DoctorsView() {
   const handleCreateSuccess = useCallback(() => {
     controller.refreshData();
     notify('Doctor registrado exitosamente', 'success');
-  }, [controller.refreshData, notify]);
+  }, [controller.refreshData]);
 
   const handleEditSuccess = useCallback(() => {
     controller.closeEditDrawer();
     controller.refreshData();
     notify('Doctor actualizado exitosamente', 'success');
-  }, [controller.closeEditDrawer, controller.refreshData, notify]);
+  }, [controller.closeEditDrawer, controller.refreshData]);
 
   const handleDelete = async () => {
     const success = await controller.confirmDelete();

@@ -1,7 +1,7 @@
 'use client'
 
 // React Imports
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import type { ReactElement, ReactNode, SyntheticEvent } from 'react'
 
 // Next Imports
@@ -55,7 +55,7 @@ const OptionMenu = (props: OptionsMenuType) => {
   const [open, setOpen] = useState(false)
 
   // Refs
-  const anchorRef = useRef<HTMLButtonElement>(null)
+  const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null)
 
   // Hooks
   const { settings } = useSettings()
@@ -65,7 +65,7 @@ const OptionMenu = (props: OptionsMenuType) => {
   }
 
   const handleClose = (event: Event | SyntheticEvent) => {
-    if (anchorRef.current && anchorRef.current.contains(event.target as HTMLElement)) {
+    if (anchorEl && anchorEl.contains(event.target as HTMLElement)) {
       return
     }
 
@@ -75,7 +75,7 @@ const OptionMenu = (props: OptionsMenuType) => {
   return (
     <>
       <IconButtonWrapper tooltipProps={tooltipProps}>
-        <IconButton ref={anchorRef} size='small' onClick={handleToggle} {...iconButtonProps}>
+        <IconButton ref={setAnchorEl} size='small' onClick={handleToggle} {...iconButtonProps}>
           {typeof icon === 'string' ? (
             <i className={classnames(icon, iconClassName)} />
           ) : (icon as ReactNode) ? (
@@ -87,7 +87,7 @@ const OptionMenu = (props: OptionsMenuType) => {
       </IconButtonWrapper>
       <Popper
         open={open}
-        anchorEl={anchorRef.current}
+        anchorEl={anchorEl}
         placement={leftAlignMenu ? 'bottom-start' : 'bottom-end'}
         transition
         disablePortal

@@ -13,7 +13,7 @@ export default function ClinicsView() {
   const handleSuccess = useCallback(() => {
     controller.refreshData();
     notify('Operación realizada exitosamente', 'success');
-  }, [controller.refreshData, notify]);
+  }, [controller.refreshData]);
 
   return (
     <Grid container spacing={3}>

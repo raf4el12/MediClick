@@ -72,6 +72,7 @@ const MenuButton: ForwardRefRenderFunction<HTMLAnchorElement, MenuButtonProps> =
     if (typeof component === 'string') {
       return createElement(
         component,
+        // eslint-disable-next-line react-hooks/refs -- se reenvía el ref de forwardRef, no se lee
         {
           className: classnames(className),
           ...rest,
@@ -87,6 +88,7 @@ const MenuButton: ForwardRefRenderFunction<HTMLAnchorElement, MenuButtonProps> =
 
       return cloneElement(
         element,
+        // eslint-disable-next-line react-hooks/refs -- se reenvía el ref de forwardRef, no se lee
         {
           className: classnames(className, classNameProp),
           ...rest,

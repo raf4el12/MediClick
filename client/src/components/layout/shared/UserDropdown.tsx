@@ -1,7 +1,7 @@
 'use client'
 
 // React Imports
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import type { MouseEvent } from 'react'
 
 // Next Imports
@@ -45,7 +45,7 @@ const UserDropdown = () => {
   const [open, setOpen] = useState(false)
 
   // Refs
-  const anchorRef = useRef<HTMLDivElement>(null)
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
 
   // Hooks
   const router = useRouter()
@@ -62,7 +62,7 @@ const UserDropdown = () => {
       router.push(url)
     }
 
-    if (anchorRef.current && anchorRef.current.contains(event?.target as HTMLElement)) {
+    if (anchorEl && anchorEl.contains(event?.target as HTMLElement)) {
       return
     }
 
@@ -77,7 +77,7 @@ const UserDropdown = () => {
   return (
     <>
       <Badge
-        ref={anchorRef}
+        ref={setAnchorEl}
         overlap='circular'
         badgeContent={<BadgeContentSpan onClick={handleDropdownOpen} />}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
@@ -97,7 +97,7 @@ const UserDropdown = () => {
         transition
         disablePortal
         placement='bottom-end'
-        anchorEl={anchorRef.current}
+        anchorEl={anchorEl}
         className='min-is-[240px] !mbs-4 z-[1]'
       >
         {({ TransitionProps, placement }) => (
