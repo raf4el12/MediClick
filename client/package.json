@@ -9,6 +9,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint \"{src,app}/**/*.{ts,tsx}\"",
+    "test": "vitest run",
     "test:a11y": "playwright test"
   },
   "dependencies": {
@@ -46,6 +47,8 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^5.0.3"
   }
 }
