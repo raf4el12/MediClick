@@ -5,8 +5,9 @@ import { IScheduleRepository } from '../../domain/repositories/schedule.reposito
 import {
   ScheduleWithRelations,
   ScheduleWithAvailability,
-  ScheduleWithBookedSlots,
+  ScheduleWindow,
   CreateScheduleData,
+  DoctorBooking,
 } from '../../domain/interfaces/schedule-data.interface.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
@@ -234,52 +235,54 @@ export class PrismaScheduleRepository implements IScheduleRepository {
     }));
   }
 
-  async findByDoctorDateWithBookedSlots(
+  async findByDoctorRange(
     doctorId: number,
-    date: Date,
+    from: Date,
+    to: Date,
     specialtyId: number,
-  ): Promise<ScheduleWithBookedSlots[]> {
-    // Usar UTC para evitar desfase por timezone del servidor
-    const startOfDay = new Date(
-      Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
-    );
-    const endOfDay = new Date(
-      Date.UTC(
-        date.getUTCFullYear(),
-        date.getUTCMonth(),
-        date.getUTCDate() + 1,
-      ),
-    );
-
-    const rows = await this.prisma.schedules.findMany({
+  ): Promise<ScheduleWindow[]> {
+    return this.prisma.schedules.findMany({
       where: {
         doctorId,
         specialtyId,
-        scheduleDate: { gte: startOfDay, lt: endOfDay },
-      },
-      include: {
-        appointments: {
-          where: {
-            deleted: false,
-            status: { notIn: ['CANCELLED', 'NO_SHOW'] },
-          },
-          select: { startTime: true, endTime: true },
+        scheduleDate: {
+          gte: utcDayRange(from).start,
+          lt: utcDayRange(to).end,
         },
       },
-      orderBy: { timeFrom: 'asc' },
+      select: { id: true, scheduleDate: true, timeFrom: true, timeTo: true },
+      orderBy: [{ scheduleDate: 'asc' }, { timeFrom: 'asc' }],
+    });
+  }
+
+  async findDoctorBookingsInRange(
+    doctorId: number,
+    from: Date,
+    to: Date,
+  ): Promise<DoctorBooking[]> {
+    const rows = await this.prisma.appointments.findMany({
+      where: {
+        deleted: false,
+        status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+        schedule: {
+          doctorId,
+          scheduleDate: {
+            gte: utcDayRange(from).start,
+            lt: utcDayRange(to).end,
+          },
+        },
+      },
+      select: {
+        startTime: true,
+        endTime: true,
+        schedule: { select: { scheduleDate: true } },
+      },
     });
 
-    return rows.map((s) => ({
-      id: s.id,
-      doctorId: s.doctorId,
-      specialtyId: s.specialtyId,
-      scheduleDate: s.scheduleDate,
-      timeFrom: s.timeFrom,
-      timeTo: s.timeTo,
-      bookedSlots: s.appointments.map((appointment) => ({
-        startTime: appointment.startTime,
-        endTime: appointment.endTime,
-      })),
+    return rows.map((row) => ({
+      scheduleDate: row.schedule.scheduleDate,
+      startTime: row.startTime,
+      endTime: row.endTime,
     }));
   }
 }

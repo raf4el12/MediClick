@@ -1,11 +1,14 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { GetAvailableTimeSlotsUseCase } from './get-available-time-slots.use-case.js';
-import type { ScheduleWithBookedSlots } from '../../domain/interfaces/schedule-data.interface.js';
+import type { ScheduleWindow } from '../../domain/interfaces/schedule-data.interface.js';
 import type { ScheduleBlockEntity } from '../../../schedule-blocks/domain/entities/schedule-block.entity.js';
 
 describe('GetAvailableTimeSlotsUseCase', () => {
   let useCase: GetAvailableTimeSlotsUseCase;
-  let scheduleRepository: { findByDoctorDateWithBookedSlots: jest.Mock };
+  let scheduleRepository: {
+    findByDoctorRange: jest.Mock;
+    findDoctorBookingsInRange: jest.Mock;
+  };
   let specialtyRepository: { findById: jest.Mock };
   let holidayRepository: { isHoliday: jest.Mock };
   let scheduleBlockRepository: { findActiveByDoctorAndDateRange: jest.Mock };
@@ -18,15 +21,12 @@ describe('GetAvailableTimeSlotsUseCase', () => {
   const hour = (h: number, m = 0) => new Date(Date.UTC(1970, 0, 1, h, m));
 
   const buildSchedule = (
-    overrides: Partial<ScheduleWithBookedSlots> = {},
-  ): ScheduleWithBookedSlots => ({
+    overrides: Partial<ScheduleWindow> = {},
+  ): ScheduleWindow => ({
     id: 10,
-    doctorId: 3,
-    specialtyId: 1,
     scheduleDate: new Date(`${FUTURE_DATE}T00:00:00.000Z`),
     timeFrom: hour(8),
     timeTo: hour(10),
-    bookedSlots: [],
     ...overrides,
   });
 
@@ -51,9 +51,8 @@ describe('GetAvailableTimeSlotsUseCase', () => {
 
   beforeEach(() => {
     scheduleRepository = {
-      findByDoctorDateWithBookedSlots: jest
-        .fn()
-        .mockResolvedValue([buildSchedule()]),
+      findByDoctorRange: jest.fn().mockResolvedValue([buildSchedule()]),
+      findDoctorBookingsInRange: jest.fn().mockResolvedValue([]),
     };
     specialtyRepository = {
       findById: jest
@@ -95,10 +94,12 @@ describe('GetAvailableTimeSlotsUseCase', () => {
   });
 
   it('genera slots disponibles y marca ocupados los que cruzan con citas', async () => {
-    scheduleRepository.findByDoctorDateWithBookedSlots.mockResolvedValue([
-      buildSchedule({
-        bookedSlots: [{ startTime: hour(8), endTime: hour(9) }],
-      }),
+    scheduleRepository.findDoctorBookingsInRange.mockResolvedValue([
+      {
+        scheduleDate: new Date(`${FUTURE_DATE}T00:00:00.000Z`),
+        startTime: hour(8),
+        endTime: hour(9),
+      },
     ]);
 
     const result = await useCase.execute(dto);
@@ -114,13 +115,25 @@ describe('GetAvailableTimeSlotsUseCase', () => {
     ]);
   });
 
+  it('una cita de otra especialidad del mismo médico que se solapa deja el cupo no disponible', async () => {
+    scheduleRepository.findDoctorBookingsInRange.mockResolvedValue([
+      {
+        scheduleDate: new Date(`${FUTURE_DATE}T00:00:00.000Z`),
+        startTime: hour(9),
+        endTime: hour(9, 30),
+      },
+    ]);
+
+    const result = await useCase.execute(dto);
+
+    expect(result.map((s) => s.available)).toEqual([true, false]);
+  });
+
   it('fecha pasada: retorna vacío sin consultar horarios', async () => {
     const result = await useCase.execute({ ...dto, date: '2020-01-01' });
 
     expect(result).toEqual([]);
-    expect(
-      scheduleRepository.findByDoctorDateWithBookedSlots,
-    ).not.toHaveBeenCalled();
+    expect(scheduleRepository.findByDoctorRange).not.toHaveBeenCalled();
   });
 
   it('feriado (de la sede del doctor): retorna vacío sin consultar horarios', async () => {
@@ -133,13 +146,11 @@ describe('GetAvailableTimeSlotsUseCase', () => {
       new Date(`${FUTURE_DATE}T00:00:00.000Z`),
       7,
     );
-    expect(
-      scheduleRepository.findByDoctorDateWithBookedSlots,
-    ).not.toHaveBeenCalled();
+    expect(scheduleRepository.findByDoctorRange).not.toHaveBeenCalled();
   });
 
   it('sin horarios para la fecha: retorna vacío', async () => {
-    scheduleRepository.findByDoctorDateWithBookedSlots.mockResolvedValue([]);
+    scheduleRepository.findByDoctorRange.mockResolvedValue([]);
 
     const result = await useCase.execute(dto);
 
@@ -176,7 +187,7 @@ describe('GetAvailableTimeSlotsUseCase', () => {
 
   it('hoy: los slots dentro de las próximas 2 horas no están disponibles', async () => {
     jest.useFakeTimers({ now: new Date('2026-06-15T10:00:00.000Z') });
-    scheduleRepository.findByDoctorDateWithBookedSlots.mockResolvedValue([
+    scheduleRepository.findByDoctorRange.mockResolvedValue([
       buildSchedule({
         scheduleDate: new Date('2026-06-15T00:00:00.000Z'),
         timeFrom: hour(8),

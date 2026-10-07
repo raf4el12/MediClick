@@ -46,15 +46,21 @@ export interface ScheduleWithAvailability {
 }
 
 /**
- * Horario enriquecido con los rangos exactos de las citas activas ya agendadas.
- * Usado para calcular disponibilidad de slots dentro de un bloque horario.
+ * Bloque de agenda de un médico para una especialidad, sin sus citas: la
+ * ocupación se calcula con todas las citas del médico (`DoctorBooking`).
  */
-export interface ScheduleWithBookedSlots {
+export interface ScheduleWindow {
   id: number;
-  doctorId: number;
-  specialtyId: number;
   scheduleDate: Date;
   timeFrom: Date;
   timeTo: Date;
-  bookedSlots: { startTime: Date; endTime: Date }[];
+}
+
+/**
+ * Intervalo ocupado por una cita activa del médico, de cualquier especialidad.
+ */
+export interface DoctorBooking {
+  scheduleDate: Date;
+  startTime: Date;
+  endTime: Date;
 }

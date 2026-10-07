@@ -1,6 +1,6 @@
 # SDD — Migración de la interfaz de MediClick a Materio v6
 
-- **Estado:** En implementación; UI-02 implementado
+- **Estado:** En implementación; los ítems terminados llevan ✅ en la tabla del §7
 - **Fecha:** 2026-10-01
 - **Alcance:** cliente Next.js completo y los endpoints de backend que piden los flujos rediseñados
 - **Decisión de base:** [ADR-0003](./adr/0003-materio-v6-sistema-de-diseno.md)
@@ -204,7 +204,7 @@ expectAccessible(page)                          // axe WCAG 2.0/2.1 A y AA
 | UI-02 ✅ | 0 Base | Vitest en el cliente y arnés Playwright (§5.3) con puerto propio (3100); CI corre ambos. Va antes que UI-01 para que el cambio de base visual ya tenga pruebas | — | — | `tdd` |
 | UI-03 | 0 Base | Layout por actor (§5.4), dropdowns de navbar, toastify en lugar de `SuccessSnackbar`, customizer Materio con sección de accesibilidad | — | UI-01, UI-02 | `codebase-design` + `tdd` |
 | UI-04 | 0 Base | Login, recuperar y restablecer contraseña en versión v2; respuesta al recordatorio (`/appointment/respond`); páginas 401/404/500 (la 500 se adapta desde la 404; `RoleGuard` deja de redirigir en silencio y muestra 401) | — | UI-03 | `tdd` |
-| UI-05 | 1 Reserva | `GET` de días con cupos por rango (médico, especialidad, desde/hasta) que descuenta feriados, bloqueos y todas las citas del médico; extrae o reutiliza el cálculo de cupos compartido (§5.2) | Sí | — | `mediclick-appointment-core` + `tdd` |
+| UI-05 ✅ | 1 Reserva | `GET` de días con cupos por rango (médico, especialidad, desde/hasta) que descuenta feriados, bloqueos y todas las citas del médico; extrae o reutiliza el cálculo de cupos compartido (§5.2) | Sí | — | `mediclick-appointment-core` + `tdd` |
 | UI-06 | 1 Reserva | Prototipo del flujo de reserva en ambos modos y decisiones de UX registradas | — | UI-03 | `prototype` |
 | UI-07 | 1 Reserva | Núcleo del flujo de reserva (§5.1) con Vitest | — | UI-02, UI-06 | `tdd` |
 | UI-08 | 1 Reserva | Pantalla de reserva con wizard, custom inputs, datepicker con días disponibles, pago y confirmación; reemplaza `patient/book` y `CreateAppointmentDialog` | — | UI-05, UI-07 | `tdd` |

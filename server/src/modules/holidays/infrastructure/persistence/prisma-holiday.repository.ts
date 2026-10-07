@@ -104,6 +104,21 @@ export class PrismaHolidayRepository implements IHolidayRepository {
     });
   }
 
+  async findActiveInRangeForClinic(
+    start: Date,
+    end: Date,
+    clinicId: number | null,
+  ): Promise<HolidayEntity[]> {
+    return this.prisma.holidays.findMany({
+      where: {
+        date: { gte: utcDayRange(start).start, lt: utcDayRange(end).end },
+        isActive: true,
+        OR: [{ clinicId: null }, ...(clinicId ? [{ clinicId }] : [])],
+      },
+      orderBy: { date: 'asc' },
+    });
+  }
+
   async isHoliday(date: Date, clinicId?: number): Promise<boolean> {
     const { start: startOfDay, end: endOfDay } = utcDayRange(date);
 

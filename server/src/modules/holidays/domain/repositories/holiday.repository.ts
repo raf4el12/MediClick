@@ -19,6 +19,15 @@ export interface IHolidayRepository {
   findByDateRange(startDate: Date, endDate: Date): Promise<HolidayEntity[]>;
   findByYear(year: number): Promise<HolidayEntity[]>;
   isHoliday(date: Date, clinicId?: number): Promise<boolean>;
+  /**
+   * Feriados activos entre dos días inclusive que afectan a una sede: los
+   * globales más los de esa sede. Con `clinicId` nulo, solo los globales.
+   */
+  findActiveInRangeForClinic(
+    start: Date,
+    end: Date,
+    clinicId: number | null,
+  ): Promise<HolidayEntity[]>;
   findRecurring(): Promise<HolidayEntity[]>;
   findDistinctYears(): Promise<number[]>;
   deleteByNameAndYear(name: string, years: number[]): Promise<number>;
