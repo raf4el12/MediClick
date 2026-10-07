@@ -29,3 +29,11 @@ export interface CreateReviewPayload {
   rating: number;
   comment?: string;
 }
+
+export interface ReviewModerationParams {
+  isVisible?: boolean;
+  rating?: number;
+  doctorId?: number;
+  currentPage?: number;
+  pageSize?: number; // máximo 100
+}

@@ -1,8 +1,10 @@
 import { api } from '@/libs/axios';
+import type { PaginatedResponse } from '@/types/pagination.types';
 import type {
   Review,
   DoctorReviews,
   CreateReviewPayload,
+  ReviewModerationParams,
 } from '@/views/reviews/types';
 
 export const reviewsService = {
@@ -29,6 +31,17 @@ export const reviewsService = {
     const response = await api.get<DoctorReviews>(
       `/reviews/doctor/${doctorId}/all`,
     );
+
+    return response.data;
+  },
+
+  // Moderación: reseñas visibles y ocultas de la sede del actor (requiere UPDATE:REVIEWS)
+  listForModeration: async (
+    params: ReviewModerationParams = {},
+  ): Promise<PaginatedResponse<Review>> => {
+    const response = await api.get<PaginatedResponse<Review>>('/reviews', {
+      params,
+    });
 
     return response.data;
   },
