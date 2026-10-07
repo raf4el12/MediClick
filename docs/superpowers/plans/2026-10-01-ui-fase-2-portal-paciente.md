@@ -299,7 +299,9 @@ con seña y saldo tiene dos transacciones aprobadas, y si la última es un reint
 comprobante aprobado queda oculto. El comprobante necesita las transacciones aprobadas de la cita.
 La receta no tiene hueco: `GET /prescriptions/my/appointment/:id` y su `/pdf` ya existen para el paciente.
 
-### Task 1: Comprobantes aprobados de una cita (backend, TDD)
+### Task 1: Comprobantes aprobados de una cita (backend, TDD) ✅
+
+Hecho en la rama `feat/ui-12-comprobantes-backend`, antes que las vistas imprimibles (dependen de UI-03).
 
 **Files:**
 - Create: `server/src/modules/payments/application/use-cases/list-appointment-receipts.use-case.ts` + `.spec.ts`

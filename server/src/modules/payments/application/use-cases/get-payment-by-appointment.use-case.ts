@@ -5,6 +5,10 @@ import { PaymentResponseDto } from '../dto/payment-response.dto.js';
 import { HandlePaymentWebhookUseCase } from './handle-payment-webhook.use-case.js';
 import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
 import { AppointmentAccessPolicy } from '../../../../shared/access/appointment-access.policy.js';
+import {
+  authorizeAppointmentPaymentRead,
+  toPaymentResponse,
+} from '../appointment-payment-read.js';
 
 @Injectable()
 export class GetPaymentByAppointmentUseCase {
@@ -21,38 +25,12 @@ export class GetPaymentByAppointmentUseCase {
     appointmentId: number,
     paymentId?: string,
   ): Promise<PaymentResponseDto> {
-    const appointment = await this.prisma.appointments.findUnique({
-      where: { id: appointmentId },
-      select: {
-        id: true,
-        deleted: true,
-        clinicId: true,
-        patient: {
-          select: { profile: { select: { userId: true } } },
-        },
-        schedule: {
-          select: {
-            doctor: {
-              select: {
-                clinicId: true,
-                profile: { select: { userId: true } },
-              },
-            },
-          },
-        },
-      },
-    });
-    if (!appointment || appointment.deleted) {
-      throw new NotFoundException('Cita no encontrada');
-    }
-
-    this.appointmentAccessPolicy.authorize(actor, 'READ_PAYMENT', {
-      id: appointment.id,
-      clinicId:
-        appointment.schedule.doctor.clinicId ?? appointment.clinicId ?? null,
-      patientUserId: appointment.patient.profile.userId,
-      doctorUserId: appointment.schedule.doctor.profile.userId,
-    });
+    await authorizeAppointmentPaymentRead(
+      this.prisma,
+      this.appointmentAccessPolicy,
+      actor,
+      appointmentId,
+    );
 
     let transaction =
       await this.transactionRepository.findLatestByAppointmentId(appointmentId);
@@ -76,18 +54,6 @@ export class GetPaymentByAppointmentUseCase {
       }
     }
 
-    return {
-      id: transaction.id,
-      appointmentId: transaction.appointmentId,
-      amount: transaction.amount,
-      currency: transaction.currency,
-      status: transaction.status,
-      paymentMethod: transaction.paymentMethod,
-      gatewayId: transaction.gatewayId,
-      payerEmail: transaction.payerEmail,
-      failureReason: transaction.failureReason,
-      paidAt: transaction.paidAt,
-      createdAt: transaction.createdAt,
-    };
+    return toPaymentResponse(transaction);
   }
 }

@@ -18,6 +18,7 @@ import { ListPaymentsQueryDto } from '../../application/dto/list-payments-query.
 import { CreatePaymentPreferenceUseCase } from '../../application/use-cases/create-payment-preference.use-case.js';
 import { GetPaymentByAppointmentUseCase } from '../../application/use-cases/get-payment-by-appointment.use-case.js';
 import { ListPaymentsUseCase } from '../../application/use-cases/list-payments.use-case.js';
+import { ListAppointmentReceiptsUseCase } from '../../application/use-cases/list-appointment-receipts.use-case.js';
 import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
 
 @ApiTags('Payments')
@@ -27,6 +28,7 @@ export class PaymentController {
     private readonly createPaymentPreferenceUseCase: CreatePaymentPreferenceUseCase,
     private readonly getPaymentByAppointmentUseCase: GetPaymentByAppointmentUseCase,
     private readonly listPaymentsUseCase: ListPaymentsUseCase,
+    private readonly listAppointmentReceiptsUseCase: ListAppointmentReceiptsUseCase,
   ) {}
 
   @Post('preferences')
@@ -66,6 +68,27 @@ export class PaymentController {
     @Query() query: ListPaymentsQueryDto,
   ) {
     return this.listPaymentsUseCase.execute(user, query);
+  }
+
+  @Get('appointment/:id/receipts')
+  @Auth()
+  @RequirePermissions('READ', 'APPOINTMENTS')
+  @ApiOperation({
+    summary: 'Comprobantes de pago de una cita (transacciones aprobadas)',
+    description:
+      'Una transacción aprobada por comprobante, en orden de pago (seña y saldo). ' +
+      'Mismo control de acceso que el pago de la cita: dueño, personal de su sede o actor global.',
+  })
+  @ApiResponse({ status: 200, type: PaymentResponseDto, isArray: true })
+  @ApiResponse({
+    status: 404,
+    description: 'Cita inexistente o fuera de alcance',
+  })
+  async getReceiptsByAppointment(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param('id', ParseIntPipe) appointmentId: number,
+  ): Promise<PaymentResponseDto[]> {
+    return this.listAppointmentReceiptsUseCase.execute(actor, appointmentId);
   }
 
   @Get('appointment/:id')
