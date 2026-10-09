@@ -23,7 +23,7 @@
 
 ---
 
-## UI-13 — `GET /agenda` por rango con alcance de sede e indicadores del médico
+## UI-13 — `GET /agenda` por rango con alcance de sede e indicadores del médico ✅
 
 **Rama:** `feat/ui-13-agenda-endpoint` · **Skills:** `mediclick-appointment-core` → `mediclick-tenant-safety` → `codebase-design` → `tdd` → `mediclick-core-review`
 
@@ -94,11 +94,11 @@ Decisión: un subject `AGENDA` en lugar de reutilizar `READ:SCHEDULE_BLOCKS` o c
 - Consumes: `TimeSlotCalculatorService.generate`, `timeRangesOverlap`, `toMinutesUTC` de `shared/utils/date-time.utils.ts`.
 - Produces: `CupoAvailabilityService.forSchedule(schedule, { durationMinutes, bufferMinutes, bookedIntervals, blocks, minStartMsOfDay }): CupoAvailability[]` — función pura, sin I/O.
 
-- [ ] **Step 1: Coordinar con UI-05.** Si UI-05 ya extrajo este cálculo a un servicio de dominio, reutilizarlo y saltar a Task 2. Si no, este ítem hace la extracción y UI-05 la reutiliza.
-- [ ] **Step 2: Escribir los tests rojos** del servicio puro: cupo libre; cupo solapado con cita de la misma especialidad; cupo solapado con cita de **otra** especialidad del mismo médico (se marca no disponible); bloqueo `FULL_DAY`; bloqueo `TIME_RANGE` parcial; anticipación de 2 h en el día actual; cita `CANCELLED` no ocupa.
-- [ ] **Step 3: Run** `cd server && pnpm test -- cupo-availability --runInBand` — Expected: FAIL (módulo inexistente).
-- [ ] **Step 4: Mover `generateSlotsForSchedule`** de `GetAvailableTimeSlotsUseCase` al servicio y hacer que el caso de uso lo llame sin cambiar su respuesta. El caso de uso sigue pasando solo las citas del propio schedule; ampliar `time-slots` a las demás especialidades es una decisión de UI-05, no de este ítem.
-- [ ] **Step 5: Run** `cd server && pnpm test -- cupo-availability schedules --runInBand` — Expected: PASS, sin cambios en los tests existentes de `time-slots`.
+- [x] **Step 1: Coordinar con UI-05.** Si UI-05 ya extrajo este cálculo a un servicio de dominio, reutilizarlo y saltar a Task 2. Si no, este ítem hace la extracción y UI-05 la reutiliza. → UI-05 ya lo extrajo a `computeSlots` (`schedules/domain/services/slot-availability.ts`); se reutiliza.
+- [x] ~~**Step 2: Escribir los tests rojos** del servicio puro: cupo libre; cupo solapado con cita de la misma especialidad; cupo solapado con cita de **otra** especialidad del mismo médico (se marca no disponible); bloqueo `FULL_DAY`; bloqueo `TIME_RANGE` parcial; anticipación de 2 h en el día actual; cita `CANCELLED` no ocupa.~~ No aplica: lo cubrió UI-05.
+- [x] ~~**Step 3: Run** `cd server && pnpm test -- cupo-availability --runInBand` — Expected: FAIL (módulo inexistente).~~ No aplica: lo cubrió UI-05.
+- [x] ~~**Step 4: Mover `generateSlotsForSchedule`** de `GetAvailableTimeSlotsUseCase` al servicio y hacer que el caso de uso lo llame sin cambiar su respuesta. El caso de uso sigue pasando solo las citas del propio schedule; ampliar `time-slots` a las demás especialidades es una decisión de UI-05, no de este ítem.~~ No aplica: lo cubrió UI-05.
+- [x] ~~**Step 5: Run** `cd server && pnpm test -- cupo-availability schedules --runInBand` — Expected: PASS, sin cambios en los tests existentes de `time-slots`.~~ No aplica: lo cubrió UI-05.
 
 ### Task 2: Subject `AGENDA` en la matriz RBAC
 
@@ -111,11 +111,11 @@ Decisión: un subject `AGENDA` en lugar de reutilizar `READ:SCHEDULE_BLOCKS` o c
 **Interfaces:**
 - Produces: `PermissionSubject.AGENDA`; `READ:AGENDA` para `DOCTOR` y `RECEPTIONIST` (admins por `MANAGE:ALL`); `PATIENT` sin acceso.
 
-- [ ] **Step 1: Test rojo** en `rbac-policy.spec.ts`: `DOCTOR` y `RECEPTIONIST` incluyen `READ:AGENDA`; `PATIENT` no.
-- [ ] **Step 2: Run** `cd server && pnpm test -- rbac-policy --runInBand` — Expected: FAIL.
-- [ ] **Step 3: Agregar el subject** al enum y a la matriz; agregar etiqueta "Agenda" e ícono `ri-calendar-schedule-line` en `permissionsMeta.ts`.
-- [ ] **Step 4: Run** `cd server && pnpm test -- rbac-policy permissions.guard --runInBand` — Expected: PASS.
-- [ ] **Step 5: Sincronizar permisos en una base local** con `cd server && npx ts-node prisma/seed-rbac.ts` (upsert; no usar `seed.ts`, que limpia la base). Expected: el log lista `READ:AGENDA`.
+- [x] **Step 1: Test rojo** en `rbac-policy.spec.ts`: `DOCTOR` y `RECEPTIONIST` incluyen `READ:AGENDA`; `PATIENT` no.
+- [x] **Step 2: Run** `cd server && pnpm test -- rbac-policy --runInBand` — Expected: FAIL.
+- [x] **Step 3: Agregar el subject** al enum y a la matriz; agregar etiqueta "Agenda" e ícono `ri-calendar-schedule-line` en `permissionsMeta.ts`.
+- [x] **Step 4: Run** `cd server && pnpm test -- rbac-policy permissions.guard --runInBand` — Expected: PASS.
+- [ ] **Step 5 (pendiente, sin PostgreSQL local): Sincronizar permisos en una base local** con `cd server && npx ts-node prisma/seed-rbac.ts` (upsert; no usar `seed.ts`, que limpia la base). Expected: el log lista `READ:AGENDA`.
 
 ### Task 3: Política de alcance (pura)
 
@@ -127,10 +127,10 @@ Decisión: un subject `AGENDA` en lugar de reutilizar `READ:SCHEDULE_BLOCKS` o c
 - Consumes: `AuthenticatedUser` (`roleName`, `clinicId`, `id`), query validada, `resolveDoctor(doctorId) → { id, clinicId } | null`, `resolveOwnDoctorId(userId) → number | null`.
 - Produces: `AgendaScope = { kind: 'doctor'; doctorId; clinicId } | { kind: 'clinic'; clinicId }` o excepción Nest (400/403/404).
 
-- [ ] **Step 1: Tests rojos tabla-driven** con cada fila de la tabla "Alcance por actor" (permitido y rechazado), incluido SUPER_ADMIN con `clinicId: null` pidiendo un médico de la sede 2 → alcance `{ doctor, clinicId: 2 }`.
-- [ ] **Step 2: Run** `cd server && pnpm test -- agenda-scope --runInBand` — Expected: FAIL.
-- [ ] **Step 3: Implementar** siguiendo la forma de `shared/access/appointment-access.policy.ts` (global = SUPER_ADMIN o ADMIN sin sede; fuera de alcance → 404 para no revelar existencia).
-- [ ] **Step 4: Run** el mismo comando — Expected: PASS.
+- [x] **Step 1: Tests rojos tabla-driven** con cada fila de la tabla "Alcance por actor" (permitido y rechazado), incluido SUPER_ADMIN con `clinicId: null` pidiendo un médico de la sede 2 → alcance `{ doctor, clinicId: 2 }`.
+- [x] **Step 2: Run** `cd server && pnpm test -- agenda-scope --runInBand` — Expected: FAIL.
+- [x] **Step 3: Implementar** siguiendo la forma de `shared/access/appointment-access.policy.ts` (global = SUPER_ADMIN o ADMIN sin sede; fuera de alcance → 404 para no revelar existencia).
+- [x] **Step 4: Run** el mismo comando — Expected: PASS.
 
 ### Task 4: Repositorio de lectura y caso de uso
 
@@ -149,7 +149,7 @@ Decisión: un subject `AGENDA` en lugar de reutilizar `READ:SCHEDULE_BLOCKS` o c
 - Consumes: `AgendaScope` (Task 3), `CupoAvailabilityService` (Task 1), `nowInTimezone`, `todayStartInTimezone`, `scheduleDateToLocalDay`, `MIN_BOOKING_ANTICIPATION_MS`, `dateToTimeString`.
 - Produces: `IAgendaReadRepository.load(scope, fromUtcDay, toUtcDay): AgendaRows` (schedules con especialidad, citas activas e históricas, bloqueos activos, feriados globales + de la sede, timezone); `GetAgendaUseCase.execute(actor, query): AgendaResponseDto`; `GET /agenda`.
 
-- [ ] **Step 1: Tests rojos del caso de uso** con repositorio en memoria:
+- [x] **Step 1: Tests rojos del caso de uso** con repositorio en memoria:
   - feriado de otra sede no aparece y no anula cupos;
   - feriado global y de la propia sede aparecen y anulan los cupos de ese día;
   - cupo solapado con cita de otra especialidad del mismo médico → `available: false`;
@@ -157,11 +157,11 @@ Decisión: un subject `AGENDA` en lugar de reutilizar `READ:SCHEDULE_BLOCKS` o c
   - rango de 43 días en alcance médico y de 8 días en alcance sede → 400;
   - SUPER_ADMIN con `clinicId: null` recibe solo feriados globales y de la sede del médico pedido;
   - `indicators` coincide con cupos y citas devueltos.
-- [ ] **Step 2: Run** `cd server && pnpm test -- agenda --runInBand` — Expected: FAIL.
-- [ ] **Step 3: Implementar el repositorio** con `this.prisma` (no `prisma.tenant`) y predicados explícitos: `doctor.clinicId = scope.clinicId` en alcance sede, `Holidays.OR [{ clinicId: null }, { clinicId }]`, `ScheduleBlocks.isActive` con solapamiento de rango, `Appointments.deleted = false`. Seleccionar del paciente solo `id`, `name`, `lastName`.
-- [ ] **Step 4: Implementar indicadores y caso de uso.** El caso de uso convierte el rango local a días UTC con `scheduleDateToLocalDay`, aplica la anticipación solo al día de hoy de la sede y arma la respuesta con fechas `YYYY-MM-DD` y horas `HH:mm`.
-- [ ] **Step 5: Controller** con `@Auth()` + `@RequirePermissions('READ', 'AGENDA')` + `@CurrentUser() actor`; Swagger con 400/403/404.
-- [ ] **Step 6: Run** `cd server && pnpm test -- agenda rbac-policy schedules --runInBand && pnpm build` — Expected: PASS y build limpio.
+- [x] **Step 2: Run** `cd server && pnpm test -- agenda --runInBand` — Expected: FAIL.
+- [x] **Step 3: Implementar el repositorio** con `this.prisma` (no `prisma.tenant`) y predicados explícitos: `doctor.clinicId = scope.clinicId` en alcance sede, `Holidays.OR [{ clinicId: null }, { clinicId }]`, `ScheduleBlocks.isActive` con solapamiento de rango, `Appointments.deleted = false`. Seleccionar del paciente solo `id`, `name`, `lastName`.
+- [x] **Step 4: Implementar indicadores y caso de uso.** El caso de uso convierte el rango local a días UTC con `scheduleDateToLocalDay`, aplica la anticipación solo al día de hoy de la sede y arma la respuesta con fechas `YYYY-MM-DD` y horas `HH:mm`.
+- [x] **Step 5: Controller** con `@Auth()` + `@RequirePermissions('READ', 'AGENDA')` + `@CurrentUser() actor`; Swagger con 400/403/404.
+- [x] **Step 6: Run** `cd server && pnpm test -- agenda rbac-policy schedules --runInBand && pnpm build` — Expected: PASS y build limpio.
 
 ### Task 5: Integración con PostgreSQL real
 
@@ -171,14 +171,24 @@ Decisión: un subject `AGENDA` en lugar de reutilizar `READ:SCHEDULE_BLOCKS` o c
 **Interfaces:**
 - Consumes: el arnés de `jest.integration.config.cjs` (un solo worker).
 
-- [ ] **Step 1: Escribir el caso**: dos sedes, médico A en sede 1, médico B en sede 2, feriado global, feriado de sede 1 y de sede 2, bloqueo de B. Alcance sede 1 devuelve solo A, feriado global y de sede 1, y ningún bloqueo de B; alcance médico A con un actor SUPER_ADMIN devuelve lo mismo.
-- [ ] **Step 2: Run** `cd server && RUN_DB_INTEGRATION=1 DATABASE_URL=<db de prueba> pnpm run test:integration -- agenda` — Expected: PASS.
+- [x] **Step 1: Escribir el caso**: dos sedes, médico A en sede 1, médico B en sede 2, feriado global, feriado de sede 1 y de sede 2, bloqueo de B. Alcance sede 1 devuelve solo A, feriado global y de sede 1, y ningún bloqueo de B; alcance médico A con un actor SUPER_ADMIN devuelve lo mismo.
+- [ ] **Step 2 (pendiente, sin PostgreSQL local): Run** `cd server && RUN_DB_INTEGRATION=1 DATABASE_URL=<db de prueba> pnpm run test:integration -- agenda` — Expected: PASS.
 
 ### Task 6: Cierre
 
-- [ ] **Step 1:** `mediclick-core-review` sobre el diff (lanes: sede, zona horaria, feriados/bloqueos, solapamiento del médico, datos del paciente expuestos).
-- [ ] **Step 2:** Actualizar `APPOINTMENT-CORE.md` §"Sedes y acceso" con una línea: la agenda de un médico es visible para él y para el personal de su sede; el paciente no la ve.
-- [ ] **Step 3:** `pnpm exec eslint` sobre los archivos tocados; confirmar que el diff no incluye cambios no relacionados.
+- [x] **Step 1:** `mediclick-core-review` sobre el diff (lanes: sede, zona horaria, feriados/bloqueos, solapamiento del médico, datos del paciente expuestos).
+- [x] **Step 2:** Actualizar `APPOINTMENT-CORE.md` §"Sedes y acceso" con una línea: la agenda de un médico es visible para él y para el personal de su sede; el paciente no la ve.
+- [x] **Step 3:** `pnpm exec eslint` sobre los archivos tocados; confirmar que el diff no incluye cambios no relacionados.
+
+### Notas de implementación
+
+- **Cálculo de cupos:** se reutiliza `computeSlots` de UI-05; no se creó `cupo-availability.service.ts`. La agenda le pasa las citas activas del médico de cualquier especialidad (las mismas que trae para la respuesta, en una sola consulta). Los cupos de días pasados y de feriados se devuelven con `available: false`, para que la UI pinte el día y `resolveDropTarget` los rechace.
+- **Rango:** `from`/`to` se validan como en `available-days` (`parseDay` rechaza fechas inexistentes como `2099-02-30`) y se usan directamente como días de agenda en medianoche UTC; no hizo falta `scheduleDateToLocalDay`. El límite (42 / 7 días) se aplica después de resolver el alcance, porque depende de él.
+- **Indicadores:** `totalCupos` cuenta los cupos ofrecidos: excluye los anulados por un feriado o un bloqueo (se devuelven igual, no disponibles); los pasados y los que caen dentro de la anticipación sí cuentan, para que la ocupación de días ya atendidos tenga sentido. `bookedCupos` son los cupos ofrecidos solapados con una cita activa: una cita de 60 min ocupa dos cupos de 30 y un sobrecupo no suma cupos. Para separar "ocupado" de "anulado" se llama a `computeSlots` con una causa a la vez, sin duplicar su lógica. `atRisk` cuenta `isAtRisk` solo en citas `PENDING`/`CONFIRMED`; `pendingPayment` usa el criterio del resumen del paciente (`PENDING` + pago `PENDING` + `pendingUntil` vigente).
+- **Alcance:** `resolveAgendaScope` es una función pura con búsquedas inyectadas (`findDoctor`, `findDoctorByUserId`, `clinicExists`) que implementa el mismo repositorio de lectura. `findDoctorByUserId` devuelve `{ id, clinicId }` en lugar de solo el id, para no consultar dos veces. Si un rol `PATIENT` editado llegara a tener `READ:AGENDA`, la política igual responde 403. Una sede inexistente pedida por un administrador global responde 404 "Sede no encontrada".
+- **Agenda de sede:** lista los médicos no borrados de la sede, incluidos los inactivos, para no esconder citas que siguen en pie.
+- **Datos del paciente:** solo `id` y nombre completo; ni email, ni teléfono, ni motivo, ni notas.
+- **Sin PostgreSQL local:** `seed-rbac.ts` no se corrió. Cada base existente debe correrlo (`cd server && npx ts-node prisma/seed-rbac.ts`) antes de usar la agenda; sin eso, DOCTOR y RECEPTIONIST reciben 403. `prisma-agenda-read.repository.integration.spec.ts` quedó escrito (sedes, feriados, bloqueo de otro médico, datos del paciente) pero sin correr.
 
 **Pregunta de dominio abierta (no se resuelve aquí):** `RescheduleAppointmentUseCase` acepta un `newScheduleId` de otro médico o especialidad. La UI de UI-16 restringe el arrastre al mismo médico y especialidad; si producto decide que el servidor también lo exija, es un cambio de regla (D7) en un ítem propio.
 
