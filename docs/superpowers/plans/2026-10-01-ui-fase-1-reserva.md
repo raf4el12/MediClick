@@ -348,7 +348,7 @@ ids del preset contra los catálogos y despacha `presetResolved` con las opcione
 
 ---
 
-## UI-08 — Pantalla de reserva en ambos modos
+## UI-08 — Pantalla de reserva en ambos modos ✅
 
 **Rama:** `feat/ui-08-pantalla-reserva` · **PR:** contra `staging`
 
@@ -407,7 +407,7 @@ Rutas de la v5 local (`/home/rafael/materio-mui-nextjs-admin-template-ts/full-ve
 
 ### Steps
 
-- [ ] **Step 1 (rojo):** escribir `booking-online.spec.ts` con el arnés (`test.use({ actor: 'PATIENT' })`,
+- [x] **Step 1 (rojo):** escribir `booking-online.spec.ts` con el arnés (`test.use({ actor: 'PATIENT' })`,
   proyectos de escritorio y móvil), escenarios:
   1. camino feliz: sede → especialidad → médico → día marcado → cupo → resumen con moneda de la
      sede → confirmar; se llaman `POST /appointments/patient` y `POST /payments/preferences` con el
@@ -424,17 +424,37 @@ Rutas de la v5 local (`/home/rafael/materio-mui-nextjs-admin-template-ts/full-ve
   6. sin sesión (`test.use({ actor: null })`), `/patient/book?doctorId=5` redirige a
      `/login?from=%2Fpatient%2Fbook%3FdoctorId%3D5`;
   7. `expectAccessible(page)` en cada paso.
-- [ ] **Step 2 (rojo):** escribir `booking-administrative.spec.ts` con `actor: 'RECEPTIONIST'`:
+- [x] **Step 2 (rojo):** escribir `booking-administrative.spec.ts` con `actor: 'RECEPTIONIST'`:
   camino feliz con búsqueda de paciente y `POST /appointments` con `patientId`; aviso de éxito y
   nueva petición `GET /appointments`; búsqueda sin resultados con mensaje accesible; diálogo sin
   violaciones de axe.
-- [ ] **Step 3:** `cd client && pnpm exec playwright test tests/e2e/booking-*` → FAIL.
-- [ ] **Step 4:** implementar `useBooking` y los pasos con los componentes de Materio; Tailwind
+- [x] **Step 3:** `cd client && pnpm exec playwright test tests/e2e/booking-*` → FAIL.
+- [x] **Step 4:** implementar `useBooking` y los pasos con los componentes de Materio; Tailwind
   solo para layout y espaciado, color y estado por el tema MUI.
-- [ ] **Step 5:** conectar las dos entradas (página del paciente con preset por query y diálogo
+- [x] **Step 5:** conectar las dos entradas (página del paciente con preset por query y diálogo
   del personal), ajustar `from` en `middleware.ts` y reestilizar `payment/{Success,Pending,Failure}`.
-- [ ] **Step 6:** repetir Step 3 → PASS.
-- [ ] **Step 7:** borrar lo reemplazado y comprobar que no quedan referencias:
+- [x] **Step 6:** repetir Step 3 → PASS.
+- [x] **Step 7:** borrar lo reemplazado y comprobar que no quedan referencias:
   `rg -n "CreateAppointmentDialog|useAppointmentForm|filterAvailableSlots|PatientBookView|createAppointmentThunk" client/src` → sin resultados.
-- [ ] **Step 8:** revisar textos visibles: ninguno dice "horario", "slot", "turno" ni "S/".
-- [ ] **Step 9:** `cd client && pnpm test && pnpm exec tsc --noEmit && pnpm build && pnpm exec eslint <archivos tocados> && pnpm test:a11y` → PASS.
+- [x] **Step 8:** revisar textos visibles: ninguno dice "horario", "slot", "turno" ni "S/".
+- [x] **Step 9:** `cd client && pnpm test && pnpm exec tsc --noEmit && pnpm build && pnpm exec eslint <archivos tocados> && pnpm test:a11y` → PASS.
+
+### Notas de implementación
+
+- **Modo administrativo sin `fixedClinic`:** la sesión del personal trae el nombre y la zona de su
+  sede, pero no su id ni su moneda. El hook no inventa una sede: el resumen toma el nombre y la
+  moneda de la sede del médico elegido (dos pruebas nuevas en `bookingFlow.test.ts`). Como UI-08 no
+  tiene preset administrativo, la validación del comportamiento 22 queda para cuando haga falta.
+- **Calendario:** `filterDate` en lugar de `includeDates` (este impide navegar a meses sin cupos) y
+  un `calendarContainer` propio, porque react-datepicker anuncia el calendario en línea en inglés
+  y como diálogo modal. Los días con cupos se marcan con el primario. `date-fns@3` pasa a ser
+  dependencia directa para registrar el locale `es`.
+- **Custom inputs de Materio:** la raíz es un `<label>` para que el radio tenga nombre accesible.
+- **`from` en el login:** solo se aceptan rutas relativas de la app (`/^\/(?![/\\])/`), ahora
+  que conserva la query.
+- **Celular:** el escenario móvil se prueba con el viewport en `booking-online.spec.ts`, sin
+  agregar otro proyecto a Playwright.
+- **Pago:** `payment/{Success,Pending,Failure}` usan la moneda del pago y un medio de pago en
+  español; "Reintentar pago" pasa al primario por contraste. Prueba nueva: `payment-result.spec.ts`.
+- **Spinners de `loading.tsx`:** se agregó `aria-label`; `/patient/book` pasó a ser dinámica y
+  axe detectaba el spinner sin nombre.
