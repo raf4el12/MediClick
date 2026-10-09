@@ -196,7 +196,7 @@ Comando del ciclo: `cd server && pnpm test -- get-available-days --runInBand` (F
 
 ---
 
-## UI-06 — Prototipo del flujo de reserva
+## UI-06 — Prototipo del flujo de reserva ✅
 
 **Rama:** `prototype/ui-06-reserva` desde `origin/staging`. **No se mergea** (skill `prototype`,
 regla 6): queda como fuente primaria. Las decisiones se integran por un PR de documentación.
@@ -229,14 +229,14 @@ America/Bogota COP, America/Argentina/Buenos_Aires ARS), 6 especialidades con pr
 
 ### Steps
 
-- [ ] **Step 1:** crear la rama y anotar en el primer archivo: "Tres variantes del flujo de
+- [x] **Step 1:** crear la rama y anotar en el primer archivo: "Tres variantes del flujo de
   reserva, conmutables con `?variant=`, sobre `/patient/book` y el diálogo de `/appointments`".
-- [ ] **Step 2:** crear `client/src/views/patient/book/prototype/{VariantA,VariantB,VariantC,PrototypeSwitcher}.tsx`
+- [x] **Step 2:** crear `client/src/views/patient/book/prototype/{VariantA,VariantB,VariantC,PrototypeSwitcher}.tsx`
   y su equivalente para el diálogo; variantes estructuralmente distintas (no solo colores).
-- [ ] **Step 3:** `cd client && pnpm dev` y compartir las URLs; recorrer con el usuario en
+- [x] **Step 3:** `cd client && pnpm dev` y compartir las URLs; recorrer con el usuario en
   escritorio y móvil, registrando la respuesta a cada pregunta.
-- [ ] **Step 4:** commit y push de la rama del prototipo.
-- [ ] **Step 5:** PR `docs/ui-06-decisiones` contra `staging` que complete la sección
+- [x] **Step 4:** commit y push de la rama del prototipo.
+- [x] **Step 5:** PR `docs/ui-06-decisiones` contra `staging` que complete la sección
   "Decisiones de UI-06" de este plan y la pregunta abierta 2 del SDD (§10).
 
 **Criterio de cierre:** las 9 preguntas tienen respuesta, hay una variante elegida, y cada regla de
@@ -244,7 +244,28 @@ negocio nueva que surja está enumerada para UI-07/UI-08 (D7).
 
 ### Decisiones de UI-06
 
-_Pendiente de completar al cerrar el prototipo._
+Cerrado el 2026-10-09. Fuente primaria: rama `prototype/ui-06-reserva` (commit `4581340`):
+`/patient/book?variant=A|B|C` y "Nueva cita" en `/appointments?variant=A|B|C`. La comparación
+con capturas se revisó con el usuario; eligió la variante A en línea y la B administrativa.
+
+| # | Pregunta | Decisión |
+|---|---|---|
+| 1 | Estructura | **Wizard horizontal** (variante A, checkout de Materio): un paso por pantalla con indicador de pasos; en celular, "Paso N de 5" en lugar del indicador. |
+| 2 | Orden en línea | **Sede → especialidad → médico → cupo → resumen**, como hoy. No se ofrece "primer cupo con cualquier médico": pediría consultar los cupos de varios médicos a la vez (endpoint nuevo). |
+| 3 | Selección de cupo | **Calendario mensual** con los días que tienen cupos marcados y las horas del día elegido al lado (debajo en celular). Cada mes visible se pide con `available-days` (rango ≤ 62 días). |
+| 4 | Modo administrativo | **Diálogo de una sola pantalla con el paciente primero** (variante B): paciente, especialidad y médico como listas, días, horas y motivo a la vista. |
+| 5 | Sin cupos | Si el médico no tiene cupos en el rango consultado: **unirse a la lista de espera** (`JoinWaitlistDialog`, con la sede del médico según la decisión de UI-29) y **"Elegir otro médico"**, que vuelve al paso médico. Un mes sin cupos muestra "No hay cupos este mes" y deja pasar al siguiente. La lista de médicos alternativos con su próximo cupo queda fuera. |
+| 6 | "Atrás" | **Conserva lo elegido.** Solo cambiar una elección limpia lo que depende de ella (invalidación en cascada). |
+| 7 | Celular | Atrás y Siguiente **fijos sobre la barra inferior** del portal del paciente. |
+| 8 | Resumen | Precio con la **moneda de la sede**, aviso de que el cupo queda reservado **15 minutos** (`APPOINTMENT_PAYMENT_TIMEOUT_MINUTES`) mientras paga y de la **redirección a Mercado Pago**. |
+| 9 | Sobrecupo | **No se expone en UI-08.** `POST /appointments/overbook` necesita definir quién puede usarlo; va en un ítem propio. |
+
+**Reglas de negocio nuevas (D7):** ninguna. Las dos que proponía el prototipo ("cualquier médico"
+y sobrecupo) quedaron fuera, así que `docs/domain/APPOINTMENT-CORE.md` no cambia.
+
+**Ajustes a UI-07 y UI-08:** el modo administrativo pone el paciente primero (comportamiento 2),
+"Atrás" conserva (comportamiento 9), se agrega el aviso `no-slots` (comportamiento 10b) y el estado
+vacío de UI-08 queda definido (escenario 2).
 
 ---
 
@@ -293,15 +314,16 @@ toBookingCommand(state): BookingCommand
 Comportamientos, uno por ciclo rojo → verde (`cd client && pnpm test -- bookingFlow`):
 
 - [ ] 1. `online` empieza en `clinic` con pasos `clinic, specialty, doctor, slot, review`.
-- [ ] 2. `administrative` empieza en `specialty` con pasos `specialty, doctor, slot, patient, review` (la sede la fija el personal).
+- [ ] 2. `administrative` empieza en `patient` con pasos `patient, specialty, doctor, slot, review` (la sede la fija el personal; UI-06: paciente primero, todo en una pantalla, así que el orden de pasos ordena `missing` y el foco).
 - [ ] 3. Elegir sede invalida especialidad, médico, día y cupo.
 - [ ] 4. Elegir especialidad invalida médico, día y cupo, pero no el paciente.
 - [ ] 5. Elegir médico invalida día, cupo y la zona horaria conocida.
 - [ ] 6. Elegir día invalida el cupo.
 - [ ] 7. Elegir un cupo con `available: false` no cambia el estado.
 - [ ] 8. `select` no avanza; `next` avanza solo si el paso actual está completo (si no, `canAdvance` es `false` y `missing` nombra el dato).
-- [ ] 9. `back` en el primer paso no hace nada; en los demás retrocede según la decisión de UI-06.
+- [ ] 9. `back` en el primer paso no hace nada; en los demás retrocede un paso y **conserva** todas las selecciones (UI-06).
 - [ ] 10. `availableDaysLoaded` fija la zona horaria de la sede y elige el primer día si no hay día elegido o el elegido ya no está disponible.
+- [ ] 10b. `availableDaysLoaded` con `days` vacío deja día y cupo vacíos y expone `notice: 'no-slots'` (UI-06: lista de espera y "Elegir otro médico"); elegir otro médico lo limpia.
 - [ ] 11. `slotTaken` limpia el cupo, vuelve al paso `slot` y expone `notice: 'slot-taken'`.
 - [ ] 12. `setReason` rechaza más de 500 caracteres (límite de los DTO del servidor) y conserva el valor anterior.
 - [ ] 13. `toBookingCommand` en línea arma `{ mode: 'online', scheduleId, startTime, endTime }` y omite `reason` si está en blanco.
@@ -389,7 +411,9 @@ Rutas de la v5 local (`/home/rafael/materio-mui-nextjs-admin-template-ts/full-ve
   1. camino feliz: sede → especialidad → médico → día marcado → cupo → resumen con moneda de la
      sede → confirmar; se llaman `POST /appointments/patient` y `POST /payments/preferences` con el
      payload esperado y se navega al `initPoint` simulado;
-  2. los días sin cupos no son seleccionables y un mes sin cupos muestra el estado vacío decidido en UI-06;
+  2. los días sin cupos no son seleccionables; un mes sin cupos muestra "No hay cupos este mes" y
+     deja pasar al siguiente; un médico sin cupos en el rango ofrece "Unirme a la lista de espera"
+     (abre `JoinWaitlistDialog`) y "Elegir otro médico" (vuelve al paso médico);
   3. un 409 al confirmar vuelve al paso de cupo con el aviso "El cupo elegido ya fue tomado" y
      vuelve a pedir `time-slots`;
   4. cambiar de médico después de elegir cupo limpia día y cupo;
