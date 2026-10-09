@@ -53,3 +53,21 @@ export function getTodayInTimezone(tz: string = DEFAULT_TZ): string {
   const d = day.toString().padStart(2, '0');
   return `${year}-${m}-${d}`;
 }
+
+/**
+ * Instante real (UTC) de un día `YYYY-MM-DD` y una hora `HH:mm` de la zona de
+ * una sede, independiente de la zona del navegador.
+ */
+export function localToInstant(isoDay: string, time: string, tz: string): Date {
+  const [y, m, d] = isoDay.split('-').map(Number) as [number, number, number];
+  const [hh, mm] = time.split(':').map(Number) as [number, number];
+  const wallMs = Date.UTC(y, m - 1, d, hh, mm);
+  // Dos pasadas para ajustar el desfase en los cambios de horario.
+  let guess = wallMs;
+  for (let i = 0; i < 2; i += 1) {
+    const p = tzParts(tz, new Date(guess));
+    const shownMs = Date.UTC(p.year, p.month, p.day, p.hour, p.minute, p.second);
+    guess += wallMs - shownMs;
+  }
+  return new Date(guess);
+}

@@ -76,6 +76,15 @@ export interface MyAppointmentsSummary {
   pendingReviewCount: number;
 }
 
+/** `GET /appointments/:id/check-in-qr` */
+export interface CheckInQr {
+  appointmentId: number;
+  qrToken: string;
+  /** Apertura de la ventana de llegada (instante UTC). */
+  opensAt: string;
+  expiresAt: string;
+}
+
 /** `GET /appointments/:id/cancellation-preview` */
 export interface CancellationPreview {
   fee: number;
@@ -114,6 +123,8 @@ export interface AppointmentFilters {
 
 export interface PatientAppointmentFilters {
   status?: AppointmentStatus;
+  /** Varios estados a la vez (p. ej. canceladas e inasistencias). */
+  statuses?: AppointmentStatus[];
   upcoming?: boolean;
 }
 
