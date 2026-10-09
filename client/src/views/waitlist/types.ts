@@ -27,6 +27,8 @@ export interface WaitlistEntry {
   specialtyName: string;
   doctorId: number | null;
   doctorName: string | null;
+  /** Sede donde se buscan cupos. */
+  clinicName: string | null;
   dateFrom: string;
   dateTo: string;
   timePreference: WaitlistTimePreference;
@@ -42,6 +44,11 @@ export interface WaitlistOffer {
   waitlistEntryId: number;
   scheduleId: number;
   specialtyName: string;
+  /** Día del cupo ofrecido (`YYYY-MM-DD`, agenda de la sede). */
+  scheduleDate: string;
+  doctorName: string;
+  clinic: { id: number; name: string; timezone: string } | null;
+  /** Horas locales de la sede (`HH:mm`). */
   startTime: string;
   endTime: string;
   expiresAt: string;
@@ -52,6 +59,8 @@ export interface WaitlistOffer {
 export interface JoinWaitlistPayload {
   specialtyId: number;
   doctorId?: number;
+  /** Obligatoria si no se elige médico; con médico vale la suya. */
+  clinicId?: number;
   dateFrom: string;
   dateTo: string;
   timePreference?: WaitlistTimePreference;

@@ -53,13 +53,13 @@ Fuente: `create-appointment.use-case.ts`.
 
 ### Lista de espera
 
-1. El paciente declara especialidad, médico opcional, sede derivada de la especialidad, rango de fechas y preferencia horaria.
+1. El paciente declara especialidad, médico opcional, sede, rango de fechas y preferencia horaria. La sede es la del médico si eligió uno; si no, la elige al anotarse y es obligatoria (decisión 2026-10-06, UI-29). Una especialidad propia de una sede solo admite esa sede. Como el matcher solo ofrece cupos de la sede de la entrada, una entrada sin sede no recibiría ofertas.
 2. Al liberarse un cupo, el matcher elige una entrada activa compatible por mayor prioridad y luego por mayor antigüedad.
 3. Un lock por cupo evita ofertas paralelas. La oferta dura 15 minutos.
 4. La aceptación reclama la oferta de forma atómica y crea una cita protegiéndola de una reserva directa concurrente.
 5. Rechazar o dejar vencer una oferta permite ofrecer el cupo al siguiente candidato, pero no vuelve a ofrecer ese mismo cupo a quien ya lo descartó.
 
-Fuentes: `waitlist.constants.ts`, `find-next-match.use-case.ts`, `accept-offer.use-case.ts`, `prisma-waitlist-entry.repository.ts`.
+Fuentes: `waitlist.constants.ts`, `join-waitlist.use-case.ts`, `find-next-match.use-case.ts`, `accept-offer.use-case.ts`, `prisma-waitlist-entry.repository.ts`.
 
 ### Sobrecupo
 

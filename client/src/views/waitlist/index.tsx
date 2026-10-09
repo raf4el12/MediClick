@@ -10,6 +10,11 @@ import CardContent from '@mui/material/CardContent';
 import Skeleton from '@mui/material/Skeleton';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogTitle from '@mui/material/DialogTitle';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { notify } from '@/utils/notify';
 import { extractApiError } from '@/utils/extractApiError';
@@ -19,7 +24,7 @@ import { JoinWaitlistDialog } from './components/JoinWaitlistDialog';
 import { OfferCard } from './components/OfferCard';
 import { WaitlistEntryCard } from './components/WaitlistEntryCard';
 import { OFFERS_POLL_INTERVAL_MS } from './functions/waitlist.constants';
-import { WaitlistEntryStatus } from './types';
+import { WaitlistEntryStatus, type WaitlistEntry } from './types';
 import type { JoinWaitlistFormValues } from './functions/waitlist.schema';
 
 export default function WaitlistView() {
@@ -29,6 +34,7 @@ export default function WaitlistView() {
   const [joinError, setJoinError] = useState<string | null>(null);
   const [redirecting, setRedirecting] = useState(false);
   const [pendingOfferId, setPendingOfferId] = useState<number | null>(null);
+  const [leaving, setLeaving] = useState<WaitlistEntry | null>(null);
 
   const {
     data: entries = [],
@@ -57,6 +63,8 @@ export default function WaitlistView() {
       waitlistService.join({
         specialtyId: payload.specialtyId,
         doctorId: payload.doctorId,
+        // Con médico, el servidor usa su sede.
+        clinicId: payload.doctorId ? undefined : payload.clinicId,
         dateFrom: payload.dateFrom,
         dateTo: payload.dateTo,
         timePreference: payload.timePreference,
@@ -76,6 +84,7 @@ export default function WaitlistView() {
   const leaveMutation = useMutation({
     mutationFn: (entryId: number) => waitlistService.leave(entryId),
     onSuccess: () => {
+      setLeaving(null);
       notify('Saliste de la lista de espera', 'success');
       void queryClient.invalidateQueries({ queryKey: ['waitlist', 'my-entries'] });
     },
@@ -216,12 +225,7 @@ export default function WaitlistView() {
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           {activeEntries.map((entry) => (
-            <WaitlistEntryCard
-              key={entry.id}
-              entry={entry}
-              onLeave={(id) => leaveMutation.mutate(id)}
-              leaving={leaveMutation.isPending && leaveMutation.variables === entry.id}
-            />
+            <WaitlistEntryCard key={entry.id} entry={entry} onLeave={setLeaving} />
           ))}
         </Box>
       )}
@@ -234,16 +238,33 @@ export default function WaitlistView() {
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {pastEntries.map((entry) => (
-              <WaitlistEntryCard
-                key={entry.id}
-                entry={entry}
-                onLeave={() => undefined}
-                leaving={false}
-              />
+              <WaitlistEntryCard key={entry.id} entry={entry} />
             ))}
           </Box>
         </Box>
       )}
+
+      <Dialog open={!!leaving} onClose={() => setLeaving(null)} aria-labelledby="leave-waitlist-title">
+        <DialogTitle id="leave-waitlist-title">Salir de la lista de espera</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Dejarás de recibir ofertas de cupo para {leaving?.specialtyName}
+            {leaving?.doctorName ? ` con ${leaving.doctorName}` : ''}. Puedes volver a anotarte cuando quieras.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setLeaving(null)} disabled={leaveMutation.isPending}>
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            disabled={leaveMutation.isPending}
+            onClick={() => leaving && leaveMutation.mutate(leaving.id)}
+          >
+            Salir de la lista
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <JoinWaitlistDialog
         open={dialogOpen}

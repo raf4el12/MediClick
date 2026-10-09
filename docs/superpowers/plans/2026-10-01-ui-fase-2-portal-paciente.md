@@ -436,7 +436,7 @@ y `views/apps/invoice/preview/print.css`; ruta de referencia `app/[lang]/(dashbo
 
 ---
 
-## UI-29 — Lista de espera del paciente
+## UI-29 — Lista de espera del paciente ✅
 
 **Rama:** `feat/ui-29-lista-de-espera-paciente` · **PR:** contra `staging`
 
@@ -452,9 +452,10 @@ Pasa a `client/src/app/(patient)/patient/waitlist/page.tsx`. La vista del person
 - `WaitlistOfferResponseDto` envía `startTime`/`endTime` como `HH:mm` (`toOfferDto` usa
   `dateToTimeString`) y no incluye la fecha del cupo, el médico ni la sede. `OfferCard.formatSlot`
   hace `new Date('09:00')` y muestra fechas inválidas: la oferta no dice para qué día es.
-- La entrada en lista de espera toma su sede de `specialty.clinicId` (`join-waitlist.use-case.ts:84`):
-  con una especialidad global queda sin sede, aunque `CONTEXT.md` define la entrada por sede. Es una
-  pregunta de dominio: se plantea al usuario, no se decide en este ítem.
+- La entrada en lista de espera tomaba su sede de `specialty.clinicId`: con una especialidad global
+  quedaba sin sede y el matcher (que filtra por sede) nunca le ofrecía cupos. **Resuelto
+  (decisión 2026-10-06):** la sede es la del médico si el paciente eligió uno; si no, es obligatoria
+  al anotarse. Se implementó en este ítem y se registró en `APPOINTMENT-CORE.md`.
 
 ### Task 1: Datos completos de la oferta de cupo (backend, TDD)
 
@@ -464,9 +465,9 @@ Pasa a `client/src/app/(patient)/patient/waitlist/page.tsx`. La vista del person
 - Modify: `server/src/modules/waitlist/domain/interfaces/waitlist-data.interface.ts` y el repositorio de ofertas (include de `schedule` con fecha, médico y sede)
 - Create/Modify: spec del mapper o del use case de "mis ofertas"
 
-- [ ] 1. La oferta incluye `scheduleDate` (`YYYY-MM-DD`), `doctorName`, `clinic: { id, name, timezone }` y conserva `startTime`/`endTime` en `HH:mm`.
-- [ ] 2. La entrada incluye `clinicName` (nulo si no tiene sede).
-- [ ] 3. `cd server && pnpm test -- waitlist --runInBand && pnpm build` → PASS.
+- [x] 1. La oferta incluye `scheduleDate` (`YYYY-MM-DD`), `doctorName`, `clinic: { id, name, timezone }` y conserva `startTime`/`endTime` en `HH:mm`.
+- [x] 2. La entrada incluye `clinicName` (nulo si no tiene sede).
+- [x] 3. `cd server && pnpm test -- waitlist --runInBand && pnpm build` → PASS.
 
 ### Task 2: Pantalla
 
@@ -479,7 +480,7 @@ para acciones de la entrada y `components/dialogs/confirmation-dialog/index.tsx`
 - Move: la página a `client/src/app/(patient)/patient/waitlist/page.tsx` (si UI-03 no lo hizo)
 - Create: `client/tests/e2e/patient-waitlist.spec.ts`
 
-- [ ] **Step 1 (rojo):** `patient-waitlist.spec.ts` (`actor: 'PATIENT'`, escritorio y móvil):
+- [x] **Step 1 (rojo):** `patient-waitlist.spec.ts` (`actor: 'PATIENT'`, escritorio y móvil):
   1. las entradas muestran especialidad, médico opcional, sede, rango de fechas y preferencia horaria;
   2. una oferta de cupo muestra fecha, hora en la zona de la sede, médico, sede y la cuenta
      regresiva hasta `expiresAt`; al vencer se deshabilita y se vuelve a pedir `/waitlist/my/offers`;
@@ -489,6 +490,21 @@ para acciones de la entrada y `components/dialogs/confirmation-dialog/index.tsx`
   5. unirse con el diálogo (validación Zod de `waitlist.schema.ts`) → `POST /waitlist`;
   6. salir de la lista con confirmación → `DELETE /waitlist/:id`;
   7. `expectAccessible` en la página y en cada diálogo.
-- [ ] **Step 2:** implementar con los componentes de Materio y el vocabulario de `CONTEXT.md`
+- [x] **Step 2:** implementar con los componentes de Materio y el vocabulario de `CONTEXT.md`
   (**entrada en lista de espera**, **oferta de cupo**, **prioridad de espera**).
-- [ ] **Step 3:** verificación completa del cliente → PASS.
+- [x] **Step 3:** verificación completa del cliente → PASS.
+
+**Notas de implementación:**
+- `JoinWaitlistUseCase` resuelve la sede: con médico, la suya (una sede distinta en la petición se
+  rechaza); sin médico, `clinicId` obligatorio, sede activa y compatible con una especialidad propia
+  de otra sede. Inyecta `IClinicRepository` (el módulo importa `ClinicsModule`).
+- La oferta incluye `scheduleDate`, `doctorName` y `clinic { id, name, timezone }`; la entrada,
+  `clinicName`. `waitlistOfferInclude` suma la agenda y la sede.
+- La cuenta regresiva sale de `expiresAt` (no de `secondsRemaining`, que envejece entre sondeos); al
+  vencer, la tarjeta se deshabilita y vuelve a pedir las ofertas una sola vez.
+- `JoinWaitlistDialog` suma "Sede"; elegir médico la fija. El efecto que limpiaba el médico al
+  cambiar la especialidad borraba también el médico precargado desde la reserva sin cupos: ahora se
+  limpia en el `onChange`.
+- Contraste del tema (AA): el texto de los chips `tonal` y el texto de error de los formularios se
+  mezclan con negro en claro (blanco en oscuro) vía `--contrast-mix`; los tonos de estado de Materio
+  no llegaban a 4.5:1. Afecta a toda la app.

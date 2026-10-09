@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { PatientsModule } from '../../patients/application/patients.module.js';
 import { SpecialtiesModule } from '../../specialties/application/specialties.module.js';
 import { DoctorsModule } from '../../doctors/application/doctors.module.js';
+import { ClinicsModule } from '../../clinics/application/clinics.module.js';
 import { SchedulesModule } from '../../schedules/application/schedules.module.js';
 import { AppointmentsModule } from '../../appointments/application/appointments.module.js';
 import { NotificationsModule } from '../../notifications/application/notifications.module.js';
@@ -25,6 +26,7 @@ import { WaitlistController } from '../interfaces/controllers/waitlist.controlle
 
 @Module({
   imports: [
+    ClinicsModule,
     PatientsModule,
     SpecialtiesModule,
     DoctorsModule,

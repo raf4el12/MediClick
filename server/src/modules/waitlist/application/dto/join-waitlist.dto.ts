@@ -19,6 +19,16 @@ export class JoinWaitlistDto {
   specialtyId: number;
 
   @ApiPropertyOptional({
+    example: 1,
+    description:
+      'Sede donde atenderse. Obligatoria si no se elige médico; con médico se usa la suya.',
+  })
+  @Type(() => Number)
+  @IsInt()
+  @IsOptional()
+  clinicId?: number;
+
+  @ApiPropertyOptional({
     example: 7,
     description: 'ID del doctor preferido. Omitir para cualquier doctor.',
   })

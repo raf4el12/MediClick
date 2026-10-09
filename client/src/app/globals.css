@@ -279,3 +279,11 @@ html[data-high-contrast='true'] *:focus-visible {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* Mezcla para llevar a AA los textos sobre tonos de estado (chips tonal, errores de formulario). */
+html {
+  --contrast-mix: black;
+}
+html[data-dark] {
+  --contrast-mix: white;
+}
