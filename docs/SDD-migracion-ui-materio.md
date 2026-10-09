@@ -205,7 +205,7 @@ expectAccessible(page)                          // axe WCAG 2.0/2.1 A y AA
 | UI-03 ✅ | 0 Base | Layout por actor (§5.4), dropdowns de navbar, toastify en lugar de `SuccessSnackbar`, customizer Materio con sección de accesibilidad | — | UI-01, UI-02 | `codebase-design` + `tdd` |
 | UI-04 ✅ | 0 Base | Login, recuperar y restablecer contraseña en versión v2; respuesta al recordatorio (`/appointment/respond`); páginas 401/404/500 (la 500 se adapta desde la 404; `RoleGuard` deja de redirigir en silencio y muestra 401) | — | UI-03 | `tdd` |
 | UI-05 ✅ | 1 Reserva | `GET` de días con cupos por rango (médico, especialidad, desde/hasta) que descuenta feriados, bloqueos y todas las citas del médico; extrae o reutiliza el cálculo de cupos compartido (§5.2) | Sí | — | `mediclick-appointment-core` + `tdd` |
-| UI-06 | 1 Reserva | Prototipo del flujo de reserva en ambos modos y decisiones de UX registradas | — | UI-03 | `prototype` |
+| UI-06 ✅ | 1 Reserva | Prototipo del flujo de reserva en ambos modos y decisiones de UX registradas | — | UI-03 | `prototype` |
 | UI-07 | 1 Reserva | Núcleo del flujo de reserva (§5.1) con Vitest | — | UI-02, UI-06 | `tdd` |
 | UI-08 | 1 Reserva | Pantalla de reserva con wizard, custom inputs, datepicker con días disponibles, pago y confirmación; reemplaza `patient/book` y `CreateAppointmentDialog` | — | UI-05, UI-07 | `tdd` |
 | UI-09 | 2 Portal | Resumen del paciente (`GET /appointments/my/summary`), sede en sus citas y `upcoming` calculado con la zona de cada sede | Sí | UI-10 | `mediclick-appointment-core` + `mediclick-tenant-safety` + `tdd` |
@@ -262,6 +262,9 @@ su fase.
 
 1. ~~Rutas de Materio v6~~: resuelto, la base es la v5 local (D1).
 2. Forma final de cada flujo rediseñado: la fijan los prototipos UI-06, UI-10, UI-14 y UI-17.
+   UI-06 resuelto (2026-10-09): wizard horizontal en línea con la sede primero y diálogo de una
+   pantalla con el paciente primero en modo administrativo; detalle en "Decisiones de UI-06" del
+   plan de la Fase 1.
 3. Mutaciones de UI-18: dependen del prototipo UI-17.
 4. ¿Reagendar puede cambiar de médico o de especialidad? El glosario define el reagendamiento
    como mover la cita a otro cupo conservando su identidad, pero el caso de uso acepta un cupo de
