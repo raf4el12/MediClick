@@ -23,8 +23,8 @@ const AppointmentDetailDialog = dynamic(
   () => import('./components/AppointmentDetailDialog').then((m) => m.AppointmentDetailDialog),
   { loading: DynamicLoading },
 );
-const CreateAppointmentDialog = dynamic(
-  () => import('./components/CreateAppointmentDialog').then((m) => m.CreateAppointmentDialog),
+const BookingDialog = dynamic(
+  () => import('@/views/booking/components/BookingDialog').then((m) => m.BookingDialog),
   { loading: DynamicLoading },
 );
 const CancelAppointmentDialog = dynamic(
@@ -39,11 +39,6 @@ const RescheduleAppointmentDialog = dynamic(
 export default function AppointmentsView() {
   const controller = useAppointments();
   const hasDetail = !!controller.detailAppointment;
-
-  const handleRefreshWithToast = () => {
-    controller.refreshData();
-    notify('Operación realizada exitosamente', 'success');
-  };
 
   return (
     <>
@@ -91,10 +86,13 @@ export default function AppointmentsView() {
         ) : null}
       </Grid>
 
-      <CreateAppointmentDialog
+      <BookingDialog
         open={controller.createDialogOpen}
         onClose={controller.closeCreateDialog}
-        onSuccess={handleRefreshWithToast}
+        onCreated={() => {
+          controller.refreshData();
+          notify('Cita creada', 'success');
+        }}
       />
 
       <CancelAppointmentDialog

@@ -127,7 +127,7 @@ export function bookingReducer(state: BookingState, event: BookingEvent): Bookin
 function summarize(state: BookingState): BookingSummary {
   const clinic = clinicOf(state);
   const entries: Partial<Record<keyof BookingSummary, unknown>> = {
-    clinic: clinic?.label,
+    clinic: clinic?.label ?? state.doctor?.meta?.clinicName,
     specialty: state.specialty?.label,
     doctor: state.doctor?.label,
     patient: state.patient?.label,
@@ -136,7 +136,8 @@ function summarize(state: BookingState): BookingSummary {
     endTime: state.slot?.endTime,
     timezone: state.timezone ?? clinic?.meta?.timezone,
     price: state.specialty?.meta?.price,
-    currency: clinic?.meta?.currency,
+    // Sin sede del personal (o sin su moneda) vale la del médico, que es de la misma sede.
+    currency: clinic?.meta?.currency ?? state.doctor?.meta?.currency,
   };
   return Object.fromEntries(Object.entries(entries).filter(([, v]) => v !== undefined)) as BookingSummary;
 }

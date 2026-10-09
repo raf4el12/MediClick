@@ -31,6 +31,8 @@ interface JoinWaitlistDialogProps {
   onSubmit: (values: JoinWaitlistFormValues) => Promise<void>;
   submitting: boolean;
   error: string | null;
+  /** Especialidad y médico ya elegidos (p. ej. desde la reserva sin cupos). */
+  initialValues?: Pick<Partial<JoinWaitlistFormValues>, 'specialtyId' | 'doctorId'>;
 }
 
 const today = () => getTodayInTimezone('America/Lima');
@@ -41,6 +43,7 @@ export function JoinWaitlistDialog({
   onSubmit,
   submitting,
   error,
+  initialValues,
 }: JoinWaitlistDialogProps) {
   const {
     control,
@@ -56,10 +59,13 @@ export function JoinWaitlistDialog({
       dateTo: today(),
       timePreference: WaitlistTimePreference.ANY,
       notes: '',
+      ...initialValues,
     },
   });
 
   const selectedSpecialtyId = watch('specialtyId');
+  const initialSpecialtyId = initialValues?.specialtyId;
+  const initialDoctorId = initialValues?.doctorId;
 
   useEffect(() => {
     if (open) {
@@ -68,9 +74,11 @@ export function JoinWaitlistDialog({
         dateTo: today(),
         timePreference: WaitlistTimePreference.ANY,
         notes: '',
+        specialtyId: initialSpecialtyId,
+        doctorId: initialDoctorId,
       });
     }
-  }, [open, reset]);
+  }, [open, reset, initialSpecialtyId, initialDoctorId]);
 
   const { data: specialties = [], isLoading: loadingSpecialties } = useQuery({
     queryKey: ['specialties', 'waitlist-join'],

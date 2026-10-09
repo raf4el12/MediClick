@@ -16,17 +16,17 @@ export default function PaymentFailureView() {
       color="error"
       icon="ri-close-line"
       title="Pago no completado"
-      description="Tu pago no pudo procesarse. Puedes intentar de nuevo o elegir otro método de pago. Tu cita sigue reservada mientras no expire el plazo."
+      description="Tu pago no pudo procesarse. Puedes intentar de nuevo o elegir otro medio de pago. Tu cita sigue reservada hasta que venza el plazo de pago."
       body={
         <>
           {payment?.failureReason && (
-            <Alert severity="error" sx={{ width: '100%', borderRadius: 2 }}>
+            <Alert severity="error" className="is-full">
               {payment.failureReason}
             </Alert>
           )}
 
           {retryError && (
-            <Alert severity="warning" sx={{ width: '100%', borderRadius: 2 }}>
+            <Alert severity="warning" className="is-full">
               {retryError}
             </Alert>
           )}
@@ -36,7 +36,6 @@ export default function PaymentFailureView() {
         <>
           <Button
             variant="contained"
-            color="error"
             onClick={retryPayment}
             disabled={retrying}
             startIcon={retrying ? <CircularProgress size={18} /> : <i className="ri-refresh-line" />}

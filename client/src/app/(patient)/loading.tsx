@@ -11,7 +11,7 @@ export default function MenuLoading() {
         minHeight: '60vh',
       }}
     >
-      <CircularProgress />
+      <CircularProgress aria-label="Cargando" />
     </Box>
   );
 }

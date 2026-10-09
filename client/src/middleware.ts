@@ -48,7 +48,8 @@ export function middleware(request: NextRequest) {
   // Unauthenticated user visiting protected route → redirect to login
   if (!isPublicPath && !accessToken) {
     const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('from', pathname);
+    // Se conserva la query (p. ej. el médico preestablecido de /patient/book).
+    loginUrl.searchParams.set('from', `${pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(loginUrl);
   }
 
