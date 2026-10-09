@@ -5,7 +5,6 @@ import type { PaginationParams, PaginatedResponse } from '@/types/pagination.typ
 import type {
   Appointment,
   AppointmentFilters,
-  CreateAppointmentPayload,
 } from '@/views/appointments/types';
 
 interface FetchAppointmentsArgs {
@@ -25,14 +24,3 @@ export const fetchAppointmentsThunk = createAsyncThunk<
   }
 });
 
-export const createAppointmentThunk = createAsyncThunk<
-  Appointment,
-  CreateAppointmentPayload,
-  { rejectValue: string }
->('appointments/create', async (payload, { rejectWithValue }) => {
-  try {
-    return await appointmentsService.create(payload);
-  } catch (err) {
-    return rejectWithValue(extractThunkError(err, 'Error al crear la cita'));
-  }
-});

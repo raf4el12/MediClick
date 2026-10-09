@@ -196,7 +196,7 @@ Comando del ciclo: `cd server && pnpm test -- get-available-days --runInBand` (F
 
 ---
 
-## UI-06 — Prototipo del flujo de reserva
+## UI-06 — Prototipo del flujo de reserva ✅
 
 **Rama:** `prototype/ui-06-reserva` desde `origin/staging`. **No se mergea** (skill `prototype`,
 regla 6): queda como fuente primaria. Las decisiones se integran por un PR de documentación.
@@ -229,14 +229,14 @@ America/Bogota COP, America/Argentina/Buenos_Aires ARS), 6 especialidades con pr
 
 ### Steps
 
-- [ ] **Step 1:** crear la rama y anotar en el primer archivo: "Tres variantes del flujo de
+- [x] **Step 1:** crear la rama y anotar en el primer archivo: "Tres variantes del flujo de
   reserva, conmutables con `?variant=`, sobre `/patient/book` y el diálogo de `/appointments`".
-- [ ] **Step 2:** crear `client/src/views/patient/book/prototype/{VariantA,VariantB,VariantC,PrototypeSwitcher}.tsx`
+- [x] **Step 2:** crear `client/src/views/patient/book/prototype/{VariantA,VariantB,VariantC,PrototypeSwitcher}.tsx`
   y su equivalente para el diálogo; variantes estructuralmente distintas (no solo colores).
-- [ ] **Step 3:** `cd client && pnpm dev` y compartir las URLs; recorrer con el usuario en
+- [x] **Step 3:** `cd client && pnpm dev` y compartir las URLs; recorrer con el usuario en
   escritorio y móvil, registrando la respuesta a cada pregunta.
-- [ ] **Step 4:** commit y push de la rama del prototipo.
-- [ ] **Step 5:** PR `docs/ui-06-decisiones` contra `staging` que complete la sección
+- [x] **Step 4:** commit y push de la rama del prototipo.
+- [x] **Step 5:** PR `docs/ui-06-decisiones` contra `staging` que complete la sección
   "Decisiones de UI-06" de este plan y la pregunta abierta 2 del SDD (§10).
 
 **Criterio de cierre:** las 9 preguntas tienen respuesta, hay una variante elegida, y cada regla de
@@ -244,11 +244,32 @@ negocio nueva que surja está enumerada para UI-07/UI-08 (D7).
 
 ### Decisiones de UI-06
 
-_Pendiente de completar al cerrar el prototipo._
+Cerrado el 2026-10-09. Fuente primaria: rama `prototype/ui-06-reserva` (commit `4581340`):
+`/patient/book?variant=A|B|C` y "Nueva cita" en `/appointments?variant=A|B|C`. La comparación
+con capturas se revisó con el usuario; eligió la variante A en línea y la B administrativa.
+
+| # | Pregunta | Decisión |
+|---|---|---|
+| 1 | Estructura | **Wizard horizontal** (variante A, checkout de Materio): un paso por pantalla con indicador de pasos; en celular, "Paso N de 5" en lugar del indicador. |
+| 2 | Orden en línea | **Sede → especialidad → médico → cupo → resumen**, como hoy. No se ofrece "primer cupo con cualquier médico": pediría consultar los cupos de varios médicos a la vez (endpoint nuevo). |
+| 3 | Selección de cupo | **Calendario mensual** con los días que tienen cupos marcados y las horas del día elegido al lado (debajo en celular). Cada mes visible se pide con `available-days` (rango ≤ 62 días). |
+| 4 | Modo administrativo | **Diálogo de una sola pantalla con el paciente primero** (variante B): paciente, especialidad y médico como listas, días, horas y motivo a la vista. |
+| 5 | Sin cupos | Si el médico no tiene cupos en el rango consultado: **unirse a la lista de espera** (`JoinWaitlistDialog`, con la sede del médico según la decisión de UI-29) y **"Elegir otro médico"**, que vuelve al paso médico. Un mes sin cupos muestra "No hay cupos este mes" y deja pasar al siguiente. La lista de médicos alternativos con su próximo cupo queda fuera. |
+| 6 | "Atrás" | **Conserva lo elegido.** Solo cambiar una elección limpia lo que depende de ella (invalidación en cascada). |
+| 7 | Celular | Atrás y Siguiente **fijos sobre la barra inferior** del portal del paciente. |
+| 8 | Resumen | Precio con la **moneda de la sede**, aviso de que el cupo queda reservado **15 minutos** (`APPOINTMENT_PAYMENT_TIMEOUT_MINUTES`) mientras paga y de la **redirección a Mercado Pago**. |
+| 9 | Sobrecupo | **No se expone en UI-08.** `POST /appointments/overbook` necesita definir quién puede usarlo; va en un ítem propio. |
+
+**Reglas de negocio nuevas (D7):** ninguna. Las dos que proponía el prototipo ("cualquier médico"
+y sobrecupo) quedaron fuera, así que `docs/domain/APPOINTMENT-CORE.md` no cambia.
+
+**Ajustes a UI-07 y UI-08:** el modo administrativo pone el paciente primero (comportamiento 2),
+"Atrás" conserva (comportamiento 9), se agrega el aviso `no-slots` (comportamiento 10b) y el estado
+vacío de UI-08 queda definido (escenario 2).
 
 ---
 
-## UI-07 — Núcleo del flujo de reserva (TDD)
+## UI-07 — Núcleo del flujo de reserva (TDD) ✅
 
 **Rama:** `feat/ui-07-nucleo-reserva` · **PR:** contra `staging`
 
@@ -282,7 +303,8 @@ type BookingEvent =
 type BookingPreset = { clinicId?: number; specialtyId?: number; doctorId?: number };
 // Opción de médico: meta = { clinicId: number; specialtyIds: number[] } para validar el preset
 
-initialBooking(mode, preset?: BookingPreset): BookingState   // guarda el preset pendiente de resolver
+initialBooking(mode, preset?: BookingPreset, fixedClinic?: BookingOption): BookingState
+// guarda el preset pendiente de resolver; `fixedClinic` es la sede del personal en modo administrativo
 bookingReducer(state, event): BookingState
 describeBooking(state): BookingView   // steps, activeStep, canAdvance, missing[], notice, summary
 toBookingCommand(state): BookingCommand
@@ -292,40 +314,41 @@ toBookingCommand(state): BookingCommand
 
 Comportamientos, uno por ciclo rojo → verde (`cd client && pnpm test -- bookingFlow`):
 
-- [ ] 1. `online` empieza en `clinic` con pasos `clinic, specialty, doctor, slot, review`.
-- [ ] 2. `administrative` empieza en `specialty` con pasos `specialty, doctor, slot, patient, review` (la sede la fija el personal).
-- [ ] 3. Elegir sede invalida especialidad, médico, día y cupo.
-- [ ] 4. Elegir especialidad invalida médico, día y cupo, pero no el paciente.
-- [ ] 5. Elegir médico invalida día, cupo y la zona horaria conocida.
-- [ ] 6. Elegir día invalida el cupo.
-- [ ] 7. Elegir un cupo con `available: false` no cambia el estado.
-- [ ] 8. `select` no avanza; `next` avanza solo si el paso actual está completo (si no, `canAdvance` es `false` y `missing` nombra el dato).
-- [ ] 9. `back` en el primer paso no hace nada; en los demás retrocede según la decisión de UI-06.
-- [ ] 10. `availableDaysLoaded` fija la zona horaria de la sede y elige el primer día si no hay día elegido o el elegido ya no está disponible.
-- [ ] 11. `slotTaken` limpia el cupo, vuelve al paso `slot` y expone `notice: 'slot-taken'`.
-- [ ] 12. `setReason` rechaza más de 500 caracteres (límite de los DTO del servidor) y conserva el valor anterior.
-- [ ] 13. `toBookingCommand` en línea arma `{ mode: 'online', scheduleId, startTime, endTime }` y omite `reason` si está en blanco.
-- [ ] 14. `toBookingCommand` administrativo incluye `patientId`.
-- [ ] 15. `toBookingCommand` con el estado incompleto lanza un error que nombra el dato faltante.
-- [ ] 16. `describeBooking().summary` expone sede, especialidad, médico, fecha, cupo, precio y moneda tomados de las opciones elegidas (sin moneda fija).
-- [ ] 17. `reset` vuelve a `initialBooking(mode)` sin preset.
+- [x] 1. `online` empieza en `clinic` con pasos `clinic, specialty, doctor, slot, review`.
+- [x] 2. `administrative` empieza en `patient` con pasos `patient, specialty, doctor, slot, review` (la sede la fija el personal; UI-06: paciente primero, todo en una pantalla, así que el orden de pasos ordena `missing` y el foco).
+- [x] 3. Elegir sede invalida especialidad, médico, día y cupo.
+- [x] 4. Elegir especialidad invalida día y cupo, y el médico salvo que atienda la nueva especialidad; no invalida el paciente. (Refinado en la implementación: el preset con solo el médico y varias especialidades lo necesita, comportamiento 19.)
+- [x] 5. Elegir médico invalida día, cupo y la zona horaria conocida.
+- [x] 6. Elegir día invalida el cupo.
+- [x] 7. Elegir un cupo con `available: false` no cambia el estado.
+- [x] 8. `select` no avanza; `next` avanza solo si el paso actual está completo (si no, `canAdvance` es `false` y `missing` nombra el dato).
+- [x] 9. `back` en el primer paso no hace nada; en los demás retrocede un paso y **conserva** todas las selecciones (UI-06).
+- [x] 10. `availableDaysLoaded` fija la zona horaria de la sede y elige el primer día si no hay día elegido o el elegido ya no está disponible.
+- [x] 10b. `availableDaysLoaded` con `days` vacío deja día y cupo vacíos y expone `notice: 'no-slots'` (UI-06: lista de espera y "Elegir otro médico"); elegir otro médico lo limpia.
+- [x] 11. `slotTaken` limpia el cupo, vuelve al paso `slot` y expone `notice: 'slot-taken'`.
+- [x] 12. `setReason` rechaza más de 500 caracteres (límite de los DTO del servidor) y conserva el valor anterior.
+- [x] 13. `toBookingCommand` en línea arma `{ mode: 'online', scheduleId, startTime, endTime }` y omite `reason` si está en blanco.
+- [x] 14. `toBookingCommand` administrativo incluye `patientId`.
+- [x] 15. `toBookingCommand` con el estado incompleto lanza un error que nombra el dato faltante.
+- [x] 16. `describeBooking().summary` expone sede, especialidad, médico, fecha, cupo, precio y moneda tomados de las opciones elegidas (sin moneda fija).
+- [x] 17. `reset` vuelve a `initialBooking(mode)` sin preset.
 
 Selecciones preestablecidas (las necesita UI-27, "Reservar con este médico"). El hook resuelve los
 ids del preset contra los catálogos y despacha `presetResolved` con las opciones encontradas:
 
-- [ ] 18. Preset completo y consistente (sede, especialidad y médico que atiende esa especialidad en esa sede) salta los pasos resueltos y deja activo `slot`.
-- [ ] 19. Preset solo con `doctorId`: fija la sede del médico; si atiende una sola especialidad la fija y deja activo `slot`, si atiende varias deja activo `specialty`.
-- [ ] 20. Preset inconsistente (médico de otra sede o que no atiende la especialidad) descarta el médico y todo lo que depende de él; el paso activo es el primero sin resolver.
-- [ ] 21. Un id del preset que no aparece en los catálogos (opción ausente en `presetResolved`) se descarta sin error.
-- [ ] 22. En modo `administrative` se ignora la sede del preset y se descarta un médico que no sea de la sede del personal.
-- [ ] 23. Elegir manualmente otra opción después de resolver el preset aplica la invalidación en cascada normal.
+- [x] 18. Preset completo y consistente (sede, especialidad y médico que atiende esa especialidad en esa sede) salta los pasos resueltos y deja activo `slot`.
+- [x] 19. Preset solo con `doctorId`: fija la sede del médico; si atiende una sola especialidad la fija y deja activo `slot`, si atiende varias deja activo `specialty`.
+- [x] 20. Preset inconsistente (médico de otra sede o que no atiende la especialidad) descarta el médico y todo lo que depende de él; el paso activo es el primero sin resolver.
+- [x] 21. Un id del preset que no aparece en los catálogos (opción ausente en `presetResolved`) se descarta sin error.
+- [x] 22. En modo `administrative` se ignora la sede del preset y se descarta un médico que no sea de la sede del personal.
+- [x] 23. Elegir manualmente otra opción después de resolver el preset aplica la invalidación en cascada normal.
 
-- [ ] **Cierre:** `cd client && pnpm test && pnpm exec tsc --noEmit && pnpm exec eslint src/views/booking/model` → PASS.
+- [x] **Cierre:** `cd client && pnpm test && pnpm exec tsc --noEmit && pnpm exec eslint src/views/booking/model` → PASS.
   Este ítem no toca pantallas ni borra código.
 
 ---
 
-## UI-08 — Pantalla de reserva en ambos modos
+## UI-08 — Pantalla de reserva en ambos modos ✅
 
 **Rama:** `feat/ui-08-pantalla-reserva` · **PR:** contra `staging`
 
@@ -384,12 +407,14 @@ Rutas de la v5 local (`/home/rafael/materio-mui-nextjs-admin-template-ts/full-ve
 
 ### Steps
 
-- [ ] **Step 1 (rojo):** escribir `booking-online.spec.ts` con el arnés (`test.use({ actor: 'PATIENT' })`,
+- [x] **Step 1 (rojo):** escribir `booking-online.spec.ts` con el arnés (`test.use({ actor: 'PATIENT' })`,
   proyectos de escritorio y móvil), escenarios:
   1. camino feliz: sede → especialidad → médico → día marcado → cupo → resumen con moneda de la
      sede → confirmar; se llaman `POST /appointments/patient` y `POST /payments/preferences` con el
      payload esperado y se navega al `initPoint` simulado;
-  2. los días sin cupos no son seleccionables y un mes sin cupos muestra el estado vacío decidido en UI-06;
+  2. los días sin cupos no son seleccionables; un mes sin cupos muestra "No hay cupos este mes" y
+     deja pasar al siguiente; un médico sin cupos en el rango ofrece "Unirme a la lista de espera"
+     (abre `JoinWaitlistDialog`) y "Elegir otro médico" (vuelve al paso médico);
   3. un 409 al confirmar vuelve al paso de cupo con el aviso "El cupo elegido ya fue tomado" y
      vuelve a pedir `time-slots`;
   4. cambiar de médico después de elegir cupo limpia día y cupo;
@@ -399,17 +424,37 @@ Rutas de la v5 local (`/home/rafael/materio-mui-nextjs-admin-template-ts/full-ve
   6. sin sesión (`test.use({ actor: null })`), `/patient/book?doctorId=5` redirige a
      `/login?from=%2Fpatient%2Fbook%3FdoctorId%3D5`;
   7. `expectAccessible(page)` en cada paso.
-- [ ] **Step 2 (rojo):** escribir `booking-administrative.spec.ts` con `actor: 'RECEPTIONIST'`:
+- [x] **Step 2 (rojo):** escribir `booking-administrative.spec.ts` con `actor: 'RECEPTIONIST'`:
   camino feliz con búsqueda de paciente y `POST /appointments` con `patientId`; aviso de éxito y
   nueva petición `GET /appointments`; búsqueda sin resultados con mensaje accesible; diálogo sin
   violaciones de axe.
-- [ ] **Step 3:** `cd client && pnpm exec playwright test tests/e2e/booking-*` → FAIL.
-- [ ] **Step 4:** implementar `useBooking` y los pasos con los componentes de Materio; Tailwind
+- [x] **Step 3:** `cd client && pnpm exec playwright test tests/e2e/booking-*` → FAIL.
+- [x] **Step 4:** implementar `useBooking` y los pasos con los componentes de Materio; Tailwind
   solo para layout y espaciado, color y estado por el tema MUI.
-- [ ] **Step 5:** conectar las dos entradas (página del paciente con preset por query y diálogo
+- [x] **Step 5:** conectar las dos entradas (página del paciente con preset por query y diálogo
   del personal), ajustar `from` en `middleware.ts` y reestilizar `payment/{Success,Pending,Failure}`.
-- [ ] **Step 6:** repetir Step 3 → PASS.
-- [ ] **Step 7:** borrar lo reemplazado y comprobar que no quedan referencias:
+- [x] **Step 6:** repetir Step 3 → PASS.
+- [x] **Step 7:** borrar lo reemplazado y comprobar que no quedan referencias:
   `rg -n "CreateAppointmentDialog|useAppointmentForm|filterAvailableSlots|PatientBookView|createAppointmentThunk" client/src` → sin resultados.
-- [ ] **Step 8:** revisar textos visibles: ninguno dice "horario", "slot", "turno" ni "S/".
-- [ ] **Step 9:** `cd client && pnpm test && pnpm exec tsc --noEmit && pnpm build && pnpm exec eslint <archivos tocados> && pnpm test:a11y` → PASS.
+- [x] **Step 8:** revisar textos visibles: ninguno dice "horario", "slot", "turno" ni "S/".
+- [x] **Step 9:** `cd client && pnpm test && pnpm exec tsc --noEmit && pnpm build && pnpm exec eslint <archivos tocados> && pnpm test:a11y` → PASS.
+
+### Notas de implementación
+
+- **Modo administrativo sin `fixedClinic`:** la sesión del personal trae el nombre y la zona de su
+  sede, pero no su id ni su moneda. El hook no inventa una sede: el resumen toma el nombre y la
+  moneda de la sede del médico elegido (dos pruebas nuevas en `bookingFlow.test.ts`). Como UI-08 no
+  tiene preset administrativo, la validación del comportamiento 22 queda para cuando haga falta.
+- **Calendario:** `filterDate` en lugar de `includeDates` (este impide navegar a meses sin cupos) y
+  un `calendarContainer` propio, porque react-datepicker anuncia el calendario en línea en inglés
+  y como diálogo modal. Los días con cupos se marcan con el primario. `date-fns@3` pasa a ser
+  dependencia directa para registrar el locale `es`.
+- **Custom inputs de Materio:** la raíz es un `<label>` para que el radio tenga nombre accesible.
+- **`from` en el login:** solo se aceptan rutas relativas de la app (`/^\/(?![/\\])/`), ahora
+  que conserva la query.
+- **Celular:** el escenario móvil se prueba con el viewport en `booking-online.spec.ts`, sin
+  agregar otro proyecto a Playwright.
+- **Pago:** `payment/{Success,Pending,Failure}` usan la moneda del pago y un medio de pago en
+  español; "Reintentar pago" pasa al primario por contraste. Prueba nueva: `payment-result.spec.ts`.
+- **Spinners de `loading.tsx`:** se agregó `aria-label`; `/patient/book` pasó a ser dinámica y
+  axe detectaba el spinner sin nombre.
