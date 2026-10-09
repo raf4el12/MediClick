@@ -269,7 +269,7 @@ vacío de UI-08 queda definido (escenario 2).
 
 ---
 
-## UI-07 — Núcleo del flujo de reserva (TDD)
+## UI-07 — Núcleo del flujo de reserva (TDD) ✅
 
 **Rama:** `feat/ui-07-nucleo-reserva` · **PR:** contra `staging`
 
@@ -303,7 +303,8 @@ type BookingEvent =
 type BookingPreset = { clinicId?: number; specialtyId?: number; doctorId?: number };
 // Opción de médico: meta = { clinicId: number; specialtyIds: number[] } para validar el preset
 
-initialBooking(mode, preset?: BookingPreset): BookingState   // guarda el preset pendiente de resolver
+initialBooking(mode, preset?: BookingPreset, fixedClinic?: BookingOption): BookingState
+// guarda el preset pendiente de resolver; `fixedClinic` es la sede del personal en modo administrativo
 bookingReducer(state, event): BookingState
 describeBooking(state): BookingView   // steps, activeStep, canAdvance, missing[], notice, summary
 toBookingCommand(state): BookingCommand
@@ -313,36 +314,36 @@ toBookingCommand(state): BookingCommand
 
 Comportamientos, uno por ciclo rojo → verde (`cd client && pnpm test -- bookingFlow`):
 
-- [ ] 1. `online` empieza en `clinic` con pasos `clinic, specialty, doctor, slot, review`.
-- [ ] 2. `administrative` empieza en `patient` con pasos `patient, specialty, doctor, slot, review` (la sede la fija el personal; UI-06: paciente primero, todo en una pantalla, así que el orden de pasos ordena `missing` y el foco).
-- [ ] 3. Elegir sede invalida especialidad, médico, día y cupo.
-- [ ] 4. Elegir especialidad invalida médico, día y cupo, pero no el paciente.
-- [ ] 5. Elegir médico invalida día, cupo y la zona horaria conocida.
-- [ ] 6. Elegir día invalida el cupo.
-- [ ] 7. Elegir un cupo con `available: false` no cambia el estado.
-- [ ] 8. `select` no avanza; `next` avanza solo si el paso actual está completo (si no, `canAdvance` es `false` y `missing` nombra el dato).
-- [ ] 9. `back` en el primer paso no hace nada; en los demás retrocede un paso y **conserva** todas las selecciones (UI-06).
-- [ ] 10. `availableDaysLoaded` fija la zona horaria de la sede y elige el primer día si no hay día elegido o el elegido ya no está disponible.
-- [ ] 10b. `availableDaysLoaded` con `days` vacío deja día y cupo vacíos y expone `notice: 'no-slots'` (UI-06: lista de espera y "Elegir otro médico"); elegir otro médico lo limpia.
-- [ ] 11. `slotTaken` limpia el cupo, vuelve al paso `slot` y expone `notice: 'slot-taken'`.
-- [ ] 12. `setReason` rechaza más de 500 caracteres (límite de los DTO del servidor) y conserva el valor anterior.
-- [ ] 13. `toBookingCommand` en línea arma `{ mode: 'online', scheduleId, startTime, endTime }` y omite `reason` si está en blanco.
-- [ ] 14. `toBookingCommand` administrativo incluye `patientId`.
-- [ ] 15. `toBookingCommand` con el estado incompleto lanza un error que nombra el dato faltante.
-- [ ] 16. `describeBooking().summary` expone sede, especialidad, médico, fecha, cupo, precio y moneda tomados de las opciones elegidas (sin moneda fija).
-- [ ] 17. `reset` vuelve a `initialBooking(mode)` sin preset.
+- [x] 1. `online` empieza en `clinic` con pasos `clinic, specialty, doctor, slot, review`.
+- [x] 2. `administrative` empieza en `patient` con pasos `patient, specialty, doctor, slot, review` (la sede la fija el personal; UI-06: paciente primero, todo en una pantalla, así que el orden de pasos ordena `missing` y el foco).
+- [x] 3. Elegir sede invalida especialidad, médico, día y cupo.
+- [x] 4. Elegir especialidad invalida día y cupo, y el médico salvo que atienda la nueva especialidad; no invalida el paciente. (Refinado en la implementación: el preset con solo el médico y varias especialidades lo necesita, comportamiento 19.)
+- [x] 5. Elegir médico invalida día, cupo y la zona horaria conocida.
+- [x] 6. Elegir día invalida el cupo.
+- [x] 7. Elegir un cupo con `available: false` no cambia el estado.
+- [x] 8. `select` no avanza; `next` avanza solo si el paso actual está completo (si no, `canAdvance` es `false` y `missing` nombra el dato).
+- [x] 9. `back` en el primer paso no hace nada; en los demás retrocede un paso y **conserva** todas las selecciones (UI-06).
+- [x] 10. `availableDaysLoaded` fija la zona horaria de la sede y elige el primer día si no hay día elegido o el elegido ya no está disponible.
+- [x] 10b. `availableDaysLoaded` con `days` vacío deja día y cupo vacíos y expone `notice: 'no-slots'` (UI-06: lista de espera y "Elegir otro médico"); elegir otro médico lo limpia.
+- [x] 11. `slotTaken` limpia el cupo, vuelve al paso `slot` y expone `notice: 'slot-taken'`.
+- [x] 12. `setReason` rechaza más de 500 caracteres (límite de los DTO del servidor) y conserva el valor anterior.
+- [x] 13. `toBookingCommand` en línea arma `{ mode: 'online', scheduleId, startTime, endTime }` y omite `reason` si está en blanco.
+- [x] 14. `toBookingCommand` administrativo incluye `patientId`.
+- [x] 15. `toBookingCommand` con el estado incompleto lanza un error que nombra el dato faltante.
+- [x] 16. `describeBooking().summary` expone sede, especialidad, médico, fecha, cupo, precio y moneda tomados de las opciones elegidas (sin moneda fija).
+- [x] 17. `reset` vuelve a `initialBooking(mode)` sin preset.
 
 Selecciones preestablecidas (las necesita UI-27, "Reservar con este médico"). El hook resuelve los
 ids del preset contra los catálogos y despacha `presetResolved` con las opciones encontradas:
 
-- [ ] 18. Preset completo y consistente (sede, especialidad y médico que atiende esa especialidad en esa sede) salta los pasos resueltos y deja activo `slot`.
-- [ ] 19. Preset solo con `doctorId`: fija la sede del médico; si atiende una sola especialidad la fija y deja activo `slot`, si atiende varias deja activo `specialty`.
-- [ ] 20. Preset inconsistente (médico de otra sede o que no atiende la especialidad) descarta el médico y todo lo que depende de él; el paso activo es el primero sin resolver.
-- [ ] 21. Un id del preset que no aparece en los catálogos (opción ausente en `presetResolved`) se descarta sin error.
-- [ ] 22. En modo `administrative` se ignora la sede del preset y se descarta un médico que no sea de la sede del personal.
-- [ ] 23. Elegir manualmente otra opción después de resolver el preset aplica la invalidación en cascada normal.
+- [x] 18. Preset completo y consistente (sede, especialidad y médico que atiende esa especialidad en esa sede) salta los pasos resueltos y deja activo `slot`.
+- [x] 19. Preset solo con `doctorId`: fija la sede del médico; si atiende una sola especialidad la fija y deja activo `slot`, si atiende varias deja activo `specialty`.
+- [x] 20. Preset inconsistente (médico de otra sede o que no atiende la especialidad) descarta el médico y todo lo que depende de él; el paso activo es el primero sin resolver.
+- [x] 21. Un id del preset que no aparece en los catálogos (opción ausente en `presetResolved`) se descarta sin error.
+- [x] 22. En modo `administrative` se ignora la sede del preset y se descarta un médico que no sea de la sede del personal.
+- [x] 23. Elegir manualmente otra opción después de resolver el preset aplica la invalidación en cascada normal.
 
-- [ ] **Cierre:** `cd client && pnpm test && pnpm exec tsc --noEmit && pnpm exec eslint src/views/booking/model` → PASS.
+- [x] **Cierre:** `cd client && pnpm test && pnpm exec tsc --noEmit && pnpm exec eslint src/views/booking/model` → PASS.
   Este ítem no toca pantallas ni borra código.
 
 ---
