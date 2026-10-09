@@ -39,6 +39,20 @@ export class AppointmentScheduleDto {
   specialty: AppointmentSpecialtyDto;
 }
 
+export class AppointmentClinicDto {
+  @ApiProperty()
+  id: number;
+
+  @ApiProperty({ example: 'Sede Miraflores' })
+  name: string;
+
+  @ApiProperty({ example: 'Av. Larco 1150, Miraflores', nullable: true })
+  address: string | null;
+
+  @ApiProperty({ example: 'PEN' })
+  currency: string;
+}
+
 export class AppointmentPatientDto {
   @ApiProperty()
   id: number;
@@ -160,4 +174,12 @@ export class AppointmentResponseDto {
 
   @ApiProperty()
   createdAt: Date;
+
+  @ApiPropertyOptional({
+    type: AppointmentClinicDto,
+    nullable: true,
+    description:
+      'Sede de la cita (la del médico); la exponen los endpoints del paciente',
+  })
+  clinic?: AppointmentClinicDto | null;
 }

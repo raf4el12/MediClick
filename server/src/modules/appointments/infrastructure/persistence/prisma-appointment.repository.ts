@@ -15,15 +15,12 @@ import type {
   CancelAppointmentAtomicallyData,
   CancelAppointmentAtomicallyResult,
   AppointmentChangedEventIdentity,
+  PatientSummarySource,
 } from '../../domain/interfaces/appointment-data.interface.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
-import {
-  utcDayRange,
-  todayStartInTimezone,
-} from '../../../../shared/utils/date-time.utils.js';
-import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
+import { utcDayRange } from '../../../../shared/utils/date-time.utils.js';
 import {
   buildDoctorOverlapWhere,
   buildPatientOverlapWhere,
@@ -67,6 +64,8 @@ const appointmentInclude = {
               timezone: true,
               defaultCancellationWindowHours: true,
               noShowPenaltyPercentage: true,
+              address: true,
+              currency: true,
             },
           },
         },
@@ -176,6 +175,41 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
     };
   }
 
+  async findPatientSummarySource(
+    patientId: number,
+    fromDate: Date,
+  ): Promise<PatientSummarySource> {
+    const [appointments, completedCount, pendingReviewCount] =
+      await Promise.all([
+        this.prisma.tenant.appointments.findMany({
+          where: {
+            patientId,
+            deleted: false,
+            status: { in: ['PENDING', 'CONFIRMED'] },
+            schedule: { scheduleDate: { gte: fromDate } },
+          },
+          include: appointmentInclude,
+        }),
+        this.prisma.tenant.appointments.count({
+          where: { patientId, deleted: false, status: 'COMPLETED' },
+        }),
+        this.prisma.tenant.appointments.count({
+          where: {
+            patientId,
+            deleted: false,
+            status: 'COMPLETED',
+            review: null,
+          },
+        }),
+      ]);
+
+    return {
+      appointments: appointments.map((r) => this.mapToRelations(r)),
+      completedCount,
+      pendingReviewCount,
+    };
+  }
+
   async findByPatientPaginated(
     patientId: number,
     params: PaginationParams,
@@ -187,14 +221,6 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       patientId,
       deleted: false,
       ...(filters.status && { status: filters.status }),
-      ...(filters.upcoming && {
-        schedule: {
-          scheduleDate: {
-            gte: todayStartInTimezone(filters.timezone ?? DEFAULT_TIMEZONE),
-          },
-        },
-        status: filters.status || { notIn: ['CANCELLED', 'NO_SHOW'] },
-      }),
     };
 
     const [rows, count] = await Promise.all([
