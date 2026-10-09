@@ -19,6 +19,20 @@ export type ActorProfile = {
 
 const base64url = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64url');
 
+/** El `accessToken` que deja el login real, sin firma: `middleware.ts` solo lo decodifica. */
+export function accessTokenFor(profile: ActorProfile): string {
+  return [
+    base64url({ alg: 'none', typ: 'JWT' }),
+    base64url({
+      sub: profile.user.id,
+      roleName: profile.user.role,
+      clinicId: profile.clinicId,
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    }),
+    'x',
+  ].join('.');
+}
+
 /**
  * Siembra la sesión como la deja el login real: la cookie `accessToken` que
  * decodifica `middleware.ts` (sin verificar firma) y el estado `auth` que
@@ -29,17 +43,7 @@ export async function seedSession(
   profile: ActorProfile,
   appURL: string,
 ): Promise<void> {
-  const token = [
-    base64url({ alg: 'none', typ: 'JWT' }),
-    base64url({
-      sub: profile.user.id,
-      roleName: profile.user.role,
-      clinicId: profile.clinicId,
-      exp: Math.floor(Date.now() / 1000) + 3600,
-    }),
-    'x',
-  ].join('.');
-  await context.addCookies([{ name: 'accessToken', value: token, url: appURL }]);
+  await context.addCookies([{ name: 'accessToken', value: accessTokenFor(profile), url: appURL }]);
 
   const persisted = JSON.stringify({
     user: JSON.stringify(profile.user),

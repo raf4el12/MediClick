@@ -10,6 +10,8 @@ const PUBLIC_PATHS = [
   '/payment/success',
   '/payment/failure',
   '/payment/pending',
+  // Enlace del recordatorio por correo: el token firmado autoriza la respuesta.
+  '/appointment/respond',
 ];
 const AUTH_ONLY_PATHS = ['/login', '/register', '/forgot-password', '/reset-password'];
 

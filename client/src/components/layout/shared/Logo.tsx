@@ -40,7 +40,9 @@ const LogoText = styled.span<LogoTextProps>`
       : 'opacity: 1; margin-inline-start: 10px;'}
 `
 
-const Logo = ({ color }: { color?: CSSProperties['color'] }) => {
+// `standalone`: fuera del menú lateral (páginas de acceso y de error) el logo
+// siempre muestra el nombre, aunque el menú esté colapsado.
+const Logo = ({ color, standalone = false }: { color?: CSSProperties['color']; standalone?: boolean }) => {
   // Refs
   const logoTextRef = useRef<HTMLSpanElement>(null)
 
@@ -49,22 +51,21 @@ const Logo = ({ color }: { color?: CSSProperties['color'] }) => {
   const { settings } = useSettings()
 
   // Vars
-  const { layout } = settings
+  const isCollapsed = !standalone && settings.layout === 'collapsed'
 
   useEffect(() => {
-    if (layout !== 'collapsed') {
+    if (!isCollapsed) {
       return
     }
 
     if (logoTextRef && logoTextRef.current) {
-      if (!isBreakpointReached && layout === 'collapsed' && !isHovered) {
+      if (!isBreakpointReached && !isHovered) {
         logoTextRef.current?.classList.add('hidden')
       } else {
         logoTextRef.current.classList.remove('hidden')
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isHovered, layout, isBreakpointReached])
+  }, [isHovered, isCollapsed, isBreakpointReached])
 
   return (
     <div className='flex items-center min-bs-[24px]'>
@@ -79,7 +80,7 @@ const Logo = ({ color }: { color?: CSSProperties['color'] }) => {
         color={color}
         ref={logoTextRef}
         isHovered={isHovered}
-        isCollapsed={layout === 'collapsed'}
+        isCollapsed={isCollapsed}
         transitionDuration={transitionDuration}
         isBreakpointReached={isBreakpointReached}
       >

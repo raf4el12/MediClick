@@ -6,7 +6,6 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
@@ -23,6 +22,7 @@ import {
   resetAuth,
 } from '@/redux-store/slices/auth';
 import { loginThunk } from '@/redux-store/thunks/auth.thunks';
+import { actorFor, homePathFor } from '@configs/navigation';
 
 const loginSchema = z.object({
   email: z
@@ -66,8 +66,7 @@ export function LoginForm() {
   useEffect(() => {
     if (loginDispatched.current && isAuthenticated && user) {
       const from = searchParams.get('from');
-      const defaultTarget = user.role === 'PATIENT' ? '/patient' : '/dashboard';
-      router.push(from || defaultTarget);
+      router.push(from || homePathFor(actorFor(user.role)));
     }
   }, [isAuthenticated, user, router, searchParams]);
 
@@ -83,12 +82,7 @@ export function LoginForm() {
   };
 
   return (
-    <Box
-      component="form"
-      onSubmit={handleSubmit(onSubmit)}
-      noValidate
-      sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}
-    >
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
       {error && (
         <Alert severity="error" onClose={() => dispatch(clearError())}>
           {error}
@@ -101,20 +95,13 @@ export function LoginForm() {
         render={({ field, fieldState: { error: fieldError } }) => (
           <TextField
             {...field}
+            fullWidth
+            type="email"
             label="Email"
             autoComplete="email"
             autoFocus
             error={!!fieldError}
             helperText={fieldError?.message}
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <Box sx={{ mr: 1, display: 'flex', color: 'action.active' }}>
-                    <i className="ri-mail-line" style={{ fontSize: 20 }} />
-                  </Box>
-                ),
-              },
-            }}
           />
         )}
       />
@@ -124,6 +111,7 @@ export function LoginForm() {
         control={control}
         render={({ field, fieldState: { error: fieldError } }) => (
           <PasswordField
+            fullWidth
             {...field}
             label="Contraseña"
             autoComplete="current-password"
@@ -133,32 +121,13 @@ export function LoginForm() {
         )}
       />
 
-      <Box sx={{ textAlign: 'right', mt: -1 }}>
-        <Typography
-          component={Link}
-          href="/forgot-password"
-          variant="body2"
-          color="primary"
-          fontWeight={500}
-          sx={{ textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}
-        >
-          ¿Olvidaste tu contraseña?
-        </Typography>
-      </Box>
+      <Typography className="text-end" color="primary.main" component={Link} href="/forgot-password">
+        ¿Olvidaste tu contraseña?
+      </Typography>
 
-      <Button
-        type="submit"
-        variant="contained"
-        size="large"
-        disabled={isLoading}
-        sx={{ mt: 1, py: 1.5 }}
-      >
-        {isLoading ? (
-          <CircularProgress size={24} color="inherit" />
-        ) : (
-          'Iniciar Sesión'
-        )}
+      <Button fullWidth type="submit" variant="contained" disabled={isLoading}>
+        {isLoading ? <CircularProgress size={24} color="inherit" aria-label="Iniciando sesión" /> : 'Iniciar sesión'}
       </Button>
-    </Box>
+    </form>
   );
 }
