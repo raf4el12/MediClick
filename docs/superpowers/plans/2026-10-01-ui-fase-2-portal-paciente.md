@@ -363,7 +363,7 @@ servidor para no ofrecer acciones que el backend rechazará:
 
 ---
 
-## UI-12 — Comprobante de pago y receta imprimibles
+## UI-12 — Comprobante de pago y receta imprimibles ✅
 
 **Rama:** `feat/ui-12-comprobante-y-receta` · **PR:** contra `staging`
 
@@ -390,14 +390,14 @@ Hecho en la rama `feat/ui-12-comprobantes-backend`, antes que las vistas imprimi
 - Produces: `GET /payments/appointment/:id/receipts` → `PaymentResponseDto[]` solo con transacciones
   `PAID`, ordenadas por `paidAt`; `@RequirePermissions('READ', 'APPOINTMENTS')`.
 
-- [ ] 1. El paciente dueño recibe sus transacciones aprobadas (seña y saldo), sin las `PENDING` ni `FAILED`.
-- [ ] 2. Otro paciente → rechazado por la política (mismo error que el endpoint existente).
-- [ ] 3. Personal de otra sede → rechazado; personal de la sede de la cita → permitido.
-- [ ] 4. Cita eliminada o inexistente → `NotFoundException`.
+- [x] 1. El paciente dueño recibe sus transacciones aprobadas (seña y saldo), sin las `PENDING` ni `FAILED`.
+- [x] 2. Otro paciente → rechazado por la política (mismo error que el endpoint existente).
+- [x] 3. Personal de otra sede → rechazado; personal de la sede de la cita → permitido.
+- [x] 4. Cita eliminada o inexistente → `NotFoundException`.
 
 Comando: `cd server && pnpm test -- list-appointment-receipts --runInBand` (FAIL → PASS por prueba).
 
-### Task 2: Vistas imprimibles
+### Task 2: Vistas imprimibles ✅
 
 **Componentes de Materio** ((v5 local, con la adaptación del Paso 0 de la Fase 0)): `views/apps/invoice/preview/{index,PreviewCard,PreviewActions}.tsx`
 y `views/apps/invoice/preview/print.css`; ruta de referencia `app/[lang]/(dashboard)/(private)/apps/invoice/preview/[id]/page.tsx`.
@@ -416,13 +416,23 @@ y `views/apps/invoice/preview/print.css`; ruta de referencia `app/[lang]/(dashbo
 - Receta: datos de la cita, ítems (medicamento, dosis, frecuencia, duración, notas), indicaciones y
   vigencia; se conserva "Descargar PDF" (`/prescriptions/my/appointment/:id/pdf`).
 
-- [ ] **Step 1 (rojo):** `patient-printables.spec.ts` (`actor: 'PATIENT'`): el comprobante muestra
+- [x] **Step 1 (rojo):** `patient-printables.spec.ts` (`actor: 'PATIENT'`): el comprobante muestra
   los datos y la leyenda; con dos transacciones aprobadas muestra ambas; sin pagos aprobados muestra
   un estado vacío; la receta muestra sus ítems; el botón Imprimir llama a `window.print`; en
   `emulateMedia({ media: 'print' })` se ocultan navegación y barra inferior; `expectAccessible`.
-- [ ] **Step 2:** implementar las vistas → PASS.
-- [ ] **Step 3:** `rg -n -i "factura|invoice" client/src/views/patient` → sin textos visibles.
-- [ ] **Step 4:** verificación completa del cliente y `pnpm test -- payments --runInBand && pnpm build` en el servidor.
+- [x] **Step 2:** implementar las vistas → PASS.
+- [x] **Step 3:** `rg -n -i "factura|invoice" client/src/views/patient` → sin textos visibles.
+- [x] **Step 4:** verificación completa del cliente y `pnpm test -- payments --runInBand && pnpm build` en el servidor.
+
+**Notas de implementación (Task 2):**
+- Los datos de la cita (paciente, médico, especialidad, fecha y sede con dirección) salen de
+  `GET /appointments/my/:id`, agregado en UI-09; los pagos, de `/payments/appointment/:id/receipts`.
+- `PrintableLayout` reúne encabezado, acciones e `print.css`; `ReceiptPreview` y
+  `PrescriptionPreview` solo aportan el contenido. Las etiquetas del medio de pago pasan a
+  `views/payment/labels.ts`, que comparten el comprobante y el resultado del pago.
+- En Mis citas, el diálogo de receta se reemplazó por enlaces a `/patient/appointments/[id]/receta`
+  (se elimina también su descarga de PDF, que usaba la cita equivocada); el resto de la vista lo
+  rediseña UI-11.
 
 ---
 
