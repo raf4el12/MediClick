@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useSearchParams } from 'next/navigation';
 import Grid from '@mui/material/Grid';
 import Button from '@mui/material/Button';
 import Collapse from '@mui/material/Collapse';
@@ -12,6 +13,9 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { useAppointments } from './hooks/useAppointments';
 import { AppointmentsTable } from './components/AppointmentsTable';
 import { notify } from '@/utils/notify';
+// PROTOTIPO UI-06: con `?variant=` "Nueva cita" abre las variantes de la creación administrativa.
+import { PrototypeSwitcher } from '@/components/prototype/PrototypeSwitcher';
+import { AdminPrototype, adminVariants } from './prototype/AdminPrototype';
 
 const DynamicLoading = () => (
   <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
@@ -39,6 +43,17 @@ const RescheduleAppointmentDialog = dynamic(
 export default function AppointmentsView() {
   const controller = useAppointments();
   const hasDetail = !!controller.detailAppointment;
+  const prototypeVariant = useSearchParams().get('variant');
+  const switcher = prototypeVariant ? <PrototypeSwitcher variants={adminVariants} /> : null;
+
+  if (prototypeVariant === 'C' && controller.createDialogOpen) {
+    return (
+      <>
+        <AdminPrototype variant='C' open onClose={controller.closeCreateDialog} />
+        {switcher}
+      </>
+    );
+  }
 
   const handleRefreshWithToast = () => {
     controller.refreshData();
@@ -91,11 +106,16 @@ export default function AppointmentsView() {
         ) : null}
       </Grid>
 
-      <CreateAppointmentDialog
-        open={controller.createDialogOpen}
-        onClose={controller.closeCreateDialog}
-        onSuccess={handleRefreshWithToast}
-      />
+      {prototypeVariant ? (
+        <AdminPrototype variant={prototypeVariant} open={controller.createDialogOpen} onClose={controller.closeCreateDialog} />
+      ) : (
+        <CreateAppointmentDialog
+          open={controller.createDialogOpen}
+          onClose={controller.closeCreateDialog}
+          onSuccess={handleRefreshWithToast}
+        />
+      )}
+      {switcher}
 
       <CancelAppointmentDialog
         open={controller.cancelDialogOpen}
