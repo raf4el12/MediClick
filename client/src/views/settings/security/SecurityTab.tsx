@@ -25,8 +25,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import { PasswordField } from '@/components/shared/PasswordField';
 import { authService } from '@/services/auth.service';
 import { getDeviceId } from '@/utils/device-id';
-import { useSnackbar } from '@/hooks/useSnackbar';
-import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
+import { notify } from '@/utils/notify';
 
 /* ─── Change Password Schema ─── */
 const changePasswordSchema = z
@@ -73,7 +72,6 @@ const cardSx = {
 
 /* ─── Change Password Section ─── */
 function ChangePasswordSection() {
-  const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
 
   const {
     control,
@@ -94,11 +92,11 @@ function ChangePasswordSection() {
       authService.changePassword(data.currentPassword, data.newPassword),
     onSuccess: () => {
       reset();
-      showSnackbar('Contraseña cambiada exitosamente. Las demás sesiones fueron cerradas.', 'success');
+      notify('Contraseña cambiada exitosamente. Las demás sesiones fueron cerradas.', 'success');
     },
     onError: (err: any) => {
       const msg = err?.response?.data?.message;
-      showSnackbar(
+      notify(
         Array.isArray(msg) ? msg[0] : msg ?? 'Error al cambiar la contraseña',
         'error',
       );
@@ -186,7 +184,6 @@ function ChangePasswordSection() {
           </Box>
         </Box>
       </Card>
-      <SuccessSnackbar snackbar={snackbar} onClose={closeSnackbar} />
     </>
   );
 }
@@ -195,7 +192,6 @@ function ChangePasswordSection() {
 function SessionsSection() {
   const theme = useTheme();
   const queryClient = useQueryClient();
-  const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
   const [logoutAllOpen, setLogoutAllOpen] = useState(false);
 
   const currentDeviceId = typeof window !== 'undefined' ? getDeviceId() : '';
@@ -214,10 +210,10 @@ function SessionsSection() {
     mutationFn: (deviceId: string) => authService.logoutDevice(deviceId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['auth', 'sessions'] });
-      showSnackbar('Sesión cerrada', 'success');
+      notify('Sesión cerrada', 'success');
     },
     onError: () => {
-      showSnackbar('Error al cerrar la sesión', 'error');
+      notify('Error al cerrar la sesión', 'error');
     },
   });
 
@@ -228,7 +224,7 @@ function SessionsSection() {
       // After logging out all, user will be redirected by the axios interceptor
     },
     onError: () => {
-      showSnackbar('Error al cerrar las sesiones', 'error');
+      notify('Error al cerrar las sesiones', 'error');
     },
   });
 
@@ -377,7 +373,6 @@ function SessionsSection() {
         </DialogActions>
       </Dialog>
 
-      <SuccessSnackbar snackbar={snackbar} onClose={closeSnackbar} />
     </>
   );
 }

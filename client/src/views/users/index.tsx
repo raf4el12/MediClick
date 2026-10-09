@@ -6,8 +6,7 @@ import { PageHeader } from '@/components/shared/PageHeader';
 import { useUsers } from './hooks/useUsers';
 import { UsersTable } from './components/UsersTable';
 import dynamic from 'next/dynamic';
-import { useSnackbar } from '@/hooks/useSnackbar';
-import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
+import { notify } from '@/utils/notify';
 
 const UserDetailDialog = dynamic(
   () => import('./components/UserDetailDialog').then((m) => m.UserDetailDialog),
@@ -15,11 +14,10 @@ const UserDetailDialog = dynamic(
 
 export default function UsersView() {
   const controller = useUsers();
-  const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
 
   const handleSuccess = () => {
     controller.refreshData();
-    showSnackbar('Operación realizada exitosamente', 'success');
+    notify('Operación realizada exitosamente', 'success');
   };
 
   return (
@@ -45,7 +43,6 @@ export default function UsersView() {
         onClose={controller.closeDetail}
       />
 
-      <SuccessSnackbar snackbar={snackbar} onClose={closeSnackbar} />
     </Grid>
   );
 }

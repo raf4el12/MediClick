@@ -19,8 +19,7 @@ import Tooltip from '@mui/material/Tooltip';
 import Skeleton from '@mui/material/Skeleton';
 import Alert from '@mui/material/Alert';
 import { PageHeader } from '@/components/shared/PageHeader';
-import { useSnackbar } from '@/hooks/useSnackbar';
-import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
+import { notify } from '@/utils/notify';
 import { extractApiError } from '@/utils/extractApiError';
 import { formatDate } from '@/utils/formatDate';
 import { specialtiesService } from '@/services/specialties.service';
@@ -32,7 +31,6 @@ import { PriorityDialog } from './PriorityDialog';
 
 export default function ClinicWaitlistView() {
   const queryClient = useQueryClient();
-  const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
 
   const [specialtyId, setSpecialtyId] = useState<number | ''>('');
   const [doctorId, setDoctorId] = useState<number | ''>('');
@@ -74,11 +72,11 @@ export default function ClinicWaitlistView() {
       waitlistService.addPriority(entryId, delta),
     onSuccess: () => {
       setPriorityTarget(null);
-      showSnackbar('Prioridad actualizada', 'success');
+      notify('Prioridad actualizada', 'success');
       void queryClient.invalidateQueries({ queryKey: ['waitlist', 'clinic'] });
     },
     onError: (err) => {
-      showSnackbar(extractApiError(err, 'No se pudo actualizar la prioridad').message, 'error');
+      notify(extractApiError(err, 'No se pudo actualizar la prioridad').message, 'error');
     },
   });
 
@@ -216,7 +214,6 @@ export default function ClinicWaitlistView() {
         submitting={priorityMutation.isPending}
       />
 
-      <SuccessSnackbar snackbar={snackbar} onClose={closeSnackbar} />
     </Box>
   );
 }

@@ -256,7 +256,7 @@ estado inicial pisaba la cookie de ajustes), con prueba `tests/e2e/theme-mode.sp
 
 ---
 
-## UI-03 — Layout por actor, navbar, avisos y customizer
+## UI-03 — Layout por actor, navbar, avisos y customizer ✅
 
 > Incluye la antigua Task 4 de UI-01: copiar desde la v5 `@menu/**`, `@layouts/{HorizontalLayout,components,styles,utils}`,
 > `@core/{hooks,styles,utils,components/{mui,option-menu,scroll-to-top}}` y `libs/styles/AppReactToastify.tsx`,

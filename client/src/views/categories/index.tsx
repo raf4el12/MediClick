@@ -5,16 +5,14 @@ import Button from '@mui/material/Button';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { useCategories } from './hooks/useCategories';
 import { CategoriesTable } from './components/CategoriesTable';
-import { useSnackbar } from '@/hooks/useSnackbar';
-import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
+import { notify } from '@/utils/notify';
 
 export default function CategoriesView() {
   const controller = useCategories();
-  const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
 
   const handleSuccess = () => {
     controller.refreshData();
-    showSnackbar('Operación realizada exitosamente', 'success');
+    notify('Operación realizada exitosamente', 'success');
   };
 
   return (
@@ -34,7 +32,6 @@ export default function CategoriesView() {
         </PageHeader>
         <CategoriesTable {...controller} refreshData={handleSuccess} />
       </Grid>
-      <SuccessSnackbar snackbar={snackbar} onClose={closeSnackbar} />
     </Grid>
   );
 }
