@@ -4,3 +4,5 @@
  */
 export const DEFAULT_TIMEZONE = 'America/Lima';
 export const DEFAULT_CLINIC_NAME = 'MediClick';
+/** Igual que el `@default("PEN")` de `Clinics.currency`. */
+export const DEFAULT_CURRENCY = 'PEN';

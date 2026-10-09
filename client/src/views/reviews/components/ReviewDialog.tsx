@@ -80,8 +80,8 @@ export function ReviewDialog({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth aria-labelledby="review-dialog-title">
+      <DialogTitle id="review-dialog-title" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         Calificar atención
         <IconButton size="small" aria-label="Cerrar" onClick={handleClose} disabled={submitting}>
           <i className="ri-close-line" />
@@ -95,13 +95,15 @@ export function ReviewDialog({
         )}
 
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          ¿Cómo fue tu consulta con Dr. {doctorName}?
+          ¿Cómo fue tu consulta con {doctorName}?
         </Typography>
 
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
           <Rating
+            name="review-rating"
             value={rating}
             onChange={(_, value) => setRating(value)}
+            getLabelText={(value) => `${value} estrella${value === 1 ? '' : 's'}`}
             size="large"
           />
         </Box>

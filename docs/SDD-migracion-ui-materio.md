@@ -208,11 +208,11 @@ expectAccessible(page)                          // axe WCAG 2.0/2.1 A y AA
 | UI-06 ✅ | 1 Reserva | Prototipo del flujo de reserva en ambos modos y decisiones de UX registradas | — | UI-03 | `prototype` |
 | UI-07 ✅ | 1 Reserva | Núcleo del flujo de reserva (§5.1) con Vitest | — | UI-02, UI-06 | `tdd` |
 | UI-08 ✅ | 1 Reserva | Pantalla de reserva con wizard, custom inputs, datepicker con días disponibles, pago y confirmación; reemplaza `patient/book` y `CreateAppointmentDialog` | — | UI-05, UI-07 | `tdd` |
-| UI-09 | 2 Portal | Resumen del paciente (`GET /appointments/my/summary`), sede en sus citas y `upcoming` calculado con la zona de cada sede | Sí | UI-10 | `mediclick-appointment-core` + `mediclick-tenant-safety` + `tdd` |
-| UI-10 | 2 Portal | Prototipo de Inicio y Mis citas | — | UI-03 | `prototype` |
-| UI-11 | 2 Portal | Inicio del paciente y Mis citas (cancelar, reagendar, pagar, reseñar) | — | UI-09, UI-10, UI-08 | `tdd` |
-| UI-12 | 2 Portal | Comprobante de pago y receta imprimibles; comprobantes de todas las transacciones aprobadas de la cita (backend ✅; vistas imprimibles pendientes de UI-03) | Sí | UI-03 | `mediclick-appointment-core` + `tdd` |
-| UI-29 | 2 Portal | Lista de espera del paciente: entradas y ofertas de cupo con fecha, médico, sede y vencimiento | Sí | UI-03 | `mediclick-appointment-core` + `tdd` |
+| UI-09 ✅ | 2 Portal | Resumen del paciente (`GET /appointments/my/summary`), sede en sus citas y `upcoming` calculado con la zona de cada sede | Sí | UI-10 | `mediclick-appointment-core` + `mediclick-tenant-safety` + `tdd` |
+| UI-10 ✅ | 2 Portal | Prototipo de Inicio y Mis citas | — | UI-03 | `prototype` |
+| UI-11 ✅ | 2 Portal | Inicio del paciente y Mis citas (cancelar, reagendar, pagar, reseñar) | — | UI-09, UI-10, UI-08 | `tdd` |
+| UI-12 ✅ | 2 Portal | Comprobante de pago y receta imprimibles; comprobantes de todas las transacciones aprobadas de la cita | Sí | UI-03 | `mediclick-appointment-core` + `tdd` |
+| UI-29 ✅ | 2 Portal | Lista de espera del paciente: entradas y ofertas de cupo con fecha, médico, sede y vencimiento | Sí | UI-03 | `mediclick-appointment-core` + `tdd` |
 | UI-13 | 3 Jornada | `GET /agenda` por rango (§5.2) con alcance de sede, permiso `READ:AGENDA` en la matriz RBAC e indicadores del médico; reutiliza el cálculo de cupos compartido | Sí | — | `mediclick-appointment-core` + `mediclick-tenant-safety` + `tdd` |
 | UI-14 | 3 Jornada | Prototipo de jornada y agenda | — | UI-03 | `prototype` |
 | UI-15 | 3 Jornada | Capa de agenda (§5.2) y adaptador FullCalendar con estilo Materio | — | UI-02, UI-13 | `codebase-design` + `tdd` |
@@ -264,13 +264,15 @@ su fase.
 2. Forma final de cada flujo rediseñado: la fijan los prototipos UI-06, UI-10, UI-14 y UI-17.
    UI-06 resuelto (2026-10-09): wizard horizontal en línea con la sede primero y diálogo de una
    pantalla con el paciente primero en modo administrativo; detalle en "Decisiones de UI-06" del
-   plan de la Fase 1.
+   plan de la Fase 1. UI-10 resuelto (2026-10-09): tablero en Inicio y tabla con pestañas y panel
+   lateral en Mis citas; detalle en "Decisiones de UI-10" del plan de la Fase 2.
 3. Mutaciones de UI-18: dependen del prototipo UI-17.
 4. ¿Reagendar puede cambiar de médico o de especialidad? El glosario define el reagendamiento
    como mover la cita a otro cupo conservando su identidad, pero el caso de uso acepta un cupo de
    otro médico o especialidad. Bloquea el arrastre entre médicos en UI-16; hasta decidirlo,
    `resolveDropTarget` solo acepta el mismo médico y especialidad.
-5. ¿Se puede reintentar un pago abandonado? `createPreference` rechaza una cita que ya tiene una
-   transacción `PENDING`; permitirlo cambia una regla de pagos (lo plantea el prototipo UI-10).
+5. ~~¿Se puede reintentar un pago abandonado?~~: resuelto (2026-10-09, UI-10). Se mantiene la
+   regla: con una transacción `PENDING` no se reintenta hasta que vence el plazo; la interfaz lo
+   explica. Cambiarla iría en un ítem propio.
 6. ~~Sede de una entrada en lista de espera~~: resuelto (2026-10-06). Toma la sede del médico si el
    paciente eligió uno; si no, la sede es obligatoria al anotarse. Lo implementa UI-29.

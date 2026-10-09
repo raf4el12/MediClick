@@ -78,10 +78,21 @@ export interface AppointmentWithRelations {
         timezone: string;
         defaultCancellationWindowHours?: number;
         noShowPenaltyPercentage?: number;
+        address?: string | null;
+        currency?: string;
       } | null;
     };
     specialty: { id: number; name: string };
   };
+}
+
+/** Datos del resumen del paciente: citas activas recientes y conteos históricos. */
+export interface PatientSummarySource {
+  /** Citas `PENDING`/`CONFIRMED` no eliminadas desde `fromDate`, de cualquier sede. */
+  appointments: AppointmentWithRelations[];
+  completedCount: number;
+  /** Citas completadas sin reseña. */
+  pendingReviewCount: number;
 }
 
 /** Slot liberado por una cita expirada (datos mínimos para la waitlist). */
@@ -139,7 +150,6 @@ export interface DashboardFilters {
 
 export interface PatientAppointmentFilters {
   status?: AppointmentStatus;
-  upcoming?: boolean;
-  /** IANA timezone para calcular "hoy" al filtrar upcoming. Fallback: America/Lima */
-  timezone?: string;
+  /** Varios estados a la vez (p. ej. canceladas e inasistencias). */
+  statuses?: AppointmentStatus[];
 }

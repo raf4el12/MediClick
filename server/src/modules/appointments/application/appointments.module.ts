@@ -19,6 +19,9 @@ import { CreateOverbookAppointmentUseCase } from './use-cases/create-overbook-ap
 import { CompleteAppointmentUseCase } from './use-cases/complete-appointment.use-case.js';
 import { MarkNoShowAppointmentUseCase } from './use-cases/mark-no-show-appointment.use-case.js';
 import { GetMyAppointmentsUseCase } from './use-cases/get-my-appointments.use-case.js';
+import { GetMyAppointmentsSummaryUseCase } from './use-cases/get-my-appointments-summary.use-case.js';
+import { GetMyAppointmentUseCase } from './use-cases/get-my-appointment.use-case.js';
+import { GetCancellationPreviewUseCase } from './use-cases/get-cancellation-preview.use-case.js';
 import { CreatePatientAppointmentUseCase } from './use-cases/create-patient-appointment.use-case.js';
 import { ExpirePendingAppointmentsUseCase } from './use-cases/expire-pending-appointments.use-case.js';
 import { AppointmentSlotValidatorService } from './services/appointment-slot-validator.service.js';
@@ -62,6 +65,9 @@ import { IssueAppointmentQrUseCase } from './use-cases/issue-appointment-qr.use-
     CompleteAppointmentUseCase,
     MarkNoShowAppointmentUseCase,
     GetMyAppointmentsUseCase,
+    GetMyAppointmentsSummaryUseCase,
+    GetMyAppointmentUseCase,
+    GetCancellationPreviewUseCase,
     CreatePatientAppointmentUseCase,
     ExpirePendingAppointmentsUseCase,
     AppointmentSlotValidatorService,

@@ -33,6 +33,11 @@ import { CreateOverbookAppointmentUseCase } from '../../application/use-cases/cr
 import { CompleteAppointmentUseCase } from '../../application/use-cases/complete-appointment.use-case.js';
 import { MarkNoShowAppointmentUseCase } from '../../application/use-cases/mark-no-show-appointment.use-case.js';
 import { GetMyAppointmentsUseCase } from '../../application/use-cases/get-my-appointments.use-case.js';
+import { GetMyAppointmentsSummaryUseCase } from '../../application/use-cases/get-my-appointments-summary.use-case.js';
+import { GetMyAppointmentUseCase } from '../../application/use-cases/get-my-appointment.use-case.js';
+import { GetCancellationPreviewUseCase } from '../../application/use-cases/get-cancellation-preview.use-case.js';
+import { MyAppointmentsSummaryResponseDto } from '../../application/dto/my-appointments-summary-response.dto.js';
+import { CancellationPreviewResponseDto } from '../../application/dto/cancellation-preview-response.dto.js';
 import { CreatePatientAppointmentUseCase } from '../../application/use-cases/create-patient-appointment.use-case.js';
 import {
   RespondAppointmentReminderUseCase,
@@ -73,6 +78,9 @@ export class AppointmentController {
     private readonly issueAppointmentQrUseCase: IssueAppointmentQrUseCase,
     private readonly configService: ConfigService,
     private readonly reminderTokenService: ReminderTokenService,
+    private readonly getMyAppointmentsSummaryUseCase: GetMyAppointmentsSummaryUseCase,
+    private readonly getMyAppointmentUseCase: GetMyAppointmentUseCase,
+    private readonly getCancellationPreviewUseCase: GetCancellationPreviewUseCase,
   ) {}
 
   @Get('my')
@@ -93,6 +101,55 @@ export class AppointmentController {
       filterDto.orderByMode,
     );
     return this.getMyAppointmentsUseCase.execute(userId, pagination, filterDto);
+  }
+
+  // Antes de `my/:id`: si no, "summary" se interpretaría como id.
+  @Get('my/summary')
+  @Auth()
+  @RequirePermissions('READ', 'APPOINTMENTS')
+  @ApiOperation({
+    summary:
+      'Resumen de mis citas: próxima cita y contadores (paciente autenticado)',
+  })
+  @ApiResponse({ status: 200, type: MyAppointmentsSummaryResponseDto })
+  @ApiResponse({ status: 404, description: 'Perfil de paciente no encontrado' })
+  getMyAppointmentsSummary(
+    @CurrentUser('id') userId: number,
+  ): Promise<MyAppointmentsSummaryResponseDto> {
+    return this.getMyAppointmentsSummaryUseCase.execute(userId);
+  }
+
+  @Get('my/:id')
+  @Auth()
+  @RequirePermissions('READ', 'APPOINTMENTS')
+  @ApiOperation({
+    summary: 'Detalle de una de mis citas, con su sede (paciente autenticado)',
+  })
+  @ApiResponse({ status: 200, type: AppointmentResponseDto })
+  @ApiResponse({
+    status: 404,
+    description: 'Cita inexistente o de otro paciente',
+  })
+  getMyAppointment(
+    @CurrentUser('id') userId: number,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<AppointmentResponseDto> {
+    return this.getMyAppointmentUseCase.execute(userId, id);
+  }
+
+  @Get(':id/cancellation-preview')
+  @Auth()
+  @RequirePermissions('UPDATE', 'APPOINTMENTS')
+  @ApiOperation({
+    summary: 'Penalización que cobraría cancelar la cita ahora, sin cancelarla',
+  })
+  @ApiResponse({ status: 200, type: CancellationPreviewResponseDto })
+  @ApiResponse({ status: 404, description: 'Cita no encontrada' })
+  getCancellationPreview(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() actor: AuthenticatedUser,
+  ): Promise<CancellationPreviewResponseDto> {
+    return this.getCancellationPreviewUseCase.execute(id, actor);
   }
 
   @Post('patient')

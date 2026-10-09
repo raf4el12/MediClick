@@ -55,6 +55,43 @@ export interface Appointment {
   hasPrescription: boolean;
   notesCount: number;
   createdAt: string;
+  /** Sede de la cita; la exponen los endpoints del paciente (`/appointments/my*`). */
+  clinic?: AppointmentClinic | null;
+}
+
+export interface AppointmentClinic {
+  id: number;
+  name: string;
+  address: string | null;
+  currency: string;
+}
+
+/** `GET /appointments/my/summary` */
+export interface MyAppointmentsSummary {
+  nextAppointment: Appointment | null;
+  upcomingCount: number;
+  awaitingPaymentCount: number;
+  earliestPaymentDeadline: string | null;
+  completedCount: number;
+  pendingReviewCount: number;
+}
+
+/** `GET /appointments/:id/check-in-qr` */
+export interface CheckInQr {
+  appointmentId: number;
+  qrToken: string;
+  /** Apertura de la ventana de llegada (instante UTC). */
+  opensAt: string;
+  expiresAt: string;
+}
+
+/** `GET /appointments/:id/cancellation-preview` */
+export interface CancellationPreview {
+  fee: number;
+  currency: string;
+  freeCancellationWindowHours: number;
+  hoursUntilAppointment: number;
+  cancellable: boolean;
 }
 
 export interface CreateAppointmentPayload {
@@ -86,6 +123,8 @@ export interface AppointmentFilters {
 
 export interface PatientAppointmentFilters {
   status?: AppointmentStatus;
+  /** Varios estados a la vez (p. ej. canceladas e inasistencias). */
+  statuses?: AppointmentStatus[];
   upcoming?: boolean;
 }
 

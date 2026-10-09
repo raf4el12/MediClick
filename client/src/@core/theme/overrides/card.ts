@@ -34,7 +34,8 @@ const card = (skin: Skin): Theme['components'] => {
         }),
         subheader: ({ theme }) => ({
           ...theme.typography.subtitle1,
-          color: 'rgb(var(--mui-palette-text-primaryChannel) / 0.55)'
+          // text-secondary: el 55 % de Materio da 3.46:1 sobre blanco (no AA).
+          color: 'var(--mui-palette-text-secondary)'
         }),
         action: ({ theme }) => ({
           ...theme.typography.body1,

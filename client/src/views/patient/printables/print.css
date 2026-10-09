@@ -1,0 +1,25 @@
+/* Al imprimir solo queda el documento (.printable-document), como la vista previa imprimible de Materio. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  [data-dark] {
+    --mui-palette-text-primary: rgba(46, 38, 61, 0.9);
+    --mui-palette-action-hover: rgba(46, 38, 61, 0.04);
+    --mui-palette-text-secondary: rgba(46, 38, 61, 0.7);
+    --mui-palette-divider: rgba(46, 38, 61, 0.12);
+  }
+
+  .printable-document,
+  .printable-document * {
+    visibility: visible;
+  }
+
+  .printable-document {
+    position: absolute;
+    inset: 0;
+    inline-size: 100%;
+    box-shadow: none !important;
+  }
+}

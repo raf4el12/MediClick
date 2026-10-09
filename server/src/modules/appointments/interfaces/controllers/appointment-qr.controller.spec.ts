@@ -56,6 +56,9 @@ describe('AppointmentQrController (Rutas QR del Controlador)', () => {
       issueAppointmentQrUseCase as unknown as IssueAppointmentQrUseCase,
       {} as any,
       {} as any,
+      {} as any, // getMyAppointmentsSummaryUseCase
+      {} as any, // getMyAppointmentUseCase
+      {} as any, // getCancellationPreviewUseCase
     );
   });
 

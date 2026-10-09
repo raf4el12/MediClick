@@ -51,6 +51,7 @@ export interface WaitlistEntryWithRelations {
   };
   specialty: { id: number; name: string };
   doctor: { id: number; profile: { name: string; lastName: string } } | null;
+  clinic?: { id: number; name: string } | null;
 }
 
 /**
@@ -95,4 +96,10 @@ export interface WaitlistOfferWithEntry {
   clinicId: number | null;
   createdAt: Date;
   entry: WaitlistEntryWithRelations;
+  /** Cupo ofrecido: día de agenda y médico. */
+  schedule?: {
+    scheduleDate: Date;
+    doctor: { profile: { name: string; lastName: string } };
+  };
+  clinic?: { id: number; name: string; timezone: string } | null;
 }

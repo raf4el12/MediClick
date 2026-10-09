@@ -59,6 +59,9 @@ describe('AppointmentController — reminder actions', () => {
       {} as any, // issueAppointmentQrUseCase
       configService,
       reminderTokenService,
+      {} as any, // getMyAppointmentsSummaryUseCase
+      {} as any, // getMyAppointmentUseCase
+      {} as any, // getCancellationPreviewUseCase
     );
   });
 

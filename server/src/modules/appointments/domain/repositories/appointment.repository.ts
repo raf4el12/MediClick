@@ -10,6 +10,7 @@ import type {
   CancelAppointmentAtomicallyData,
   CancelAppointmentAtomicallyResult,
   AppointmentChangedEventIdentity,
+  PatientSummarySource,
 } from '../interfaces/appointment-data.interface.js';
 import { PaginationParams } from '../../../../shared/domain/interfaces/pagination-params.interface.js';
 import { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
@@ -140,4 +141,14 @@ export interface IAppointmentRepository {
     clinicId: number;
     checkedInAt: Date;
   }): Promise<AppointmentWithRelations | null>;
+
+  /**
+   * Fuente del resumen del paciente: sus citas activas desde `fromDate` en
+   * cualquier sede y los conteos de completadas y de completadas sin reseña.
+   * Filtra solo por `patientId`: el paciente es multi-sede.
+   */
+  findPatientSummarySource(
+    patientId: number,
+    fromDate: Date,
+  ): Promise<PatientSummarySource>;
 }

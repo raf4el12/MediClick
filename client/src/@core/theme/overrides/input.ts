@@ -1,6 +1,9 @@
 // MUI Imports
 import type { Theme } from '@mui/material/styles'
 
+// El rojo de estado (#FF4C51) da 3.27:1 sobre blanco; el texto de error se oscurece (o aclara en oscuro).
+const ERROR_TEXT = 'color-mix(in srgb, var(--mui-palette-error-main) 70%, var(--contrast-mix, black))'
+
 const input: Theme['components'] = {
   MuiFormControl: {
     styleOverrides: {
@@ -103,7 +106,15 @@ const input: Theme['components'] = {
     styleOverrides: {
       root: {
         lineHeight: 1,
-        letterSpacing: 'unset'
+        letterSpacing: 'unset',
+        '&.Mui-error': { color: ERROR_TEXT }
+      }
+    }
+  },
+  MuiFormLabel: {
+    styleOverrides: {
+      root: {
+        '&.Mui-error': { color: ERROR_TEXT }
       }
     }
   }

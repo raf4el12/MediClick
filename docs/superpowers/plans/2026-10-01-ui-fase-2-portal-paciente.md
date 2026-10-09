@@ -52,7 +52,7 @@ del contrato se confirman con el prototipo.
 
 ---
 
-## UI-10 — Prototipo de Inicio y Mis citas
+## UI-10 — Prototipo de Inicio y Mis citas ✅
 
 **Rama:** `prototype/ui-10-portal-paciente` desde `origin/staging`. **No se mergea**; las
 decisiones entran por un PR de documentación.
@@ -89,13 +89,13 @@ oferta de cupo vigente.
 
 ### Steps
 
-- [ ] **Step 1:** crear la rama; anotar "Tres variantes de Inicio y de Mis citas, conmutables con `?variant=`".
-- [ ] **Step 2:** crear `client/src/views/patient/dashboard/prototype/*` y
+- [x] **Step 1:** crear la rama; anotar "Tres variantes de Inicio y de Mis citas, conmutables con `?variant=`".
+- [x] **Step 2:** crear `client/src/views/patient/dashboard/prototype/*` y
   `client/src/views/patient/appointments/prototype/*` con 3 variantes estructuralmente distintas cada uno
   y el `PrototypeSwitcher` oculto en producción.
-- [ ] **Step 3:** `cd client && pnpm dev`; recorrer con el usuario en escritorio y móvil.
-- [ ] **Step 4:** commit y push de la rama del prototipo.
-- [ ] **Step 5:** PR `docs/ui-10-decisiones` contra `staging` que complete "Decisiones de UI-10" y
+- [x] **Step 3:** `cd client && pnpm dev`; recorrer con el usuario en escritorio y móvil.
+- [x] **Step 4:** commit y push de la rama del prototipo.
+- [x] **Step 5:** PR `docs/ui-10-decisiones` contra `staging` que complete "Decisiones de UI-10" y
   el contrato final de UI-09.
 
 **Criterio de cierre:** las 11 preguntas respondidas, variantes elegidas, contrato de UI-09
@@ -103,11 +103,33 @@ cerrado y toda regla de negocio nueva enumerada.
 
 ### Decisiones de UI-10
 
-_Pendiente de completar al cerrar el prototipo._
+Cerrado el 2026-10-09. Fuente primaria: rama `prototype/ui-10-portal-paciente` (commit `6b51d70`):
+`/patient?variant=A|B|C` y `/patient/appointments?variant=A|B|C`. La comparación con capturas se
+revisó con el usuario.
+
+| # | Pregunta | Decisión |
+|---|---|---|
+| 1 | Indicadores de Inicio | Variante **A (tablero)**: saludo con "Reservar cita", indicadores **próximas**, **por pagar** (con el plazo más cercano), **reseñas pendientes** y **completadas**. Una oferta de cupo vigente se muestra como aviso (sale de `GET /waitlist/my-offers`, no del resumen). |
+| 2 | Próxima cita | Tarjeta destacada con sede, dirección, estado y pago, y las acciones que permita la matriz (la principal destacada): pagar, código de llegada, reagendar, cancelar, comprobante y cómo llegar. |
+| 3 | Código QR de llegada | **Sí, en un diálogo** desde una cita confirmada (`GET /appointments/:id/check-in-qr`). Suma una librería de QR cuyo `peerDependencies` admita `react@^19`. |
+| 4 | Mis citas | Variante **A**: tabla al estilo `InvoiceListTable` de Materio con fecha y hora local de cada sede, especialidad y médico, sede, estado y pago, total y menú de acciones; en celular, filas compactas. |
+| 5 | Filtros | **Pestañas** Próximas / Todas / Completadas / Canceladas (Canceladas incluye inasistencias). |
+| 6 | Detalle de una cita | **Panel lateral** con datos, montos, acciones e historial. |
+| 7 | Acciones por estado | Matriz de UI-11 Task 1 con `checkInQr` en las confirmadas futuras. Menú en cada fila y botones en el panel. |
+| 8 | Aviso de penalización | **Con el monto exacto** antes de confirmar. Necesita un endpoint de lectura nuevo (UI-09, Task 4) que reutilice el mismo cálculo de la cancelación. **No cambia ninguna regla**: expone la que ya aplica `CancelAppointmentUseCase`. |
+| 9 | Reagendar | **Diálogo con el paso de cupo** de la reserva (UI-08), limitado al mismo médico y especialidad. |
+| 10 | Pago abandonado | **Se mantiene la regla**: con una transacción `PENDING`, `createPreference` rechaza el reintento hasta que vence el plazo. La interfaz muestra "Tu pago está en proceso" con el plazo en lugar de un error genérico. Cambiarla iría en un ítem propio. |
+| 11 | Lista de espera | **Entrada propia del menú**, como hoy (`/patient/waitlist`); la rediseña UI-29. |
+
+**Reglas de negocio nuevas (D7):** ninguna, así que `docs/domain/APPOINTMENT-CORE.md` no cambia.
+
+**Ajustes:** UI-09 suma la Task 4 (vista previa de la cancelación); UI-11 crea `CheckInQrDialog`
+con su dependencia, usa la vista previa en `CancelAppointmentDialog` y traduce el rechazo por
+transacción pendiente.
 
 ---
 
-## UI-09 — Resumen de citas del paciente y sede en sus citas (backend)
+## UI-09 — Resumen de citas del paciente y sede en sus citas (backend) ✅
 
 **Rama:** `feat/ui-09-resumen-paciente` · **PR:** contra `staging`
 
@@ -115,7 +137,7 @@ _Pendiente de completar al cerrar el prototipo._
 hora local de la sede de cada cita), `mediclick-tenant-safety` (paciente multi-sede: el paciente se
 resuelve por `userId`, nunca por un id de la petición), `tdd` y `mediclick-core-review` al cierre.
 
-### Contrato (provisional hasta UI-10)
+### Contrato (cerrado por UI-10)
 
 ```
 GET /appointments/my/summary
@@ -160,14 +182,14 @@ GET /appointments/my/summary
 
 Una prueba por ciclo (`cd server && pnpm test -- get-my-appointments-summary --runInBand`):
 
-- [ ] 1. Sin citas → `nextAppointment: null` y contadores en 0.
-- [ ] 2. Dos citas el mismo día: Lima 10:00 (15:00 UTC) y Buenos Aires 11:00 (14:00 UTC) → la próxima es la de Buenos Aires.
-- [ ] 3. Una cita de hoy cuyo inicio ya pasó en la zona de su sede no es próxima ni cuenta en `upcomingCount`.
-- [ ] 4. Citas `CANCELLED`, `NO_SHOW`, `COMPLETED` e `IN_PROGRESS` no son próximas.
-- [ ] 5. Pendiente con plazo vigente cuenta como pendiente de pago; con plazo vencido no; `CONFIRMED` + `PARTIAL` sí.
-- [ ] 6. `pendingReviewCount` cuenta las completadas sin reseña y no las reseñadas.
-- [ ] 7. Usuario sin perfil de paciente → `NotFoundException`.
-- [ ] 8. El repositorio se consulta solo por `patientId` (sin filtro de sede): un paciente con citas en dos sedes ve ambas.
+- [x] 1. Sin citas → `nextAppointment: null` y contadores en 0.
+- [x] 2. Dos citas el mismo día: Lima 10:00 (15:00 UTC) y Buenos Aires 11:00 (14:00 UTC) → la próxima es la de Buenos Aires.
+- [x] 3. Una cita de hoy cuyo inicio ya pasó en la zona de su sede no es próxima ni cuenta en `upcomingCount`.
+- [x] 4. Citas `CANCELLED`, `NO_SHOW`, `COMPLETED` e `IN_PROGRESS` no son próximas.
+- [x] 5. Pendiente con plazo vigente cuenta como pendiente de pago; con plazo vencido no; `CONFIRMED` + `PARTIAL` sí.
+- [x] 6. `pendingReviewCount` cuenta las completadas sin reseña y no las reseñadas.
+- [x] 7. Usuario sin perfil de paciente → `NotFoundException`.
+- [x] 8. El repositorio se consulta solo por `patientId` (sin filtro de sede): un paciente con citas en dos sedes ve ambas.
 
 ### Task 2: Sede en las citas del paciente
 
@@ -177,14 +199,48 @@ Una prueba por ciclo (`cd server && pnpm test -- get-my-appointments-summary --r
 - Modify: `server/src/modules/appointments/infrastructure/persistence/prisma-appointment.repository.ts` (include de la sede)
 - Modify: spec existente o nuevo de `get-my-appointments` con el mapeo de `clinic`
 
-- [ ] **Step 1 (rojo):** prueba que `/appointments/my` devuelve `clinic` con nombre, dirección y moneda de la sede del médico.
-- [ ] **Step 2 (verde):** incluir la sede en la consulta y mapearla.
-- [ ] **Step 3 (rojo):** pruebas de `/appointments/my?upcoming`: una cita de hoy cuyo inicio ya
+- [x] **Step 1 (rojo):** prueba que `/appointments/my` devuelve `clinic` con nombre, dirección y moneda de la sede del médico.
+- [x] **Step 2 (verde):** incluir la sede en la consulta y mapearla.
+- [x] **Step 3 (rojo):** pruebas de `/appointments/my?upcoming`: una cita de hoy cuyo inicio ya
   pasó en la zona de su sede no aparece; dos citas en sedes con zonas distintas salen ordenadas por
   instante de inicio (no por `createdAt` ni por la zona del navegador).
-- [ ] **Step 4 (verde):** reutilizar el criterio de "próxima" de Task 1 (`localDateAndTimeToInstant`
+- [x] **Step 4 (verde):** reutilizar el criterio de "próxima" de Task 1 (`localDateAndTimeToInstant`
   con la zona de cada sede) para el filtro `upcoming` y ordenar por ese instante. Así la pestaña
   "Próximas" de UI-11 y el resumen comparten la misma definición.
+
+### Task 4: Vista previa de la cancelación (TDD)
+
+Decisión 8 de UI-10: el paciente ve el monto exacto de la penalización antes de confirmar.
+
+```
+GET /appointments/:id/cancellation-preview
+@Auth() + @RequirePermissions('UPDATE', 'APPOINTMENTS')   // el mismo permiso que cancelar
+
+200 {
+  "fee": 45,                         // 0 si no corresponde penalización
+  "currency": "PEN",
+  "freeCancellationWindowHours": 24,
+  "hoursUntilAppointment": 3.5,
+  "cancellable": true
+}
+404  cita inexistente o de otro paciente (sin revelar existencia)
+```
+
+**Files:**
+- Create: `server/src/modules/appointments/application/services/cancellation-fee.calculator.ts`
+  (o extraer a `appointment-cancellation.service.ts`): el cálculo que hoy vive dentro de
+  `CancelAppointmentUseCase` (horas hasta la cita en la zona de la sede, fondos cobrados, ventana
+  de la especialidad o de la sede y fee), para que la vista previa y la cancelación no diverjan.
+- Create: `get-cancellation-preview.use-case.ts` + spec
+- Modify: `cancel-appointment.use-case.ts` para usar el cálculo extraído (sus pruebas no cambian)
+
+Una prueba por ciclo (`cd server && pnpm test -- cancellation-preview --runInBand`):
+
+- [x] 1. Cita pagada fuera de la ventana gratuita → `fee: 0`.
+- [x] 2. Cita pagada dentro de la ventana → `fee` igual al que cobraría `CancelAppointmentUseCase` para la misma cita y el mismo instante (paridad).
+- [x] 3. Cita sin fondos cobrados → `fee: 0`.
+- [x] 4. Cita `COMPLETED` o `CANCELLED` → `cancellable: false` (los mismos estados que rechaza la cancelación).
+- [x] 5. Cita de otro paciente → `NotFoundException`.
 
 ### Task 3: Controlador, cliente y verificación
 
@@ -193,14 +249,31 @@ Una prueba por ciclo (`cd server && pnpm test -- get-my-appointments-summary --r
 - Modify: `client/src/services/appointments.service.ts` (`getMySummary`)
 - Modify: `client/src/views/appointments/types/index.ts` (`MyAppointmentsSummary`, `clinic` en `Appointment`)
 
-- [ ] **Step 1:** `cd server && pnpm test -- appointments --runInBand && pnpm build` → PASS.
-- [ ] **Step 2:** `cd client && pnpm exec tsc --noEmit` → OK.
-- [ ] **Step 3:** `mediclick-core-review` sobre el diff (carriles: estado asistencial vs de pago,
+- [x] **Step 1:** `cd server && pnpm test -- appointments --runInBand && pnpm build` → PASS.
+- [x] **Step 2:** `cd client && pnpm exec tsc --noEmit` → OK.
+- [x] **Step 3:** `mediclick-core-review` sobre el diff (carriles: estado asistencial vs de pago,
   hora local de cada sede, paciente multi-sede).
+
+### Notas de implementación
+
+- **`GET /appointments/my/:id` (agregado):** detalle de una cita propia con su sede; una ajena
+  responde 404 igual que una inexistente. Lo necesitan las vistas imprimibles de UI-12, que se
+  abren por URL y no tienen otra forma de leer una sola cita.
+- **Definición compartida de "próxima":** `application/services/patient-upcoming.ts` la usan el
+  resumen y `/appointments/my?upcoming`. El filtro `upcoming` del repositorio (zona del cliente,
+  orden por `createdAt`) se eliminó; `timezone` en la query se acepta por compatibilidad y se ignora.
+  "Próximas" se pagina en memoria: son pocas por paciente.
+- **Vista previa de cancelación:** `cancellable` refleja exactamente los estados que rechaza
+  `CancelAppointmentUseCase` (`COMPLETED` y `CANCELLED`); la matriz de UI-11 ya no ofrece cancelar
+  una cita en curso. `CancellationFeeCalculator` es una clase sin DI que ambos casos de uso arman
+  con sus mismas dependencias, así las pruebas de la cancelación no cambian.
+- **Prueba de integración:** sin base de datos local disponible, `findPatientSummarySource` (filtro
+  por `patientId`, estados y `review: null`) queda cubierto por las pruebas unitarias del caso de uso
+  y la revisión de la consulta; falta correrlo contra PostgreSQL.
 
 ---
 
-## UI-11 — Inicio del paciente y Mis citas
+## UI-11 — Inicio del paciente y Mis citas ✅
 
 **Rama:** `feat/ui-11-inicio-y-mis-citas` · **PR:** contra `staging`
 
@@ -231,8 +304,11 @@ Rutas de la v5 local (`/home/rafael/materio-mui-nextjs-admin-template-ts/full-ve
   `components/{AppointmentList,AppointmentCard,AppointmentDetail,CancelAppointmentDialog,RescheduleAppointmentDialog}.tsx`
 - Modify: `client/src/views/reviews/components/ReviewDialog.tsx` → estética Materio, mismo contrato
 - Modify: `client/src/app/(patient)/patient/page.tsx`, `client/src/app/(patient)/patient/appointments/page.tsx`
-- Create (solo si UI-10 lo decide): `components/CheckInQrDialog.tsx` + dependencia de QR cuyo
-  `peerDependencies` admita `react@^19`
+- Create: `components/CheckInQrDialog.tsx` + dependencia de QR cuyo `peerDependencies` admita
+  `react@^19` (UI-10: QR sí)
+- `CancelAppointmentDialog` consume `GET /appointments/:id/cancellation-preview` (UI-09, Task 4) y
+  muestra el monto exacto antes de confirmar; un rechazo de `POST /payments/preferences` por
+  transacción pendiente se muestra como "Tu pago está en proceso" con el plazo (UI-10, decisión 10).
 - Create: `client/tests/e2e/patient-home.spec.ts`, `client/tests/e2e/patient-appointments.spec.ts`
 
 ### Interfaces
@@ -254,21 +330,21 @@ Rutas de la v5 local (`/home/rafael/materio-mui-nextjs-admin-template-ts/full-ve
 Una prueba por ciclo (`cd client && pnpm test -- appointmentActions`); las reglas reflejan las del
 servidor para no ofrecer acciones que el backend rechazará:
 
-- [ ] 1. `PENDING` + pago `PENDING` con plazo vigente → `pay`, `reschedule`, `cancel`.
-- [ ] 2. `PENDING` con plazo vencido → no ofrece `pay`.
-- [ ] 3. `CONFIRMED` + `PARTIAL` → `pay` (saldo), `reschedule`, `cancel`.
-- [ ] 4. `CONFIRMED` + `PAID` → `reschedule`, `cancel`, `receipt` (y `checkInQr` si UI-10 lo decide).
-- [ ] 5. Una cita cuyo inicio ya pasó en la zona de su sede no ofrece `reschedule` ni `cancel`.
-- [ ] 6. `COMPLETED` sin reseña → `review`, `prescription`; reseñada → sin `review`.
-- [ ] 7. `CANCELLED` o `NO_SHOW` → solo `receipt` si hubo un pago aprobado.
-- [ ] 8. `IN_PROGRESS` → ninguna acción del paciente.
+- [x] 1. `PENDING` + pago `PENDING` con plazo vigente → `pay`, `reschedule`, `cancel`.
+- [x] 2. `PENDING` con plazo vencido → no ofrece `pay`.
+- [x] 3. `CONFIRMED` + `PARTIAL` → `pay` (saldo), `reschedule`, `cancel`.
+- [x] 4. `CONFIRMED` + `PAID` → `checkInQr`, `reschedule`, `cancel`, `receipt` (UI-10: QR sí).
+- [x] 5. Una cita cuyo inicio ya pasó en la zona de su sede no ofrece `reschedule` ni `cancel`.
+- [x] 6. `COMPLETED` sin reseña → `review`, `prescription`; reseñada → sin `review`.
+- [x] 7. `CANCELLED` o `NO_SHOW` → solo `receipt` si hubo un pago aprobado.
+- [x] 8. `IN_PROGRESS` → ninguna acción del paciente.
 
 ### Task 2: Pantallas (rojo → verde con Playwright)
 
-- [ ] **Step 1 (rojo):** `patient-home.spec.ts` (`actor: 'PATIENT'`, escritorio y móvil): saludo,
+- [x] **Step 1 (rojo):** `patient-home.spec.ts` (`actor: 'PATIENT'`, escritorio y móvil): saludo,
   indicadores tomados del resumen, próxima cita con sede y hora local, accesos a Reservar y Mis
   citas, `expectAccessible`.
-- [ ] **Step 2 (rojo):** `patient-appointments.spec.ts`:
+- [x] **Step 2 (rojo):** `patient-appointments.spec.ts`:
   1. pestañas Próximas / Todas / Completadas piden `/appointments/my` con el filtro esperado;
   2. cancelar: diálogo con motivo → `PATCH /appointments/:id/cancel` → aviso de éxito y la lista se refresca;
   3. reagendar: elegir día y cupo → `PATCH /appointments/:id/reschedule` con `newScheduleId`,
@@ -278,16 +354,37 @@ servidor para no ofrecer acciones que el backend rechazará:
   5. reseñar una completada → `POST /reviews` → la acción desaparece;
   6. receta y comprobante enlazan a las rutas de UI-12;
   7. `expectAccessible` en lista, detalle y cada diálogo.
-- [ ] **Step 3:** `cd client && pnpm exec playwright test tests/e2e/patient-*` → FAIL.
-- [ ] **Step 4:** implementar Inicio y Mis citas con los componentes de Materio y `appointmentActions`.
-- [ ] **Step 5:** repetir Step 3 → PASS.
-- [ ] **Step 6:** borrar el código reemplazado de los dos monolitos (diálogos inline, `canCancel`,
+- [x] **Step 3:** `cd client && pnpm exec playwright test tests/e2e/patient-*` → FAIL.
+- [x] **Step 4:** implementar Inicio y Mis citas con los componentes de Materio y `appointmentActions`.
+- [x] **Step 5:** repetir Step 3 → PASS.
+- [x] **Step 6:** borrar el código reemplazado de los dos monolitos (diálogos inline, `canCancel`,
   `isCompleted`, el cálculo de "próxima cita" por `createdAt`) y comprobar con `rg` que no quedan referencias.
-- [ ] **Step 7:** `cd client && pnpm test && pnpm exec tsc --noEmit && pnpm build && pnpm exec eslint <archivos tocados> && pnpm test:a11y` → PASS.
+- [x] **Step 7:** `cd client && pnpm test && pnpm exec tsc --noEmit && pnpm build && pnpm exec eslint <archivos tocados> && pnpm test:a11y` → PASS.
+
+### Notas de implementación
+
+- **Backend:** `/appointments/my` acepta `statuses` (varios estados separados por coma) para que la
+  pestaña Canceladas incluya las inasistencias (decisión 5 de UI-10).
+- **Matriz:** el comprobante se ofrece siempre que haya un pago aprobado (`PAID`, `PARTIAL` o
+  `REFUNDED`), también en una confirmada con seña y en una completada; el código de llegada solo en
+  una confirmada pagada y futura. El inicio de la cita se compara con `localToInstant` (nuevo en
+  `utils/timezone.ts`) en la zona de su sede.
+- **Reagendar:** `RescheduleAppointmentDialog` usa `useBooking` con el preset de la cita (mismo
+  médico y especialidad) y `SlotStep` con `allowAlternatives={false}` (sin lista de espera ni otro
+  médico). Un 409 muestra el aviso de cupo tomado y recarga las horas.
+- **Detalle:** el panel muestra datos, montos, plazo de pago y motivo de cancelación. El historial de
+  la cita queda pendiente: no hay un endpoint que lo exponga.
+- **Pago con transacción pendiente:** se muestra "Tu pago está en proceso" con la hora del plazo.
+- **Código QR:** `qrcode.react@4.2` (declara `react@^19`).
+- **Accesibilidad:** el subtítulo de `CardHeader` pasa a `text-secondary` (el 55 % de Materio daba
+  3.46:1). `ReviewDialog` gana `aria-labelledby` y etiquetas de estrellas en español.
+- **Arnés:** `expectAccessible` espera a que terminen las transiciones finitas (un diálogo a medio
+  fundido daba falsos fallos de contraste); los valores por defecto del paciente incluyen el resumen,
+  las ofertas y las reseñas que pide el Inicio nuevo.
 
 ---
 
-## UI-12 — Comprobante de pago y receta imprimibles
+## UI-12 — Comprobante de pago y receta imprimibles ✅
 
 **Rama:** `feat/ui-12-comprobante-y-receta` · **PR:** contra `staging`
 
@@ -314,14 +411,14 @@ Hecho en la rama `feat/ui-12-comprobantes-backend`, antes que las vistas imprimi
 - Produces: `GET /payments/appointment/:id/receipts` → `PaymentResponseDto[]` solo con transacciones
   `PAID`, ordenadas por `paidAt`; `@RequirePermissions('READ', 'APPOINTMENTS')`.
 
-- [ ] 1. El paciente dueño recibe sus transacciones aprobadas (seña y saldo), sin las `PENDING` ni `FAILED`.
-- [ ] 2. Otro paciente → rechazado por la política (mismo error que el endpoint existente).
-- [ ] 3. Personal de otra sede → rechazado; personal de la sede de la cita → permitido.
-- [ ] 4. Cita eliminada o inexistente → `NotFoundException`.
+- [x] 1. El paciente dueño recibe sus transacciones aprobadas (seña y saldo), sin las `PENDING` ni `FAILED`.
+- [x] 2. Otro paciente → rechazado por la política (mismo error que el endpoint existente).
+- [x] 3. Personal de otra sede → rechazado; personal de la sede de la cita → permitido.
+- [x] 4. Cita eliminada o inexistente → `NotFoundException`.
 
 Comando: `cd server && pnpm test -- list-appointment-receipts --runInBand` (FAIL → PASS por prueba).
 
-### Task 2: Vistas imprimibles
+### Task 2: Vistas imprimibles ✅
 
 **Componentes de Materio** ((v5 local, con la adaptación del Paso 0 de la Fase 0)): `views/apps/invoice/preview/{index,PreviewCard,PreviewActions}.tsx`
 y `views/apps/invoice/preview/print.css`; ruta de referencia `app/[lang]/(dashboard)/(private)/apps/invoice/preview/[id]/page.tsx`.
@@ -340,17 +437,27 @@ y `views/apps/invoice/preview/print.css`; ruta de referencia `app/[lang]/(dashbo
 - Receta: datos de la cita, ítems (medicamento, dosis, frecuencia, duración, notas), indicaciones y
   vigencia; se conserva "Descargar PDF" (`/prescriptions/my/appointment/:id/pdf`).
 
-- [ ] **Step 1 (rojo):** `patient-printables.spec.ts` (`actor: 'PATIENT'`): el comprobante muestra
+- [x] **Step 1 (rojo):** `patient-printables.spec.ts` (`actor: 'PATIENT'`): el comprobante muestra
   los datos y la leyenda; con dos transacciones aprobadas muestra ambas; sin pagos aprobados muestra
   un estado vacío; la receta muestra sus ítems; el botón Imprimir llama a `window.print`; en
   `emulateMedia({ media: 'print' })` se ocultan navegación y barra inferior; `expectAccessible`.
-- [ ] **Step 2:** implementar las vistas → PASS.
-- [ ] **Step 3:** `rg -n -i "factura|invoice" client/src/views/patient` → sin textos visibles.
-- [ ] **Step 4:** verificación completa del cliente y `pnpm test -- payments --runInBand && pnpm build` en el servidor.
+- [x] **Step 2:** implementar las vistas → PASS.
+- [x] **Step 3:** `rg -n -i "factura|invoice" client/src/views/patient` → sin textos visibles.
+- [x] **Step 4:** verificación completa del cliente y `pnpm test -- payments --runInBand && pnpm build` en el servidor.
+
+**Notas de implementación (Task 2):**
+- Los datos de la cita (paciente, médico, especialidad, fecha y sede con dirección) salen de
+  `GET /appointments/my/:id`, agregado en UI-09; los pagos, de `/payments/appointment/:id/receipts`.
+- `PrintableLayout` reúne encabezado, acciones e `print.css`; `ReceiptPreview` y
+  `PrescriptionPreview` solo aportan el contenido. Las etiquetas del medio de pago pasan a
+  `views/payment/labels.ts`, que comparten el comprobante y el resultado del pago.
+- En Mis citas, el diálogo de receta se reemplazó por enlaces a `/patient/appointments/[id]/receta`
+  (se elimina también su descarga de PDF, que usaba la cita equivocada); el resto de la vista lo
+  rediseña UI-11.
 
 ---
 
-## UI-29 — Lista de espera del paciente
+## UI-29 — Lista de espera del paciente ✅
 
 **Rama:** `feat/ui-29-lista-de-espera-paciente` · **PR:** contra `staging`
 
@@ -366,9 +473,10 @@ Pasa a `client/src/app/(patient)/patient/waitlist/page.tsx`. La vista del person
 - `WaitlistOfferResponseDto` envía `startTime`/`endTime` como `HH:mm` (`toOfferDto` usa
   `dateToTimeString`) y no incluye la fecha del cupo, el médico ni la sede. `OfferCard.formatSlot`
   hace `new Date('09:00')` y muestra fechas inválidas: la oferta no dice para qué día es.
-- La entrada en lista de espera toma su sede de `specialty.clinicId` (`join-waitlist.use-case.ts:84`):
-  con una especialidad global queda sin sede, aunque `CONTEXT.md` define la entrada por sede. Es una
-  pregunta de dominio: se plantea al usuario, no se decide en este ítem.
+- La entrada en lista de espera tomaba su sede de `specialty.clinicId`: con una especialidad global
+  quedaba sin sede y el matcher (que filtra por sede) nunca le ofrecía cupos. **Resuelto
+  (decisión 2026-10-06):** la sede es la del médico si el paciente eligió uno; si no, es obligatoria
+  al anotarse. Se implementó en este ítem y se registró en `APPOINTMENT-CORE.md`.
 
 ### Task 1: Datos completos de la oferta de cupo (backend, TDD)
 
@@ -378,9 +486,9 @@ Pasa a `client/src/app/(patient)/patient/waitlist/page.tsx`. La vista del person
 - Modify: `server/src/modules/waitlist/domain/interfaces/waitlist-data.interface.ts` y el repositorio de ofertas (include de `schedule` con fecha, médico y sede)
 - Create/Modify: spec del mapper o del use case de "mis ofertas"
 
-- [ ] 1. La oferta incluye `scheduleDate` (`YYYY-MM-DD`), `doctorName`, `clinic: { id, name, timezone }` y conserva `startTime`/`endTime` en `HH:mm`.
-- [ ] 2. La entrada incluye `clinicName` (nulo si no tiene sede).
-- [ ] 3. `cd server && pnpm test -- waitlist --runInBand && pnpm build` → PASS.
+- [x] 1. La oferta incluye `scheduleDate` (`YYYY-MM-DD`), `doctorName`, `clinic: { id, name, timezone }` y conserva `startTime`/`endTime` en `HH:mm`.
+- [x] 2. La entrada incluye `clinicName` (nulo si no tiene sede).
+- [x] 3. `cd server && pnpm test -- waitlist --runInBand && pnpm build` → PASS.
 
 ### Task 2: Pantalla
 
@@ -393,7 +501,7 @@ para acciones de la entrada y `components/dialogs/confirmation-dialog/index.tsx`
 - Move: la página a `client/src/app/(patient)/patient/waitlist/page.tsx` (si UI-03 no lo hizo)
 - Create: `client/tests/e2e/patient-waitlist.spec.ts`
 
-- [ ] **Step 1 (rojo):** `patient-waitlist.spec.ts` (`actor: 'PATIENT'`, escritorio y móvil):
+- [x] **Step 1 (rojo):** `patient-waitlist.spec.ts` (`actor: 'PATIENT'`, escritorio y móvil):
   1. las entradas muestran especialidad, médico opcional, sede, rango de fechas y preferencia horaria;
   2. una oferta de cupo muestra fecha, hora en la zona de la sede, médico, sede y la cuenta
      regresiva hasta `expiresAt`; al vencer se deshabilita y se vuelve a pedir `/waitlist/my/offers`;
@@ -403,6 +511,21 @@ para acciones de la entrada y `components/dialogs/confirmation-dialog/index.tsx`
   5. unirse con el diálogo (validación Zod de `waitlist.schema.ts`) → `POST /waitlist`;
   6. salir de la lista con confirmación → `DELETE /waitlist/:id`;
   7. `expectAccessible` en la página y en cada diálogo.
-- [ ] **Step 2:** implementar con los componentes de Materio y el vocabulario de `CONTEXT.md`
+- [x] **Step 2:** implementar con los componentes de Materio y el vocabulario de `CONTEXT.md`
   (**entrada en lista de espera**, **oferta de cupo**, **prioridad de espera**).
-- [ ] **Step 3:** verificación completa del cliente → PASS.
+- [x] **Step 3:** verificación completa del cliente → PASS.
+
+**Notas de implementación:**
+- `JoinWaitlistUseCase` resuelve la sede: con médico, la suya (una sede distinta en la petición se
+  rechaza); sin médico, `clinicId` obligatorio, sede activa y compatible con una especialidad propia
+  de otra sede. Inyecta `IClinicRepository` (el módulo importa `ClinicsModule`).
+- La oferta incluye `scheduleDate`, `doctorName` y `clinic { id, name, timezone }`; la entrada,
+  `clinicName`. `waitlistOfferInclude` suma la agenda y la sede.
+- La cuenta regresiva sale de `expiresAt` (no de `secondsRemaining`, que envejece entre sondeos); al
+  vencer, la tarjeta se deshabilita y vuelve a pedir las ofertas una sola vez.
+- `JoinWaitlistDialog` suma "Sede"; elegir médico la fija. El efecto que limpiaba el médico al
+  cambiar la especialidad borraba también el médico precargado desde la reserva sin cupos: ahora se
+  limpia en el `onChange`.
+- Contraste del tema (AA): el texto de los chips `tonal` y el texto de error de los formularios se
+  mezclan con negro en claro (blanco en oscuro) vía `--contrast-mix`; los tonos de estado de Materio
+  no llegaban a 4.5:1. Afecta a toda la app.

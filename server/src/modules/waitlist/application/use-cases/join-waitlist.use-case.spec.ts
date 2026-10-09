@@ -40,6 +40,7 @@ function buildCreatedEntry(overrides: any = {}) {
 
 const VALID_DTO = {
   specialtyId: 3,
+  clinicId: 1,
   dateFrom: '2030-06-01',
   dateTo: '2030-06-15',
 };
@@ -50,6 +51,7 @@ describe('JoinWaitlistUseCase', () => {
   let patientRepo: any;
   let specialtyRepo: any;
   let doctorRepo: any;
+  let clinicRepo: any;
 
   beforeEach(() => {
     entryRepo = {
@@ -68,11 +70,17 @@ describe('JoinWaitlistUseCase', () => {
       }),
     };
     doctorRepo = { findById: jest.fn() };
+    clinicRepo = {
+      findById: jest
+        .fn()
+        .mockResolvedValue({ id: 1, isActive: true, deleted: false }),
+    };
     useCase = new JoinWaitlistUseCase(
       entryRepo,
       patientRepo,
       specialtyRepo,
       doctorRepo,
+      clinicRepo,
     );
   });
 
@@ -108,13 +116,13 @@ describe('JoinWaitlistUseCase', () => {
     expect(entryRepo.create).not.toHaveBeenCalled();
   });
 
-  it('happy path: crea la entrada con clinicId de la especialidad y waitUntil', async () => {
+  it('happy path: sin médico, crea la entrada en la sede indicada y con waitUntil', async () => {
     const result = await useCase.execute(900, VALID_DTO as any);
 
     expect(result.id).toBe(55);
     const createArg = entryRepo.create.mock.calls[0][0];
     expect(createArg.patientId).toBe(42);
-    expect(createArg.clinicId).toBe(1); // tomado de specialty.clinicId
+    expect(createArg.clinicId).toBe(1); // la sede elegida al anotarse
     expect(createArg.waitUntil).toBeInstanceOf(Date);
     // waitUntil = fin del último día de la ventana (dateTo + 1 día)
     expect(createArg.waitUntil.getTime()).toBeGreaterThan(
@@ -127,5 +135,77 @@ describe('JoinWaitlistUseCase', () => {
     await expect(
       useCase.execute(900, { ...VALID_DTO, doctorId: 7 } as any),
     ).rejects.toThrow(BadRequestException);
+  });
+
+  describe('sede de la entrada (decisión 2026-10-06)', () => {
+    const doctor = (clinicId: number | null) => ({
+      id: 7,
+      clinicId,
+      isActive: true,
+      deleted: false,
+    });
+
+    it('sin médico la sede es obligatoria', async () => {
+      const { clinicId: _omit, ...withoutClinic } = VALID_DTO;
+      await expect(useCase.execute(900, withoutClinic as any)).rejects.toThrow(
+        BadRequestException,
+      );
+      expect(entryRepo.create).not.toHaveBeenCalled();
+    });
+
+    it('con médico toma la sede del médico, aunque la especialidad sea global', async () => {
+      specialtyRepo.findById.mockResolvedValue({
+        id: 3,
+        clinicId: null,
+        isActive: true,
+        deleted: false,
+      });
+      doctorRepo.findById.mockResolvedValue(doctor(2));
+
+      await useCase.execute(900, {
+        specialtyId: 3,
+        doctorId: 7,
+        dateFrom: '2030-06-01',
+        dateTo: '2030-06-15',
+      } as any);
+
+      expect(entryRepo.create.mock.calls[0][0].clinicId).toBe(2);
+    });
+
+    it('con médico y una sede distinta a la suya rechaza la entrada', async () => {
+      doctorRepo.findById.mockResolvedValue(doctor(2));
+
+      await expect(
+        useCase.execute(900, { ...VALID_DTO, doctorId: 7, clinicId: 1 } as any),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('una especialidad propia de otra sede rechaza la entrada', async () => {
+      clinicRepo.findById.mockResolvedValue({
+        id: 2,
+        isActive: true,
+        deleted: false,
+      });
+
+      await expect(
+        useCase.execute(900, { ...VALID_DTO, clinicId: 2 } as any),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('una sede inexistente o inactiva rechaza la entrada', async () => {
+      clinicRepo.findById.mockResolvedValue(null);
+      await expect(useCase.execute(900, VALID_DTO as any)).rejects.toThrow(
+        BadRequestException,
+      );
+
+      clinicRepo.findById.mockResolvedValue({
+        id: 1,
+        isActive: false,
+        deleted: false,
+      });
+      await expect(useCase.execute(900, VALID_DTO as any)).rejects.toThrow(
+        BadRequestException,
+      );
+    });
   });
 });

@@ -23,7 +23,14 @@ test.describe('páginas de error', () => {
 
   test('un fallo al cargar la página ofrece reintentar', async ({ page, api }) => {
     // Respuesta con una forma que la vista no espera: rompe el render.
-    api.on('GET /appointments/my', { totalRows: 0, totalPages: 0, currentPage: 1, rows: null });
+    api.on('GET /appointments/my/summary', {
+      nextAppointment: { id: 1, schedule: null },
+      upcomingCount: 1,
+      awaitingPaymentCount: 0,
+      earliestPaymentDeadline: null,
+      completedCount: 0,
+      pendingReviewCount: 0,
+    });
 
     await page.goto('/patient');
 
