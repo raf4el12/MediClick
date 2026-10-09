@@ -221,6 +221,7 @@ export class PrismaAppointmentRepository implements IAppointmentRepository {
       patientId,
       deleted: false,
       ...(filters.status && { status: filters.status }),
+      ...(filters.statuses?.length && { status: { in: filters.statuses } }),
     };
 
     const [rows, count] = await Promise.all([

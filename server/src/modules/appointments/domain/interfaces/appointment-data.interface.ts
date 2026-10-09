@@ -150,4 +150,6 @@ export interface DashboardFilters {
 
 export interface PatientAppointmentFilters {
   status?: AppointmentStatus;
+  /** Varios estados a la vez (p. ej. canceladas e inasistencias). */
+  statuses?: AppointmentStatus[];
 }
