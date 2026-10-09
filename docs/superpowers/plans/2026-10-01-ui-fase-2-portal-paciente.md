@@ -273,7 +273,7 @@ Una prueba por ciclo (`cd server && pnpm test -- cancellation-preview --runInBan
 
 ---
 
-## UI-11 — Inicio del paciente y Mis citas
+## UI-11 — Inicio del paciente y Mis citas ✅
 
 **Rama:** `feat/ui-11-inicio-y-mis-citas` · **PR:** contra `staging`
 
@@ -330,21 +330,21 @@ Rutas de la v5 local (`/home/rafael/materio-mui-nextjs-admin-template-ts/full-ve
 Una prueba por ciclo (`cd client && pnpm test -- appointmentActions`); las reglas reflejan las del
 servidor para no ofrecer acciones que el backend rechazará:
 
-- [ ] 1. `PENDING` + pago `PENDING` con plazo vigente → `pay`, `reschedule`, `cancel`.
-- [ ] 2. `PENDING` con plazo vencido → no ofrece `pay`.
-- [ ] 3. `CONFIRMED` + `PARTIAL` → `pay` (saldo), `reschedule`, `cancel`.
-- [ ] 4. `CONFIRMED` + `PAID` → `checkInQr`, `reschedule`, `cancel`, `receipt` (UI-10: QR sí).
-- [ ] 5. Una cita cuyo inicio ya pasó en la zona de su sede no ofrece `reschedule` ni `cancel`.
-- [ ] 6. `COMPLETED` sin reseña → `review`, `prescription`; reseñada → sin `review`.
-- [ ] 7. `CANCELLED` o `NO_SHOW` → solo `receipt` si hubo un pago aprobado.
-- [ ] 8. `IN_PROGRESS` → ninguna acción del paciente.
+- [x] 1. `PENDING` + pago `PENDING` con plazo vigente → `pay`, `reschedule`, `cancel`.
+- [x] 2. `PENDING` con plazo vencido → no ofrece `pay`.
+- [x] 3. `CONFIRMED` + `PARTIAL` → `pay` (saldo), `reschedule`, `cancel`.
+- [x] 4. `CONFIRMED` + `PAID` → `checkInQr`, `reschedule`, `cancel`, `receipt` (UI-10: QR sí).
+- [x] 5. Una cita cuyo inicio ya pasó en la zona de su sede no ofrece `reschedule` ni `cancel`.
+- [x] 6. `COMPLETED` sin reseña → `review`, `prescription`; reseñada → sin `review`.
+- [x] 7. `CANCELLED` o `NO_SHOW` → solo `receipt` si hubo un pago aprobado.
+- [x] 8. `IN_PROGRESS` → ninguna acción del paciente.
 
 ### Task 2: Pantallas (rojo → verde con Playwright)
 
-- [ ] **Step 1 (rojo):** `patient-home.spec.ts` (`actor: 'PATIENT'`, escritorio y móvil): saludo,
+- [x] **Step 1 (rojo):** `patient-home.spec.ts` (`actor: 'PATIENT'`, escritorio y móvil): saludo,
   indicadores tomados del resumen, próxima cita con sede y hora local, accesos a Reservar y Mis
   citas, `expectAccessible`.
-- [ ] **Step 2 (rojo):** `patient-appointments.spec.ts`:
+- [x] **Step 2 (rojo):** `patient-appointments.spec.ts`:
   1. pestañas Próximas / Todas / Completadas piden `/appointments/my` con el filtro esperado;
   2. cancelar: diálogo con motivo → `PATCH /appointments/:id/cancel` → aviso de éxito y la lista se refresca;
   3. reagendar: elegir día y cupo → `PATCH /appointments/:id/reschedule` con `newScheduleId`,
@@ -354,12 +354,33 @@ servidor para no ofrecer acciones que el backend rechazará:
   5. reseñar una completada → `POST /reviews` → la acción desaparece;
   6. receta y comprobante enlazan a las rutas de UI-12;
   7. `expectAccessible` en lista, detalle y cada diálogo.
-- [ ] **Step 3:** `cd client && pnpm exec playwright test tests/e2e/patient-*` → FAIL.
-- [ ] **Step 4:** implementar Inicio y Mis citas con los componentes de Materio y `appointmentActions`.
-- [ ] **Step 5:** repetir Step 3 → PASS.
-- [ ] **Step 6:** borrar el código reemplazado de los dos monolitos (diálogos inline, `canCancel`,
+- [x] **Step 3:** `cd client && pnpm exec playwright test tests/e2e/patient-*` → FAIL.
+- [x] **Step 4:** implementar Inicio y Mis citas con los componentes de Materio y `appointmentActions`.
+- [x] **Step 5:** repetir Step 3 → PASS.
+- [x] **Step 6:** borrar el código reemplazado de los dos monolitos (diálogos inline, `canCancel`,
   `isCompleted`, el cálculo de "próxima cita" por `createdAt`) y comprobar con `rg` que no quedan referencias.
-- [ ] **Step 7:** `cd client && pnpm test && pnpm exec tsc --noEmit && pnpm build && pnpm exec eslint <archivos tocados> && pnpm test:a11y` → PASS.
+- [x] **Step 7:** `cd client && pnpm test && pnpm exec tsc --noEmit && pnpm build && pnpm exec eslint <archivos tocados> && pnpm test:a11y` → PASS.
+
+### Notas de implementación
+
+- **Backend:** `/appointments/my` acepta `statuses` (varios estados separados por coma) para que la
+  pestaña Canceladas incluya las inasistencias (decisión 5 de UI-10).
+- **Matriz:** el comprobante se ofrece siempre que haya un pago aprobado (`PAID`, `PARTIAL` o
+  `REFUNDED`), también en una confirmada con seña y en una completada; el código de llegada solo en
+  una confirmada pagada y futura. El inicio de la cita se compara con `localToInstant` (nuevo en
+  `utils/timezone.ts`) en la zona de su sede.
+- **Reagendar:** `RescheduleAppointmentDialog` usa `useBooking` con el preset de la cita (mismo
+  médico y especialidad) y `SlotStep` con `allowAlternatives={false}` (sin lista de espera ni otro
+  médico). Un 409 muestra el aviso de cupo tomado y recarga las horas.
+- **Detalle:** el panel muestra datos, montos, plazo de pago y motivo de cancelación. El historial de
+  la cita queda pendiente: no hay un endpoint que lo exponga.
+- **Pago con transacción pendiente:** se muestra "Tu pago está en proceso" con la hora del plazo.
+- **Código QR:** `qrcode.react@4.2` (declara `react@^19`).
+- **Accesibilidad:** el subtítulo de `CardHeader` pasa a `text-secondary` (el 55 % de Materio daba
+  3.46:1). `ReviewDialog` gana `aria-labelledby` y etiquetas de estrellas en español.
+- **Arnés:** `expectAccessible` espera a que terminen las transiciones finitas (un diálogo a medio
+  fundido daba falsos fallos de contraste); los valores por defecto del paciente incluyen el resumen,
+  las ofertas y las reseñas que pide el Inicio nuevo.
 
 ---
 
