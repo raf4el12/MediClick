@@ -13,7 +13,7 @@ export type BookingField = 'clinic' | 'specialty' | 'doctor' | 'date' | 'slot' |
 /**
  * Opción elegible de un catálogo. `meta` según el campo:
  * sede `{ currency, timezone }`, especialidad `{ price }` (en la moneda de la sede),
- * médico `{ clinicId, specialtyIds }`.
+ * médico `{ clinicId, specialtyIds, clinicName, currency }`.
  */
 export type BookingOption = { id: number; label: string; meta?: Record<string, unknown> };
 

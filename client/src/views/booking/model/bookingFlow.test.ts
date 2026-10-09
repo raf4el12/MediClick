@@ -250,6 +250,27 @@ describe('flujo de reserva', () => {
     expect(staff).toEqual(initialBooking('administrative', undefined, lima));
   });
 
+  it('sin la moneda de la sede del personal, el resumen toma la de la sede del médico', () => {
+    const fromSession: BookingOption = { id: 1, label: 'Sede Miraflores', meta: { timezone: 'America/Lima' } };
+    const state = run(
+      initialBooking('administrative', undefined, fromSession),
+      { type: 'select', field: 'specialty', option: cardiologia },
+      { type: 'select', field: 'doctor', option: { ...lucia, meta: { ...lucia.meta, currency: 'PEN' } } },
+    );
+
+    expect(describeBooking(state).summary).toMatchObject({ clinic: 'Sede Miraflores', price: 150, currency: 'PEN' });
+  });
+
+  it('sin la sede del personal, el resumen toma la sede del médico', () => {
+    const state = run(
+      initialBooking('administrative'),
+      { type: 'select', field: 'specialty', option: cardiologia },
+      { type: 'select', field: 'doctor', option: { ...lucia, meta: { ...lucia.meta, clinicName: 'Sede Miraflores', currency: 'PEN' } } },
+    );
+
+    expect(describeBooking(state).summary).toMatchObject({ clinic: 'Sede Miraflores', currency: 'PEN' });
+  });
+
   describe('selecciones preestablecidas', () => {
     it('un preset completo y consistente salta a elegir el cupo', () => {
       const pending = initialBooking('online', { clinicId: 1, specialtyId: 2, doctorId: 1 });
