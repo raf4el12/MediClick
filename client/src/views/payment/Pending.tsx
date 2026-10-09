@@ -27,8 +27,8 @@ export default function PaymentPendingView() {
       color="warning"
       icon="ri-time-line"
       title="Procesando pago…"
-      description="Mercado Pago está validando tu pago. Esta página se actualiza automáticamente; puedes cerrarla y te notificaremos cuando se confirme."
-      body={<CircularProgress size={28} sx={{ my: 1 }} />}
+      description="Mercado Pago está validando tu pago. Esta página se actualiza sola; puedes cerrarla y te avisaremos cuando se confirme."
+      body={<CircularProgress size={28} aria-label='Esperando la confirmación' />}
       actions={
         <>
           <Button

@@ -1,19 +1,26 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
 import CircularProgress from '@mui/material/CircularProgress';
-import Divider from '@mui/material/Divider';
 import LinearProgress from '@mui/material/LinearProgress';
 import Typography from '@mui/material/Typography';
 import { useRouter } from 'next/navigation';
-import { PaymentResultShell } from '@/views/payment/components/PaymentResultShell';
+import { formatPrice } from '@/views/booking/format';
+import { PaymentDetails, PaymentResultShell } from '@/views/payment/components/PaymentResultShell';
+import type { PaymentMethod } from '@/views/payment/types';
 import { usePaymentResult } from '@/views/payment/hooks/usePaymentResult';
 
 const REDIRECT_SECONDS = 5;
+
+const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  CASH: 'Efectivo',
+  CREDIT_CARD: 'Tarjeta de crédito',
+  DEBIT_CARD: 'Tarjeta de débito',
+  TRANSFER: 'Transferencia',
+  INSURANCE: 'Seguro',
+  OTHER: 'Otro',
+};
 
 export default function PaymentSuccessView() {
   const router = useRouter();
@@ -34,44 +41,38 @@ export default function PaymentSuccessView() {
       color="success"
       icon="ri-check-line"
       title="¡Pago confirmado!"
-      description="Tu cita ha sido confirmada exitosamente. Te enviaremos un recordatorio antes de la consulta."
+      description="Tu cita quedó confirmada. Te enviaremos un recordatorio antes de la consulta."
       body={
         <>
-          {loading && <CircularProgress size={28} sx={{ my: 1 }} />}
+          {loading && <CircularProgress size={28} aria-label='Cargando el pago' />}
 
           {!loading && payment && (
-            <Card variant="outlined" sx={{ width: '100%', borderRadius: 2, mt: 1 }}>
-              <CardContent sx={{ py: 1.5 }}>
-                <SummaryRow label="Monto pagado" value={`S/ ${payment.amount.toFixed(2)}`} valueWeight={600} />
-                <Divider sx={{ my: 0.5 }} />
-                <SummaryRow label="Método" value={payment.paymentMethod ?? '—'} valueWeight={500} />
-                {payment.gatewayId && (
-                  <>
-                    <Divider sx={{ my: 0.5 }} />
-                    <SummaryRow label="Operación" value={payment.gatewayId} mono />
-                  </>
-                )}
-              </CardContent>
-            </Card>
+            <PaymentDetails
+              items={[
+                { icon: 'ri-money-dollar-circle-line', label: 'Monto pagado', value: formatPrice(payment.amount, payment.currency) },
+                { icon: 'ri-bank-card-line', label: 'Medio de pago', value: payment.paymentMethod ? PAYMENT_METHOD_LABELS[payment.paymentMethod] : '—' },
+                ...(payment.gatewayId ? [{ icon: 'ri-hashtag', label: 'Operación', value: payment.gatewayId }] : []),
+              ]}
+            />
           )}
 
           {!loading && error && (
-            <Typography variant="caption" color="warning.main" textAlign="center">
+            <Typography variant='body2' color='text.secondary'>
               {error}
             </Typography>
           )}
 
-          <Box sx={{ width: '100%', mt: 1 }}>
-            <Typography variant="caption" color="text.secondary" textAlign="center" display="block" mb={0.5}>
-              Redirigiendo a tus citas en {countdown}s…
+          <div className='is-full'>
+            <Typography variant='body2' color='text.secondary' className='mbe-1'>
+              Te llevamos a tus citas en {countdown} s…
             </Typography>
             <LinearProgress
-              variant="determinate"
+              variant='determinate'
               value={((REDIRECT_SECONDS - countdown) / REDIRECT_SECONDS) * 100}
-              color="success"
-              sx={{ borderRadius: 1 }}
+              color='success'
+              aria-label='Tiempo hasta ir a tus citas'
             />
-          </Box>
+          </div>
         </>
       }
       actions={
@@ -89,32 +90,5 @@ export default function PaymentSuccessView() {
         </>
       }
     />
-  );
-}
-
-function SummaryRow({
-  label,
-  value,
-  valueWeight,
-  mono,
-}: {
-  label: string;
-  value: string;
-  valueWeight?: number;
-  mono?: boolean;
-}) {
-  return (
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 0.5 }}>
-      <Typography variant="caption" color="text.secondary">
-        {label}
-      </Typography>
-      <Typography
-        variant={mono ? 'caption' : 'body2'}
-        fontWeight={valueWeight}
-        fontFamily={mono ? 'monospace' : undefined}
-      >
-        {value}
-      </Typography>
-    </Box>
   );
 }
