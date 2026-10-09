@@ -11,6 +11,7 @@ import type {
   PatientAppointmentFilters,
   MyAppointmentsSummary,
   CancellationPreview,
+  CheckInQr,
 } from '@/views/appointments/types';
 
 export const appointmentsService = {
@@ -120,10 +121,9 @@ export const appointmentsService = {
     if (params.orderBy) queryParams.orderBy = params.orderBy;
     if (params.orderByMode) queryParams.orderByMode = params.orderByMode;
     if (filters?.status) queryParams.status = filters.status;
-    if (filters?.upcoming !== undefined) {
-      queryParams.upcoming = filters.upcoming;
-      queryParams.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    }
+    if (filters?.statuses?.length) queryParams.statuses = filters.statuses.join(',');
+    // "Próximas" se calcula en la zona de la sede de cada cita (UI-09).
+    if (filters?.upcoming !== undefined) queryParams.upcoming = filters.upcoming;
 
     const response = await api.get<PaginatedResponse<Appointment>>(
       '/appointments/my',
@@ -141,6 +141,12 @@ export const appointmentsService = {
 
   getMyAppointment: async (id: number): Promise<Appointment> => {
     const response = await api.get<Appointment>(`/appointments/my/${id}`);
+
+    return response.data;
+  },
+
+  getCheckInQr: async (id: number): Promise<CheckInQr> => {
+    const response = await api.get<CheckInQr>(`/appointments/${id}/check-in-qr`);
 
     return response.data;
   },

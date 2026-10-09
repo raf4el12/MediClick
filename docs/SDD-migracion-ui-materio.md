@@ -210,7 +210,7 @@ expectAccessible(page)                          // axe WCAG 2.0/2.1 A y AA
 | UI-08 ✅ | 1 Reserva | Pantalla de reserva con wizard, custom inputs, datepicker con días disponibles, pago y confirmación; reemplaza `patient/book` y `CreateAppointmentDialog` | — | UI-05, UI-07 | `tdd` |
 | UI-09 ✅ | 2 Portal | Resumen del paciente (`GET /appointments/my/summary`), sede en sus citas y `upcoming` calculado con la zona de cada sede | Sí | UI-10 | `mediclick-appointment-core` + `mediclick-tenant-safety` + `tdd` |
 | UI-10 ✅ | 2 Portal | Prototipo de Inicio y Mis citas | — | UI-03 | `prototype` |
-| UI-11 | 2 Portal | Inicio del paciente y Mis citas (cancelar, reagendar, pagar, reseñar) | — | UI-09, UI-10, UI-08 | `tdd` |
+| UI-11 ✅ | 2 Portal | Inicio del paciente y Mis citas (cancelar, reagendar, pagar, reseñar) | — | UI-09, UI-10, UI-08 | `tdd` |
 | UI-12 ✅ | 2 Portal | Comprobante de pago y receta imprimibles; comprobantes de todas las transacciones aprobadas de la cita | Sí | UI-03 | `mediclick-appointment-core` + `tdd` |
 | UI-29 ✅ | 2 Portal | Lista de espera del paciente: entradas y ofertas de cupo con fecha, médico, sede y vencimiento | Sí | UI-03 | `mediclick-appointment-core` + `tdd` |
 | UI-13 | 3 Jornada | `GET /agenda` por rango (§5.2) con alcance de sede, permiso `READ:AGENDA` en la matriz RBAC e indicadores del médico; reutiliza el cálculo de cupos compartido | Sí | — | `mediclick-appointment-core` + `mediclick-tenant-safety` + `tdd` |

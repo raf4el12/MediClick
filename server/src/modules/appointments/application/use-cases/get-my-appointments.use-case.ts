@@ -45,7 +45,10 @@ export class GetMyAppointmentsUseCase {
           upcomingFromDate(now),
         );
       const upcoming = upcomingAppointments(appointments, now).filter(
-        (a) => !filterDto.status || a.status === filterDto.status,
+        (a) =>
+          (!filterDto.status || a.status === filterDto.status) &&
+          (!filterDto.statuses?.length ||
+            filterDto.statuses.includes(a.status)),
       );
       return {
         totalRows: upcoming.length,
@@ -66,7 +69,10 @@ export class GetMyAppointmentsUseCase {
         orderBy: pagination.orderBy,
         orderByMode: pagination.orderByMode,
       },
-      { ...(filterDto.status && { status: filterDto.status }) },
+      {
+        ...(filterDto.status && { status: filterDto.status }),
+        ...(filterDto.statuses?.length && { statuses: filterDto.statuses }),
+      },
     );
 
     const rows: AppointmentResponseDto[] = result.rows.map(

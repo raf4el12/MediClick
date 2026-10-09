@@ -52,9 +52,11 @@ interface SlotStepProps {
   booking: Booking;
   /** Vuelve a elegir médico cuando el actual no tiene cupos. */
   onChooseOtherDoctor: () => void;
+  /** Ofrecer lista de espera y otro médico sin cupos (la reserva sí; reagendar no). */
+  allowAlternatives?: boolean;
 }
 
-export function SlotStep({ booking, onChooseOtherDoctor }: SlotStepProps) {
+export function SlotStep({ booking, onChooseOtherDoctor, allowAlternatives = true }: SlotStepProps) {
   const { state, view, options, loading, dispatch } = booking;
   const [month, setMonth] = useState<string | null>(null);
   const [waitlistOpen, setWaitlistOpen] = useState(false);
@@ -78,6 +80,10 @@ export function SlotStep({ booking, onChooseOtherDoctor }: SlotStepProps) {
   });
 
   if (loading.days) return <Typography color='text.secondary'>Buscando días con cupos…</Typography>;
+
+  if (view.notice === 'no-slots' && !allowAlternatives) {
+    return <Alert severity='info'>{state.doctor?.label} no tiene cupos en los próximos dos meses.</Alert>;
+  }
 
   if (view.notice === 'no-slots') {
     return (

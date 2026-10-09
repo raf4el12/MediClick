@@ -3,6 +3,7 @@ import type { IAppointmentRepository } from '../../domain/repositories/appointme
 import type { IPatientRepository } from '../../../patients/domain/repositories/patient.repository.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { LIMA, appointment } from './testing/patient-appointment.builder.js';
+import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
 
 describe('GetMyAppointmentsUseCase', () => {
   let useCase: GetMyAppointmentsUseCase;
@@ -75,6 +76,18 @@ describe('GetMyAppointmentsUseCase', () => {
     expect(appointmentRepository.findPatientSummarySource).toHaveBeenCalledWith(
       7,
       new Date('2026-10-19T00:00:00.000Z'),
+    );
+  });
+
+  it('filtra por varios estados a la vez (Canceladas incluye inasistencias)', async () => {
+    await useCase.execute(70, new PaginationImproved(), {
+      statuses: [AppointmentStatus.CANCELLED, AppointmentStatus.NO_SHOW],
+    });
+
+    expect(appointmentRepository.findByPatientPaginated).toHaveBeenCalledWith(
+      7,
+      expect.anything(),
+      { statuses: [AppointmentStatus.CANCELLED, AppointmentStatus.NO_SHOW] },
     );
   });
 });
