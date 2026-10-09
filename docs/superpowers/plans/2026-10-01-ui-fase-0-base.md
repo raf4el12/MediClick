@@ -369,7 +369,7 @@ estado inicial pisaba la cookie de ajustes), con prueba `tests/e2e/theme-mode.sp
 
 ---
 
-## UI-04 — Páginas de acceso y de error
+## UI-04 — Páginas de acceso y de error ✅
 
 **Rama:** `feat/ui-04-paginas-acceso` · **Skills:** `tdd` · **Depende de:** UI-03
 
