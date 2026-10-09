@@ -66,7 +66,9 @@ export function LoginForm() {
   useEffect(() => {
     if (loginDispatched.current && isAuthenticated && user) {
       const from = searchParams.get('from');
-      router.push(from || homePathFor(actorFor(user.role)));
+      // Solo rutas de la propia app: una URL absoluta, `//host` o `/\host` abrirían una redirección externa.
+      const safeFrom = from && /^\/(?![/\\])/.test(from) ? from : null;
+      router.push(safeFrom ?? homePathFor(actorFor(user.role)));
     }
   }, [isAuthenticated, user, router, searchParams]);
 
