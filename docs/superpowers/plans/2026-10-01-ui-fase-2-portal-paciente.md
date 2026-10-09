@@ -52,7 +52,7 @@ del contrato se confirman con el prototipo.
 
 ---
 
-## UI-10 — Prototipo de Inicio y Mis citas
+## UI-10 — Prototipo de Inicio y Mis citas ✅
 
 **Rama:** `prototype/ui-10-portal-paciente` desde `origin/staging`. **No se mergea**; las
 decisiones entran por un PR de documentación.
@@ -89,13 +89,13 @@ oferta de cupo vigente.
 
 ### Steps
 
-- [ ] **Step 1:** crear la rama; anotar "Tres variantes de Inicio y de Mis citas, conmutables con `?variant=`".
-- [ ] **Step 2:** crear `client/src/views/patient/dashboard/prototype/*` y
+- [x] **Step 1:** crear la rama; anotar "Tres variantes de Inicio y de Mis citas, conmutables con `?variant=`".
+- [x] **Step 2:** crear `client/src/views/patient/dashboard/prototype/*` y
   `client/src/views/patient/appointments/prototype/*` con 3 variantes estructuralmente distintas cada uno
   y el `PrototypeSwitcher` oculto en producción.
-- [ ] **Step 3:** `cd client && pnpm dev`; recorrer con el usuario en escritorio y móvil.
-- [ ] **Step 4:** commit y push de la rama del prototipo.
-- [ ] **Step 5:** PR `docs/ui-10-decisiones` contra `staging` que complete "Decisiones de UI-10" y
+- [x] **Step 3:** `cd client && pnpm dev`; recorrer con el usuario en escritorio y móvil.
+- [x] **Step 4:** commit y push de la rama del prototipo.
+- [x] **Step 5:** PR `docs/ui-10-decisiones` contra `staging` que complete "Decisiones de UI-10" y
   el contrato final de UI-09.
 
 **Criterio de cierre:** las 11 preguntas respondidas, variantes elegidas, contrato de UI-09
@@ -103,7 +103,29 @@ cerrado y toda regla de negocio nueva enumerada.
 
 ### Decisiones de UI-10
 
-_Pendiente de completar al cerrar el prototipo._
+Cerrado el 2026-10-09. Fuente primaria: rama `prototype/ui-10-portal-paciente` (commit `6b51d70`):
+`/patient?variant=A|B|C` y `/patient/appointments?variant=A|B|C`. La comparación con capturas se
+revisó con el usuario.
+
+| # | Pregunta | Decisión |
+|---|---|---|
+| 1 | Indicadores de Inicio | Variante **A (tablero)**: saludo con "Reservar cita", indicadores **próximas**, **por pagar** (con el plazo más cercano), **reseñas pendientes** y **completadas**. Una oferta de cupo vigente se muestra como aviso (sale de `GET /waitlist/my-offers`, no del resumen). |
+| 2 | Próxima cita | Tarjeta destacada con sede, dirección, estado y pago, y las acciones que permita la matriz (la principal destacada): pagar, código de llegada, reagendar, cancelar, comprobante y cómo llegar. |
+| 3 | Código QR de llegada | **Sí, en un diálogo** desde una cita confirmada (`GET /appointments/:id/check-in-qr`). Suma una librería de QR cuyo `peerDependencies` admita `react@^19`. |
+| 4 | Mis citas | Variante **A**: tabla al estilo `InvoiceListTable` de Materio con fecha y hora local de cada sede, especialidad y médico, sede, estado y pago, total y menú de acciones; en celular, filas compactas. |
+| 5 | Filtros | **Pestañas** Próximas / Todas / Completadas / Canceladas (Canceladas incluye inasistencias). |
+| 6 | Detalle de una cita | **Panel lateral** con datos, montos, acciones e historial. |
+| 7 | Acciones por estado | Matriz de UI-11 Task 1 con `checkInQr` en las confirmadas futuras. Menú en cada fila y botones en el panel. |
+| 8 | Aviso de penalización | **Con el monto exacto** antes de confirmar. Necesita un endpoint de lectura nuevo (UI-09, Task 4) que reutilice el mismo cálculo de la cancelación. **No cambia ninguna regla**: expone la que ya aplica `CancelAppointmentUseCase`. |
+| 9 | Reagendar | **Diálogo con el paso de cupo** de la reserva (UI-08), limitado al mismo médico y especialidad. |
+| 10 | Pago abandonado | **Se mantiene la regla**: con una transacción `PENDING`, `createPreference` rechaza el reintento hasta que vence el plazo. La interfaz muestra "Tu pago está en proceso" con el plazo en lugar de un error genérico. Cambiarla iría en un ítem propio. |
+| 11 | Lista de espera | **Entrada propia del menú**, como hoy (`/patient/waitlist`); la rediseña UI-29. |
+
+**Reglas de negocio nuevas (D7):** ninguna, así que `docs/domain/APPOINTMENT-CORE.md` no cambia.
+
+**Ajustes:** UI-09 suma la Task 4 (vista previa de la cancelación); UI-11 crea `CheckInQrDialog`
+con su dependencia, usa la vista previa en `CancelAppointmentDialog` y traduce el rechazo por
+transacción pendiente.
 
 ---
 
@@ -115,7 +137,7 @@ _Pendiente de completar al cerrar el prototipo._
 hora local de la sede de cada cita), `mediclick-tenant-safety` (paciente multi-sede: el paciente se
 resuelve por `userId`, nunca por un id de la petición), `tdd` y `mediclick-core-review` al cierre.
 
-### Contrato (provisional hasta UI-10)
+### Contrato (cerrado por UI-10)
 
 ```
 GET /appointments/my/summary
@@ -186,6 +208,40 @@ Una prueba por ciclo (`cd server && pnpm test -- get-my-appointments-summary --r
   con la zona de cada sede) para el filtro `upcoming` y ordenar por ese instante. Así la pestaña
   "Próximas" de UI-11 y el resumen comparten la misma definición.
 
+### Task 4: Vista previa de la cancelación (TDD)
+
+Decisión 8 de UI-10: el paciente ve el monto exacto de la penalización antes de confirmar.
+
+```
+GET /appointments/:id/cancellation-preview
+@Auth() + @RequirePermissions('UPDATE', 'APPOINTMENTS')   // el mismo permiso que cancelar
+
+200 {
+  "fee": 45,                         // 0 si no corresponde penalización
+  "currency": "PEN",
+  "freeCancellationWindowHours": 24,
+  "hoursUntilAppointment": 3.5,
+  "cancellable": true
+}
+404  cita inexistente o de otro paciente (sin revelar existencia)
+```
+
+**Files:**
+- Create: `server/src/modules/appointments/application/services/cancellation-fee.calculator.ts`
+  (o extraer a `appointment-cancellation.service.ts`): el cálculo que hoy vive dentro de
+  `CancelAppointmentUseCase` (horas hasta la cita en la zona de la sede, fondos cobrados, ventana
+  de la especialidad o de la sede y fee), para que la vista previa y la cancelación no diverjan.
+- Create: `get-cancellation-preview.use-case.ts` + spec
+- Modify: `cancel-appointment.use-case.ts` para usar el cálculo extraído (sus pruebas no cambian)
+
+Una prueba por ciclo (`cd server && pnpm test -- cancellation-preview --runInBand`):
+
+- [ ] 1. Cita pagada fuera de la ventana gratuita → `fee: 0`.
+- [ ] 2. Cita pagada dentro de la ventana → `fee` igual al que cobraría `CancelAppointmentUseCase` para la misma cita y el mismo instante (paridad).
+- [ ] 3. Cita sin fondos cobrados → `fee: 0`.
+- [ ] 4. Cita `COMPLETED`, `CANCELLED` o en curso → `cancellable: false`.
+- [ ] 5. Cita de otro paciente → `NotFoundException`.
+
 ### Task 3: Controlador, cliente y verificación
 
 **Files:**
@@ -231,8 +287,11 @@ Rutas de la v5 local (`/home/rafael/materio-mui-nextjs-admin-template-ts/full-ve
   `components/{AppointmentList,AppointmentCard,AppointmentDetail,CancelAppointmentDialog,RescheduleAppointmentDialog}.tsx`
 - Modify: `client/src/views/reviews/components/ReviewDialog.tsx` → estética Materio, mismo contrato
 - Modify: `client/src/app/(patient)/patient/page.tsx`, `client/src/app/(patient)/patient/appointments/page.tsx`
-- Create (solo si UI-10 lo decide): `components/CheckInQrDialog.tsx` + dependencia de QR cuyo
-  `peerDependencies` admita `react@^19`
+- Create: `components/CheckInQrDialog.tsx` + dependencia de QR cuyo `peerDependencies` admita
+  `react@^19` (UI-10: QR sí)
+- `CancelAppointmentDialog` consume `GET /appointments/:id/cancellation-preview` (UI-09, Task 4) y
+  muestra el monto exacto antes de confirmar; un rechazo de `POST /payments/preferences` por
+  transacción pendiente se muestra como "Tu pago está en proceso" con el plazo (UI-10, decisión 10).
 - Create: `client/tests/e2e/patient-home.spec.ts`, `client/tests/e2e/patient-appointments.spec.ts`
 
 ### Interfaces
@@ -257,7 +316,7 @@ servidor para no ofrecer acciones que el backend rechazará:
 - [ ] 1. `PENDING` + pago `PENDING` con plazo vigente → `pay`, `reschedule`, `cancel`.
 - [ ] 2. `PENDING` con plazo vencido → no ofrece `pay`.
 - [ ] 3. `CONFIRMED` + `PARTIAL` → `pay` (saldo), `reschedule`, `cancel`.
-- [ ] 4. `CONFIRMED` + `PAID` → `reschedule`, `cancel`, `receipt` (y `checkInQr` si UI-10 lo decide).
+- [ ] 4. `CONFIRMED` + `PAID` → `checkInQr`, `reschedule`, `cancel`, `receipt` (UI-10: QR sí).
 - [ ] 5. Una cita cuyo inicio ya pasó en la zona de su sede no ofrece `reschedule` ni `cancel`.
 - [ ] 6. `COMPLETED` sin reseña → `review`, `prescription`; reseñada → sin `review`.
 - [ ] 7. `CANCELLED` o `NO_SHOW` → solo `receipt` si hubo un pago aprobado.
