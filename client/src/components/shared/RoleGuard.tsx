@@ -17,7 +17,7 @@ interface RoleGuardProps {
 
 /**
  * Guarda de acceso basado en permisos.
- * Redirige al usuario si no tiene al menos uno de los permisos requeridos.
+ * Sin al menos uno de los permisos requeridos, redirige a `/401`.
  */
 export function RoleGuard({ permissions: required, children }: RoleGuardProps) {
   const router = useRouter();
@@ -27,8 +27,7 @@ export function RoleGuard({ permissions: required, children }: RoleGuardProps) {
 
   useEffect(() => {
     if (roleName && !hasAccess) {
-      const target = roleName === 'PATIENT' ? '/patient' : '/dashboard';
-      router.replace(target);
+      router.replace('/401');
     }
   }, [roleName, hasAccess, router]);
 
