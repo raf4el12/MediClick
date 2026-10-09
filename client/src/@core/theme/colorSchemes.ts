@@ -98,11 +98,13 @@ const colorSchemes = (skin: Skin): Theme['colorSchemes'] => {
           activeChannel: 'var(--mui-mainColorChannels-light)',
           selectedChannel: 'var(--mui-mainColorChannels-light)'
         },
+        // El texto de los Alert estándar va en text-primary: los tonos de estado de
+        // Materio no llegan a 4.5:1 sobre su propio fondo; el ícono conserva el color.
         Alert: {
-          errorColor: 'var(--mui-palette-error-main)',
-          warningColor: 'var(--mui-palette-warning-main)',
-          infoColor: 'var(--mui-palette-info-main)',
-          successColor: 'var(--mui-palette-success-main)',
+          errorColor: 'var(--mui-palette-text-primary)',
+          warningColor: 'var(--mui-palette-text-primary)',
+          infoColor: 'var(--mui-palette-text-primary)',
+          successColor: 'var(--mui-palette-text-primary)',
           errorStandardBg: 'var(--mui-palette-error-lightOpacity)',
           warningStandardBg: 'var(--mui-palette-warning-lightOpacity)',
           infoStandardBg: 'var(--mui-palette-info-lightOpacity)',
@@ -257,11 +259,13 @@ const colorSchemes = (skin: Skin): Theme['colorSchemes'] => {
           activeChannel: 'var(--mui-mainColorChannels-dark)',
           selectedChannel: 'var(--mui-mainColorChannels-dark)'
         },
+        // El texto de los Alert estándar va en text-primary: los tonos de estado de
+        // Materio no llegan a 4.5:1 sobre su propio fondo; el ícono conserva el color.
         Alert: {
-          errorColor: 'var(--mui-palette-error-main)',
-          warningColor: 'var(--mui-palette-warning-main)',
-          infoColor: 'var(--mui-palette-info-main)',
-          successColor: 'var(--mui-palette-success-main)',
+          errorColor: 'var(--mui-palette-text-primary)',
+          warningColor: 'var(--mui-palette-text-primary)',
+          infoColor: 'var(--mui-palette-text-primary)',
+          successColor: 'var(--mui-palette-text-primary)',
           errorStandardBg: 'var(--mui-palette-error-lightOpacity)',
           warningStandardBg: 'var(--mui-palette-warning-lightOpacity)',
           infoStandardBg: 'var(--mui-palette-info-lightOpacity)',
