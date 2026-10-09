@@ -11,6 +11,8 @@ import {
   buildPermissionCatalog,
   permissionKey,
 } from '../../../../prisma/rbac-policy.js';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 /**
  * SDD-012: la matriz RBAC vive en un único lugar (`rbac-policy.ts`).
@@ -201,6 +203,21 @@ describe('rbac-policy (fuente única declarativa)', () => {
           subject: PermissionSubject.PATIENTS,
         }),
       ).toBe(false); // PATIENTS solo tiene CREATE/READ/UPDATE, no MANAGE
+    });
+  });
+  describe('copia del cliente', () => {
+    it('client/tests/fixtures/role-permissions.json coincide con ROLE_PERMISSIONS', () => {
+      // El cliente no puede importar esta política (depende de enums de Prisma):
+      // usa una copia en JSON para su navegación y sus pruebas. Si esto falla,
+      // regenerarla desde ROLE_PERMISSIONS.
+      const copy = JSON.parse(
+        readFileSync(
+          join(__dirname, '../../../../../client/tests/fixtures/role-permissions.json'),
+          'utf8',
+        ),
+      ) as Record<string, string[]>;
+
+      expect(copy).toEqual(ROLE_PERMISSIONS);
     });
   });
 });

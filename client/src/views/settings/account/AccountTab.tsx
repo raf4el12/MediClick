@@ -18,8 +18,7 @@ import { useAppDispatch } from '@/redux-store/hooks';
 import { updateUserProfile } from '@/redux-store/slices/auth';
 import { profileSchema, type ProfileFormValues } from '@/views/profile/functions/profile.schema';
 import { InternationalPhoneInput } from '@/components/shared/InternationalPhoneInput';
-import { useSnackbar } from '@/hooks/useSnackbar';
-import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
+import { notify } from '@/utils/notify';
 import type { ProfileResponse, UpdateProfileData } from '@/types/profile.types';
 
 const roleLabels: Record<string, string> = {
@@ -36,7 +35,6 @@ interface AccountTabProps {
 export default function AccountTab({ userData }: AccountTabProps) {
     const dispatch = useAppDispatch();
     const queryClient = useQueryClient();
-    const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
 
     const profileValues: ProfileFormValues = {
         name: userData.profile?.name ?? '',
@@ -80,10 +78,10 @@ export default function AccountTab({ userData }: AccountTabProps) {
                 country: updatedUser.profile?.country ?? '',
             });
 
-            showSnackbar('Perfil actualizado correctamente', 'success');
+            notify('Perfil actualizado correctamente', 'success');
         },
         onError: () => {
-            showSnackbar('Error al actualizar el perfil', 'error');
+            notify('Error al actualizar el perfil', 'error');
         },
     });
 
@@ -309,7 +307,6 @@ export default function AccountTab({ userData }: AccountTabProps) {
                 </Box>
             </Card>
 
-            <SuccessSnackbar snackbar={snackbar} onClose={closeSnackbar} />
         </>
     );
 }

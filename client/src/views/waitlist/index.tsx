@@ -11,8 +11,7 @@ import Skeleton from '@mui/material/Skeleton';
 import Alert from '@mui/material/Alert';
 import CircularProgress from '@mui/material/CircularProgress';
 import { PageHeader } from '@/components/shared/PageHeader';
-import { useSnackbar } from '@/hooks/useSnackbar';
-import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
+import { notify } from '@/utils/notify';
 import { extractApiError } from '@/utils/extractApiError';
 import { waitlistService } from '@/services/waitlist.service';
 import { paymentsService } from '@/services/payments.service';
@@ -25,7 +24,6 @@ import type { JoinWaitlistFormValues } from './functions/waitlist.schema';
 
 export default function WaitlistView() {
   const queryClient = useQueryClient();
-  const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -67,7 +65,7 @@ export default function WaitlistView() {
     onSuccess: () => {
       setDialogOpen(false);
       setJoinError(null);
-      showSnackbar('Te uniste a la lista de espera', 'success');
+      notify('Te uniste a la lista de espera', 'success');
       void queryClient.invalidateQueries({ queryKey: ['waitlist', 'my-entries'] });
     },
     onError: (err) => {
@@ -78,22 +76,22 @@ export default function WaitlistView() {
   const leaveMutation = useMutation({
     mutationFn: (entryId: number) => waitlistService.leave(entryId),
     onSuccess: () => {
-      showSnackbar('Saliste de la lista de espera', 'success');
+      notify('Saliste de la lista de espera', 'success');
       void queryClient.invalidateQueries({ queryKey: ['waitlist', 'my-entries'] });
     },
     onError: (err) => {
-      showSnackbar(extractApiError(err, 'No se pudo salir de la lista').message, 'error');
+      notify(extractApiError(err, 'No se pudo salir de la lista').message, 'error');
     },
   });
 
   const rejectMutation = useMutation({
     mutationFn: (offerId: number) => waitlistService.rejectOffer(offerId),
     onSuccess: () => {
-      showSnackbar('Oferta rechazada', 'info');
+      notify('Oferta rechazada', 'info');
       refetchAll();
     },
     onError: (err) => {
-      showSnackbar(extractApiError(err, 'No se pudo rechazar la oferta').message, 'error');
+      notify(extractApiError(err, 'No se pudo rechazar la oferta').message, 'error');
       refetchAll();
     },
   });
@@ -107,7 +105,7 @@ export default function WaitlistView() {
         window.location.href = preference.initPoint;
       } catch (err) {
         setRedirecting(false);
-        showSnackbar(
+        notify(
           extractApiError(err, 'La cita se reservó pero no se pudo iniciar el pago').message,
           'error',
         );
@@ -115,7 +113,7 @@ export default function WaitlistView() {
     },
     onError: (err) => {
       const { message, status } = extractApiError(err, 'No se pudo aceptar la oferta');
-      showSnackbar(
+      notify(
         status === 409 ? 'La oferta ya no está disponible' : message,
         'error',
       );
@@ -257,7 +255,6 @@ export default function WaitlistView() {
         error={joinError}
       />
 
-      <SuccessSnackbar snackbar={snackbar} onClose={closeSnackbar} />
     </Box>
   );
 }

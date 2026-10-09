@@ -1,37 +1,67 @@
-import type { Components, Theme } from '@mui/material/styles';
+// MUI Imports
+import type { Theme } from '@mui/material/styles'
 
-const dialog = (): Components<Theme> => ({
+// Type Imports
+import type { Skin } from '@core/types'
+
+const dialog = (skin: Skin): Theme['components'] => ({
   MuiDialog: {
     styleOverrides: {
-      paper: {
-        borderRadius: 16,
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
-      },
-    },
+      paper: ({ theme }) => ({
+        ...(skin !== 'bordered'
+          ? {
+              boxShadow: 'var(--mui-customShadows-xl)'
+            }
+          : {
+              boxShadow: 'none'
+            }),
+        [theme.breakpoints.down('sm')]: {
+          '&:not(.MuiDialog-paperFullScreen)': {
+            margin: theme.spacing(6)
+          }
+        }
+      })
+    }
   },
   MuiDialogTitle: {
-    styleOverrides: {
-      root: {
-        fontSize: '1.125rem',
-        fontWeight: 600,
-        padding: '20px 24px',
-      },
+    defaultProps: {
+      variant: 'h5'
     },
+    styleOverrides: {
+      root: ({ theme }) => ({
+        padding: theme.spacing(5),
+        '& + .MuiDialogActions-root': {
+          paddingTop: 0
+        }
+      })
+    }
   },
   MuiDialogContent: {
     styleOverrides: {
-      root: {
-        padding: '8px 24px 20px',
-      },
-    },
+      root: ({ theme }) => ({
+        padding: theme.spacing(5),
+        '& + .MuiDialogContent-root, & + .MuiDialogActions-root': {
+          paddingTop: 0
+        }
+      })
+    }
   },
   MuiDialogActions: {
     styleOverrides: {
-      root: {
-        padding: '12px 24px 20px',
-      },
-    },
-  },
-});
+      root: ({ theme }) => ({
+        padding: theme.spacing(5),
+        '& .MuiButtonBase-root:not(:first-of-type)': {
+          marginInlineStart: theme.spacing(4)
+        },
+        '&:where(.dialog-actions-dense)': {
+          padding: theme.spacing(2.5),
+          '& .MuiButton-text': {
+            paddingInline: theme.spacing(2.5)
+          }
+        }
+      })
+    }
+  }
+})
 
-export default dialog;
+export default dialog

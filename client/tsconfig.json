@@ -22,7 +22,12 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@core/*": ["./src/@core/*"],
+      "@layouts/*": ["./src/@layouts/*"],
+      "@menu/*": ["./src/@menu/*"],
+      "@configs/*": ["./src/configs/*"],
+      "@components/*": ["./src/components/*"]
     }
   },
   "include": [

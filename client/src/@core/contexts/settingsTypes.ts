@@ -1,3 +1,5 @@
+import type { Layout, Skin } from '@core/types';
+
 export type FontSize = 'normal' | 'large' | 'xlarge';
 export type ColorBlindMode =
   | 'none'
@@ -8,9 +10,9 @@ export type ColorBlindMode =
 
 export interface Settings {
   mode: 'light' | 'dark' | 'system';
-  skin: 'default' | 'shadow';
+  skin: Skin;
   semiDark: boolean;
-  layout: 'vertical' | 'collapsed';
+  layout: Layout;
   navbarContentWidth: 'compact' | 'wide';
   contentWidth: 'compact' | 'wide';
   footerContentWidth: 'compact' | 'wide';

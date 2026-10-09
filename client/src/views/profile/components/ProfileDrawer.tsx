@@ -17,8 +17,7 @@ import FormHelperText from '@mui/material/FormHelperText';
 import { Controller } from 'react-hook-form';
 import { useProfileForm } from '../hooks/useProfileForm';
 import { InternationalPhoneInput } from '@/components/shared/InternationalPhoneInput';
-import { useSnackbar } from '@/hooks/useSnackbar';
-import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
+import { notify } from '@/utils/notify';
 
 interface ProfileDrawerProps {
   open: boolean;
@@ -26,13 +25,12 @@ interface ProfileDrawerProps {
 }
 
 export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
-  const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
 
   const { form, isLoadingProfile, isSubmitting, submitError, handleSubmit } =
     useProfileForm({
       open,
       onSuccess: () => {
-        showSnackbar('Perfil actualizado correctamente', 'success');
+        notify('Perfil actualizado correctamente', 'success');
       },
     });
 
@@ -239,7 +237,6 @@ export function ProfileDrawer({ open, onClose }: ProfileDrawerProps) {
         )}
       </Drawer>
 
-      <SuccessSnackbar snackbar={snackbar} onClose={closeSnackbar} />
     </>
   );
 }

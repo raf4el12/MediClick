@@ -6,24 +6,22 @@ import { useRoles } from './hooks/useRoles';
 import { RolesTable } from './components/RolesTable';
 import { RoleFormDrawer } from './components/RoleFormDrawer';
 import { PermissionsDialog } from './components/PermissionsDialog';
-import { useSnackbar } from '@/hooks/useSnackbar';
-import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
+import { notify } from '@/utils/notify';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import type { RoleDto } from './types';
 
 export default function RolesView() {
   const controller = useRoles();
-  const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
   const [viewRole, setViewRole] = useState<RoleDto | null>(null);
 
   const handleSuccess = () => {
     controller.refreshData();
-    showSnackbar('Operación realizada exitosamente', 'success');
+    notify('Operación realizada exitosamente', 'success');
   };
 
   const handleDelete = async () => {
     await controller.handleDelete();
-    showSnackbar('Rol eliminado exitosamente', 'success');
+    notify('Rol eliminado exitosamente', 'success');
   };
 
   return (
@@ -64,7 +62,6 @@ export default function RolesView() {
         onCancel={() => controller.setDeleteTarget(null)}
       />
 
-      <SuccessSnackbar snackbar={snackbar} onClose={closeSnackbar} />
     </Grid>
   );
 }

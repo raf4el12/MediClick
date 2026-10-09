@@ -53,6 +53,9 @@ export const SettingsProvider = ({ children, mode }: SettingsProviderProps) => {
 
   // Always initialize with default settings to match SSR output and avoid hydration mismatch
   const [settingsState, setSettingsState] = useState<Settings>(initialSettings);
+  // Hasta leer la cookie no se escribe: si no, el estado inicial pisaba la
+  // preferencia guardada (p. ej. el modo oscuro se perdía al recargar).
+  const [hydrated, setHydrated] = useState(false);
 
   // Hydrate from cookie after mount (client-only) to restore user preferences
   useEffect(() => {
@@ -67,14 +70,17 @@ export const SettingsProvider = ({ children, mode }: SettingsProviderProps) => {
             (sanitized as Record<string, unknown>)[k] = v;
           }
         }
+        // Skin 'shadow' (antes de Materio) equivale al 'default' de Materio.
+        if ((sanitized.skin as string) === 'shadow') sanitized.skin = 'default';
         return { ...prev, ...sanitized };
       });
     }
+    setHydrated(true);
   }, []);
 
   useEffect(() => {
-    writeCookie(settingsState);
-  }, [settingsState]);
+    if (hydrated) writeCookie(settingsState);
+  }, [hydrated, settingsState]);
 
   const updateSettings = useCallback((newSettings: Partial<Settings>) => {
     setSettingsState((prev) => ({ ...prev, ...newSettings }));

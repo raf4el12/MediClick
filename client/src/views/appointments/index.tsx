@@ -11,8 +11,7 @@ import Box from '@mui/material/Box';
 import { PageHeader } from '@/components/shared/PageHeader';
 import { useAppointments } from './hooks/useAppointments';
 import { AppointmentsTable } from './components/AppointmentsTable';
-import { useSnackbar } from '@/hooks/useSnackbar';
-import { SuccessSnackbar } from '@/components/shared/SuccessSnackbar';
+import { notify } from '@/utils/notify';
 
 const DynamicLoading = () => (
   <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
@@ -40,11 +39,10 @@ const RescheduleAppointmentDialog = dynamic(
 export default function AppointmentsView() {
   const controller = useAppointments();
   const hasDetail = !!controller.detailAppointment;
-  const { snackbar, showSnackbar, closeSnackbar } = useSnackbar();
 
   const handleRefreshWithToast = () => {
     controller.refreshData();
-    showSnackbar('Operación realizada exitosamente', 'success');
+    notify('Operación realizada exitosamente', 'success');
   };
 
   return (
@@ -113,7 +111,6 @@ export default function AppointmentsView() {
         onConfirm={controller.handleReschedule}
       />
 
-      <SuccessSnackbar snackbar={snackbar} onClose={closeSnackbar} />
 
       <Snackbar
         open={!!controller.actionError}

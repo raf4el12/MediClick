@@ -64,6 +64,8 @@
   border-start-start-radius: 50px;
   border-end-start-radius: 50px;
   transition: filter 200ms ease;
+  border: 0;
+  font: inherit;
 }
 
 .toggler:hover {
@@ -190,6 +192,7 @@
 }
 
 .primaryColor {
+  display: block;
   block-size: 100%;
   inline-size: 100%;
   border-radius: var(--border-radius);
@@ -199,4 +202,24 @@
   border: 0;
   border-block-start: 1px solid var(--border-color);
   margin: 0;
+}
+.iconButton {
+  display: flex;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+button.itemWrapper,
+button.primaryColorWrapper {
+  background: none;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+}
+
+button.primaryColorWrapper {
+  padding: 8px;
 }

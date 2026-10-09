@@ -1,16 +1,14 @@
-import type { Components, Theme } from '@mui/material/styles';
+// MUI Imports
+import type { Theme } from '@mui/material/styles'
 
-const paper = (): Components<Theme> => ({
+const paper: Theme['components'] = {
   MuiPaper: {
     styleOverrides: {
       root: {
-        backgroundImage: 'none',
-      },
-      rounded: {
-        borderRadius: 12,
-      },
-    },
-  },
-});
+        backgroundImage: 'none'
+      }
+    }
+  }
+}
 
-export default paper;
+export default paper

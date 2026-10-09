@@ -1,9 +1,9 @@
-# SDD — Migración de la interfaz de MediClick a Materio v6
+# SDD — Migración de la interfaz de MediClick a Materio
 
 - **Estado:** En implementación; los ítems terminados llevan ✅ en la tabla del §7
 - **Fecha:** 2026-10-01
 - **Alcance:** cliente Next.js completo y los endpoints de backend que piden los flujos rediseñados
-- **Decisión de base:** [ADR-0003](./adr/0003-materio-v6-sistema-de-diseno.md)
+- **Decisión de base:** [ADR-0003](./adr/0003-materio-sistema-de-diseno.md)
 - **Investigación:** [`docs/research/2026-10-01-materio-stack-compatibility.md`](./research/2026-10-01-materio-stack-compatibility.md)
 - **Fuentes de verdad:** [`CONTEXT.md`](../CONTEXT.md),
   [`APPOINTMENT-CORE.md`](./domain/APPOINTMENT-CORE.md), código, tests y
@@ -16,7 +16,7 @@ El cliente es hoy un derivado recortado de Materio: conserva `@core` y `@layouts
 menú propio de 502 líneas, 8 de los 37 overrides de tema, ningún uso de Tailwind y flujos que
 crecieron como pantallas monolíticas (`patient/book` 660 líneas, `CreateAppointmentDialog` 881,
 `patient/appointments` 746, `AppointmentWorkspaceDialog` 600). Este SDD reemplaza toda la interfaz
-por Materio v6.0.2 y rediseña los siete flujos principales en 8 fases y 31 ítems `UI-NN`.
+por Materio (v5.0.0 adaptada a MUI 7 / React 19, ADR-0003) y rediseña los siete flujos principales en 8 fases y 31 ítems `UI-NN`.
 
 La migración no es solo visual. Los flujos rediseñados necesitan datos que la API REST no expone
 hoy (cupos por rango, agenda agregada, indicadores, perfil público), así que cada fase incluye los
@@ -45,7 +45,7 @@ endpoints que su interfaz consume, entregados antes que la pantalla.
 
 ### 3.1 Objetivos
 
-- Una sola base visual: Materio v6 con Tailwind 4, tema MUI con variables CSS y primario
+- Una sola base visual: Materio v5 adaptada con Tailwind 3.4, tema MUI con variables CSS y primario
   `#7E4EE6` que cumple WCAG AA.
 - Layout por actor: vertical para el personal de sede; horizontal con barra inferior móvil para
   el portal del paciente.
@@ -67,8 +67,8 @@ endpoints que su interfaz consume, entregados antes que la pantalla.
 
 | # | Decisión | Origen |
 |---|---|---|
-| D1 | Base Materio v6.0.2, descomprimida en `~/materio-v6/`; la v5 local solo como referencia | ADR-0003 |
-| D2 | Tailwind 4 + `tailwindcss-logical@5`; Tailwind solo para layout y espaciado, color y estado por tema MUI | ADR-0003 |
+| D1 | Base Materio v5.0.0 local (`~/materio-mui-nextjs-admin-template-ts/full-version`), adaptada al copiar cada archivo (Grid2→Grid, sin i18n/next-auth/valibot); la v6 no está disponible | ADR-0003 (enmienda 2026-10-06) |
+| D2 | Tailwind 3.4 (LTS) + `tailwindcss-logical@3` + plugin propio de Materio; Tailwind solo para layout y espaciado, color y estado por tema MUI | ADR-0003 (enmienda 2026-10-06) |
 | D3 | Primario `#7E4EE6`; los presets del customizer se reemplazan por presets AA | ADR-0003 |
 | D4 | Gráficos con recharts 3; ApexCharts excluido | ADR-0003 |
 | D5 | Se rediseñan los flujos, no solo su aspecto | Usuario |
@@ -180,7 +180,7 @@ expectAccessible(page)                          // axe WCAG 2.0/2.1 A y AA
 - **Accesibilidad:** cada pantalla migrada pasa axe WCAG 2.0/2.1 A y AA y conserva las opciones
   del customizer de accesibilidad.
 - **Estilos:** Tailwind solo para layout y espaciado; color, tipografía y estado por el tema MUI.
-  Como Materio v6, Tailwind va sin preflight y con utilidades `!important`, sin `enableCssLayer`;
+  Como en Materio, Tailwind va sin preflight y con `important: '#__next'`, sin `enableCssLayer`;
   el reset sin capa de `globals.css` se elimina.
 - **Dependencias:** versiones fijadas según la investigación (`@mui/lab@7.0.1-beta.21`,
   `react-datepicker@^7.6`, `react-toastify@10`); nunca `@latest` de `@mui/*` (apunta a 9.x).
@@ -200,10 +200,10 @@ expectAccessible(page)                          // axe WCAG 2.0/2.1 A y AA
 
 | ID | Fase | Entrega y criterio de aceptación | Backend | Depende de | Skills |
 |---|---|---|---|---|---|
-| UI-01 | 0 Base | Fundación Materio v6: dependencias, Tailwind 4, tema con `colorSchemes` + `cssVariables` y `#7E4EE6` (el modo alto contraste pasa a ser una transformación de ambos esquemas), 37 overrides, `@core`/`@layouts`/`@menu`, `libs/styles`; `CLAUDE.md` refleja el stack real | — | UI-02 | `codebase-design` |
+| UI-01 ✅ | 0 Base | Fundación Materio (v5 adaptada): dependencias, Tailwind 3.4, tema con `colorSchemes` + `cssVariables` y `#7E4EE6` (el modo alto contraste pasa a ser una transformación de ambos esquemas), 37 overrides, `@core`/`@layouts`/`@menu`, `libs/styles`; `CLAUDE.md` refleja el stack real | — | UI-02 | `codebase-design` |
 | UI-02 ✅ | 0 Base | Vitest en el cliente y arnés Playwright (§5.3) con puerto propio (3100); CI corre ambos. Va antes que UI-01 para que el cambio de base visual ya tenga pruebas | — | — | `tdd` |
-| UI-03 | 0 Base | Layout por actor (§5.4), dropdowns de navbar, toastify en lugar de `SuccessSnackbar`, customizer Materio con sección de accesibilidad | — | UI-01, UI-02 | `codebase-design` + `tdd` |
-| UI-04 | 0 Base | Login, recuperar y restablecer contraseña en versión v2; respuesta al recordatorio (`/appointment/respond`); páginas 401/404/500 (la 500 se adapta desde la 404; `RoleGuard` deja de redirigir en silencio y muestra 401) | — | UI-03 | `tdd` |
+| UI-03 ✅ | 0 Base | Layout por actor (§5.4), dropdowns de navbar, toastify en lugar de `SuccessSnackbar`, customizer Materio con sección de accesibilidad | — | UI-01, UI-02 | `codebase-design` + `tdd` |
+| UI-04 ✅ | 0 Base | Login, recuperar y restablecer contraseña en versión v2; respuesta al recordatorio (`/appointment/respond`); páginas 401/404/500 (la 500 se adapta desde la 404; `RoleGuard` deja de redirigir en silencio y muestra 401) | — | UI-03 | `tdd` |
 | UI-05 ✅ | 1 Reserva | `GET` de días con cupos por rango (médico, especialidad, desde/hasta) que descuenta feriados, bloqueos y todas las citas del médico; extrae o reutiliza el cálculo de cupos compartido (§5.2) | Sí | — | `mediclick-appointment-core` + `tdd` |
 | UI-06 | 1 Reserva | Prototipo del flujo de reserva en ambos modos y decisiones de UX registradas | — | UI-03 | `prototype` |
 | UI-07 | 1 Reserva | Núcleo del flujo de reserva (§5.1) con Vitest | — | UI-02, UI-06 | `tdd` |
@@ -241,8 +241,9 @@ su fase.
 
 | Riesgo | Mitigación |
 |---|---|
-| Tailwind y MUI compiten en especificidad | UI-01 replica el esquema de Materio v6 (sin preflight, utilidades `!important`, sin reset global sin capa) y lo verifica con axe y revisión visual en ambos modos |
-| La v6 descargada difiere de las rutas citadas (tomadas de la v5) | Cada plan confirma las rutas en `~/materio-v6/` antes de copiar |
+| Tailwind y MUI compiten en especificidad | UI-01 replica el esquema de Materio (sin preflight, `important: '#__next'`, sin reset global sin capa) y lo verifica con axe y revisión visual en ambos modos |
+| La v5 es MUI 6 / React 18 / Next 15 | Adaptación mecánica al copiar (Paso 0 del plan de la Fase 0); solo se copia lo que usa cada pantalla |
+| Tailwind 3.4 queda una versión mayor atrás | Pasar a Tailwind 4 es un trabajo aparte (reescribir el plugin de Materio como `@theme`), fuera de esta migración |
 | `react-perfect-scrollbar` sin mantenimiento | Se acepta como herencia de la plantilla (ADR-0003); reemplazo solo si falla con React 19 |
 | Cambiar reglas de negocio dentro de un rediseño | D7: la regla se enumera en la spec y en `APPOINTMENT-CORE.md`; `mediclick-core-review` antes del merge |
 | Datos públicos del médico | UI-26 enumera los campos expuestos y prueba que una reseña oculta nunca sale |
@@ -259,7 +260,7 @@ su fase.
 
 ## 10. Preguntas abiertas
 
-1. Rutas exactas de Materio v6 para cada componente citado: se confirman al iniciar cada fase.
+1. ~~Rutas de Materio v6~~: resuelto, la base es la v5 local (D1).
 2. Forma final de cada flujo rediseñado: la fijan los prototipos UI-06, UI-10, UI-14 y UI-17.
 3. Mutaciones de UI-18: dependen del prototipo UI-17.
 4. ¿Reagendar puede cambiar de médico o de especialidad? El glosario define el reagendamiento
@@ -268,5 +269,5 @@ su fase.
    `resolveDropTarget` solo acepta el mismo médico y especialidad.
 5. ¿Se puede reintentar un pago abandonado? `createPreference` rechaza una cita que ya tiene una
    transacción `PENDING`; permitirlo cambia una regla de pagos (lo plantea el prototipo UI-10).
-6. ¿Qué sede tiene una entrada en lista de espera creada sobre una especialidad global? Hoy queda
-   sin sede, en contra de `CONTEXT.md` (lo resuelve UI-29).
+6. ~~Sede de una entrada en lista de espera~~: resuelto (2026-10-06). Toma la sede del médico si el
+   paciente eligió uno; si no, la sede es obligatoria al anotarse. Lo implementa UI-29.
