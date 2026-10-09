@@ -8,19 +8,10 @@ import Typography from '@mui/material/Typography';
 import { useRouter } from 'next/navigation';
 import { formatPrice } from '@/views/booking/format';
 import { PaymentDetails, PaymentResultShell } from '@/views/payment/components/PaymentResultShell';
-import type { PaymentMethod } from '@/views/payment/types';
+import { PAYMENT_METHOD_LABELS } from '@/views/payment/labels';
 import { usePaymentResult } from '@/views/payment/hooks/usePaymentResult';
 
 const REDIRECT_SECONDS = 5;
-
-const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
-  CASH: 'Efectivo',
-  CREDIT_CARD: 'Tarjeta de crédito',
-  DEBIT_CARD: 'Tarjeta de débito',
-  TRANSFER: 'Transferencia',
-  INSURANCE: 'Seguro',
-  OTHER: 'Otro',
-};
 
 export default function PaymentSuccessView() {
   const router = useRouter();
