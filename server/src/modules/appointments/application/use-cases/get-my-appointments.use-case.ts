@@ -5,8 +5,11 @@ import { MyAppointmentsFilterDto } from '../dto/my-appointments-filter.dto.js';
 import type { IAppointmentRepository } from '../../domain/repositories/appointment.repository.js';
 import type { IPatientRepository } from '../../../patients/domain/repositories/patient.repository.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
-import { dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
-import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
+import { toPatientAppointmentResponse } from '../mappers/patient-appointment.mapper.js';
+import {
+  upcomingAppointments,
+  upcomingFromDate,
+} from '../services/patient-upcoming.js';
 
 @Injectable()
 export class GetMyAppointmentsUseCase {
@@ -32,6 +35,28 @@ export class GetMyAppointmentsUseCase {
 
     const { limit, offset } = pagination.getOffsetLimit();
 
+    // "Próximas" comparte la definición del resumen: el instante real de cada cita
+    // en la zona de su sede, ordenado entre sedes. Son pocas: se pagina en memoria.
+    if (filterDto.upcoming) {
+      const now = new Date();
+      const { appointments } =
+        await this.appointmentRepository.findPatientSummarySource(
+          patient.id,
+          upcomingFromDate(now),
+        );
+      const upcoming = upcomingAppointments(appointments, now).filter(
+        (a) => !filterDto.status || a.status === filterDto.status,
+      );
+      return {
+        totalRows: upcoming.length,
+        rows: upcoming
+          .slice(offset, offset + limit)
+          .map(toPatientAppointmentResponse),
+        totalPages: Math.ceil(upcoming.length / limit),
+        currentPage: Math.floor(offset / limit) + 1,
+      };
+    }
+
     const result = await this.appointmentRepository.findByPatientPaginated(
       patient.id,
       {
@@ -41,55 +66,12 @@ export class GetMyAppointmentsUseCase {
         orderBy: pagination.orderBy,
         orderByMode: pagination.orderByMode,
       },
-      {
-        ...(filterDto.status && { status: filterDto.status }),
-        ...(filterDto.upcoming !== undefined && {
-          upcoming: filterDto.upcoming,
-          timezone: filterDto.timezone || DEFAULT_TIMEZONE,
-        }),
-      },
+      { ...(filterDto.status && { status: filterDto.status }) },
     );
 
-    const rows: AppointmentResponseDto[] = result.rows.map((a) => ({
-      id: a.id,
-      patientId: a.patientId,
-      scheduleId: a.scheduleId,
-      startTime: dateToTimeString(a.startTime),
-      endTime: dateToTimeString(a.endTime),
-      reason: a.reason,
-      notes: a.notes,
-      status: a.status,
-      paymentStatus: a.paymentStatus,
-      amount: a.amount,
-      cancelReason: a.cancelReason,
-      cancellationFee: a.cancellationFee,
-      isOverbook: a.isOverbook,
-      pendingUntil: a.pendingUntil ?? null,
-      confirmedAt: a.confirmedAt ?? null,
-      isAtRisk: a.isAtRisk ?? false,
-      patient: {
-        id: a.patient.id,
-        name: a.patient.profile.name,
-        lastName: a.patient.profile.lastName,
-        email: a.patient.profile.email,
-      },
-      schedule: {
-        id: a.schedule.id,
-        scheduleDate: a.schedule.scheduleDate,
-        timeFrom: dateToTimeString(a.schedule.timeFrom),
-        timeTo: dateToTimeString(a.schedule.timeTo),
-        doctor: {
-          id: a.schedule.doctor.id,
-          name: a.schedule.doctor.profile.name,
-          lastName: a.schedule.doctor.profile.lastName,
-        },
-        specialty: a.schedule.specialty,
-      },
-      timezone: a.schedule.doctor.clinic?.timezone ?? DEFAULT_TIMEZONE,
-      hasPrescription: a.hasPrescription,
-      notesCount: a.notesCount,
-      createdAt: a.createdAt,
-    }));
+    const rows: AppointmentResponseDto[] = result.rows.map(
+      toPatientAppointmentResponse,
+    );
 
     return {
       totalRows: result.totalRows,

@@ -15,7 +15,8 @@ export class MyAppointmentsFilterDto extends PaginationDto {
 
   @ApiPropertyOptional({
     example: true,
-    description: 'Solo citas próximas (fecha >= hoy)',
+    description:
+      'Solo próximas: pendientes o confirmadas cuyo inicio, en la zona de su sede, aún no llegó; ordenadas por ese instante',
   })
   @Transform(({ value }) => value === 'true' || value === true)
   @IsBoolean()
@@ -24,7 +25,8 @@ export class MyAppointmentsFilterDto extends PaginationDto {
 
   @ApiPropertyOptional({
     example: 'America/Lima',
-    description: 'Zona horaria IANA del cliente para calcular "hoy"',
+    description:
+      'Ignorado: las próximas se calculan en la zona de la sede de cada cita. Se acepta por compatibilidad.',
   })
   @IsString()
   @IsOptional()

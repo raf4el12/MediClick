@@ -129,7 +129,7 @@ transacción pendiente.
 
 ---
 
-## UI-09 — Resumen de citas del paciente y sede en sus citas (backend)
+## UI-09 — Resumen de citas del paciente y sede en sus citas (backend) ✅
 
 **Rama:** `feat/ui-09-resumen-paciente` · **PR:** contra `staging`
 
@@ -182,14 +182,14 @@ GET /appointments/my/summary
 
 Una prueba por ciclo (`cd server && pnpm test -- get-my-appointments-summary --runInBand`):
 
-- [ ] 1. Sin citas → `nextAppointment: null` y contadores en 0.
-- [ ] 2. Dos citas el mismo día: Lima 10:00 (15:00 UTC) y Buenos Aires 11:00 (14:00 UTC) → la próxima es la de Buenos Aires.
-- [ ] 3. Una cita de hoy cuyo inicio ya pasó en la zona de su sede no es próxima ni cuenta en `upcomingCount`.
-- [ ] 4. Citas `CANCELLED`, `NO_SHOW`, `COMPLETED` e `IN_PROGRESS` no son próximas.
-- [ ] 5. Pendiente con plazo vigente cuenta como pendiente de pago; con plazo vencido no; `CONFIRMED` + `PARTIAL` sí.
-- [ ] 6. `pendingReviewCount` cuenta las completadas sin reseña y no las reseñadas.
-- [ ] 7. Usuario sin perfil de paciente → `NotFoundException`.
-- [ ] 8. El repositorio se consulta solo por `patientId` (sin filtro de sede): un paciente con citas en dos sedes ve ambas.
+- [x] 1. Sin citas → `nextAppointment: null` y contadores en 0.
+- [x] 2. Dos citas el mismo día: Lima 10:00 (15:00 UTC) y Buenos Aires 11:00 (14:00 UTC) → la próxima es la de Buenos Aires.
+- [x] 3. Una cita de hoy cuyo inicio ya pasó en la zona de su sede no es próxima ni cuenta en `upcomingCount`.
+- [x] 4. Citas `CANCELLED`, `NO_SHOW`, `COMPLETED` e `IN_PROGRESS` no son próximas.
+- [x] 5. Pendiente con plazo vigente cuenta como pendiente de pago; con plazo vencido no; `CONFIRMED` + `PARTIAL` sí.
+- [x] 6. `pendingReviewCount` cuenta las completadas sin reseña y no las reseñadas.
+- [x] 7. Usuario sin perfil de paciente → `NotFoundException`.
+- [x] 8. El repositorio se consulta solo por `patientId` (sin filtro de sede): un paciente con citas en dos sedes ve ambas.
 
 ### Task 2: Sede en las citas del paciente
 
@@ -199,12 +199,12 @@ Una prueba por ciclo (`cd server && pnpm test -- get-my-appointments-summary --r
 - Modify: `server/src/modules/appointments/infrastructure/persistence/prisma-appointment.repository.ts` (include de la sede)
 - Modify: spec existente o nuevo de `get-my-appointments` con el mapeo de `clinic`
 
-- [ ] **Step 1 (rojo):** prueba que `/appointments/my` devuelve `clinic` con nombre, dirección y moneda de la sede del médico.
-- [ ] **Step 2 (verde):** incluir la sede en la consulta y mapearla.
-- [ ] **Step 3 (rojo):** pruebas de `/appointments/my?upcoming`: una cita de hoy cuyo inicio ya
+- [x] **Step 1 (rojo):** prueba que `/appointments/my` devuelve `clinic` con nombre, dirección y moneda de la sede del médico.
+- [x] **Step 2 (verde):** incluir la sede en la consulta y mapearla.
+- [x] **Step 3 (rojo):** pruebas de `/appointments/my?upcoming`: una cita de hoy cuyo inicio ya
   pasó en la zona de su sede no aparece; dos citas en sedes con zonas distintas salen ordenadas por
   instante de inicio (no por `createdAt` ni por la zona del navegador).
-- [ ] **Step 4 (verde):** reutilizar el criterio de "próxima" de Task 1 (`localDateAndTimeToInstant`
+- [x] **Step 4 (verde):** reutilizar el criterio de "próxima" de Task 1 (`localDateAndTimeToInstant`
   con la zona de cada sede) para el filtro `upcoming` y ordenar por ese instante. Así la pestaña
   "Próximas" de UI-11 y el resumen comparten la misma definición.
 
@@ -236,11 +236,11 @@ GET /appointments/:id/cancellation-preview
 
 Una prueba por ciclo (`cd server && pnpm test -- cancellation-preview --runInBand`):
 
-- [ ] 1. Cita pagada fuera de la ventana gratuita → `fee: 0`.
-- [ ] 2. Cita pagada dentro de la ventana → `fee` igual al que cobraría `CancelAppointmentUseCase` para la misma cita y el mismo instante (paridad).
-- [ ] 3. Cita sin fondos cobrados → `fee: 0`.
-- [ ] 4. Cita `COMPLETED`, `CANCELLED` o en curso → `cancellable: false`.
-- [ ] 5. Cita de otro paciente → `NotFoundException`.
+- [x] 1. Cita pagada fuera de la ventana gratuita → `fee: 0`.
+- [x] 2. Cita pagada dentro de la ventana → `fee` igual al que cobraría `CancelAppointmentUseCase` para la misma cita y el mismo instante (paridad).
+- [x] 3. Cita sin fondos cobrados → `fee: 0`.
+- [x] 4. Cita `COMPLETED` o `CANCELLED` → `cancellable: false` (los mismos estados que rechaza la cancelación).
+- [x] 5. Cita de otro paciente → `NotFoundException`.
 
 ### Task 3: Controlador, cliente y verificación
 
@@ -249,10 +249,27 @@ Una prueba por ciclo (`cd server && pnpm test -- cancellation-preview --runInBan
 - Modify: `client/src/services/appointments.service.ts` (`getMySummary`)
 - Modify: `client/src/views/appointments/types/index.ts` (`MyAppointmentsSummary`, `clinic` en `Appointment`)
 
-- [ ] **Step 1:** `cd server && pnpm test -- appointments --runInBand && pnpm build` → PASS.
-- [ ] **Step 2:** `cd client && pnpm exec tsc --noEmit` → OK.
-- [ ] **Step 3:** `mediclick-core-review` sobre el diff (carriles: estado asistencial vs de pago,
+- [x] **Step 1:** `cd server && pnpm test -- appointments --runInBand && pnpm build` → PASS.
+- [x] **Step 2:** `cd client && pnpm exec tsc --noEmit` → OK.
+- [x] **Step 3:** `mediclick-core-review` sobre el diff (carriles: estado asistencial vs de pago,
   hora local de cada sede, paciente multi-sede).
+
+### Notas de implementación
+
+- **`GET /appointments/my/:id` (agregado):** detalle de una cita propia con su sede; una ajena
+  responde 404 igual que una inexistente. Lo necesitan las vistas imprimibles de UI-12, que se
+  abren por URL y no tienen otra forma de leer una sola cita.
+- **Definición compartida de "próxima":** `application/services/patient-upcoming.ts` la usan el
+  resumen y `/appointments/my?upcoming`. El filtro `upcoming` del repositorio (zona del cliente,
+  orden por `createdAt`) se eliminó; `timezone` en la query se acepta por compatibilidad y se ignora.
+  "Próximas" se pagina en memoria: son pocas por paciente.
+- **Vista previa de cancelación:** `cancellable` refleja exactamente los estados que rechaza
+  `CancelAppointmentUseCase` (`COMPLETED` y `CANCELLED`); la matriz de UI-11 ya no ofrece cancelar
+  una cita en curso. `CancellationFeeCalculator` es una clase sin DI que ambos casos de uso arman
+  con sus mismas dependencias, así las pruebas de la cancelación no cambian.
+- **Prueba de integración:** sin base de datos local disponible, `findPatientSummarySource` (filtro
+  por `patientId`, estados y `review: null`) queda cubierto por las pruebas unitarias del caso de uso
+  y la revisión de la consulta; falta correrlo contra PostgreSQL.
 
 ---
 

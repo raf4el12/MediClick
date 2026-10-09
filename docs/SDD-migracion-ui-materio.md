@@ -208,7 +208,7 @@ expectAccessible(page)                          // axe WCAG 2.0/2.1 A y AA
 | UI-06 ✅ | 1 Reserva | Prototipo del flujo de reserva en ambos modos y decisiones de UX registradas | — | UI-03 | `prototype` |
 | UI-07 ✅ | 1 Reserva | Núcleo del flujo de reserva (§5.1) con Vitest | — | UI-02, UI-06 | `tdd` |
 | UI-08 ✅ | 1 Reserva | Pantalla de reserva con wizard, custom inputs, datepicker con días disponibles, pago y confirmación; reemplaza `patient/book` y `CreateAppointmentDialog` | — | UI-05, UI-07 | `tdd` |
-| UI-09 | 2 Portal | Resumen del paciente (`GET /appointments/my/summary`), sede en sus citas y `upcoming` calculado con la zona de cada sede | Sí | UI-10 | `mediclick-appointment-core` + `mediclick-tenant-safety` + `tdd` |
+| UI-09 ✅ | 2 Portal | Resumen del paciente (`GET /appointments/my/summary`), sede en sus citas y `upcoming` calculado con la zona de cada sede | Sí | UI-10 | `mediclick-appointment-core` + `mediclick-tenant-safety` + `tdd` |
 | UI-10 ✅ | 2 Portal | Prototipo de Inicio y Mis citas | — | UI-03 | `prototype` |
 | UI-11 | 2 Portal | Inicio del paciente y Mis citas (cancelar, reagendar, pagar, reseñar) | — | UI-09, UI-10, UI-08 | `tdd` |
 | UI-12 | 2 Portal | Comprobante de pago y receta imprimibles; comprobantes de todas las transacciones aprobadas de la cita (backend ✅; vistas imprimibles pendientes de UI-03) | Sí | UI-03 | `mediclick-appointment-core` + `tdd` |

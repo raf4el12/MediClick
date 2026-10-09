@@ -12,16 +12,14 @@ import type { ITransactionRepository } from '../../../payments/domain/repositori
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
 import { UserRole } from '../../../../shared/domain/enums/user-role.enum.js';
 import type { AppointmentWithRelations } from '../../domain/interfaces/appointment-data.interface.js';
-import {
-  dateToTimeString,
-  nowInTimezone,
-} from '../../../../shared/utils/date-time.utils.js';
+import { dateToTimeString } from '../../../../shared/utils/date-time.utils.js';
 import { TimezoneResolverService } from '../../../../shared/services/timezone-resolver.service.js';
 import { DEFAULT_TIMEZONE } from '../../../../shared/constants/defaults.constant.js';
 import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
 import { AppointmentAccessPolicy } from '../../../../shared/access/appointment-access.policy.js';
 import { AppointmentCancellationService } from '../services/appointment-cancellation.service.js';
 import { CancellationPolicyService } from '../../domain/services/cancellation-policy.service.js';
+import { CancellationFeeCalculator } from '../services/cancellation-fee.calculator.js';
 
 @Injectable()
 export class CancelAppointmentUseCase {
@@ -36,7 +34,16 @@ export class CancelAppointmentUseCase {
     private readonly appointmentCancellationService: AppointmentCancellationService,
     private readonly appointmentAccessPolicy: AppointmentAccessPolicy,
     private readonly cancellationPolicyService: CancellationPolicyService,
-  ) {}
+  ) {
+    this.feeCalculator = new CancellationFeeCalculator(
+      specialtyRepository,
+      transactionRepository,
+      timezoneResolver,
+      cancellationPolicyService,
+    );
+  }
+
+  private readonly feeCalculator: CancellationFeeCalculator;
 
   async execute(
     id: number,
@@ -65,59 +72,10 @@ export class CancelAppointmentUseCase {
       );
     }
 
-    // Calcular horas restantes hasta la cita (zona horaria de la sede del doctor)
-    const tz = await this.timezoneResolver.resolveByDoctorId(
-      appointment.schedule.doctor.id,
-    );
-    const now = nowInTimezone(tz);
-    const scheduleDate = new Date(appointment.schedule.scheduleDate);
-    const appointmentDateTime = new Date(
-      scheduleDate.getUTCFullYear(),
-      scheduleDate.getUTCMonth(),
-      scheduleDate.getUTCDate(),
-      appointment.startTime.getUTCHours(),
-      appointment.startTime.getUTCMinutes(),
-    );
-    const hoursUntilAppointment =
-      (appointmentDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
-
-    // Buscar la última transacción: el fee aplica si hay fondos cobrados (PAID o PARTIAL).
-    const tx = await this.transactionRepository.findLatestByAppointmentId(id);
-    const hasFunding =
-      appointment.paymentStatus === 'PAID' ||
-      appointment.paymentStatus === 'PARTIAL' ||
-      tx?.status === 'PAID';
-
-    let cancellationFee: number | undefined;
-
-    if (actor.roleName === String(UserRole.PATIENT) && hasFunding) {
-      const specialty = await this.specialtyRepository.findById(
-        appointment.schedule.specialty.id,
-      );
-      const specialtyPrice = specialty?.price ?? 0;
-      const specialtyWindow = specialty?.cancellationWindowHours ?? null;
-      const clinicWindow =
-        appointment.schedule.doctor.clinic?.defaultCancellationWindowHours ??
-        null;
-
-      const windowHours = this.cancellationPolicyService.resolveWindowHours({
-        specialtyWindowHours: specialtyWindow,
-        clinicDefaultWindowHours: clinicWindow,
-      });
-
-      const calculation = this.cancellationPolicyService.calculateFee({
-        hoursUntilAppointment,
-        freeCancellationWindowHours: windowHours,
-        appointmentPrice: specialtyPrice,
-        depositAmount: appointment.depositAmount ?? null,
-        isPaid: true,
-        isPatient: true,
-      });
-
-      if (calculation.fee > 0) {
-        cancellationFee = calculation.fee;
-      }
-    }
+    const { fee } = await this.feeCalculator.calculate(appointment, {
+      isPatient: actor.roleName === String(UserRole.PATIENT),
+    });
+    const cancellationFee = fee > 0 ? fee : undefined;
 
     const updated = await this.appointmentCancellationService.cancel({
       appointmentId: id,

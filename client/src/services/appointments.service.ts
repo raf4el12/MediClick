@@ -9,6 +9,8 @@ import type {
   RescheduleAppointmentPayload,
   AppointmentFilters,
   PatientAppointmentFilters,
+  MyAppointmentsSummary,
+  CancellationPreview,
 } from '@/views/appointments/types';
 
 export const appointmentsService = {
@@ -127,6 +129,24 @@ export const appointmentsService = {
       '/appointments/my',
       { params: queryParams },
     );
+
+    return response.data;
+  },
+
+  getMySummary: async (): Promise<MyAppointmentsSummary> => {
+    const response = await api.get<MyAppointmentsSummary>('/appointments/my/summary');
+
+    return response.data;
+  },
+
+  getMyAppointment: async (id: number): Promise<Appointment> => {
+    const response = await api.get<Appointment>(`/appointments/my/${id}`);
+
+    return response.data;
+  },
+
+  getCancellationPreview: async (id: number): Promise<CancellationPreview> => {
+    const response = await api.get<CancellationPreview>(`/appointments/${id}/cancellation-preview`);
 
     return response.data;
   },
