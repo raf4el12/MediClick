@@ -17,6 +17,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import { specialtiesService } from '@/services/specialties.service';
 import { doctorsService } from '@/services/doctors.service';
+import { clinicsService } from '@/services/clinics.service';
 import { getTodayInTimezone } from '@/utils/timezone';
 import {
   joinWaitlistSchema,
@@ -64,6 +65,8 @@ export function JoinWaitlistDialog({
   });
 
   const selectedSpecialtyId = watch('specialtyId');
+  const selectedDoctorId = watch('doctorId');
+  const selectedClinicId = watch('clinicId');
   const initialSpecialtyId = initialValues?.specialtyId;
   const initialDoctorId = initialValues?.doctorId;
 
@@ -90,7 +93,14 @@ export function JoinWaitlistDialog({
     staleTime: 5 * 60 * 1000,
   });
 
-  const { data: doctors = [], isLoading: loadingDoctors } = useQuery({
+  const { data: clinics = [], isLoading: loadingClinics } = useQuery({
+    queryKey: ['clinics', 'waitlist-join'],
+    queryFn: () => clinicsService.findAll().then((rows) => rows.filter((c) => c.isActive)),
+    enabled: open,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const { data: allDoctors = [], isLoading: loadingDoctors } = useQuery({
     queryKey: ['doctors', 'waitlist-join', selectedSpecialtyId],
     queryFn: () =>
       doctorsService
@@ -100,16 +110,14 @@ export function JoinWaitlistDialog({
     staleTime: 5 * 60 * 1000,
   });
 
-  // Limpiar el doctor preferido si cambia la especialidad
-  useEffect(() => {
-    setValue('doctorId', undefined);
-  }, [selectedSpecialtyId, setValue]);
+  // Con sede elegida, solo sus médicos; con médico elegido, la sede es la suya.
+  const doctors = selectedDoctorId ? allDoctors : allDoctors.filter((d) => !selectedClinicId || d.clinicId === selectedClinicId);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth aria-labelledby="join-waitlist-title">
+      <DialogTitle id="join-waitlist-title" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         Unirse a la lista de espera
-        <IconButton onClick={onClose} size="small">
+        <IconButton onClick={onClose} size="small" aria-label="Cerrar">
           <i className="ri-close-line" />
         </IconButton>
       </DialogTitle>
@@ -136,7 +144,11 @@ export function JoinWaitlistDialog({
                 select
                 label="Especialidad"
                 value={field.value ?? ''}
-                onChange={(e) => field.onChange(Number(e.target.value))}
+                onChange={(e) => {
+                  field.onChange(Number(e.target.value));
+                  // Otra especialidad: el médico elegido puede no atenderla.
+                  setValue('doctorId', undefined);
+                }}
                 error={!!errors.specialtyId}
                 helperText={errors.specialtyId?.message}
                 disabled={loadingSpecialties}
@@ -152,25 +164,57 @@ export function JoinWaitlistDialog({
           />
 
           <Controller
+            name="clinicId"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                select
+                label="Sede"
+                value={field.value ?? ''}
+                onChange={(e) => {
+                  field.onChange(e.target.value === '' ? undefined : Number(e.target.value));
+                  setValue('doctorId', undefined);
+                }}
+                disabled={loadingClinics || selectedDoctorId !== undefined}
+                error={!!errors.clinicId}
+                helperText={
+                  errors.clinicId?.message ??
+                  (selectedDoctorId !== undefined ? 'Es la sede del médico elegido' : 'Donde quieres atenderte')
+                }
+                fullWidth
+              >
+                {clinics.map((c) => (
+                  <MenuItem key={c.id} value={c.id}>
+                    {c.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
+          />
+          <Controller
             name="doctorId"
             control={control}
             render={({ field }) => (
               <TextField
                 {...field}
                 select
-                label="Doctor preferido (opcional)"
+                label="Médico preferido (opcional)"
                 value={field.value ?? ''}
-                onChange={(e) =>
-                  field.onChange(e.target.value === '' ? undefined : Number(e.target.value))
-                }
+                onChange={(e) => {
+                  const doctorId = e.target.value === '' ? undefined : Number(e.target.value);
+                  field.onChange(doctorId);
+                  const doctor = allDoctors.find((d) => d.id === doctorId);
+                  if (doctor?.clinicId) setValue('clinicId', doctor.clinicId, { shouldValidate: true });
+                }}
                 disabled={selectedSpecialtyId == null || loadingDoctors}
-                helperText="Déjalo vacío para aceptar cualquier doctor"
+                helperText="Déjalo vacío para aceptar cualquier médico"
                 fullWidth
               >
-                <MenuItem value="">Cualquier doctor</MenuItem>
+                <MenuItem value="">Cualquier médico</MenuItem>
                 {doctors.map((d) => (
                   <MenuItem key={d.id} value={d.id}>
-                    Dr. {d.profile.name} {d.profile.lastName}
+                    {d.profile.name} {d.profile.lastName}
                   </MenuItem>
                 ))}
               </TextField>

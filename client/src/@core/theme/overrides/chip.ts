@@ -50,7 +50,8 @@ const chip: Theme['components'] = {
             props: { variant: 'tonal', color: 'primary' },
             style: {
               backgroundColor: 'var(--mui-palette-primary-lightOpacity)',
-              color: 'var(--mui-palette-primary-main)',
+              // Texto oscurecido (claro) o aclarado (oscuro): el tono de estado no llega a 4.5:1 sobre su fondo.
+              color: 'color-mix(in srgb, var(--mui-palette-primary-main) 55%, var(--contrast-mix, black))',
               '&.Mui-focusVisible': {
                 backgroundColor: 'var(--mui-palette-primary-mainOpacity)'
               },
@@ -70,7 +71,8 @@ const chip: Theme['components'] = {
             props: { variant: 'tonal', color: 'secondary' },
             style: {
               backgroundColor: 'var(--mui-palette-secondary-lightOpacity)',
-              color: 'var(--mui-palette-secondary-main)',
+              // Texto oscurecido (claro) o aclarado (oscuro): el tono de estado no llega a 4.5:1 sobre su fondo.
+              color: 'color-mix(in srgb, var(--mui-palette-secondary-main) 55%, var(--contrast-mix, black))',
               '&.Mui-focusVisible': {
                 backgroundColor: 'var(--mui-palette-secondary-mainOpacity)'
               },
@@ -90,7 +92,8 @@ const chip: Theme['components'] = {
             props: { variant: 'tonal', color: 'error' },
             style: {
               backgroundColor: 'var(--mui-palette-error-lightOpacity)',
-              color: 'var(--mui-palette-error-main)',
+              // Texto oscurecido (claro) o aclarado (oscuro): el tono de estado no llega a 4.5:1 sobre su fondo.
+              color: 'color-mix(in srgb, var(--mui-palette-error-main) 55%, var(--contrast-mix, black))',
               '&.Mui-focusVisible': {
                 backgroundColor: 'var(--mui-palette-error-mainOpacity)'
               },
@@ -110,7 +113,8 @@ const chip: Theme['components'] = {
             props: { variant: 'tonal', color: 'warning' },
             style: {
               backgroundColor: 'var(--mui-palette-warning-lightOpacity)',
-              color: 'var(--mui-palette-warning-main)',
+              // Texto oscurecido (claro) o aclarado (oscuro): el tono de estado no llega a 4.5:1 sobre su fondo.
+              color: 'color-mix(in srgb, var(--mui-palette-warning-main) 55%, var(--contrast-mix, black))',
               '&.Mui-focusVisible': {
                 backgroundColor: 'var(--mui-palette-warning-mainOpacity)'
               },
@@ -130,7 +134,8 @@ const chip: Theme['components'] = {
             props: { variant: 'tonal', color: 'info' },
             style: {
               backgroundColor: 'var(--mui-palette-info-lightOpacity)',
-              color: 'var(--mui-palette-info-main)',
+              // Texto oscurecido (claro) o aclarado (oscuro): el tono de estado no llega a 4.5:1 sobre su fondo.
+              color: 'color-mix(in srgb, var(--mui-palette-info-main) 55%, var(--contrast-mix, black))',
               '&.Mui-focusVisible': {
                 backgroundColor: 'var(--mui-palette-info-mainOpacity)'
               },
@@ -150,7 +155,8 @@ const chip: Theme['components'] = {
             props: { variant: 'tonal', color: 'success' },
             style: {
               backgroundColor: 'var(--mui-palette-success-lightOpacity)',
-              color: 'var(--mui-palette-success-main)',
+              // Texto oscurecido (claro) o aclarado (oscuro): el tono de estado no llega a 4.5:1 sobre su fondo.
+              color: 'color-mix(in srgb, var(--mui-palette-success-main) 55%, var(--contrast-mix, black))',
               '&.Mui-focusVisible': {
                 backgroundColor: 'var(--mui-palette-success-mainOpacity)'
               },
