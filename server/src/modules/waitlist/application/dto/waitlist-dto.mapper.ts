@@ -21,6 +21,7 @@ export function toEntryDto(
     doctorName: entry.doctor
       ? `${entry.doctor.profile.name} ${entry.doctor.profile.lastName}`
       : null,
+    clinicName: entry.clinic?.name ?? null,
     dateFrom: entry.dateFrom,
     dateTo: entry.dateTo,
     timePreference: entry.timePreference,
@@ -40,6 +41,13 @@ export function toOfferDto(
     waitlistEntryId: offer.waitlistEntryId,
     scheduleId: offer.scheduleId,
     specialtyName: offer.entry.specialty.name,
+    scheduleDate: offer.schedule
+      ? offer.schedule.scheduleDate.toISOString().slice(0, 10)
+      : '',
+    doctorName: offer.schedule
+      ? `${offer.schedule.doctor.profile.name} ${offer.schedule.doctor.profile.lastName}`
+      : '',
+    clinic: offer.clinic ?? null,
     startTime: dateToTimeString(offer.startTime),
     endTime: dateToTimeString(offer.endTime),
     expiresAt: offer.expiresAt,

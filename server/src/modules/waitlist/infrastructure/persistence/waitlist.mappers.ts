@@ -28,10 +28,20 @@ export const waitlistEntryInclude = {
       profile: { select: { name: true, lastName: true } },
     },
   },
+  clinic: { select: { id: true, name: true } },
 } as const;
 
 export const waitlistOfferInclude = {
   entry: { include: waitlistEntryInclude },
+  schedule: {
+    select: {
+      scheduleDate: true,
+      doctor: {
+        select: { profile: { select: { name: true, lastName: true } } },
+      },
+    },
+  },
+  clinic: { select: { id: true, name: true, timezone: true } },
 } as const;
 
 export function mapEntry(raw: any): WaitlistEntryWithRelations {
@@ -64,6 +74,7 @@ export function mapEntry(raw: any): WaitlistEntryWithRelations {
     doctor: raw.doctor
       ? { id: raw.doctor.id, profile: raw.doctor.profile }
       : null,
+    clinic: raw.clinic ?? null,
   };
 }
 
@@ -82,5 +93,7 @@ export function mapOffer(raw: any): WaitlistOfferWithEntry {
     clinicId: raw.clinicId ?? null,
     createdAt: raw.createdAt,
     entry: mapEntry(raw.entry),
+    schedule: raw.schedule ?? undefined,
+    clinic: raw.clinic ?? null,
   };
 }
