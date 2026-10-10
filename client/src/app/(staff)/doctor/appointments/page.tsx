@@ -1,10 +1,6 @@
-import { RoleGuard } from '@/components/shared/RoleGuard';
-import DoctorAppointmentsView from '@/views/doctor/appointments';
+import { redirect } from 'next/navigation';
 
+// La jornada reemplazó a "Mis citas de hoy" (decisión 1 de UI-14).
 export default function DoctorAppointmentsPage() {
-  return (
-    <RoleGuard permissions={[{ action: 'READ', subject: 'APPOINTMENTS' }]}>
-      <DoctorAppointmentsView />
-    </RoleGuard>
-  );
+  redirect('/doctor');
 }

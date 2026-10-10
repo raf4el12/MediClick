@@ -125,6 +125,18 @@ describe('rbac-policy (fuente única declarativa)', () => {
       ).toBe(true);
     });
 
+    it.each([SystemRole.DOCTOR, SystemRole.RECEPTIONIST])(
+      '%s puede leer la agenda (READ:AGENDA, UI-13)',
+      (role) => {
+        expect(
+          hasPermission(grantedPermissionsFor(role), {
+            action: PermissionAction.READ,
+            subject: PermissionSubject.AGENDA,
+          }),
+        ).toBe(true);
+      },
+    );
+
     it('SUPER_ADMIN con MANAGE:ALL puede operar cualquier acción sobre cualquier subject', () => {
       const granted = grantedPermissionsFor(SystemRole.SUPER_ADMIN);
       expect(
@@ -163,6 +175,16 @@ describe('rbac-policy (fuente única declarativa)', () => {
         hasPermission(granted, {
           action: PermissionAction.READ,
           subject: PermissionSubject.PAYMENTS,
+        }),
+      ).toBe(false);
+    });
+
+    it('PATIENT no puede leer la agenda del médico (READ:AGENDA, UI-13)', () => {
+      const granted = grantedPermissionsFor(SystemRole.PATIENT);
+      expect(
+        hasPermission(granted, {
+          action: PermissionAction.READ,
+          subject: PermissionSubject.AGENDA,
         }),
       ).toBe(false);
     });

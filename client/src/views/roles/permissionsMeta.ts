@@ -5,6 +5,7 @@ type MuiColor = 'success' | 'info' | 'warning' | 'error' | 'primary' | 'secondar
 /** Etiqueta legible por dominio (subject) */
 export const SUBJECT_LABELS: Record<string, string> = {
   ALL: 'Todos',
+  AGENDA: 'Agenda',
   APPOINTMENTS: 'Citas',
   AVAILABILITY: 'Disponibilidad',
   CATEGORIES: 'Categorías',
@@ -30,6 +31,7 @@ export const SUBJECT_LABELS: Record<string, string> = {
 /** Ícono Remix por dominio */
 export const SUBJECT_ICONS: Record<string, string> = {
   ALL: 'ri-shield-star-line',
+  AGENDA: 'ri-calendar-schedule-line',
   APPOINTMENTS: 'ri-calendar-check-line',
   AVAILABILITY: 'ri-time-line',
   CATEGORIES: 'ri-price-tag-3-line',
@@ -107,6 +109,7 @@ export const PERMISSION_DOMAINS: PermissionDomain[] = [
     label: 'Agenda y atención',
     icon: 'ri-calendar-2-line',
     subjects: [
+      'AGENDA',
       'APPOINTMENTS',
       'AVAILABILITY',
       'SCHEDULES',

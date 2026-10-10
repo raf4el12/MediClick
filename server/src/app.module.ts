@@ -36,6 +36,7 @@ import { PaymentsModule } from './modules/payments/application/payments.module.j
 import { MedicalHistoryModule } from './modules/medical-history/application/medical-history.module.js';
 import { HolidaysModule } from './modules/holidays/application/holidays.module.js';
 import { ScheduleBlocksModule } from './modules/schedule-blocks/application/schedule-blocks.module.js';
+import { AgendaModule } from './modules/agenda/application/agenda.module.js';
 import { SchedulerModule } from './modules/scheduler/application/scheduler.module.js';
 import { WaitlistModule } from './modules/waitlist/application/waitlist.module.js';
 import { RolesModule } from './modules/roles/application/roles.module.js';
@@ -103,6 +104,7 @@ import { OutboxModule } from './shared/outbox/outbox.module.js';
     MedicalHistoryModule,
     HolidaysModule,
     ScheduleBlocksModule,
+    AgendaModule,
     SchedulerModule,
     WaitlistModule,
     RolesModule,
