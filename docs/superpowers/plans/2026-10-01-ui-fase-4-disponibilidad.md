@@ -76,7 +76,7 @@
 
 ---
 
-## UI-18 — Mutaciones de disponibilidad pedidas por el prototipo
+## UI-18 — Mutaciones de disponibilidad pedidas por el prototipo ✅
 
 **Rama:** `feat/ui-18-<mutación>` (una por mutación si son independientes) · **Skills:** `mediclick-appointment-core` → `mediclick-tenant-safety` → `tdd` → `mediclick-core-review`
 
@@ -94,9 +94,9 @@ Condicional a "Decisiones UI-17". Si el prototipo se resuelve con los endpoints 
 
 ### Task 1 (por cada mutación aprobada): especificar la invariante
 
-- [ ] **Step 1:** Leer `CONTEXT.md` y `APPOINTMENT-CORE.md` completos (paso 1 de `mediclick-appointment-core`).
-- [ ] **Step 2:** Trazar la entrada real: controller → caso de uso → repositorio → evento → `AvailabilityChangeListener` (`server/src/modules/appointments/application/listeners/availability-change.listener.ts`) → `AppointmentCancellationService` → outbox.
-- [ ] **Step 3:** Escribir en el PR la invariante con ejemplo permitido y rechazado (actor, sede, hora local, estado de pago, concurrencia).
+- [x] **Step 1:** Leer `CONTEXT.md` y `APPOINTMENT-CORE.md` completos (paso 1 de `mediclick-appointment-core`).
+- [x] **Step 2:** Trazar la entrada real: controller → caso de uso → repositorio → evento → `AvailabilityChangeListener` (`server/src/modules/appointments/application/listeners/availability-change.listener.ts`) → `AppointmentCancellationService` → outbox.
+- [x] **Step 3:** Escribir en el PR la invariante con ejemplo permitido y rechazado (actor, sede, hora local, estado de pago, concurrencia).
 
 ### Task 2: Tests primero
 
@@ -104,18 +104,46 @@ Condicional a "Decisiones UI-17". Si el prototipo se resuelve con los endpoints 
 - M1: Create `server/src/modules/availability/application/use-cases/preview-restriction-impact.use-case.ts` + `.spec.ts`; Modify `availability.controller.ts`.
 - M4: Modify `server/src/modules/schedule-blocks/application/use-cases/delete-schedule-block.use-case.ts`, `server/src/modules/holidays/application/use-cases/delete-holiday.use-case.ts`, `server/src/shared/events/availability-events.interface.ts`; Create el consumidor en `server/src/modules/waitlist/…` con su `.spec.ts`; integración en `*.integration.spec.ts`.
 
-- [ ] **Step 1 (M1):** casos: cita `CONFIRMED` dentro del rango aparece; cita `CANCELLED` no; feriado de sede B no afecta citas de sede A; bloqueo `TIME_RANGE` solo afecta citas solapadas; actor de otra sede → 404; `excludeRestrictionId` evita contar la propia restricción al editarla.
+- [x] **Step 1 (M1):** casos: cita `CONFIRMED` dentro del rango aparece; cita `CANCELLED` no; feriado de sede B no afecta citas de sede A; bloqueo `TIME_RANGE` solo afecta citas solapadas; actor de otra sede → 404; `excludeRestrictionId` evita contar la propia restricción al editarla.
 - [ ] **Step 2 (M4, solo si se aprueba):** casos: eliminar un bloqueo emite el evento en la misma transacción que la baja; redelivery del mismo `eventId` es no-op; un cupo que sigue cubierto por otro bloqueo no se ofrece.
-- [ ] **Step 3:** `cd server && pnpm test -- availability schedule-blocks holidays waitlist --runInBand` — Expected: FAIL por la razón esperada.
+- [x] **Step 3:** `cd server && pnpm test -- availability schedule-blocks holidays waitlist --runInBand` — Expected: FAIL por la razón esperada.
 
 ### Task 3: Implementación y verificación
 
-- [ ] **Step 1:** Implementar el cambio mínimo; ninguna mutación nueva cancela citas por su cuenta: siempre vía evento + listener.
-- [ ] **Step 2:** `cd server && pnpm test -- appointments --runInBand && pnpm test -- waitlist --runInBand && pnpm test -- payments --runInBand && pnpm build` (matriz de impacto de `APPOINTMENT-CORE.md`).
+- [x] **Step 1:** Implementar el cambio mínimo; ninguna mutación nueva cancela citas por su cuenta: siempre vía evento + listener.
+- [x] **Step 2:** `cd server && pnpm test -- appointments --runInBand && pnpm test -- waitlist --runInBand && pnpm test -- payments --runInBand && pnpm build` (matriz de impacto de `APPOINTMENT-CORE.md`).
 - [ ] **Step 3 (M4):** `RUN_DB_INTEGRATION=1 DATABASE_URL=<db de prueba> pnpm run test:integration -- waitlist availability`.
-- [ ] **Step 4:** Actualizar `APPOINTMENT-CORE.md` si cambió una regla (M4) y `mediclick-core-review` sobre el diff.
+- [x] **Step 4:** Actualizar `APPOINTMENT-CORE.md` si cambió una regla (M4) y `mediclick-core-review` sobre el diff.
 
 **Riesgo conocido:** `availability.restriction_changed` todavía se publica con `EventEmitter2` en memoria, no por la outbox (G-04 del SDD de hardening). Un crash entre la escritura de la restricción y el listener pierde las cancelaciones derivadas. Una mutación nueva de restricción usa el mismo camino para no divergir; moverlo a la outbox es un ítem del SDD de hardening, no de esta fase.
+
+### Notas de implementación
+
+Alcance cerrado por "Decisiones UI-17": solo **M1**. M2 usa `POST /schedule-blocks`; M3, M4 y M5 no se implementan (Step 2 y Step 3 de M4 no aplican).
+
+- **Ubicación:** el endpoint vive en el módulo `agenda` y no en `availability`, como sugería Task 2. La agenda ya es el modelo de lectura de citas, bloqueos y feriados con alcance de sede (`resolveAgendaScope`, lecturas con predicados explícitos sobre `this.prisma`), así que se reutiliza sin acoplar `availability` a `appointments`. Archivos: `preview-restriction-impact.use-case.ts` (+ spec), `restriction-coverage.ts` (reglas puras de cobertura), `prisma-restriction-impact.repository.ts` y `availability-restrictions.controller.ts`.
+- **Contrato:** `GET /availability-restrictions/impact?type=FULL_DAY|TIME_RANGE|HOLIDAY&doctorId?&clinicId?&startDate&endDate&timeFrom?&timeTo?&excludeRestrictionId?` → `{ total, withPayment, appointments[] }`. Cada cita trae id, médico, especialidad, día y horas locales, estado, pago y del paciente solo id y nombre. Permiso `READ:AGENDA`.
+- **Misma resolución que el listener:**
+  - se evalúa la unión del rango actual de la restricción editada (`excludeRestrictionId`) y el nuevo, contra el estado final: el borrador más las demás restricciones vigentes del mismo tipo;
+  - un bloqueo sigue la regla de `isBlocked`: día completo o franja que se solapa;
+  - un feriado sigue la de `isHoliday`: misma fecha, global o de la sede de la cita;
+  - las citas candidatas salen del mismo filtro: por médico o por `appointments.clinicId`.
+- **Estados:** solo cuentan `PENDING` y `CONFIRMED`, los únicos que `cancelAtomically` lleva a `CANCELLED`. El listener consulta además `IN_PROGRESS` y `COMPLETED`, pero su cancelación es un no-op. `withPayment` cuenta `PAID` y `PARTIAL`, que quedarían con reembolso pendiente.
+- **Alcance de feriados** (ajustado durante la implementación, igual que `CreateHolidayUseCase`):
+  - para el personal con sede vale la del JWT y `clinicId` es opcional; otra sede responde **403**, como al crear un feriado;
+  - un administrador global elige una sede (inexistente: 404) o ninguna: feriado global, que afecta citas de todas las sedes;
+  - el médico responde 403.
+  
+  Un `excludeRestrictionId` de un feriado ajeno al alcance se ignora.
+- **Alcance de bloqueos:** `resolveAgendaScope` con `doctorId`. El médico solo previsualiza su propia agenda, aunque no gestione bloqueos; un médico de otra sede responde 404. Un `excludeRestrictionId` de otro médico se ignora.
+- **400:**
+  - bloqueo sin `doctorId` o con `clinicId`;
+  - feriado con `doctorId`, con horas o de varios días;
+  - franja sin horas o con `timeFrom >= timeTo`;
+  - día completo con horas;
+  - fechas inexistentes, fin antes del inicio o más de 62 días (el tope de `available-days`).
+- **Pruebas:** 23 casos en `preview-restriction-impact.use-case.spec.ts` con un doble en memoria que aplica los mismos predicados que el repositorio. El repositorio Prisma no tiene prueba de integración: no hay PostgreSQL local.
+- **Acoplamiento a vigilar:** si cambia la resolución de `AvailabilityChangeListener` o los estados que cancela `cancelAtomically`, la vista previa debe cambiar en el mismo PR. Quedó anotado en `APPOINTMENT-CORE.md`.
 
 ---
 

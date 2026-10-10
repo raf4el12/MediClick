@@ -218,7 +218,7 @@ expectAccessible(page)                          // axe WCAG 2.0/2.1 A y AA
 | UI-15 ✅ | 3 Jornada | Capa de agenda (§5.2) y adaptador FullCalendar con estilo Materio | — | UI-02, UI-13 | `codebase-design` + `tdd` |
 | UI-16 ✅ | 3 Jornada | Jornada del médico: inicio, agenda, espacio de atención y reagendamiento por arrastre | — | UI-14, UI-15 | `tdd` |
 | UI-17 ✅ | 4 Disponibilidad | Prototipo de disponibilidad visual | — | UI-15 | `prototype` |
-| UI-18 | 4 Disponibilidad | Mutaciones que pida el prototipo (p. ej. bloqueo desde una selección de rango), sobre la restricción unificada de SDD-010 | Sí | UI-17 | `mediclick-appointment-core` + `tdd` |
+| UI-18 ✅ | 4 Disponibilidad | Mutaciones que pida el prototipo (p. ej. bloqueo desde una selección de rango), sobre la restricción unificada de SDD-010 | Sí | UI-17 | `mediclick-appointment-core` + `tdd` |
 | UI-19 | 4 Disponibilidad | Reglas, bloqueos, feriados y cupos generados sobre el calendario; reemplaza `WeeklyScheduleConfigurator`, las listas y el `ScheduleCalendar` de `/schedules` | — | UI-18 | `tdd` |
 | UI-20 | 5 Registro | Rediseño del registro del paciente, que ya tiene 4 pasos, con el wizard de Materio | — | UI-04 | `tdd` |
 | UI-21 | 5 Expediente | Expediente con la vista de usuario de Materio sobre `patientRecord` (el arnés enruta su GraphQL) | — | UI-02, UI-03 | `tdd` |
