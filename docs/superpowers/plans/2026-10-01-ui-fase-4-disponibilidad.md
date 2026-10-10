@@ -147,7 +147,7 @@ Alcance cerrado por "Decisiones UI-17": solo **M1**. M2 usa `POST /schedule-bloc
 
 ---
 
-## UI-19 — Disponibilidad visual
+## UI-19 — Disponibilidad visual ✅
 
 **Rama:** `feat/ui-19-disponibilidad-visual` · **Skills:** `tdd` (pruebas de navegador primero)
 
@@ -161,7 +161,7 @@ Ajustar a "Decisiones UI-17". Lo siguiente es la forma por defecto (una ruta `/a
 **Interfaces:**
 - Consumes: arnés UI-02 — `test.use({ actor: 'RECEPTIONIST' })` y `'DOCTOR'`; `api.on('GET /agenda', …)`, `api.on('GET /availability', …)`, `api.on('POST /availability/bulk-save', …)`, `api.on('POST /schedule-blocks', …)`, `api.on('PATCH /schedule-blocks/:id', …)`, `api.on('DELETE /schedule-blocks/:id', …)`, `api.on('GET /holidays', …)`, `api.on('POST /holidays', …)`, `api.on('POST /holidays/seed', …)` y M1 si existe; `expectAccessible(page)`.
 
-- [ ] **Step 1:** Escenarios:
+- [x] **Step 1:** Escenarios:
   - recepción selecciona un rango en el calendario, completa el drawer y se envía `POST /schedule-blocks` con `FULL_DAY` o `TIME_RANGE`, fechas y horas locales;
   - si existe M1, el drawer lista las citas afectadas y marca las pagadas antes de confirmar;
   - mover un bloqueo envía `PATCH` con el rango nuevo;
@@ -173,7 +173,7 @@ Ajustar a "Decisiones UI-17". Lo siguiente es la forma por defecto (una ruta `/a
   - un 403 del servidor muestra el mensaje y no deja estado a medias;
   - el médico ve la superficie sin acciones de edición;
   - `expectAccessible` en cada pestaña.
-- [ ] **Step 2:** `cd client && pnpm exec playwright test tests/e2e/availability-visual.spec.ts` — Expected: FAIL.
+- [x] **Step 2:** `cd client && pnpm exec playwright test tests/e2e/availability-visual.spec.ts` — Expected: FAIL.
 
 ### Task 2: Pantallas
 
@@ -191,10 +191,10 @@ Ajustar a "Decisiones UI-17". Lo siguiente es la forma por defecto (una ruta `/a
 - Consumes: `useAgenda({ doctorId }, range)` (UI-15), `availabilityService`, `scheduleBlocksService`, `holidaysService`, M1 si existe.
 - Produces: ruta `/availability` (lectura para médico, edición para recepción y admin).
 
-- [ ] **Step 1:** Selector de médico con `DoctorSelector` reestilizado (custom input horizontal de Materio si UI-17 lo eligió).
-- [ ] **Step 2:** Calendario, drawer, reglas y feriados; textos con el vocabulario de `CONTEXT.md`.
-- [ ] **Step 3:** Si UI-17 conserva la generación manual de cupos, migrar `GenerateDialog` (modos mes/rango, resultado y advertencias) a un drawer con React Query en lugar de los thunks de Redux; si no, borrarla. El total de cupos de la semana sale de `indicators.totalCupos` de la agenda.
-- [ ] **Step 4:** `cd client && pnpm exec playwright test tests/e2e/availability-visual.spec.ts` — Expected: PASS.
+- [x] **Step 1:** Selector de médico con `DoctorSelector` reestilizado (custom input horizontal de Materio si UI-17 lo eligió).
+- [x] **Step 2:** Calendario, drawer, reglas y feriados; textos con el vocabulario de `CONTEXT.md`.
+- [x] **Step 3:** Si UI-17 conserva la generación manual de cupos, migrar `GenerateDialog` (modos mes/rango, resultado y advertencias) a un drawer con React Query en lugar de los thunks de Redux; si no, borrarla. El total de cupos de la semana sale de `indicators.totalCupos` de la agenda.
+- [x] **Step 4:** `cd client && pnpm exec playwright test tests/e2e/availability-visual.spec.ts` — Expected: PASS.
 
 ### Task 3: Borrar lo reemplazado y verificar
 
@@ -204,9 +204,46 @@ Ajustar a "Decisiones UI-17". Lo siguiente es la forma por defecto (una ruta `/a
 - Delete: `client/src/views/holidays/components/`, `index.tsx` y `client/src/app/(staff)/holidays/` (ídem con `functions/` y `types/`)
 - Delete: `client/src/views/availability/components/WeeklyScheduleConfigurator.tsx`, `AvailabilitySummary.tsx`
 
-- [ ] **Step 1:** `grep -rn "views/schedules\|ScheduleCalendar\|WeeklyScheduleConfigurator\|ScheduleBlockList\|HolidayList" client/src` — Expected: sin referencias.
-- [ ] **Step 2:** `cd client && pnpm test && pnpm exec tsc --noEmit && pnpm exec eslint src/views/availability && pnpm build && pnpm test:a11y` — Expected: en verde.
-- [ ] **Step 3:** Revisión visual en claro/oscuro y con las opciones de accesibilidad del customizer; confirmar que el arrastre tiene alternativa por teclado (editar desde el drawer).
+- [x] **Step 1:** `grep -rn "views/schedules\|ScheduleCalendar\|WeeklyScheduleConfigurator\|ScheduleBlockList\|HolidayList" client/src` — Expected: sin referencias.
+- [x] **Step 2:** `cd client && pnpm test && pnpm exec tsc --noEmit && pnpm exec eslint src/views/availability && pnpm build && pnpm test:a11y` — Expected: en verde.
+- [x] **Step 3:** Revisión visual en claro/oscuro y con las opciones de accesibilidad del customizer; confirmar que el arrastre tiene alternativa por teclado (editar desde el drawer).
+
+### Notas de implementación
+
+Se aplicaron los ajustes de "Decisiones UI-17": `/availability` con Calendario y Reglas, bloqueos sin arrastre, `/holidays` como vista anual y sin generación manual.
+
+- **Calendario:** reutiliza `AgendaCalendar` de UI-15, que gana estas opciones:
+  - `onSelectRange` para la selección;
+  - `onSelectBlock`, con bloqueos pintados como eventos (`blocksAsEvents` en `toAgendaEvents`), porque FullCalendar no permite tocar un evento de fondo;
+  - `specialtyId`, `withDoctor` (el título de la cita lleva el médico en la vista de sede);
+  - `views` y `onSnapshot`, que entrega a la página los indicadores y el médico.
+
+  `toAgendaEvents` suma estas tres opciones con sus pruebas.
+- **Médico y sede:**
+  - recepción elige el médico o «Todos los médicos», que pide `GET /agenda` sin `doctorId` (la sede del usuario, 7 días) y ofrece solo semana, día y lista;
+  - un administrador sin sede no ve esa opción, porque la agenda de sede le exige `clinicId`, que la sesión no trae;
+  - el médico, que no puede listar médicos, ve su propia agenda (alcance vacío) y su id sale del snapshot.
+- **Bloqueos:**
+  - la selección horaria da un bloqueo por horas y tocar un día en la fila «Todo el día» da uno de día completo;
+  - el drawer consulta la vista previa de impacto (UI-18, `GET /availability-restrictions/impact`) en cada cambio, con `excludeRestrictionId` al editar;
+  - la lista de citas afectadas es `role="status"` y no `alert`, para no interrumpir al lector de pantalla en cada cambio.
+- **Reglas:**
+  - `rulesToWeek`, `weekToEntries` y `appointmentsOutsideRules` son funciones puras con pruebas;
+  - el formulario anterior mezclaba las franjas de todas las especialidades del médico aunque `bulk-save` reemplaza las de una; ahora muestra solo las de la especialidad elegida y conserva el tipo de cada franja;
+  - el aviso de citas que quedan fuera usa la agenda de los próximos 42 días.
+- **Feriados:**
+  - `/holidays` se reescribió con React Query: año, alta, edición, baja, carga de Perú y vista previa de impacto;
+  - el alcance lo elige solo un administrador sin sede; para el personal de sede lo fija el servidor con la sede del JWT.
+- **Fechas y horas:** inputs nativos (`type="date"` y `type="time"`) en lugar de `AppReactDatepicker`. Son accesibles por teclado y bastan para estos formularios.
+- **Borrado:**
+  - `views/schedules/` salvo `types/` (lo usan el reagendamiento y `schedules.service`);
+  - `views/schedule-blocks/` salvo `types/`;
+  - los componentes y el hook de `views/holidays/`;
+  - `WeeklyScheduleConfigurator`, `AvailabilitySummary`, `DoctorSelector` y los esquemas que quedaron sin uso;
+  - los slices y thunks de Redux `availability` y `schedules`.
+
+  `/schedules` y `/schedule-blocks` redirigen a `/availability`, y el menú queda con «Disponibilidad» y «Feriados».
+- **Pruebas de navegador:** `availability-visual.spec.ts`, 11 escenarios. La de zona horaria corre con `timezoneId: 'Asia/Tokyo'`.
 
 ---
 
