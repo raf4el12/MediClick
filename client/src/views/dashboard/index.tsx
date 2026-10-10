@@ -3,13 +3,13 @@
 import { useAppSelector } from '@/redux-store/hooks';
 import { selectUser } from '@/redux-store/slices/auth';
 import { AdminDashboard } from './components/AdminDashboard';
-import DoctorDashboardView from '@/views/doctor';
+import JornadaView from '@/views/doctor/jornada';
 
 const DashboardView = () => {
   const user = useAppSelector(selectUser);
 
   if (user?.role === 'DOCTOR') {
-    return <DoctorDashboardView />;
+    return <JornadaView />;
   }
 
   return <AdminDashboard />;

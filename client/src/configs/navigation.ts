@@ -57,7 +57,7 @@ const sections: { title: string; items: NavItem[] }[] = [
         actors: STAFF_ACTORS,
         permissions: [{ action: 'MANAGE', subject: 'CLINICS' }],
       },
-      { title: 'Inicio', path: '/doctor', icon: 'ri-home-4-line', actors: ['DOCTOR'] },
+      { title: 'Jornada', path: '/doctor', icon: 'ri-home-4-line', actors: ['DOCTOR'] },
       {
         title: 'Notificaciones',
         path: '/notifications',
@@ -70,7 +70,7 @@ const sections: { title: string; items: NavItem[] }[] = [
   {
     title: 'Gestión Médica',
     items: [
-      { title: 'Mis Citas Hoy', path: '/doctor/appointments', icon: 'ri-calendar-todo-line', actors: ['DOCTOR'] },
+      { title: 'Agenda', path: '/doctor/agenda', icon: 'ri-calendar-todo-line', actors: ['DOCTOR'] },
       {
         title: 'Citas',
         path: '/appointments',
@@ -190,7 +190,6 @@ const BOTTOM_NAV_PATHS = ['/patient', '/patient/book', '/patient/appointments', 
 // Rutas sin ítem de menú propio (o con un título distinto al del menú).
 const EXTRA_TITLES: Record<string, string> = {
   '/': 'Dashboard',
-  '/doctor/appointments': 'Mis Citas de Hoy',
   '/schedule-blocks': 'Bloqueos de Horario',
   '/profile': 'Mi Perfil',
   '/settings/account': 'Configuración',

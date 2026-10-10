@@ -27,9 +27,10 @@ describe('navigationFor', () => {
     ]);
   });
 
-  it('el médico ve su inicio y sus citas de hoy, y no el dashboard de la sede', () => {
+  it('el médico ve su jornada y su agenda, y no el dashboard de la sede', () => {
     const doctor = paths('DOCTOR');
-    expect(doctor).toEqual(expect.arrayContaining(['/doctor', '/doctor/appointments']));
+    expect(doctor).toEqual(expect.arrayContaining(['/doctor', '/doctor/agenda']));
+    expect(doctor).not.toContain('/doctor/appointments');
     expect(doctor).not.toContain('/dashboard');
     expect(doctor).not.toContain('/patient');
     expect(menuFor('DOCTOR').bottomNav).toBeUndefined();
