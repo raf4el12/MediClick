@@ -103,7 +103,7 @@ Los estados financieros agregados son `PENDING`, `PAID`, `PARTIAL`, `REFUNDED`, 
 - Reemplazar la disponibilidad de una especialidad desactiva y crea su conjunto completo dentro de una transacción serializada por médico y especialidad; un fallo conserva las reglas anteriores y las otras especialidades del médico. Un conflicto de serialización de PostgreSQL entre dos reemplazos concurrentes del mismo médico y especialidad se reintenta hasta 3 veces antes de propagarse como error.
 - Feriados, bloqueos y la anticipación mínima se evalúan con la fecha local de la sede.
 - Al generar cupos, solo un feriado global o de la sede del médico bloquea la fecha; un feriado de otra sede no afecta su agenda.
-- Crear o actualizar un feriado o bloqueo publica `availability.restriction_changed` con la sede, actor y rangos anterior/nuevo. El listener consulta la unión de los rangos y vuelve a comprobar `isHoliday` o `isBlocked` contra el estado final antes de cancelar una cita.
+- Crear o actualizar un feriado o bloqueo publica `availability.restriction_changed` con la sede, actor y rangos anterior/nuevo. El listener consulta la unión de los rangos y vuelve a comprobar `isHoliday` o `isBlocked` contra el estado final antes de cancelar una cita. La vista previa de impacto (`GET /availability-restrictions/impact`) aplica la misma resolución sin cancelar nada y cuenta solo las citas que la cancelación transiciona (`PENDING` y `CONFIRMED`); si cambia el listener, cambia también la vista previa.
 - Crear o reagendar combina la comprobación de solapamiento y la escritura en una transacción serializable.
 - Un cupo se ofrece libre solo si no se solapa con ninguna cita activa del médico en esa fecha, de cualquier especialidad, ni con un bloqueo, ni cae dentro de la anticipación mínima. `time-slots`, `available-days` (días con cupos por rango, máximo 62 días) y la agenda comparten ese cálculo (`computeSlots`); antes, `time-slots` solo descontaba las citas del propio bloque de agenda y ofrecía libres cupos que la creación luego rechazaba.
 
@@ -173,7 +173,7 @@ Estas conductas existen en el código, pero su intención de negocio no está re
 |---|---|
 | creación o reagendamiento | validador de cupo, repositorio transaccional, cupos disponibles, eventos de liberación |
 | estados de cita | pagos, recordatorios, lista de espera, notas/recetas, reseñas, reportes e interoperabilidad |
-| disponibilidad, feriados o bloqueos | generación de cupos, agenda (`GET /agenda`), citas existentes, notificaciones y reembolsos |
+| disponibilidad, feriados o bloqueos | generación de cupos, agenda (`GET /agenda`), vista previa de impacto (`GET /availability-restrictions/impact`), citas existentes, notificaciones y reembolsos |
 | pagos o plazos | expiración, webhook, idempotencia, cita confirmada y revisión financiera |
 | lista de espera | locks, ranking, expiraciones, aceptación concurrente y creación de cita |
 | `clinicId` o sede | guard, interceptor, cliente Prisma tenant-aware y callbacks transaccionales |
