@@ -7,7 +7,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
 import interactionPlugin from '@fullcalendar/interaction';
 import esLocale from '@fullcalendar/core/locales/es';
-import type { DatesSetArg, EventClickArg, EventDropArg } from '@fullcalendar/core';
+import type { DateSelectArg, DatesSetArg, EventClickArg, EventDropArg } from '@fullcalendar/core';
 import { useTheme } from '@mui/material/styles';
 import AppFullCalendar from '@/libs/styles/AppFullCalendar';
 import { useAppSelector } from '@/redux-store/hooks';
@@ -18,16 +18,25 @@ import { nowInTimezone } from '@/utils/timezone';
 import type { AppointmentStatus } from '@/views/appointments/types';
 import { useAgenda } from '../hooks/useAgenda';
 import { resolveDropTarget } from '../model/resolveDropTarget';
-import type { AgendaAppointment, AgendaEventProps, AgendaScope, AgendaSnapshot, DateRange } from '../types';
+import type { AgendaAppointment, AgendaBlock, AgendaEventProps, AgendaScope, AgendaSnapshot, DateRange } from '../types';
 
 export type AgendaView = 'dayGridMonth' | 'timeGridWeek' | 'timeGridDay' | 'listWeek';
 
 interface AgendaCalendarProps {
   scope: AgendaScope;
   view?: AgendaView;
+  /** Vistas ofrecidas; por defecto todas (sin mes para una sede). */
+  views?: AgendaView[];
   statuses?: AppointmentStatus[];
   showFreeCupos?: boolean;
+  specialtyId?: number;
+  /** Agenda de una sede: el título de la cita lleva el médico. */
+  withDoctor?: boolean;
   onSelectAppointment?: (appointment: AgendaAppointment, agenda: AgendaSnapshot) => void;
+  /** Disponibilidad: marcar un rango vacío y tocar un bloqueo para editarlo. */
+  onSelectRange?: (range: { start: Date; end: Date; allDay: boolean }) => void;
+  onSelectBlock?: (block: AgendaBlock) => void;
+  onSnapshot?: (agenda: AgendaSnapshot) => void;
 }
 
 const TIME_FORMAT = { hour: '2-digit', minute: '2-digit', hour12: false } as const;
@@ -51,16 +60,38 @@ const sedeNow = (tz: string) => {
  * Agenda sobre FullCalendar. Usa `timeZone: 'UTC'` porque los eventos llegan con la hora local de
  * la sede sin offset: así se pintan tal cual, sea cual sea la zona del navegador.
  */
-export default function AgendaCalendar({ scope, view = 'timeGridWeek', statuses, showFreeCupos, onSelectAppointment }: AgendaCalendarProps) {
+export default function AgendaCalendar({
+  scope,
+  view = 'timeGridWeek',
+  views,
+  statuses,
+  showFreeCupos,
+  specialtyId,
+  withDoctor,
+  onSelectAppointment,
+  onSelectRange,
+  onSelectBlock,
+  onSnapshot,
+}: AgendaCalendarProps) {
   const theme = useTheme();
   const user = useAppSelector(selectUser);
   const rootRef = useRef<HTMLDivElement>(null);
   const [range, setRange] = useState<DateRange | null>(null);
-  const { snapshot, events, reschedule } = useAgenda(scope, range, { statuses, showFreeCupos });
+  const { snapshot, events, reschedule } = useAgenda(scope, range, {
+    statuses,
+    showFreeCupos,
+    specialtyId,
+    withDoctor,
+    blocksAsEvents: !!onSelectBlock,
+  });
   const timezone = snapshot?.timezone ?? user?.clinicTimezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+  useEffect(() => {
+    if (snapshot) onSnapshot?.(snapshot);
+  }, [snapshot, onSnapshot]);
+
   // La agenda de una sede admite hasta 7 días: sin vista de mes.
-  const monthAllowed = !('clinicId' in scope);
+  const offered = views ?? (['dayGridMonth', 'timeGridWeek', 'timeGridDay', 'listWeek'] as AgendaView[]).filter((v) => v !== 'dayGridMonth' || !('clinicId' in scope));
   const calendarEvents = useMemo(() => events.map((e) => ({ ...e, durationEditable: false })), [events]);
 
   // FullCalendar marca los íconos de anterior/siguiente como role="img" sin nombre; el botón ya
@@ -76,6 +107,11 @@ export default function AgendaCalendar({ scope, view = 'timeGridWeek', statuses,
 
   const handleEventClick = ({ event, jsEvent }: EventClickArg) => {
     const props = event.extendedProps as AgendaEventProps;
+    if (props.kind === 'block' && snapshot) {
+      const block = snapshot.blocks.find((b) => b.id === props.blockId);
+      if (block) onSelectBlock?.(block);
+      return;
+    }
     if (props.kind !== 'appointment' || !snapshot) return;
     jsEvent.preventDefault();
     const appointment = snapshot.appointments.find((a) => a.id === props.appointmentId);
@@ -112,7 +148,7 @@ export default function AgendaCalendar({ scope, view = 'timeGridWeek', statuses,
         direction={theme.direction}
         headerToolbar={{
           start: 'prev,next today title',
-          end: [monthAllowed && 'dayGridMonth', 'timeGridWeek', 'timeGridDay', 'listWeek'].filter(Boolean).join(','),
+          end: offered.join(','),
         }}
         buttonText={{ today: 'Hoy', month: 'Mes', week: 'Semana', day: 'Día', list: 'Lista' }}
         buttonHints={{ prev: '$0 anterior', next: '$0 siguiente' }}
@@ -132,6 +168,12 @@ export default function AgendaCalendar({ scope, view = 'timeGridWeek', statuses,
         eventAllow={(dropInfo, dragged) => {
           const props = dragged?.extendedProps as AgendaEventProps | undefined;
           return !!snapshot && props?.kind === 'appointment' && resolveDropTarget(snapshot, props.appointmentId, dropInfo.start) !== null;
+        }}
+        selectable={!!onSelectRange}
+        selectMirror
+        select={(info: DateSelectArg) => {
+          info.view.calendar.unselect();
+          onSelectRange?.({ start: info.start, end: info.end, allDay: info.allDay });
         }}
         eventClick={handleEventClick}
         eventDrop={handleEventDrop}

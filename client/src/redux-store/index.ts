@@ -5,8 +5,6 @@ import { authSlice } from './slices/auth';
 import { specialtiesSlice } from './slices/specialties';
 import { categoriesSlice } from './slices/categories';
 import { doctorsSlice } from './slices/doctors';
-import { availabilitySlice } from './slices/availability';
-import { schedulesSlice } from './slices/schedules';
 import { usersSlice } from './slices/users';
 import { patientsSlice } from './slices/patients';
 import { appointmentsSlice } from './slices/appointments';
@@ -24,8 +22,6 @@ const rootReducer = combineReducers({
   specialties: specialtiesSlice.reducer,
   categories: categoriesSlice.reducer,
   doctors: doctorsSlice.reducer,
-  availability: availabilitySlice.reducer,
-  schedules: schedulesSlice.reducer,
   users: usersSlice.reducer,
   patients: patientsSlice.reducer,
   appointments: appointmentsSlice.reducer,

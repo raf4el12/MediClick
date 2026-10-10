@@ -210,4 +210,32 @@ describe('toAgendaEvents', () => {
       expect(lima.find((e) => e.id === 'bloqueo-8-2026-11-01')?.start).toBe('2026-11-01T08:00:00');
     });
   });
+
+  it('el filtro de especialidad deja solo sus citas y sus cupos libres', () => {
+    const agenda = snapshot({
+      appointments: [appointment({ id: 1, specialtyId: 2 }), appointment({ id: 2, specialtyId: 1 })],
+      cupos: [cupo({ specialtyId: 2 }), cupo({ specialtyId: 1, startTime: '11:00', endTime: '11:30' })],
+    });
+
+    const ids = toAgendaEvents(agenda, { specialtyId: 1, showFreeCupos: true }).map((e) => e.id);
+
+    expect(ids).toEqual(['cupo-40-11:00', 'cita-2']);
+  });
+
+  it('en la agenda de una sede el título lleva el médico antes del paciente', () => {
+    const [event] = toAgendaEvents(snapshot({ appointments: [appointment()] }), { withDoctor: true });
+
+    expect(event!.title).toBe('Lucía Paredes · Ana Torres');
+  });
+
+  it('en disponibilidad los bloqueos son eventos que se pueden tocar, no fondos', () => {
+    const agenda = snapshot({
+      blocks: [{ id: 8, doctorId: 12, type: 'TIME_RANGE', startDate: '2026-10-05', endDate: '2026-10-05', timeFrom: '14:00', timeTo: '16:00', reason: 'Reunión' }],
+    });
+
+    const [event] = toAgendaEvents(agenda, { blocksAsEvents: true });
+
+    expect(event).toMatchObject({ id: 'bloqueo-8-2026-10-05', title: 'Reunión', editable: false, classNames: ['bloqueo', 'bloqueo-evento'] });
+    expect(event!.display).toBeUndefined();
+  });
 });
