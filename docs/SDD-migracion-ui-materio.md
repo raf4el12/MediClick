@@ -217,7 +217,7 @@ expectAccessible(page)                          // axe WCAG 2.0/2.1 A y AA
 | UI-14 ✅ | 3 Jornada | Prototipo de jornada y agenda | — | UI-03 | `prototype` |
 | UI-15 ✅ | 3 Jornada | Capa de agenda (§5.2) y adaptador FullCalendar con estilo Materio | — | UI-02, UI-13 | `codebase-design` + `tdd` |
 | UI-16 ✅ | 3 Jornada | Jornada del médico: inicio, agenda, espacio de atención y reagendamiento por arrastre | — | UI-14, UI-15 | `tdd` |
-| UI-17 | 4 Disponibilidad | Prototipo de disponibilidad visual | — | UI-15 | `prototype` |
+| UI-17 ✅ | 4 Disponibilidad | Prototipo de disponibilidad visual | — | UI-15 | `prototype` |
 | UI-18 | 4 Disponibilidad | Mutaciones que pida el prototipo (p. ej. bloqueo desde una selección de rango), sobre la restricción unificada de SDD-010 | Sí | UI-17 | `mediclick-appointment-core` + `tdd` |
 | UI-19 | 4 Disponibilidad | Reglas, bloqueos, feriados y cupos generados sobre el calendario; reemplaza `WeeklyScheduleConfigurator`, las listas y el `ScheduleCalendar` de `/schedules` | — | UI-18 | `tdd` |
 | UI-20 | 5 Registro | Rediseño del registro del paciente, que ya tiene 4 pasos, con el wizard de Materio | — | UI-04 | `tdd` |
@@ -267,8 +267,13 @@ su fase.
    plan de la Fase 1. UI-10 resuelto (2026-10-09): tablero en Inicio y tabla con pestañas y panel
    lateral en Mis citas; detalle en "Decisiones de UI-10" del plan de la Fase 2. UI-14 resuelto
    (2026-10-09): jornada en `/doctor` con el espacio de atención como panel lateral y agenda en
-   `/doctor/agenda`; detalle en "Decisiones UI-14" del plan de la Fase 3.
-3. Mutaciones de UI-18: dependen del prototipo UI-17.
+   `/doctor/agenda`; detalle en "Decisiones UI-14" del plan de la Fase 3. UI-17 resuelto
+   (2026-10-10): `/availability` con pestañas Calendario y Reglas por médico, bloqueos que se
+   crean seleccionando un rango y se editan en un drawer, y `/holidays` como vista anual;
+   detalle en "Decisiones UI-17" del plan de la Fase 4.
+3. ~~Mutaciones de UI-18~~: resuelto (2026-10-10, UI-17). Solo la vista previa de impacto (M1),
+   un endpoint de lectura. Reofrecer a la lista de espera los cupos que libera quitar un bloqueo
+   o feriado (M4) queda fuera de esta fase: es una regla nueva y va en un ítem propio.
 4. ¿Reagendar puede cambiar de médico o de especialidad? El glosario define el reagendamiento
    como mover la cita a otro cupo conservando su identidad, pero el caso de uso acepta un cupo de
    otro médico o especialidad. Bloquea el arrastre entre médicos en UI-16; hasta decidirlo,
