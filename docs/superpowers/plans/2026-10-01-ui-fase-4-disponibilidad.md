@@ -35,7 +35,7 @@
 
 ---
 
-## UI-17 — Prototipo de disponibilidad visual
+## UI-17 — Prototipo de disponibilidad visual ✅
 
 **Rama:** `prototype/ui-17-disponibilidad` (descartable) + `docs/ui-17-decisiones-disponibilidad` (PR a `staging`) · **Skills:** `prototype` (rama UI, sub-forma A sobre `/availability`)
 
@@ -51,32 +51,32 @@
 - Consumes: `fixtures.ts` con un `AgendaSnapshot` falso (dos especialidades, reglas semanales, cupos generados, citas `CONFIRMED` y una `PAID`, un bloqueo, un feriado global y uno de sede) más reglas de disponibilidad falsas.
 - Produces: tres variantes estructuralmente distintas sobre el layout `(staff)`.
 
-- [ ] **Step 1:** Cabecera: "Tres variantes de disponibilidad visual, conmutables con `?variant=`, sobre `/availability`. PROTOTIPO — se descarta."
-- [ ] **Step 2:** Variante A — calendario `timeGridWeek` con cupos y citas; seleccionar un rango abre un drawer (patrón `AddEventSidebar`) para crear un bloqueo; reglas semanales en una pestaña aparte con el formulario actual reestilizado.
-- [ ] **Step 3:** Variante B — grilla semanal de reglas editable por arrastre (franjas por especialidad) arriba y calendario de restricciones abajo; un solo botón "Guardar" aplica el reemplazo.
-- [ ] **Step 4:** Variante C — vista mensual con feriados y bloqueos como protagonistas y panel lateral con la lista de restricciones (patrón `SidebarLeft`); las reglas viven en una pantalla de configuración separada.
-- [ ] **Step 5:** En las tres, antes de confirmar una restricción, mostrar la lista de citas que caerían dentro con su estado de pago, para validar si la vista previa de impacto es necesaria.
+- [x] **Step 1:** Cabecera: "Tres variantes de disponibilidad visual, conmutables con `?variant=`, sobre `/availability`. PROTOTIPO — se descarta."
+- [x] **Step 2:** Variante A — calendario `timeGridWeek` con cupos y citas; seleccionar un rango abre un drawer (patrón `AddEventSidebar`) para crear un bloqueo; reglas semanales en una pestaña aparte con el formulario actual reestilizado.
+- [x] **Step 3:** Variante B — grilla semanal de reglas editable por arrastre (franjas por especialidad) arriba y calendario de restricciones abajo; un solo botón "Guardar" aplica el reemplazo.
+- [x] **Step 4:** Variante C — vista mensual con feriados y bloqueos como protagonistas y panel lateral con la lista de restricciones (patrón `SidebarLeft`); las reglas viven en una pantalla de configuración separada.
+- [x] **Step 5:** En las tres, antes de confirmar una restricción, mostrar la lista de citas que caerían dentro con su estado de pago, para validar si la vista previa de impacto es necesaria.
 
 ### Task 2: Preguntas que el usuario debe cerrar
 
-- [ ] ¿Las reglas semanales se editan sobre la grilla (arrastrando franjas) o con formulario?
-- [ ] ¿Un bloqueo se crea seleccionando un rango en el calendario? ¿Se puede mover o estirar arrastrándolo?
-- [ ] ¿Hace falta una vista previa de impacto (citas que se cancelarían, cuáles tienen pago) antes de confirmar?
-- [ ] ¿Feriados en el mismo calendario o en una vista anual aparte (con la carga de feriados de Perú)?
-- [ ] ¿La generación manual de cupos (`GenerateDialog`) sigue existiendo o alcanza con la regeneración automática que ya hace `bulk-save`?
-- [ ] ¿Qué rutas sobreviven? Propuesta: una sola `/availability` con pestañas Calendario | Reglas | Feriados; se eliminan `/schedules` y `/schedule-blocks`.
-- [ ] ¿Eliminar un bloqueo debe reofrecer la capacidad recuperada a la lista de espera? Hoy no lo hace (ver UI-18, M4).
+- [x] ¿Las reglas semanales se editan sobre la grilla (arrastrando franjas) o con formulario?
+- [x] ¿Un bloqueo se crea seleccionando un rango en el calendario? ¿Se puede mover o estirar arrastrándolo?
+- [x] ¿Hace falta una vista previa de impacto (citas que se cancelarían, cuáles tienen pago) antes de confirmar?
+- [x] ¿Feriados en el mismo calendario o en una vista anual aparte (con la carga de feriados de Perú)?
+- [x] ¿La generación manual de cupos (`GenerateDialog`) sigue existiendo o alcanza con la regeneración automática que ya hace `bulk-save`?
+- [x] ¿Qué rutas sobreviven? Propuesta: una sola `/availability` con pestañas Calendario | Reglas | Feriados; se eliminan `/schedules` y `/schedule-blocks`.
+- [x] ¿Eliminar un bloqueo debe reofrecer la capacidad recuperada a la lista de espera? Hoy no lo hace (ver UI-18, M4).
 
 ### Task 3: Captura
 
-- [ ] **Step 1:** Commit y push de `prototype/ui-17-disponibilidad` (sin PR).
-- [ ] **Step 2:** PR `docs/ui-17-decisiones-disponibilidad` → `staging` con la sección "Decisiones UI-17" al final de este plan: variante elegida, respuestas, enlace al prototipo y la lista definitiva de mutaciones de UI-18 (o "UI-18 no necesario").
+- [x] **Step 1:** Commit y push de `prototype/ui-17-disponibilidad` (sin PR).
+- [x] **Step 2:** PR `docs/ui-17-decisiones-disponibilidad` → `staging` con la sección "Decisiones UI-17" al final de este plan: variante elegida, respuestas, enlace al prototipo y la lista definitiva de mutaciones de UI-18 (o "UI-18 no necesario").
 
 **Criterio de cierre:** las siete preguntas tienen respuesta y UI-18 tiene alcance cerrado.
 
 ---
 
-## UI-18 — Mutaciones de disponibilidad pedidas por el prototipo
+## UI-18 — Mutaciones de disponibilidad pedidas por el prototipo ✅
 
 **Rama:** `feat/ui-18-<mutación>` (una por mutación si son independientes) · **Skills:** `mediclick-appointment-core` → `mediclick-tenant-safety` → `tdd` → `mediclick-core-review`
 
@@ -94,9 +94,9 @@ Condicional a "Decisiones UI-17". Si el prototipo se resuelve con los endpoints 
 
 ### Task 1 (por cada mutación aprobada): especificar la invariante
 
-- [ ] **Step 1:** Leer `CONTEXT.md` y `APPOINTMENT-CORE.md` completos (paso 1 de `mediclick-appointment-core`).
-- [ ] **Step 2:** Trazar la entrada real: controller → caso de uso → repositorio → evento → `AvailabilityChangeListener` (`server/src/modules/appointments/application/listeners/availability-change.listener.ts`) → `AppointmentCancellationService` → outbox.
-- [ ] **Step 3:** Escribir en el PR la invariante con ejemplo permitido y rechazado (actor, sede, hora local, estado de pago, concurrencia).
+- [x] **Step 1:** Leer `CONTEXT.md` y `APPOINTMENT-CORE.md` completos (paso 1 de `mediclick-appointment-core`).
+- [x] **Step 2:** Trazar la entrada real: controller → caso de uso → repositorio → evento → `AvailabilityChangeListener` (`server/src/modules/appointments/application/listeners/availability-change.listener.ts`) → `AppointmentCancellationService` → outbox.
+- [x] **Step 3:** Escribir en el PR la invariante con ejemplo permitido y rechazado (actor, sede, hora local, estado de pago, concurrencia).
 
 ### Task 2: Tests primero
 
@@ -104,22 +104,50 @@ Condicional a "Decisiones UI-17". Si el prototipo se resuelve con los endpoints 
 - M1: Create `server/src/modules/availability/application/use-cases/preview-restriction-impact.use-case.ts` + `.spec.ts`; Modify `availability.controller.ts`.
 - M4: Modify `server/src/modules/schedule-blocks/application/use-cases/delete-schedule-block.use-case.ts`, `server/src/modules/holidays/application/use-cases/delete-holiday.use-case.ts`, `server/src/shared/events/availability-events.interface.ts`; Create el consumidor en `server/src/modules/waitlist/…` con su `.spec.ts`; integración en `*.integration.spec.ts`.
 
-- [ ] **Step 1 (M1):** casos: cita `CONFIRMED` dentro del rango aparece; cita `CANCELLED` no; feriado de sede B no afecta citas de sede A; bloqueo `TIME_RANGE` solo afecta citas solapadas; actor de otra sede → 404; `excludeRestrictionId` evita contar la propia restricción al editarla.
+- [x] **Step 1 (M1):** casos: cita `CONFIRMED` dentro del rango aparece; cita `CANCELLED` no; feriado de sede B no afecta citas de sede A; bloqueo `TIME_RANGE` solo afecta citas solapadas; actor de otra sede → 404; `excludeRestrictionId` evita contar la propia restricción al editarla.
 - [ ] **Step 2 (M4, solo si se aprueba):** casos: eliminar un bloqueo emite el evento en la misma transacción que la baja; redelivery del mismo `eventId` es no-op; un cupo que sigue cubierto por otro bloqueo no se ofrece.
-- [ ] **Step 3:** `cd server && pnpm test -- availability schedule-blocks holidays waitlist --runInBand` — Expected: FAIL por la razón esperada.
+- [x] **Step 3:** `cd server && pnpm test -- availability schedule-blocks holidays waitlist --runInBand` — Expected: FAIL por la razón esperada.
 
 ### Task 3: Implementación y verificación
 
-- [ ] **Step 1:** Implementar el cambio mínimo; ninguna mutación nueva cancela citas por su cuenta: siempre vía evento + listener.
-- [ ] **Step 2:** `cd server && pnpm test -- appointments --runInBand && pnpm test -- waitlist --runInBand && pnpm test -- payments --runInBand && pnpm build` (matriz de impacto de `APPOINTMENT-CORE.md`).
+- [x] **Step 1:** Implementar el cambio mínimo; ninguna mutación nueva cancela citas por su cuenta: siempre vía evento + listener.
+- [x] **Step 2:** `cd server && pnpm test -- appointments --runInBand && pnpm test -- waitlist --runInBand && pnpm test -- payments --runInBand && pnpm build` (matriz de impacto de `APPOINTMENT-CORE.md`).
 - [ ] **Step 3 (M4):** `RUN_DB_INTEGRATION=1 DATABASE_URL=<db de prueba> pnpm run test:integration -- waitlist availability`.
-- [ ] **Step 4:** Actualizar `APPOINTMENT-CORE.md` si cambió una regla (M4) y `mediclick-core-review` sobre el diff.
+- [x] **Step 4:** Actualizar `APPOINTMENT-CORE.md` si cambió una regla (M4) y `mediclick-core-review` sobre el diff.
 
 **Riesgo conocido:** `availability.restriction_changed` todavía se publica con `EventEmitter2` en memoria, no por la outbox (G-04 del SDD de hardening). Un crash entre la escritura de la restricción y el listener pierde las cancelaciones derivadas. Una mutación nueva de restricción usa el mismo camino para no divergir; moverlo a la outbox es un ítem del SDD de hardening, no de esta fase.
 
+### Notas de implementación
+
+Alcance cerrado por "Decisiones UI-17": solo **M1**. M2 usa `POST /schedule-blocks`; M3, M4 y M5 no se implementan (Step 2 y Step 3 de M4 no aplican).
+
+- **Ubicación:** el endpoint vive en el módulo `agenda` y no en `availability`, como sugería Task 2. La agenda ya es el modelo de lectura de citas, bloqueos y feriados con alcance de sede (`resolveAgendaScope`, lecturas con predicados explícitos sobre `this.prisma`), así que se reutiliza sin acoplar `availability` a `appointments`. Archivos: `preview-restriction-impact.use-case.ts` (+ spec), `restriction-coverage.ts` (reglas puras de cobertura), `prisma-restriction-impact.repository.ts` y `availability-restrictions.controller.ts`.
+- **Contrato:** `GET /availability-restrictions/impact?type=FULL_DAY|TIME_RANGE|HOLIDAY&doctorId?&clinicId?&startDate&endDate&timeFrom?&timeTo?&excludeRestrictionId?` → `{ total, withPayment, appointments[] }`. Cada cita trae id, médico, especialidad, día y horas locales, estado, pago y del paciente solo id y nombre. Permiso `READ:AGENDA`.
+- **Misma resolución que el listener:**
+  - se evalúa la unión del rango actual de la restricción editada (`excludeRestrictionId`) y el nuevo, contra el estado final: el borrador más las demás restricciones vigentes del mismo tipo;
+  - un bloqueo sigue la regla de `isBlocked`: día completo o franja que se solapa;
+  - un feriado sigue la de `isHoliday`: misma fecha, global o de la sede de la cita;
+  - las citas candidatas salen del mismo filtro: por médico o por `appointments.clinicId`.
+- **Estados:** solo cuentan `PENDING` y `CONFIRMED`, los únicos que `cancelAtomically` lleva a `CANCELLED`. El listener consulta además `IN_PROGRESS` y `COMPLETED`, pero su cancelación es un no-op. `withPayment` cuenta `PAID` y `PARTIAL`, que quedarían con reembolso pendiente.
+- **Alcance de feriados** (ajustado durante la implementación, igual que `CreateHolidayUseCase`):
+  - para el personal con sede vale la del JWT y `clinicId` es opcional; otra sede responde **403**, como al crear un feriado;
+  - un administrador global elige una sede (inexistente: 404) o ninguna: feriado global, que afecta citas de todas las sedes;
+  - el médico responde 403.
+  
+  Un `excludeRestrictionId` de un feriado ajeno al alcance se ignora.
+- **Alcance de bloqueos:** `resolveAgendaScope` con `doctorId`. El médico solo previsualiza su propia agenda, aunque no gestione bloqueos; un médico de otra sede responde 404. Un `excludeRestrictionId` de otro médico se ignora.
+- **400:**
+  - bloqueo sin `doctorId` o con `clinicId`;
+  - feriado con `doctorId`, con horas o de varios días;
+  - franja sin horas o con `timeFrom >= timeTo`;
+  - día completo con horas;
+  - fechas inexistentes, fin antes del inicio o más de 62 días (el tope de `available-days`).
+- **Pruebas:** 23 casos en `preview-restriction-impact.use-case.spec.ts` con un doble en memoria que aplica los mismos predicados que el repositorio. El repositorio Prisma no tiene prueba de integración: no hay PostgreSQL local.
+- **Acoplamiento a vigilar:** si cambia la resolución de `AvailabilityChangeListener` o los estados que cancela `cancelAtomically`, la vista previa debe cambiar en el mismo PR. Quedó anotado en `APPOINTMENT-CORE.md`.
+
 ---
 
-## UI-19 — Disponibilidad visual
+## UI-19 — Disponibilidad visual ✅
 
 **Rama:** `feat/ui-19-disponibilidad-visual` · **Skills:** `tdd` (pruebas de navegador primero)
 
@@ -133,7 +161,7 @@ Ajustar a "Decisiones UI-17". Lo siguiente es la forma por defecto (una ruta `/a
 **Interfaces:**
 - Consumes: arnés UI-02 — `test.use({ actor: 'RECEPTIONIST' })` y `'DOCTOR'`; `api.on('GET /agenda', …)`, `api.on('GET /availability', …)`, `api.on('POST /availability/bulk-save', …)`, `api.on('POST /schedule-blocks', …)`, `api.on('PATCH /schedule-blocks/:id', …)`, `api.on('DELETE /schedule-blocks/:id', …)`, `api.on('GET /holidays', …)`, `api.on('POST /holidays', …)`, `api.on('POST /holidays/seed', …)` y M1 si existe; `expectAccessible(page)`.
 
-- [ ] **Step 1:** Escenarios:
+- [x] **Step 1:** Escenarios:
   - recepción selecciona un rango en el calendario, completa el drawer y se envía `POST /schedule-blocks` con `FULL_DAY` o `TIME_RANGE`, fechas y horas locales;
   - si existe M1, el drawer lista las citas afectadas y marca las pagadas antes de confirmar;
   - mover un bloqueo envía `PATCH` con el rango nuevo;
@@ -145,7 +173,7 @@ Ajustar a "Decisiones UI-17". Lo siguiente es la forma por defecto (una ruta `/a
   - un 403 del servidor muestra el mensaje y no deja estado a medias;
   - el médico ve la superficie sin acciones de edición;
   - `expectAccessible` en cada pestaña.
-- [ ] **Step 2:** `cd client && pnpm exec playwright test tests/e2e/availability-visual.spec.ts` — Expected: FAIL.
+- [x] **Step 2:** `cd client && pnpm exec playwright test tests/e2e/availability-visual.spec.ts` — Expected: FAIL.
 
 ### Task 2: Pantallas
 
@@ -163,10 +191,10 @@ Ajustar a "Decisiones UI-17". Lo siguiente es la forma por defecto (una ruta `/a
 - Consumes: `useAgenda({ doctorId }, range)` (UI-15), `availabilityService`, `scheduleBlocksService`, `holidaysService`, M1 si existe.
 - Produces: ruta `/availability` (lectura para médico, edición para recepción y admin).
 
-- [ ] **Step 1:** Selector de médico con `DoctorSelector` reestilizado (custom input horizontal de Materio si UI-17 lo eligió).
-- [ ] **Step 2:** Calendario, drawer, reglas y feriados; textos con el vocabulario de `CONTEXT.md`.
-- [ ] **Step 3:** Si UI-17 conserva la generación manual de cupos, migrar `GenerateDialog` (modos mes/rango, resultado y advertencias) a un drawer con React Query en lugar de los thunks de Redux; si no, borrarla. El total de cupos de la semana sale de `indicators.totalCupos` de la agenda.
-- [ ] **Step 4:** `cd client && pnpm exec playwright test tests/e2e/availability-visual.spec.ts` — Expected: PASS.
+- [x] **Step 1:** Selector de médico con `DoctorSelector` reestilizado (custom input horizontal de Materio si UI-17 lo eligió).
+- [x] **Step 2:** Calendario, drawer, reglas y feriados; textos con el vocabulario de `CONTEXT.md`.
+- [x] **Step 3:** Si UI-17 conserva la generación manual de cupos, migrar `GenerateDialog` (modos mes/rango, resultado y advertencias) a un drawer con React Query en lugar de los thunks de Redux; si no, borrarla. El total de cupos de la semana sale de `indicators.totalCupos` de la agenda.
+- [x] **Step 4:** `cd client && pnpm exec playwright test tests/e2e/availability-visual.spec.ts` — Expected: PASS.
 
 ### Task 3: Borrar lo reemplazado y verificar
 
@@ -176,6 +204,84 @@ Ajustar a "Decisiones UI-17". Lo siguiente es la forma por defecto (una ruta `/a
 - Delete: `client/src/views/holidays/components/`, `index.tsx` y `client/src/app/(staff)/holidays/` (ídem con `functions/` y `types/`)
 - Delete: `client/src/views/availability/components/WeeklyScheduleConfigurator.tsx`, `AvailabilitySummary.tsx`
 
-- [ ] **Step 1:** `grep -rn "views/schedules\|ScheduleCalendar\|WeeklyScheduleConfigurator\|ScheduleBlockList\|HolidayList" client/src` — Expected: sin referencias.
-- [ ] **Step 2:** `cd client && pnpm test && pnpm exec tsc --noEmit && pnpm exec eslint src/views/availability && pnpm build && pnpm test:a11y` — Expected: en verde.
-- [ ] **Step 3:** Revisión visual en claro/oscuro y con las opciones de accesibilidad del customizer; confirmar que el arrastre tiene alternativa por teclado (editar desde el drawer).
+- [x] **Step 1:** `grep -rn "views/schedules\|ScheduleCalendar\|WeeklyScheduleConfigurator\|ScheduleBlockList\|HolidayList" client/src` — Expected: sin referencias.
+- [x] **Step 2:** `cd client && pnpm test && pnpm exec tsc --noEmit && pnpm exec eslint src/views/availability && pnpm build && pnpm test:a11y` — Expected: en verde.
+- [x] **Step 3:** Revisión visual en claro/oscuro y con las opciones de accesibilidad del customizer; confirmar que el arrastre tiene alternativa por teclado (editar desde el drawer).
+
+### Notas de implementación
+
+Se aplicaron los ajustes de "Decisiones UI-17": `/availability` con Calendario y Reglas, bloqueos sin arrastre, `/holidays` como vista anual y sin generación manual.
+
+- **Calendario:** reutiliza `AgendaCalendar` de UI-15, que gana estas opciones:
+  - `onSelectRange` para la selección;
+  - `onSelectBlock`, con bloqueos pintados como eventos (`blocksAsEvents` en `toAgendaEvents`), porque FullCalendar no permite tocar un evento de fondo;
+  - `specialtyId`, `withDoctor` (el título de la cita lleva el médico en la vista de sede);
+  - `views` y `onSnapshot`, que entrega a la página los indicadores y el médico.
+
+  `toAgendaEvents` suma estas tres opciones con sus pruebas.
+- **Médico y sede:**
+  - recepción elige el médico o «Todos los médicos», que pide `GET /agenda` sin `doctorId` (la sede del usuario, 7 días) y ofrece solo semana, día y lista;
+  - un administrador sin sede no ve esa opción, porque la agenda de sede le exige `clinicId`, que la sesión no trae;
+  - el médico, que no puede listar médicos, ve su propia agenda (alcance vacío) y su id sale del snapshot.
+- **Bloqueos:**
+  - la selección horaria da un bloqueo por horas y tocar un día en la fila «Todo el día» da uno de día completo;
+  - el drawer consulta la vista previa de impacto (UI-18, `GET /availability-restrictions/impact`) en cada cambio, con `excludeRestrictionId` al editar;
+  - la lista de citas afectadas es `role="status"` y no `alert`, para no interrumpir al lector de pantalla en cada cambio.
+- **Reglas:**
+  - `rulesToWeek`, `weekToEntries` y `appointmentsOutsideRules` son funciones puras con pruebas;
+  - el formulario anterior mezclaba las franjas de todas las especialidades del médico aunque `bulk-save` reemplaza las de una; ahora muestra solo las de la especialidad elegida y conserva el tipo de cada franja;
+  - el aviso de citas que quedan fuera usa la agenda de los próximos 42 días.
+- **Feriados:**
+  - `/holidays` se reescribió con React Query: año, alta, edición, baja, carga de Perú y vista previa de impacto;
+  - el alcance lo elige solo un administrador sin sede; para el personal de sede lo fija el servidor con la sede del JWT.
+- **Fechas y horas:** inputs nativos (`type="date"` y `type="time"`) en lugar de `AppReactDatepicker`. Son accesibles por teclado y bastan para estos formularios.
+- **Borrado:**
+  - `views/schedules/` salvo `types/` (lo usan el reagendamiento y `schedules.service`);
+  - `views/schedule-blocks/` salvo `types/`;
+  - los componentes y el hook de `views/holidays/`;
+  - `WeeklyScheduleConfigurator`, `AvailabilitySummary`, `DoctorSelector` y los esquemas que quedaron sin uso;
+  - los slices y thunks de Redux `availability` y `schedules`.
+
+  `/schedules` y `/schedule-blocks` redirigen a `/availability`, y el menú queda con «Disponibilidad» y «Feriados».
+- **Pruebas de navegador:** `availability-visual.spec.ts`, 11 escenarios. La de zona horaria corre con `timezoneId: 'Asia/Tokyo'`.
+
+---
+
+## Decisiones UI-17
+
+Cerrado el 2026-10-10. Fuente primaria: rama `prototype/ui-17-disponibilidad` (commit `5457380`), `/availability?variant=A|B|C` con datos falsos en la forma de `AgendaSnapshot` y de las reglas de disponibilidad. Las variantes viven en `views/availability/prototype-disponibilidad/Variants.tsx`. La comparación con capturas se revisó con el usuario, que eligió la **variante A** con dos cambios: los bloqueos no se arrastran y los feriados se gestionan en `/holidays`.
+
+**Pregunta:** ¿cómo edita recepción la oferta de un médico sobre el calendario sin perder de vista las citas que una restricción afectaría?
+**Respuesta:** sobre la agenda semanal del médico. Un bloqueo se crea marcando su rango y, antes de confirmar, el drawer lista las citas que se cancelarían con su estado de pago. Las reglas se editan en formulario.
+
+| # | Pregunta | Decisión |
+|---|---|---|
+| 1 | Reglas semanales | **Formulario**: el configurador actual reestilizado, con día, especialidad, horas, tipo y vigencia exactos. No se edita sobre la grilla, así que M5 no hace falta. |
+| 2 | Crear y editar bloqueos | **Se crean seleccionando un rango** en el calendario: día entero si la selección es de día completo, por horas si es en la grilla horaria. **Se editan tocándolos**, en el mismo drawer (`PATCH /schedule-blocks/:id`). No se mueven ni estiran arrastrando, para que un descuido no cancele citas pagadas (M3 sin UI). |
+| 3 | Vista previa de impacto | **Sí, con el endpoint M1.** El drawer de bloqueo, al crear y al editar, lista las citas activas que se cancelarían y marca las que tienen pago (quedan con reembolso pendiente). Guardar reglas muestra las citas próximas que quedan fuera de las reglas nuevas; no se cancelan y conservan su cupo. |
+| 4 | Feriados | **Se ven en el calendario** de disponibilidad y **se gestionan en `/holidays`**, una vista anual con filtro por año, alta, edición, baja y la carga de feriados de Perú. Los feriados son de la sede o globales, no de un médico. |
+| 5 | Generación manual de cupos | **Se elimina.** `bulk-save` ya regenera los cupos libres en toda la vigencia de las reglas, y no hay un job que necesite la generación manual. |
+| 6 | Rutas | **`/availability`** con pestañas **Calendario \| Reglas**, por médico, y **`/holidays`** como vista anual. Se eliminan **`/schedules`** y **`/schedule-blocks`**. |
+| 7 | Lista de espera al quitar una restricción | **No en esta fase.** Reofrecer los cupos recuperados (M4) es una regla nueva con evento en la outbox y consumidor propio; queda como ítem aparte. |
+
+**Reglas de negocio nuevas (D7):** ninguna. M4 era la única y quedó fuera, así que `APPOINTMENT-CORE.md` no cambia.
+
+**Alcance de UI-18:** solo **M1**, la vista previa de impacto. M2 usa `POST /schedule-blocks`, que ya existe; M3 (arrastre) y M5 (reglas sobre la grilla) quedan sin uso; M4 queda fuera. UI-18 pasa a ser una rama `feat/ui-18-vista-previa-impacto`.
+
+**Ajustes a UI-19:**
+
+- Task 1:
+  - no hay escenario de "mover un bloqueo" por arrastre; en su lugar, tocar un bloqueo abre el drawer y guardar envía `PATCH`;
+  - el drawer muestra las citas de M1 al crear y al editar;
+  - no hay escenario de generación manual;
+  - feriados se prueban sobre `/holidays`.
+- Task 2:
+  - pestañas Calendario | Reglas (sin Feriados);
+  - `AvailabilityCalendar` con `selectable`, y los bloqueos se abren al tocarlos, sin `editable`;
+  - `HolidaysPanel` pasa a ser la vista de `/holidays`;
+  - `GenerateDialog` se borra.
+- Task 3:
+  - se borran `views/schedules/` y `views/schedule-blocks/` con sus rutas;
+  - `views/holidays/` se reescribe sobre Materio en lugar de borrarse;
+  - el menú queda con "Disponibilidad" y "Feriados" y sin "Horarios" ni "Bloqueos".
+- Al seleccionar un rango hay que empezar en un hueco: si se empieza sobre una cita, FullCalendar intenta moverla. La pantalla lo explica en el texto de ayuda.

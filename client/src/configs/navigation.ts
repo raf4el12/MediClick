@@ -126,25 +126,11 @@ const sections: { title: string; items: NavItem[] }[] = [
     title: 'Programación',
     items: [
       {
-        title: 'Horarios',
-        path: '/schedules',
-        icon: 'ri-time-line',
-        actors: STAFF_ACTORS,
-        permissions: [{ action: 'READ', subject: 'SCHEDULES' }],
-      },
-      {
         title: 'Disponibilidad',
         path: '/availability',
         icon: 'ri-calendar-event-line',
         actors: STAFF_ACTORS,
         permissions: [{ action: 'READ', subject: 'AVAILABILITY' }],
-      },
-      {
-        title: 'Bloqueos',
-        path: '/schedule-blocks',
-        icon: 'ri-calendar-close-line',
-        actors: STAFF_ACTORS,
-        permissions: [{ action: 'READ', subject: 'SCHEDULE_BLOCKS' }],
       },
       {
         title: 'Feriados',
@@ -190,7 +176,6 @@ const BOTTOM_NAV_PATHS = ['/patient', '/patient/book', '/patient/appointments', 
 // Rutas sin ítem de menú propio (o con un título distinto al del menú).
 const EXTRA_TITLES: Record<string, string> = {
   '/': 'Dashboard',
-  '/schedule-blocks': 'Bloqueos de Horario',
   '/profile': 'Mi Perfil',
   '/settings/account': 'Configuración',
 };
