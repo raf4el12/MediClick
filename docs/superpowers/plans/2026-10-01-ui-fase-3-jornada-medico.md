@@ -335,7 +335,7 @@ Comportamientos:
 
 ---
 
-## UI-16 — Jornada del médico
+## UI-16 — Jornada del médico ✅
 
 **Rama:** `feat/ui-16-jornada-medico` · **Skills:** `tdd` (pruebas de navegador primero) → `mediclick-core-review` si UI-14 cambió alguna regla
 
@@ -358,7 +358,7 @@ Hoy la jornada vive duplicada en `views/doctor/components/DoctorDashboard.tsx` (
 **Interfaces:**
 - Consumes: arnés de UI-02 — `test.use({ actor: 'DOCTOR' })`, `api.on('GET /agenda', …)`, `api.on('GET /appointments/doctor/today', …)`, `api.on('GET /clinical-notes/appointment/:id', …)`, `api.on('GET /prescriptions/appointment/:id', …)`, `api.on('PATCH /appointments/:id/reschedule', …)`, `api.on('PATCH /appointments/:id/complete', …)`, `expectAccessible(page)`.
 
-- [ ] **Step 1:** Escenarios:
+- [x] **Step 1:** Escenarios:
   - la jornada muestra las citas de hoy en orden y los indicadores de `indicators`;
   - abrir una cita muestra notas y receta; crear una nota llama al endpoint y la lista se actualiza;
   - completar una cita `IN_PROGRESS` cambia su estado en la lista;
@@ -367,7 +367,7 @@ Hoy la jornada vive duplicada en `views/doctor/components/DoctorDashboard.tsx` (
   - una cita `COMPLETED` no se puede arrastrar;
   - el feriado de la sede se ve como fondo con su nombre;
   - `expectAccessible` en jornada y agenda.
-- [ ] **Step 2:** `cd client && pnpm exec playwright test tests/e2e/doctor-jornada.spec.ts` — Expected: FAIL (pantallas inexistentes).
+- [x] **Step 2:** `cd client && pnpm exec playwright test tests/e2e/doctor-jornada.spec.ts` — Expected: FAIL (pantallas inexistentes).
 
 ### Task 2: Pantallas
 
@@ -386,10 +386,10 @@ Hoy la jornada vive duplicada en `views/doctor/components/DoctorDashboard.tsx` (
 - Consumes: `useAgenda({ doctorId }, rangoDelDía)` para indicadores y lista; `clinicalNotesService`, `prescriptionsService`, `appointmentsService.complete`.
 - Produces: rutas `/doctor` (jornada) y `/doctor/agenda`.
 
-- [ ] **Step 1:** Jornada sobre `useAgenda` con el rango de hoy en la zona de la sede (reemplaza `GET /appointments/doctor/today` como fuente de la lista; mantener refresco de 2 minutos con `refetchInterval`).
-- [ ] **Step 2:** Espacio de atención con los componentes de Materio y los textos de `CONTEXT.md`.
-- [ ] **Step 3:** Agenda con `AgendaCalendar` (vistas semana, día, mes y lista) y filtros por estado.
-- [ ] **Step 4:** `cd client && pnpm exec playwright test tests/e2e/doctor-jornada.spec.ts` — Expected: PASS.
+- [x] **Step 1:** Jornada sobre `useAgenda` con el rango de hoy en la zona de la sede (reemplaza `GET /appointments/doctor/today` como fuente de la lista; mantener refresco de 2 minutos con `refetchInterval`).
+- [x] **Step 2:** Espacio de atención con los componentes de Materio y los textos de `CONTEXT.md`.
+- [x] **Step 3:** Agenda con `AgendaCalendar` (vistas semana, día, mes y lista) y filtros por estado.
+- [x] **Step 4:** `cd client && pnpm exec playwright test tests/e2e/doctor-jornada.spec.ts` — Expected: PASS.
 
 ### Task 3: Borrar lo reemplazado y verificar
 
@@ -398,10 +398,33 @@ Hoy la jornada vive duplicada en `views/doctor/components/DoctorDashboard.tsx` (
 - Delete: `client/src/views/doctor/appointments/` y `client/src/app/(staff)/doctor/appointments/` (si UI-14 confirma que se elimina la ruta)
 - Delete o reducir: `client/src/views/doctor/hooks/useDoctorDashboard.ts`
 
-- [ ] **Step 1:** `grep -rn "useDoctorDashboard\|AppointmentWorkspaceDialog\|AppointmentDetailPanel\|doctor/appointments" client/src` — Expected: sin referencias.
-- [ ] **Step 2:** Si `GET /appointments/doctor/today` queda sin consumidores en el cliente, dejarlo en el servidor (lo usan los tests del controller) y anotarlo en el PR.
-- [ ] **Step 3:** `cd client && pnpm test && pnpm exec tsc --noEmit && pnpm exec eslint src/views/doctor src/views/agenda && pnpm build && pnpm test:a11y` — Expected: todo en verde.
-- [ ] **Step 4:** Revisión visual en modo claro y oscuro, y con las opciones del customizer de accesibilidad (tamaño de letra, contraste alto, movimiento reducido).
+- [x] **Step 1:** `grep -rn "useDoctorDashboard\|AppointmentWorkspaceDialog\|AppointmentDetailPanel\|doctor/appointments" client/src` — Expected: sin referencias.
+- [x] **Step 2:** Si `GET /appointments/doctor/today` queda sin consumidores en el cliente, dejarlo en el servidor (lo usan los tests del controller) y anotarlo en el PR.
+- [x] **Step 3:** `cd client && pnpm test && pnpm exec tsc --noEmit && pnpm exec eslint src/views/doctor src/views/agenda && pnpm build && pnpm test:a11y` — Expected: todo en verde.
+- [x] **Step 4:** Revisión visual en modo claro y oscuro, y con las opciones del customizer de accesibilidad (tamaño de letra, contraste alto, movimiento reducido).
+
+### Notas de implementación
+
+Se aplicaron los ajustes de "Decisiones UI-14": jornada con panel lateral en `/doctor`, agenda con drawer en `/doctor/agenda` y `/doctor/appointments` como redirección.
+
+- **Fuentes de datos:** la lista y los cuatro indicadores salen de `useAgenda({}, hoy)` con refresco cada 2 minutos (el médico puede omitir `doctorId`). El motivo de la consulta no viene en `GET /agenda` (UI-13 lo excluye a propósito), así que el espacio de atención lo toma de `GET /appointments/doctor/today`, que sigue teniendo ese consumidor.
+- **Acciones:** `attentionActions` (función pura con pruebas en Vitest) decide qué ofrece el panel:
+  - "Marcar llegada" en citas confirmadas de hoy;
+  - "Inasistencia" en confirmadas cuya hora de inicio ya pasó en la sede, la misma regla del servidor;
+  - "Completar atención" en curso;
+  - notas y receta se escriben en curso o completada, como antes.
+  
+  `useSedeNow` actualiza el reloj de la sede cada minuto. Se agregó `appointmentsService.noShow`.
+- **Estado tras una acción:** `useAtencion` muestra el estado devuelto por el servidor mientras la agenda se vuelve a pedir, y deja de hacerlo en cuanto la agenda trae otro estado. Así el drawer de la agenda, que guarda la cita que se tocó, no queda desactualizado.
+- **Selección:** al entrar se abre la cita en curso si hay una. En pantallas angostas, tocar una cita desplaza la vista hasta el panel, que queda debajo de la lista.
+- **Componentes compartidos:**
+  - `views/agenda/status.ts` reúne la etiqueta y el color de cada estado para los filtros, los chips y el calendario;
+  - `AgendaStatusChips` muestra el estado, "En riesgo" (solo en citas por atender), el pago y "Sobrecupo";
+  - `AgendaCalendar.onSelectAppointment` ahora entrega la cita y la agenda, para resolver el nombre de la especialidad.
+- **Permisos:** `/doctor` y `/doctor/agenda` piden `READ:AGENDA`. En una base sin `seed-rbac.ts` el médico ve la pantalla de acceso denegado en lugar de una jornada vacía con error.
+- **Navegación:** "Inicio" pasa a "Jornada" y "Mis Citas Hoy" a "Agenda". Notas clínicas, recetas, historial médico y disponibilidad ya están en el menú del médico por sus permisos, así que se quitaron las tarjetas de acceso rápido.
+- **Borrado:** `DoctorDashboard`, `TodayAppointmentsList`, `DoctorStatCards`, `AppointmentWorkspaceDialog`, `views/doctor/appointments/` y `useDoctorDashboard`. `/dashboard` para un médico muestra la jornada.
+- **Pruebas de navegador:** `doctor-jornada.spec.ts` cubre 13 escenarios, entre ellos llegada, inasistencia y error visible. La cita de Ana a las 23:45 hace de "todavía no llega su hora": entre las 23:45 y las 23:59 de Lima esa prueba fallaría. El arnés del médico ahora responde por defecto `GET /agenda` y `GET /appointments/doctor/today`.
 
 ---
 
