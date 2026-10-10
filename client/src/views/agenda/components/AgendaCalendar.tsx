@@ -18,7 +18,7 @@ import { nowInTimezone } from '@/utils/timezone';
 import type { AppointmentStatus } from '@/views/appointments/types';
 import { useAgenda } from '../hooks/useAgenda';
 import { resolveDropTarget } from '../model/resolveDropTarget';
-import type { AgendaEventProps, AgendaScope, DateRange } from '../types';
+import type { AgendaAppointment, AgendaEventProps, AgendaScope, AgendaSnapshot, DateRange } from '../types';
 
 export type AgendaView = 'dayGridMonth' | 'timeGridWeek' | 'timeGridDay' | 'listWeek';
 
@@ -27,7 +27,7 @@ interface AgendaCalendarProps {
   view?: AgendaView;
   statuses?: AppointmentStatus[];
   showFreeCupos?: boolean;
-  onSelectAppointment?: (appointmentId: number) => void;
+  onSelectAppointment?: (appointment: AgendaAppointment, agenda: AgendaSnapshot) => void;
 }
 
 const TIME_FORMAT = { hour: '2-digit', minute: '2-digit', hour12: false } as const;
@@ -76,9 +76,10 @@ export default function AgendaCalendar({ scope, view = 'timeGridWeek', statuses,
 
   const handleEventClick = ({ event, jsEvent }: EventClickArg) => {
     const props = event.extendedProps as AgendaEventProps;
-    if (props.kind !== 'appointment') return;
+    if (props.kind !== 'appointment' || !snapshot) return;
     jsEvent.preventDefault();
-    onSelectAppointment?.(props.appointmentId);
+    const appointment = snapshot.appointments.find((a) => a.id === props.appointmentId);
+    if (appointment) onSelectAppointment?.(appointment, snapshot);
   };
 
   const handleEventDrop = async (info: EventDropArg) => {

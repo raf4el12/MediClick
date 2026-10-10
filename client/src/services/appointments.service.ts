@@ -86,6 +86,14 @@ export const appointmentsService = {
     return response.data;
   },
 
+  noShow: async (id: number): Promise<Appointment> => {
+    const response = await api.patch<Appointment>(
+      `/appointments/${id}/no-show`,
+    );
+
+    return response.data;
+  },
+
   confirm: async (id: number): Promise<Appointment> => {
     const response = await api.patch<Appointment>(
       `/appointments/${id}/confirm`,

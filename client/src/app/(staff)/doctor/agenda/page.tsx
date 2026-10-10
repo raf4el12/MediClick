@@ -1,10 +1,10 @@
 import { RoleGuard } from '@/components/shared/RoleGuard';
-import JornadaView from '@/views/doctor/jornada';
+import DoctorAgendaView from '@/views/doctor/agenda';
 
-export default function DoctorPage() {
+export default function DoctorAgendaPage() {
   return (
     <RoleGuard permissions={[{ action: 'READ', subject: 'AGENDA' }]}>
-      <JornadaView />
+      <DoctorAgendaView />
     </RoleGuard>
   );
 }

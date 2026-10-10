@@ -8,7 +8,11 @@ import { toAgendaEvents, type AgendaEventOptions } from '../model/toAgendaEvents
 import type { AgendaScope, DateRange, SlotTarget } from '../types';
 
 /** Agenda de un médico o una sede en un rango; `range` nulo mientras el calendario no informa el suyo. */
-export function useAgenda(scope: AgendaScope, range: DateRange | null, options: AgendaEventOptions = {}) {
+interface UseAgendaOptions extends AgendaEventOptions {
+  refetchInterval?: number;
+}
+
+export function useAgenda(scope: AgendaScope, range: DateRange | null, options: UseAgendaOptions = {}) {
   const queryClient = useQueryClient();
 
   const query = useQuery({
@@ -16,6 +20,7 @@ export function useAgenda(scope: AgendaScope, range: DateRange | null, options: 
     queryFn: () => agendaService.get(scope, range!),
     enabled: range !== null,
     placeholderData: (previous) => previous,
+    refetchInterval: options.refetchInterval,
   });
 
   const { statuses, showFreeCupos } = options;
