@@ -23,10 +23,10 @@ export function useAgenda(scope: AgendaScope, range: DateRange | null, options: 
     refetchInterval: options.refetchInterval,
   });
 
-  const { statuses, showFreeCupos } = options;
+  const { statuses, showFreeCupos, specialtyId, withDoctor, blocksAsEvents } = options;
   const events = useMemo(
-    () => (query.data ? toAgendaEvents(query.data, { statuses, showFreeCupos }) : []),
-    [query.data, statuses, showFreeCupos],
+    () => (query.data ? toAgendaEvents(query.data, { statuses, showFreeCupos, specialtyId, withDoctor, blocksAsEvents }) : []),
+    [query.data, statuses, showFreeCupos, specialtyId, withDoctor, blocksAsEvents],
   );
 
   const mutation = useMutation({

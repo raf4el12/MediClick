@@ -1,272 +1,43 @@
 'use client';
 
-import { useEffect, useMemo, useState, useCallback } from 'react';
-import { useAppDispatch, useAppSelector } from '@/redux-store/hooks';
-import {
-  selectAvailabilityData,
-  selectAvailabilityDoctors,
-  selectAvailabilityLoading,
-  selectAvailabilityError,
-} from '@/redux-store/slices/availability';
-import {
-  fetchAvailabilityThunk,
-  fetchAvailabilityDoctorsThunk,
-  bulkSaveAvailabilityThunk,
-} from '@/redux-store/thunks/availability.thunks';
-import {
-  type DayOfWeek,
-  type WeeklySchedule,
-  AvailabilityType,
-  ORDERED_DAYS,
-  createDefaultSchedule,
-} from '../types';
+import { useMemo } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { availabilityService } from '@/services/availability.service';
+import { doctorsService } from '@/services/doctors.service';
+import { rulesToWeek, weekToEntries, type WeekRules } from '../model/weekRules';
 
-export function useAvailability() {
-  const dispatch = useAppDispatch();
+/** Médicos que recepción puede elegir. */
+export function useDoctorOptions(enabled: boolean) {
+  return useQuery({
+    queryKey: ['availability', 'doctors'],
+    queryFn: async () => (await doctorsService.findAllPaginated({ pageSize: 100, currentPage: 1 })).rows,
+    enabled,
+    staleTime: 5 * 60_000,
+  });
+}
 
-  const data = useAppSelector(selectAvailabilityData);
-  const doctors = useAppSelector(selectAvailabilityDoctors);
-  const loading = useAppSelector(selectAvailabilityLoading);
-  const error = useAppSelector(selectAvailabilityError);
+/** Reglas semanales de un médico en una especialidad, y su reemplazo con `bulk-save`. */
+export function useWeekRules(doctorId: number | null, specialtyId: number | null) {
+  const queryClient = useQueryClient();
 
-  const [selectedDoctorId, setSelectedDoctorId] = useState<number | ''>('');
-  const [selectedSpecialtyId, setSelectedSpecialtyId] = useState<number | ''>('');
-  const [schedule, setSchedule] = useState<WeeklySchedule>(createDefaultSchedule());
-  const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
-  const [saving, setSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
+  const rules = useQuery({
+    queryKey: ['availability', 'rules', doctorId],
+    queryFn: async () => (await availabilityService.findAllPaginated({ pageSize: 100, currentPage: 1 }, doctorId!)).rows,
+    enabled: doctorId !== null,
+  });
 
-  // Load doctors on mount
-  useEffect(() => {
-    void dispatch(fetchAvailabilityDoctorsThunk());
-  }, [dispatch]);
-
-  // Load existing availability when doctor changes
-  useEffect(() => {
-    if (selectedDoctorId) {
-      void dispatch(
-        fetchAvailabilityThunk({
-          pagination: { pageSize: 100, currentPage: 1 },
-          doctorId: selectedDoctorId,
-        }),
-      );
-    }
-  }, [dispatch, selectedDoctorId]);
-
-  // Build weekly schedule from existing availability data
-  useEffect(() => {
-    if (selectedDoctorId && data.rows.length > 0) {
-      // Build schedule from server data — start with all days disabled/empty
-      const newSchedule = createDefaultSchedule();
-
-      for (const day of ORDERED_DAYS) {
-        newSchedule[day].enabled = false;
-        newSchedule[day].slots = [];
-      }
-
-      for (const avail of data.rows) {
-        if (!avail.isAvailable) continue;
-        const day = avail.dayOfWeek as DayOfWeek;
-        if (!newSchedule[day]) continue;
-
-        newSchedule[day].enabled = true;
-        newSchedule[day].slots.push({
-          start: avail.timeFrom,
-          end: avail.timeTo,
-        });
-
-        // Use the first availability's dates as range
-        if (!dateRange.startDate && avail.startDate) {
-          setDateRange({
-            startDate: avail.startDate.split('T')[0] ?? '',
-            endDate: avail.endDate.split('T')[0] ?? '',
-          });
-        }
-      }
-
-      setSchedule(newSchedule);
-    } else {
-      // No server data — use defaults (Mon-Fri 08:00-14:00)
-      setSchedule(createDefaultSchedule());
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- Only rebuild schedule when source data or selected doctor changes; other deps are stable callbacks
-  }, [data.rows, selectedDoctorId]);
-
-  // Doctor index map for O(1) lookup
-  const doctorMap = useMemo(() => new Map(doctors.map((d) => [d.id, d])), [doctors]);
-
-  const selectedDoctor = useMemo(
-    () => doctorMap.get(selectedDoctorId as number) ?? null,
-    [doctorMap, selectedDoctorId],
+  const week = useMemo(
+    () => (rules.data && specialtyId !== null ? rulesToWeek(rules.data, specialtyId) : null),
+    [rules.data, specialtyId],
   );
 
-  const doctorSpecialties: Array<{ id: number; name: string }> = useMemo(
-    () => selectedDoctor?.specialties ?? [],
-    [selectedDoctor],
-  );
+  const save = useMutation({
+    mutationFn: (next: WeekRules) => availabilityService.bulkSave({ doctorId: doctorId!, specialtyId: specialtyId!, entries: weekToEntries(next) }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['availability', 'rules', doctorId] });
+      void queryClient.invalidateQueries({ queryKey: ['agenda'] });
+    },
+  });
 
-  // KPIs
-  const activeDays = useMemo(
-    () => ORDERED_DAYS.filter((day) => schedule[day].enabled).length,
-    [schedule],
-  );
-
-  const weeklyHours = useMemo(() => {
-    let total = 0;
-
-    for (const day of ORDERED_DAYS) {
-      if (!schedule[day].enabled) continue;
-
-      for (const slot of schedule[day].slots) {
-        const startParts = slot.start.split(':').map(Number);
-        const endParts = slot.end.split(':').map(Number);
-        const sh = startParts[0] ?? 0;
-        const sm = startParts[1] ?? 0;
-        const eh = endParts[0] ?? 0;
-        const em = endParts[1] ?? 0;
-        const diff = (eh * 60 + em) - (sh * 60 + sm);
-        if (diff > 0) total += diff;
-      }
-    }
-
-    return Math.round((total / 60) * 10) / 10;
-  }, [schedule]);
-
-  // Schedule manipulation
-  const toggleDay = (day: DayOfWeek) => {
-    setSchedule((prev) => {
-      const wasEnabled = prev[day].enabled;
-
-      return {
-        ...prev,
-        [day]: {
-          enabled: !wasEnabled,
-          slots: !wasEnabled && prev[day].slots.length === 0
-            ? [{ start: '08:00', end: '14:00' }]
-            : prev[day].slots,
-        },
-      };
-    });
-  };
-
-  const addSlot = (day: DayOfWeek) => {
-    setSchedule((prev) => ({
-      ...prev,
-      [day]: {
-        ...prev[day],
-        slots: [...prev[day].slots, { start: '14:00', end: '18:00' }],
-      },
-    }));
-  };
-
-  const removeSlot = (day: DayOfWeek, index: number) => {
-    setSchedule((prev) => ({
-      ...prev,
-      [day]: {
-        ...prev[day],
-        slots: prev[day].slots.filter((_, i) => i !== index),
-      },
-    }));
-  };
-
-  const updateSlot = (
-    day: DayOfWeek,
-    index: number,
-    field: 'start' | 'end',
-    value: string,
-  ) => {
-    setSchedule((prev) => ({
-      ...prev,
-      [day]: {
-        ...prev[day],
-        slots: prev[day].slots.map((slot, i) =>
-          i === index ? { ...slot, [field]: value } : slot,
-        ),
-      },
-    }));
-  };
-
-  // Save all — single bulk request: deletes old + creates new on the server
-  const handleSave = useCallback(async () => {
-    if (!selectedDoctorId || !selectedSpecialtyId || !dateRange.startDate || !dateRange.endDate) return;
-
-    setSaving(true);
-    setSaveSuccess(false);
-
-    // Build entries from schedule
-    const entries: Array<{
-      startDate: string;
-      endDate: string;
-      dayOfWeek: string;
-      timeFrom: string;
-      timeTo: string;
-      type: string;
-    }> = [];
-
-    for (const day of ORDERED_DAYS) {
-      if (!schedule[day].enabled) continue;
-
-      for (const slot of schedule[day].slots) {
-        entries.push({
-          startDate: dateRange.startDate,
-          endDate: dateRange.endDate,
-          dayOfWeek: day,
-          timeFrom: slot.start,
-          timeTo: slot.end,
-          type: AvailabilityType.REGULAR,
-        });
-      }
-    }
-
-    if (entries.length > 0) {
-      const result = await dispatch(
-        bulkSaveAvailabilityThunk({
-          doctorId: selectedDoctorId as number,
-          specialtyId: selectedSpecialtyId as number,
-          entries,
-        }),
-      );
-
-      if (bulkSaveAvailabilityThunk.fulfilled.match(result)) {
-        setSaveSuccess(true);
-      }
-    } else {
-      setSaveSuccess(true);
-    }
-
-    // Reload availability
-    void dispatch(
-      fetchAvailabilityThunk({
-        pagination: { pageSize: 100, currentPage: 1 },
-        doctorId: selectedDoctorId as number,
-      }),
-    );
-
-    setSaving(false);
-  }, [dispatch, selectedDoctorId, selectedSpecialtyId, dateRange, schedule]);
-
-  return {
-    doctors,
-    selectedDoctorId,
-    setSelectedDoctorId,
-    selectedDoctor,
-    selectedSpecialtyId,
-    setSelectedSpecialtyId,
-    doctorSpecialties,
-    schedule,
-    dateRange,
-    setDateRange,
-    loading,
-    error,
-    saving,
-    saveSuccess,
-    setSaveSuccess,
-    activeDays,
-    weeklyHours,
-    toggleDay,
-    addSlot,
-    removeSlot,
-    updateSlot,
-    handleSave,
-  };
+  return { week, isLoading: rules.isLoading, error: rules.error, save };
 }

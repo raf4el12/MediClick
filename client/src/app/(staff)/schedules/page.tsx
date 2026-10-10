@@ -1,10 +1,6 @@
-import { RoleGuard } from '@/components/shared/RoleGuard';
-import SchedulesView from '@/views/schedules';
+import { redirect } from 'next/navigation';
 
-export default function SchedulesPage() {
-  return (
-    <RoleGuard permissions={[{ action: 'READ', subject: 'SCHEDULES' }]}>
-      <SchedulesView />
-    </RoleGuard>
-  );
+// Reemplazada por /availability (decisión 6 de UI-17).
+export default function Page() {
+  redirect('/availability');
 }

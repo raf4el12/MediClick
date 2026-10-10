@@ -230,6 +230,19 @@ const AppFullCalendar = styled('div')(({ theme }: { theme: Theme }) => ({
       }
     },
 
+    // Bloqueos de agenda como eventos (disponibilidad): se tocan para editarlos.
+    '& .fc-event.bloqueo-evento': {
+      cursor: 'pointer',
+      border: '1px dashed var(--mui-palette-text-secondary)',
+      backgroundColor: 'var(--mui-palette-background-paper)',
+      backgroundImage: 'repeating-linear-gradient(45deg, var(--mui-palette-action-selected) 0 6px, transparent 6px 12px)',
+      '& .fc-event-title, & .fc-event-time': {
+        color: 'var(--mui-palette-text-primary)',
+        fontSize: theme.typography.caption.fontSize,
+        fontWeight: 500
+      }
+    },
+
     // En la vista de mes el nombre del fondo va abajo, sin tapar el número del día.
     '& .fc-daygrid-bg-harness .fc-event-title': {
       position: 'absolute',

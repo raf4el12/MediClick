@@ -4,6 +4,11 @@ import type { AgendaAppointment, AgendaBlock, AgendaCupo, AgendaEvent, AgendaHol
 export interface AgendaEventOptions {
   statuses?: AppointmentStatus[];
   showFreeCupos?: boolean;
+  specialtyId?: number;
+  /** Agenda de una sede: el título lleva el médico antes del paciente. */
+  withDoctor?: boolean;
+  /** Disponibilidad: los bloqueos se pintan como eventos para poder tocarlos y editarlos. */
+  blocksAsEvents?: boolean;
 }
 
 const MOVABLE: AppointmentStatus[] = [AppointmentStatus.PENDING, AppointmentStatus.CONFIRMED];
@@ -19,9 +24,9 @@ const addDays = (date: string, days: number) => {
   return d.toISOString().slice(0, 10);
 };
 
-const appointmentEvent = (a: AgendaAppointment): AgendaEvent => ({
+const appointmentEvent = (a: AgendaAppointment, doctorName?: string): AgendaEvent => ({
   id: `cita-${a.id}`,
-  title: a.patient.fullName,
+  title: doctorName ? `${doctorName} · ${a.patient.fullName}` : a.patient.fullName,
   start: at(a.date, a.startTime),
   end: at(a.date, a.endTime),
   editable: isMovable(a),
@@ -92,11 +97,17 @@ const holidayEvent = (h: AgendaHoliday): AgendaEvent => ({
  * `timeZone: 'UTC'`: así el calendario pinta la hora local de la sede tal cual viene.
  */
 export function toAgendaEvents(agenda: AgendaSnapshot, options: AgendaEventOptions = {}): AgendaEvent[] {
-  const { statuses, showFreeCupos = false } = options;
-  const appointments = agenda.appointments.filter((a) => !statuses || statuses.includes(a.status)).map(appointmentEvent);
-  const cupos = showFreeCupos ? agenda.cupos.filter((c) => c.available).map(cupoEvent) : [];
+  const { statuses, showFreeCupos = false, specialtyId, withDoctor = false } = options;
+  const doctorName = (id: number) => (withDoctor ? agenda.doctors.find((d) => d.id === id)?.fullName : undefined);
+  const ofSpecialty = (item: { specialtyId: number }) => specialtyId === undefined || item.specialtyId === specialtyId;
+  const appointments = agenda.appointments
+    .filter((a) => ofSpecialty(a) && (!statuses || statuses.includes(a.status)))
+    .map((a) => appointmentEvent(a, doctorName(a.doctorId)));
+  const cupos = showFreeCupos ? agenda.cupos.filter((c) => c.available && ofSpecialty(c)).map(cupoEvent) : [];
 
-  const blocks = agenda.blocks.flatMap(blockEvents);
+  const blocks = agenda.blocks
+    .flatMap(blockEvents)
+    .map((e) => (options.blocksAsEvents ? { ...e, display: undefined, classNames: [...e.classNames, 'bloqueo-evento'] } : e));
 
   const holidays = agenda.holidays.map(holidayEvent);
 
