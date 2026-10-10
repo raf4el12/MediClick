@@ -235,7 +235,7 @@ Decisión: un subject `AGENDA` en lugar de reutilizar `READ:SCHEDULE_BLOCKS` o c
 
 ---
 
-## UI-15 — Capa de agenda y adaptador FullCalendar
+## UI-15 — Capa de agenda y adaptador FullCalendar ✅
 
 **Rama:** `feat/ui-15-capa-agenda` · **Skills:** `codebase-design` → `tdd`
 
@@ -250,8 +250,8 @@ Decisión: un subject `AGENDA` en lugar de reutilizar `READ:SCHEDULE_BLOCKS` o c
 - Consumes: `GET /agenda` (UI-13) vía `client/src/libs/axios.ts`.
 - Produces: `agendaService.get({ doctorId | clinicId, from, to }): Promise<AgendaSnapshot>`; tipos `AgendaSnapshot` (espejo de `AgendaResponseDto`), `AgendaEvent`, `SlotTarget = { scheduleId; startTime; endTime }`, `DateRange = { from: string; to: string }`.
 
-- [ ] **Step 1:** `cd client && pnpm add @fullcalendar/core@6.1.21 @fullcalendar/react@6.1.21 @fullcalendar/daygrid@6.1.21 @fullcalendar/timegrid@6.1.21 @fullcalendar/list@6.1.21 @fullcalendar/interaction@6.1.21` — Expected: versiones exactas en `package.json`. No usar 7.x (exige `temporal-polyfill` y cambia temas) ni `@fullcalendar/common` (paquete v5).
-- [ ] **Step 2:** Servicio y tipos; `pnpm exec tsc --noEmit` — Expected: PASS.
+- [x] **Step 1:** `cd client && pnpm add @fullcalendar/core@6.1.21 @fullcalendar/react@6.1.21 @fullcalendar/daygrid@6.1.21 @fullcalendar/timegrid@6.1.21 @fullcalendar/list@6.1.21 @fullcalendar/interaction@6.1.21` — Expected: versiones exactas en `package.json`. No usar 7.x (exige `temporal-polyfill` y cambia temas) ni `@fullcalendar/common` (paquete v5).
+- [x] **Step 2:** Servicio y tipos; `pnpm exec tsc --noEmit` — Expected: PASS.
 
 ### Task 2: `toAgendaEvents` con TDD
 
@@ -265,16 +265,16 @@ Decisión: un subject `AGENDA` en lugar de reutilizar `READ:SCHEDULE_BLOCKS` o c
 
 Comportamientos (un test por fila, rojo → verde de a uno):
 
-- [ ] Cita `CONFIRMED` → evento con `start`/`end` locales sin offset, `extendedProps { kind: 'appointment', appointmentId, status, paymentStatus, patientName }` y clase por estado.
-- [ ] Cita `PENDING`/`CONFIRMED` no sobrecupo → `editable: true`; `IN_PROGRESS`, `COMPLETED`, `CANCELLED`, `NO_SHOW` y sobrecupos → `editable: false`.
-- [ ] `statuses` filtra citas (los filtros de estado del panel lateral).
-- [ ] Cupo libre con `showFreeCupos` → evento `display: 'background'`, clase `cupo-libre`, no editable; cupo ocupado no se pinta.
-- [ ] Bloqueo `FULL_DAY` de 3 días → un evento de fondo `allDay` con `end` exclusivo = `endDate + 1 día`.
-- [ ] Bloqueo `TIME_RANGE` de 2 días → un evento de fondo por día con `timeFrom`–`timeTo`.
-- [ ] Feriado global y de sede → evento de fondo `allDay` con el nombre del feriado.
-- [ ] El resultado no depende de la zona del proceso: el mismo snapshot da la misma salida con `TZ=Asia/Tokyo`.
+- [x] Cita `CONFIRMED` → evento con `start`/`end` locales sin offset, `extendedProps { kind: 'appointment', appointmentId, status, paymentStatus, patientName }` y clase por estado.
+- [x] Cita `PENDING`/`CONFIRMED` no sobrecupo → `editable: true`; `IN_PROGRESS`, `COMPLETED`, `CANCELLED`, `NO_SHOW` y sobrecupos → `editable: false`.
+- [x] `statuses` filtra citas (los filtros de estado del panel lateral).
+- [x] Cupo libre con `showFreeCupos` → evento `display: 'background'`, clase `cupo-libre`, no editable; cupo ocupado no se pinta.
+- [x] Bloqueo `FULL_DAY` de 3 días → un evento de fondo `allDay` con `end` exclusivo = `endDate + 1 día`.
+- [x] Bloqueo `TIME_RANGE` de 2 días → un evento de fondo por día con `timeFrom`–`timeTo`.
+- [x] Feriado global y de sede → evento de fondo `allDay` con el nombre del feriado.
+- [x] El resultado no depende de la zona del proceso: el mismo snapshot da la misma salida con `TZ=Asia/Tokyo`.
 
-- [ ] **Run:** `cd client && pnpm test -- toAgendaEvents && TZ=Asia/Tokyo pnpm test -- toAgendaEvents` — Expected: PASS en ambas.
+- [x] **Run:** `cd client && pnpm test -- toAgendaEvents && TZ=Asia/Tokyo pnpm test -- toAgendaEvents` — Expected: PASS en ambas.
 
 ### Task 3: `resolveDropTarget` con TDD
 
@@ -288,14 +288,14 @@ Comportamientos (un test por fila, rojo → verde de a uno):
 
 Comportamientos:
 
-- [ ] Soltar dentro de un cupo libre del mismo médico y especialidad → su `{ scheduleId, startTime, endTime }`.
-- [ ] Soltar dentro de un cupo libre de otra especialidad o de otro médico → `null`.
-- [ ] Soltar sobre un cupo ocupado, bloqueado o de feriado (`available: false`) → `null`.
-- [ ] Soltar sobre el cupo de origen → `null` (sin cambio).
-- [ ] Soltar en un instante sin cupo → `null`.
-- [ ] La lectura de la hora no depende de la zona del navegador (`TZ=Asia/Tokyo`).
+- [x] Soltar dentro de un cupo libre del mismo médico y especialidad → su `{ scheduleId, startTime, endTime }`.
+- [x] Soltar dentro de un cupo libre de otra especialidad o de otro médico → `null`.
+- [x] Soltar sobre un cupo ocupado, bloqueado o de feriado (`available: false`) → `null`.
+- [x] Soltar sobre el cupo de origen → `null` (sin cambio).
+- [x] Soltar en un instante sin cupo → `null`.
+- [x] La lectura de la hora no depende de la zona del navegador (`TZ=Asia/Tokyo`).
 
-- [ ] **Run:** `cd client && pnpm test -- resolveDropTarget && TZ=Asia/Tokyo pnpm test -- resolveDropTarget` — Expected: PASS.
+- [x] **Run:** `cd client && pnpm test -- resolveDropTarget && TZ=Asia/Tokyo pnpm test -- resolveDropTarget` — Expected: PASS.
 
 ### Task 4: `useAgenda` y adaptador visual
 
@@ -309,14 +309,29 @@ Comportamientos:
 - Consumes: `agendaService`, `appointmentsService.reschedule(id, { newScheduleId, startTime, endTime, reason? })`, React Query.
 - Produces: `useAgenda(scope, range) → { snapshot, events, isLoading, reschedule(appointmentId, target) }` con clave `['agenda', scope, range]`; `reschedule` invalida `['agenda']` y `['doctor', 'daily-appointments']`. `<AgendaCalendar scope view onSelectAppointment />`.
 
-- [ ] **Step 1:** `AppFullCalendar` adaptado al tema: colores desde `var(--mui-palette-…)` (primario `#7E4EE6`), sin colores fijos; Tailwind solo para layout.
-- [ ] **Step 2:** `AgendaCalendar` con plugins `dayGrid`, `timeGrid`, `list`, `interaction`; `timeZone: 'UTC'`; `locale: 'es'`; textos de botones en español; `datesSet` actualiza el rango; `eventAllow` usa `resolveDropTarget`; `eventDrop` llama `reschedule` y, ante error (409 cupo ocupado, 400 anticipación), hace `info.revert()` y muestra el mensaje del servidor con toastify.
-- [ ] **Step 3:** No se usa el slice Redux `calendar.ts` de Materio: el estado de servidor vive en React Query, como en el resto del cliente.
-- [ ] **Step 4:** `cd client && pnpm exec tsc --noEmit && pnpm test -- agenda` — Expected: PASS.
+- [x] **Step 1:** `AppFullCalendar` adaptado al tema: colores desde `var(--mui-palette-…)` (primario `#7E4EE6`), sin colores fijos; Tailwind solo para layout.
+- [x] **Step 2:** `AgendaCalendar` con plugins `dayGrid`, `timeGrid`, `list`, `interaction`; `timeZone: 'UTC'`; `locale: 'es'`; textos de botones en español; `datesSet` actualiza el rango; `eventAllow` usa `resolveDropTarget`; `eventDrop` llama `reschedule` y, ante error (409 cupo ocupado, 400 anticipación), hace `info.revert()` y muestra el mensaje del servidor con toastify.
+- [x] **Step 3:** No se usa el slice Redux `calendar.ts` de Materio: el estado de servidor vive en React Query, como en el resto del cliente.
+- [x] **Step 4:** `cd client && pnpm exec tsc --noEmit && pnpm test -- agenda` — Expected: PASS.
 
 ### Task 5: Verificación del ítem
 
-- [ ] `cd client && pnpm exec eslint src/views/agenda src/services/agenda.service.ts src/libs/styles/AppFullCalendar.ts && pnpm build` — Expected: sin errores nuevos.
+- [x] `cd client && pnpm exec eslint src/views/agenda src/services/agenda.service.ts src/libs/styles/AppFullCalendar.ts && pnpm build` — Expected: sin errores nuevos.
+
+### Notas de implementación
+
+- **Servicio:** `agendaService.get(scope, range)` en lugar de un solo objeto; `AgendaScope` admite `{ doctorId }`, `{ clinicId }` o vacío (el médico y el personal de sede pueden omitirlo).
+- **`toAgendaEvents`:** las citas usan clases `cita` + `cita-<estado>` y los fondos `cupo-libre`, `bloqueo` y `feriado`; los ids son estables (`cita-101`, `cupo-40-10:00`, `bloqueo-8-2026-10-05`, `feriado-3`). Las fechas `YYYY-MM-DD` se suman en UTC (`addDays`) para no depender de la zona del proceso. La prueba de zona horaria compara la salida en Lima y en Tokio dentro del mismo proceso; una mutación a parseo local cuelga el bucle de días en Tokio, así que la prueba la detecta.
+- **`resolveDropTarget`:** busca el cupo cuyo intervalo `[inicio, fin)` contiene la hora soltada, no solo el que empieza ahí, porque el calendario ajusta el arrastre cada 10 minutos (`snapDuration`) y los cupos pueden ser de 20.
+- **`AgendaCalendar`:** además de lo previsto,
+  - "Hoy" y la línea de la hora usan el reloj de la sede (`now` con `nowInTimezone`), porque con `timeZone: 'UTC'` FullCalendar tomaría la fecha UTC y después de las 19:00 en Lima marcaría el día siguiente;
+  - con alcance de sede no se ofrece la vista de mes (la agenda de sede admite 7 días); la de médico pide 42 días en la vista de mes, justo el límite;
+  - `durationEditable: false` en cada evento: el arrastre mueve la cita, no la estira;
+  - `eventDisplay: 'block'` para que en la vista de mes cada cita lleve el color de su estado;
+  - los íconos de anterior/siguiente llevan `aria-hidden` (FullCalendar los marca `role="img"` sin nombre); el botón ya se nombra por su `title` ("Semana anterior", con `buttonHints`).
+- **`AppFullCalendar`:** se reemplazaron las clases `event-bg-*` de Materio por los estados de la cita, con el texto mezclado hacia `--contrast-mix` como los chips tonales. También los botones de vista y "Hoy" usan ese texto, porque el primario sobre fondo transparente no llega a AA en modo oscuro. El texto `text-disabled` pasó a `text-secondary`. Se quitó el botón de barra lateral de Materio: los filtros viven fuera del calendario.
+- **`AgendaFilters`:** componente controlado (estados y cupos libres), sin `Drawer`; la página de UI-16 decide dónde montarlo. Las casillas usan el primario y un punto con el color del estado, porque el amarillo de "Pendiente" no llega a 3:1 como control.
+- **Verificación visual:** se montó el calendario en una página temporal con `GET /agenda` simulado (borrada antes del commit). Se comprobaron las vistas semana, mes y lista en claro y oscuro, `expectAccessible` sin violaciones, el arrastre a un cupo libre (`{ newScheduleId: 40, startTime: '08:30', endTime: '09:00' }`) y la vuelta atrás con el mensaje ante un 409.
 
 ---
 

@@ -215,7 +215,7 @@ expectAccessible(page)                          // axe WCAG 2.0/2.1 A y AA
 | UI-29 ✅ | 2 Portal | Lista de espera del paciente: entradas y ofertas de cupo con fecha, médico, sede y vencimiento | Sí | UI-03 | `mediclick-appointment-core` + `tdd` |
 | UI-13 ✅ | 3 Jornada | `GET /agenda` por rango (§5.2) con alcance de sede, permiso `READ:AGENDA` en la matriz RBAC e indicadores del médico; reutiliza el cálculo de cupos compartido | Sí | — | `mediclick-appointment-core` + `mediclick-tenant-safety` + `tdd` |
 | UI-14 ✅ | 3 Jornada | Prototipo de jornada y agenda | — | UI-03 | `prototype` |
-| UI-15 | 3 Jornada | Capa de agenda (§5.2) y adaptador FullCalendar con estilo Materio | — | UI-02, UI-13 | `codebase-design` + `tdd` |
+| UI-15 ✅ | 3 Jornada | Capa de agenda (§5.2) y adaptador FullCalendar con estilo Materio | — | UI-02, UI-13 | `codebase-design` + `tdd` |
 | UI-16 | 3 Jornada | Jornada del médico: inicio, agenda, espacio de atención y reagendamiento por arrastre | — | UI-14, UI-15 | `tdd` |
 | UI-17 | 4 Disponibilidad | Prototipo de disponibilidad visual | — | UI-15 | `prototype` |
 | UI-18 | 4 Disponibilidad | Mutaciones que pida el prototipo (p. ej. bloqueo desde una selección de rango), sobre la restricción unificada de SDD-010 | Sí | UI-17 | `mediclick-appointment-core` + `tdd` |
