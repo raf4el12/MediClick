@@ -113,6 +113,7 @@ Los estados financieros agregados son `PENDING`, `PAID`, `PARTIAL`, `REFUNDED`, 
 - Personal con sede solo opera sobre médicos y datos de esa sede.
 - Un paciente solo puede listar sus propias citas (de cualquier sede), consultar sus pagos, cancelarlas o reagendarlas; las transiciones asistenciales quedan reservadas al personal autorizado.
 - Un médico solo opera citas asignadas a su propio perfil. Otro personal de sede solo opera citas de esa sede.
+- La agenda de un médico (`GET /agenda`) es visible para él y para el personal de su sede; el paciente no la ve. Lleva solo los feriados globales y los de esa sede, y del paciente solo su identificación.
 - El expediente asistencial expone al paciente su propio historial, al personal únicamente datos de su sede y al médico únicamente pacientes con citas asignadas a él en esa sede.
 - Datos de catálogo globales son visibles junto con los específicos de la sede; datos asistenciales estrictos se filtran a la sede.
 - Dentro de callbacks de transacción no existe filtrado automático por sede: cada lectura y escritura sensible debe llevar el alcance explícito.
@@ -172,7 +173,7 @@ Estas conductas existen en el código, pero su intención de negocio no está re
 |---|---|
 | creación o reagendamiento | validador de cupo, repositorio transaccional, cupos disponibles, eventos de liberación |
 | estados de cita | pagos, recordatorios, lista de espera, notas/recetas, reseñas, reportes e interoperabilidad |
-| disponibilidad, feriados o bloqueos | generación de cupos, citas existentes, notificaciones y reembolsos |
+| disponibilidad, feriados o bloqueos | generación de cupos, agenda (`GET /agenda`), citas existentes, notificaciones y reembolsos |
 | pagos o plazos | expiración, webhook, idempotencia, cita confirmada y revisión financiera |
 | lista de espera | locks, ranking, expiraciones, aceptación concurrente y creación de cita |
 | `clinicId` o sede | guard, interceptor, cliente Prisma tenant-aware y callbacks transaccionales |
