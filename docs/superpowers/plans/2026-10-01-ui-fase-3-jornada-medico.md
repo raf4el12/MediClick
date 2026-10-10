@@ -194,7 +194,7 @@ Decisión: un subject `AGENDA` en lugar de reutilizar `READ:SCHEDULE_BLOCKS` o c
 
 ---
 
-## UI-14 — Prototipo de jornada y agenda
+## UI-14 — Prototipo de jornada y agenda ✅
 
 **Rama:** `prototype/ui-14-jornada` (descartable; no se mergea) + `docs/ui-14-decisiones-jornada` (PR a `staging` con las decisiones) · **Skills:** `prototype` (rama UI, sub-forma A)
 
@@ -210,26 +210,26 @@ Decisión: un subject `AGENDA` en lugar de reutilizar `READ:SCHEDULE_BLOCKS` o c
 - Consumes: `fixtures.ts` con un `AgendaResponseDto` falso (un médico, dos especialidades, 3 días, citas en todos los estados, un bloqueo `TIME_RANGE`, un feriado de sede, una cita en riesgo y una con pago pendiente).
 - Produces: tres variantes estructuralmente distintas sobre el layout `(staff)` real.
 
-- [ ] **Step 1:** Escribir en la cabecera del switcher: "Tres variantes de la jornada del médico, conmutables con `?variant=`, sobre `/doctor`. PROTOTIPO — se descarta."
-- [ ] **Step 2:** Variante A — panel del día a la izquierda (lista + indicadores `card-statistics`) y espacio de atención como panel lateral persistente; agenda en otra ruta.
-- [ ] **Step 3:** Variante B — agenda `timeGridDay` como protagonista; al hacer clic en una cita se abre un drawer (patrón `AddEventSidebar` de Materio) con notas, receta y acciones.
-- [ ] **Step 4:** Variante C — pestañas Hoy | Semana | Mes con el patrón `user/view` de Materio (resumen del paciente a la izquierda, pestañas de atención a la derecha).
-- [ ] **Step 5:** `cd client && pnpm dev` y recorrer las tres con el usuario. Mostrar el estado (cita seleccionada, pestaña, rango) en la barra del switcher.
+- [x] **Step 1:** Escribir en la cabecera del switcher: "Tres variantes de la jornada del médico, conmutables con `?variant=`, sobre `/doctor`. PROTOTIPO — se descarta."
+- [x] **Step 2:** Variante A — panel del día a la izquierda (lista + indicadores `card-statistics`) y espacio de atención como panel lateral persistente; agenda en otra ruta.
+- [x] **Step 3:** Variante B — agenda `timeGridDay` como protagonista; al hacer clic en una cita se abre un drawer (patrón `AddEventSidebar` de Materio) con notas, receta y acciones.
+- [x] **Step 4:** Variante C — pestañas Hoy | Semana | Mes con el patrón `user/view` de Materio (resumen del paciente a la izquierda, pestañas de atención a la derecha).
+- [x] **Step 5:** `cd client && pnpm dev` y recorrer las tres con el usuario. Mostrar el estado (cita seleccionada, pestaña, rango) en la barra del switcher.
 
 ### Task 2: Preguntas que el usuario debe cerrar
 
-- [ ] ¿La jornada y la agenda son una sola ruta o dos (`/doctor` y `/doctor/agenda`)? ¿Se elimina `/doctor/appointments`, que hoy duplica la jornada?
-- [ ] ¿El espacio de atención es panel lateral, drawer o pantalla completa?
-- [ ] ¿El médico ve los cupos libres en su agenda o solo citas, bloqueos y feriados?
-- [ ] ¿El médico marca llegada (`PATCH /appointments/:id/check-in`) e inasistencia desde su jornada, o eso sigue siendo de recepción?
-- [ ] ¿Qué estados puede arrastrar? Propuesta: solo `PENDING` y `CONFIRMED`, no sobrecupos.
-- [ ] ¿Qué indicadores se muestran? Propuesta: ocupación, por estado, en riesgo, con pago pendiente.
+- [x] ¿La jornada y la agenda son una sola ruta o dos (`/doctor` y `/doctor/agenda`)? ¿Se elimina `/doctor/appointments`, que hoy duplica la jornada?
+- [x] ¿El espacio de atención es panel lateral, drawer o pantalla completa?
+- [x] ¿El médico ve los cupos libres en su agenda o solo citas, bloqueos y feriados?
+- [x] ¿El médico marca llegada (`PATCH /appointments/:id/check-in`) e inasistencia desde su jornada, o eso sigue siendo de recepción?
+- [x] ¿Qué estados puede arrastrar? Propuesta: solo `PENDING` y `CONFIRMED`, no sobrecupos.
+- [x] ¿Qué indicadores se muestran? Propuesta: ocupación, por estado, en riesgo, con pago pendiente.
 
 ### Task 3: Captura
 
-- [ ] **Step 1:** Commit del prototipo en `prototype/ui-14-jornada` y push (rama de referencia, sin PR).
-- [ ] **Step 2:** PR `docs/ui-14-decisiones-jornada` → `staging` que agrega al final de este plan una sección "Decisiones UI-14" con la pregunta, la variante elegida, las respuestas de Task 2 y el enlace a la rama del prototipo.
-- [ ] **Step 3:** Si una respuesta cambia una regla de negocio, abrir el cambio como tarea explícita de UI-16 con actualización de `APPOINTMENT-CORE.md` (D7).
+- [x] **Step 1:** Commit del prototipo en `prototype/ui-14-jornada` y push (rama de referencia, sin PR).
+- [x] **Step 2:** PR `docs/ui-14-decisiones-jornada` → `staging` que agrega al final de este plan una sección "Decisiones UI-14" con la pregunta, la variante elegida, las respuestas de Task 2 y el enlace a la rama del prototipo.
+- [x] **Step 3:** Si una respuesta cambia una regla de negocio, abrir el cambio como tarea explícita de UI-16 con actualización de `APPOINTMENT-CORE.md` (D7).
 
 **Criterio de cierre:** las seis preguntas de Task 2 tienen respuesta escrita y UI-16 puede ajustarse sin abrir decisiones nuevas.
 
@@ -387,3 +387,42 @@ Hoy la jornada vive duplicada en `views/doctor/components/DoctorDashboard.tsx` (
 - [ ] **Step 2:** Si `GET /appointments/doctor/today` queda sin consumidores en el cliente, dejarlo en el servidor (lo usan los tests del controller) y anotarlo en el PR.
 - [ ] **Step 3:** `cd client && pnpm test && pnpm exec tsc --noEmit && pnpm exec eslint src/views/doctor src/views/agenda && pnpm build && pnpm test:a11y` — Expected: todo en verde.
 - [ ] **Step 4:** Revisión visual en modo claro y oscuro, y con las opciones del customizer de accesibilidad (tamaño de letra, contraste alto, movimiento reducido).
+
+---
+
+## Decisiones UI-14
+
+Cerrado el 2026-10-09. Fuente primaria: rama `prototype/ui-14-jornada` (commit `a80ec54`),
+`/doctor?variant=A|B|C` con datos falsos en la forma de `AgendaResponseDto`. Las variantes viven en
+`views/doctor/prototype-jornada/Variants.tsx` (un archivo en lugar de tres) y el switcher en
+`components/prototype/PrototypeSwitcher.tsx`. La comparación con capturas se revisó con el usuario;
+eligió la jornada de la variante A y la agenda de la variante B, en rutas separadas.
+
+**Pregunta:** ¿cómo recorre el médico su jornada sin perder el contexto de la cita en curso?
+**Respuesta:** la jornada deja la lista del día y la cita en curso a la vista a la vez; la agenda
+vive aparte y es donde se reagenda.
+
+| # | Pregunta | Decisión |
+|---|---|---|
+| 1 | ¿Una ruta o dos? | **Dos:** `/doctor` (jornada) y `/doctor/agenda`. `/doctor/appointments` se elimina y redirige a `/doctor`. |
+| 2 | Espacio de atención | **Panel lateral** fijo junto a la lista en la jornada (debajo en celular). En la agenda, el mismo contenido abre en un drawer al tocar la cita. |
+| 3 | Cupos libres | **Solo en la agenda**, con el interruptor "Mostrar cupos libres" encendido por defecto; son el destino del arrastre. La jornada no los muestra. |
+| 4 | Llegada e inasistencia | **El médico las marca** desde el espacio de atención: "Marcar llegada" (`PATCH /appointments/:id/check-in`, que pasa la cita a `IN_PROGRESS`) e "Inasistencia" (`PATCH /appointments/:id/no-show`) sobre citas `CONFIRMED`. El médico ya tiene `UPDATE:APPOINTMENTS`. |
+| 5 | Arrastre | **Solo `PENDING` y `CONFIRMED`, nunca sobrecupos** (coincide con `editable` de `toAgendaEvents` en UI-15). |
+| 6 | Indicadores | **Los cuatro propuestos:** ocupación (cupos reservados sobre ofrecidos), atendidas con las confirmadas por atender, en riesgo y pago pendiente, todos desde `indicators` de `GET /agenda`. |
+
+**Reglas de negocio nuevas (D7):** ninguna. El médico ya podía marcar llegada e inasistencia en el
+servidor; `APPOINTMENT-CORE.md` no cambia.
+
+**Ajustes a UI-16:**
+
+- "Comportamiento que no se puede perder": los indicadores pasan a ser los cuatro de la decisión 6
+  en lugar de total, pendientes, en curso, completadas y canceladas.
+- Task 1: agregar escenarios para "Marcar llegada" e "Inasistencia" (`api.on('PATCH
+  /appointments/:id/check-in', …)` y `no-show`), para el interruptor de cupos libres en la agenda y
+  para la redirección de `/doctor/appointments` a `/doctor`.
+- Task 2: `AtencionDrawer.tsx` pasa a `AtencionPanel.tsx`; la jornada lo monta como panel lateral y
+  la agenda dentro de un `Drawer`. Crear la redirección en `app/(staff)/doctor/appointments/page.tsx`.
+- Task 3: se borra `views/doctor/appointments/`; la ruta queda solo como redirección.
+- En la lista de la jornada, los chips de estado van debajo del nombre en pantallas angostas (el
+  prototipo los aprieta en celular).
