@@ -33,7 +33,7 @@ UI-31), §5.3 (arnés de pruebas), §5.4 (grupo `(shared)`), §6 (restricciones 
 
 ---
 
-## UI-20 — Registro del paciente en varios pasos
+## UI-20 — Registro del paciente en varios pasos ✅
 
 **Rama:** `git fetch origin && git switch -c feat/ui-20-registro-paciente origin/staging`
 **Skills:** `mattpocock-skills:tdd`, `mattpocock-skills:code-review`
@@ -49,8 +49,8 @@ de 4 pasos (`Identificación`, `Datos Personales`, `Inf. Médica`, `Credenciales
 
 **Files:** ninguno.
 
-- [ ] **Step 1:** Crear la rama con el comando de arriba.
-- [ ] **Step 2:** Confirmar en `~/materio-mui-nextjs-admin-template-ts/full-version/` los equivalentes de
+- [x] **Step 1:** Crear la rama con el comando de arriba.
+- [x] **Step 2:** Confirmar en `~/materio-mui-nextjs-admin-template-ts/full-version/` los equivalentes de
   `views/pages/auth/register-multi-steps/{index,StepAccountDetails,StepPersonalInfo,StepBillingDetails}.tsx`,
   `components/stepper-dot/index.tsx` y `@core/styles/stepper.ts`. Si UI-01 ya trajo `stepper-dot` y
   `stepper.ts`, reutilizarlos sin duplicar.
@@ -67,12 +67,12 @@ de 4 pasos (`Identificación`, `Datos Personales`, `Inf. Médica`, `Credenciales
   `DOCUMENT_TYPES`, `GENDER_OPTIONS`, `BLOOD_TYPE_OPTIONS`.
 - Consumes: `zod`, `isValidPhoneNumber` de `libphonenumber-js`.
 
-- [ ] **Step 1 (rojo):** Escribir pruebas Vitest: contraseña sin mayúscula / sin número / < 8 caracteres
+- [x] **Step 1 (rojo):** Escribir pruebas Vitest: contraseña sin mayúscula / sin número / < 8 caracteres
   rechazada; `confirmPassword` distinto marca el error en `confirmPassword`; teléfono y contacto de
   emergencia inválidos rechazados; `allergies` de 501 caracteres rechazado; y que la unión de los campos
   de `REGISTER_STEPS` sea exactamente el conjunto de claves de `registerSchema` (ningún campo sin paso).
   Run: `cd client && pnpm test -- register.schema` → Expected: FAIL (módulo inexistente).
-- [ ] **Step 2 (verde):** Mover el esquema y las constantes desde `RegisterForm.tsx` sin cambiar reglas
+- [x] **Step 2 (verde):** Mover el esquema y las constantes desde `RegisterForm.tsx` sin cambiar reglas
   ni mensajes. Run: `pnpm test -- register.schema` → Expected: PASS.
 
 ### Task 3: Flujo multi-paso con el layout de Materio
@@ -92,14 +92,14 @@ de 4 pasos (`Identificación`, `Datos Personales`, `Inf. Médica`, `Credenciales
   `PasswordField`.
 - Produces: misma navegación post-registro que hoy (redirección por rol tras `selectIsAuthenticated`).
 
-- [ ] **Step 1:** Reemplazar el `Stepper` MUI por el stepper vertical con `StepperWrapper` + `stepper-dot`
+- [x] **Step 1:** Reemplazar el `Stepper` MUI por el stepper vertical con `StepperWrapper` + `stepper-dot`
   de `register-multi-steps`; 4 pasos MediClick en lugar de los 3 de Materio (Account/Personal/Billing).
-- [ ] **Step 2:** Cada componente de paso recibe `control` y renderiza solo sus campos; la validación
+- [x] **Step 2:** Cada componente de paso recibe `control` y renderiza solo sus campos; la validación
   asíncrona (documento disponible + autocompletado, email disponible) queda en el orquestador, igual que
   `validateStep0`/`validateStep1` actuales.
-- [ ] **Step 3:** Mensajes de error del servidor (incluido 429) en `Alert` del paso activo; el botón
+- [x] **Step 3:** Mensajes de error del servidor (incluido 429) en `Alert` del paso activo; el botón
   "Siguiente" muestra estado de carga mientras corre `checking || lookingUp || isLoading`.
-- [ ] **Step 4:** Verificar a mano en modo claro y oscuro, en 375 px y 1440 px.
+- [x] **Step 4:** Verificar a mano en modo claro y oscuro, en 375 px y 1440 px.
 
 ### Task 4: Prueba de navegador del registro
 
@@ -109,21 +109,36 @@ de 4 pasos (`Identificación`, `Datos Personales`, `Inf. Médica`, `Credenciales
 **Interfaces:**
 - Consumes: arnés de UI-02 (`api.on`, `expectAccessible`), sin `actor` (ruta pública).
 
-- [ ] **Step 1:** Camino feliz: fixtures `POST /auth/check-document` → `{ available: true }`,
+- [x] **Step 1:** Camino feliz: fixtures `POST /auth/check-document` → `{ available: true }`,
   `POST /auth/lookup-document` → nombre y apellido, `POST /auth/check-email` → `{ available: true }`,
   `POST /auth/register` → `AuthResponse` de PATIENT. Expected: termina en `/patient`.
-- [ ] **Step 2:** Documento ya registrado (`available: false`) bloquea el paso 1 con su mensaje.
-- [ ] **Step 3:** `POST /auth/register` → 429 muestra el error y no navega.
-- [ ] **Step 4:** `expectAccessible(page)` en cada uno de los 4 pasos.
+- [x] **Step 2:** Documento ya registrado (`available: false`) bloquea el paso 1 con su mensaje.
+- [x] **Step 3:** `POST /auth/register` → 429 muestra el error y no navega.
+- [x] **Step 4:** `expectAccessible(page)` en cada uno de los 4 pasos.
   Run: `cd client && pnpm exec playwright test register` → Expected: PASS.
 
 ### Task 5: Verificación y limpieza
 
-- [ ] **Step 1:** Borrar del `RegisterForm.tsx` todo lo que pasó a `functions/` y `steps/`; ningún
+- [x] **Step 1:** Borrar del `RegisterForm.tsx` todo lo que pasó a `functions/` y `steps/`; ningún
   `Stepper`/`StepLabel` de MUI queda importado en `views/Register`.
-- [ ] **Step 2:** Run: `cd client && pnpm exec tsc --noEmit && pnpm exec eslint src/views/Register tests/e2e/register.spec.ts && pnpm test && pnpm build && pnpm test:a11y`
+- [x] **Step 2:** Run: `cd client && pnpm exec tsc --noEmit && pnpm exec eslint src/views/Register tests/e2e/register.spec.ts && pnpm test && pnpm build && pnpm test:a11y`
   Expected: todo PASS.
-- [ ] **Step 3:** PR contra `staging` con capturas de los 4 pasos (claro/oscuro, móvil/escritorio).
+- [x] **Step 3:** PR contra `staging` con capturas de los 4 pasos (claro/oscuro, móvil/escritorio).
+
+### Notas de implementación
+
+- **Esquema:** `functions/register.schema.ts` lleva el esquema textual del formulario anterior (reglas y mensajes sin cambios, verificado al moverlo), las constantes y `REGISTER_STEPS` con título, subtítulo y campos de cada paso. La prueba de cobertura compara contra `registerSchema.shape`, no contra un objeto de ejemplo.
+- **Stepper:** la Task 5 pedía que no quedara ningún `Stepper`/`StepLabel` de MUI, pero `register-multi-steps` de Materio usa justamente `Stepper` + `StepLabel` con `StepperWrapper` (`@core/styles/stepper.ts`) y `StepperCustomDot` (`components/stepper-dot`). Se siguió a Materio: lo que se reemplazó es el stepper genérico con `alternativeLabel`. Con eso se copiaron `stepper.ts` y `stepper-dot` desde la v5 local.
+- **Adaptaciones a lo copiado:**
+  - el número de los pasos siguientes usa `text-secondary` en lugar de `text-disabled`, que no llega a AA;
+  - `stepper-dot` no usa las clases del CSS module como claves calculadas, porque `noUncheckedIndexedAccess` las tipa `string | undefined`.
+- **Pantalla:**
+  - ilustración `characters/4.png` (copiada de Materio) a la izquierda en escritorio;
+  - pasos con número, título y subtítulo;
+  - un `h2` «Paso N de 4: …» que recibe el foco al cambiar de paso, para que el lector de pantalla anuncie el cambio;
+  - el aviso de cada paso es texto secundario; ya no son cajas de color (las de error y advertencia no llegaban a AA).
+- **Comportamiento conservado:** documento disponible y autocompletado RENIEC en el paso 1, email disponible en el paso 2, error del servidor (incluido 429) en `Alert`, «Siguiente» con indicador de carga y la misma redirección por rol tras registrarse.
+- **Pruebas de navegador:** `register.spec.ts` cubre tres escenarios: el camino feliz con `expectAccessible` en los cuatro pasos y el payload exacto de `POST /auth/register` sin `confirmPassword`, el documento ya registrado y el 429.
 
 ---
 
