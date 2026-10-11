@@ -1,39 +1,37 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CardHeader from '@mui/material/CardHeader';
 import Chip from '@mui/material/Chip';
-import Skeleton from '@mui/material/Skeleton';
-import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
+import Skeleton from '@mui/material/Skeleton';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
 import Tooltip from '@mui/material/Tooltip';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
-import DialogActions from '@mui/material/DialogActions';
-import { alpha, useTheme } from '@mui/material/styles';
+import Typography from '@mui/material/Typography';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { PasswordField } from '@/components/shared/PasswordField';
 import { authService } from '@/services/auth.service';
 import { getDeviceId } from '@/utils/device-id';
+import { extractApiError } from '@/utils/extractApiError';
 import { notify } from '@/utils/notify';
 
-/* ─── Change Password Schema ─── */
 const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1, 'La contraseña actual es obligatoria'),
-    newPassword: z
-      .string()
-      .min(8, 'La nueva contraseña debe tener al menos 8 caracteres'),
+    newPassword: z.string().min(8, 'La nueva contraseña debe tener al menos 8 caracteres'),
     confirmPassword: z.string().min(1, 'Confirma tu nueva contraseña'),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
@@ -43,36 +41,17 @@ const changePasswordSchema = z
 
 type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
 
-/* ─── Helpers ─── */
-function formatSessionDate(timestamp: number): string {
-  return new Date(timestamp).toLocaleString('es-PE', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
+const formatSessionDate = (timestamp: number) =>
+  new Date(timestamp).toLocaleString('es-PE', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-function getDeviceLabel(deviceId: string): string {
+function deviceLabel(deviceId: string): string {
   if (deviceId === 'web-register') return 'Registro web';
   if (deviceId.length > 12) return `Dispositivo …${deviceId.slice(-8)}`;
   return deviceId;
 }
 
-/* ─── Card wrapper ─── */
-const cardSx = {
-  p: { xs: 3, md: 4 },
-  bgcolor: 'background.paper',
-  borderRadius: 2,
-  boxShadow: 'none',
-  border: '1px solid',
-  borderColor: 'divider',
-};
-
-/* ─── Change Password Section ─── */
-function ChangePasswordSection() {
-
+/** Cambio de contraseña (patrón `ChangePasswordCard` de Materio). */
+function ChangePasswordCard() {
   const {
     control,
     handleSubmit,
@@ -80,310 +59,165 @@ function ChangePasswordSection() {
     formState: { errors },
   } = useForm<ChangePasswordFormValues>({
     resolver: zodResolver(changePasswordSchema),
-    defaultValues: {
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    },
+    defaultValues: { currentPassword: '', newPassword: '', confirmPassword: '' },
   });
 
   const mutation = useMutation({
-    mutationFn: (data: ChangePasswordFormValues) =>
-      authService.changePassword(data.currentPassword, data.newPassword),
+    mutationFn: (data: ChangePasswordFormValues) => authService.changePassword(data.currentPassword, data.newPassword),
     onSuccess: () => {
       reset();
-      notify('Contraseña cambiada exitosamente. Las demás sesiones fueron cerradas.', 'success');
+      notify('Contraseña cambiada. Se cerraron las demás sesiones.');
     },
-    onError: (err: any) => {
-      const msg = err?.response?.data?.message;
-      notify(
-        Array.isArray(msg) ? msg[0] : msg ?? 'Error al cambiar la contraseña',
-        'error',
-      );
-    },
+    onError: (err) => notify(extractApiError(err, 'No se pudo cambiar la contraseña').message, 'error'),
   });
 
-  const onSubmit = (data: ChangePasswordFormValues) => {
-    mutation.mutate(data);
-  };
+  const fields = [
+    { name: 'currentPassword', label: 'Contraseña actual', autoComplete: 'current-password' },
+    { name: 'newPassword', label: 'Nueva contraseña', autoComplete: 'new-password' },
+    { name: 'confirmPassword', label: 'Confirmar nueva contraseña', autoComplete: 'new-password' },
+  ] as const;
 
   return (
-    <>
-      <Card sx={cardSx}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
-          <i className="ri-lock-password-line" style={{ fontSize: 22 }} />
-          <Typography variant="h6" fontWeight={600}>
-            Cambiar Contraseña
-          </Typography>
-        </Box>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Al cambiar tu contraseña, se cerrarán todas las demás sesiones activas por seguridad.
-        </Typography>
-
-        <Box
-          component="form"
-          onSubmit={handleSubmit(onSubmit)}
-          noValidate
-          sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, maxWidth: 480 }}
-        >
-          <Controller
-            name="currentPassword"
-            control={control}
-            render={({ field }) => (
-              <PasswordField
-                {...field}
-                label="Contraseña actual"
-                autoComplete="current-password"
-                error={!!errors.currentPassword}
-                helperText={errors.currentPassword?.message}
-              />
-            )}
-          />
-
-          <Controller
-            name="newPassword"
-            control={control}
-            render={({ field }) => (
-              <PasswordField
-                {...field}
-                label="Nueva contraseña"
-                autoComplete="new-password"
-                error={!!errors.newPassword}
-                helperText={errors.newPassword?.message}
-              />
-            )}
-          />
-
-          <Controller
-            name="confirmPassword"
-            control={control}
-            render={({ field }) => (
-              <PasswordField
-                {...field}
-                label="Confirmar nueva contraseña"
-                autoComplete="new-password"
-                error={!!errors.confirmPassword}
-                helperText={errors.confirmPassword?.message}
-              />
-            )}
-          />
-
-          <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={mutation.isPending}
-              sx={{ px: 4, textTransform: 'none' }}
-            >
-              {mutation.isPending ? (
-                <CircularProgress size={22} color="inherit" />
-              ) : (
-                'Cambiar Contraseña'
+    <Card>
+      <CardHeader title='Cambiar contraseña' subheader='Al cambiarla se cierran las demás sesiones abiertas.' />
+      <CardContent>
+        <form noValidate onSubmit={handleSubmit((data) => mutation.mutate(data))} className='flex flex-col gap-5 max-is-[480px]'>
+          {fields.map(({ name, label, autoComplete }) => (
+            <Controller
+              key={name}
+              name={name}
+              control={control}
+              render={({ field }) => (
+                <PasswordField {...field} id={`seguridad-${name}`} label={label} autoComplete={autoComplete} error={!!errors[name]} helperText={errors[name]?.message} />
               )}
-            </Button>
-          </Box>
-        </Box>
-      </Card>
-    </>
+            />
+          ))}
+          <Button type='submit' variant='contained' disabled={mutation.isPending} className='self-start'>
+            {mutation.isPending ? 'Cambiando…' : 'Cambiar contraseña'}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }
 
-/* ─── Sessions Section ─── */
-function SessionsSection() {
-  const theme = useTheme();
+/** Sesiones abiertas por dispositivo (patrón `RecentDevicesTable` de Materio). */
+function SessionsCard() {
   const queryClient = useQueryClient();
-  const [logoutAllOpen, setLogoutAllOpen] = useState(false);
+  const [confirmAll, setConfirmAll] = useState(false);
+  const [currentDeviceId] = useState(() => (typeof window !== 'undefined' ? getDeviceId() : ''));
 
-  const currentDeviceId = typeof window !== 'undefined' ? getDeviceId() : '';
-
-  const {
-    data: sessions,
-    isLoading,
-    isError,
-  } = useQuery({
+  const sessions = useQuery({
     queryKey: ['auth', 'sessions'],
     queryFn: () => authService.getSessions(currentDeviceId),
-    staleTime: 30 * 1000,
+    staleTime: 30_000,
   });
 
-  const logoutDeviceMutation = useMutation({
+  const logoutDevice = useMutation({
     mutationFn: (deviceId: string) => authService.logoutDevice(deviceId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['auth', 'sessions'] });
-      notify('Sesión cerrada', 'success');
+      void queryClient.invalidateQueries({ queryKey: ['auth', 'sessions'] });
+      notify('Sesión cerrada');
     },
-    onError: () => {
-      notify('Error al cerrar la sesión', 'error');
-    },
+    onError: () => notify('No se pudo cerrar la sesión', 'error'),
   });
 
-  const logoutAllMutation = useMutation({
+  const logoutAll = useMutation({
     mutationFn: () => authService.logoutAllDevices(),
-    onSuccess: () => {
-      setLogoutAllOpen(false);
-      // After logging out all, user will be redirected by the axios interceptor
-    },
-    onError: () => {
-      notify('Error al cerrar las sesiones', 'error');
-    },
+    onSuccess: () => setConfirmAll(false),
+    onError: () => notify('No se pudieron cerrar las sesiones', 'error'),
   });
 
-  const otherSessions = sessions?.filter((s) => !s.isCurrent) ?? [];
+  const others = sessions.data?.filter((s) => !s.isCurrent) ?? [];
 
   return (
-    <>
-      <Card sx={cardSx}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, flexWrap: 'wrap', gap: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <i className="ri-device-line" style={{ fontSize: 22 }} />
-            <Typography variant="h6" fontWeight={600}>
-              Sesiones Activas
-            </Typography>
-          </Box>
-          {otherSessions.length > 0 && (
-            <Button
-              variant="outlined"
-              color="error"
-              size="small"
-              onClick={() => setLogoutAllOpen(true)}
-              startIcon={<i className="ri-logout-box-r-line" style={{ fontSize: 16 }} />}
-              sx={{ textTransform: 'none' }}
-            >
+    <Card>
+      <CardHeader
+        title='Sesiones activas'
+        subheader='Dispositivos donde tu cuenta tiene una sesión iniciada.'
+        action={
+          others.length > 0 && (
+            <Button variant='outlined' size='small' startIcon={<i className='ri-logout-box-r-line' aria-hidden />} onClick={() => setConfirmAll(true)}>
               Cerrar todas
             </Button>
-          )}
-        </Box>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Dispositivos donde tu cuenta tiene una sesión iniciada.
-        </Typography>
-
-        {isLoading ? (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} variant="rounded" height={64} />
-            ))}
-          </Box>
-        ) : isError ? (
-          <Alert severity="error">No se pudieron cargar las sesiones.</Alert>
-        ) : !sessions || sessions.length === 0 ? (
-          <Alert severity="info">No se encontraron sesiones activas.</Alert>
-        ) : (
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-            {sessions.map((session) => (
-              <Box
-                key={session.deviceId}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  p: 2,
-                  borderRadius: 2,
-                  border: '1px solid',
-                  borderColor: session.isCurrent
-                    ? alpha(theme.palette.success.main, 0.4)
-                    : 'divider',
-                  bgcolor: session.isCurrent
-                    ? alpha(theme.palette.success.main, 0.04)
-                    : 'transparent',
-                }}
-              >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minWidth: 0 }}>
-                  <Box
-                    sx={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 2,
-                      bgcolor: session.isCurrent
-                        ? alpha(theme.palette.success.main, 0.12)
-                        : alpha(theme.palette.grey[500], 0.12),
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                    }}
-                  >
-                    <i
-                      className={session.isCurrent ? 'ri-computer-line' : 'ri-device-line'}
-                      style={{
-                        fontSize: 20,
-                        color: session.isCurrent
-                          ? theme.palette.success.main
-                          : theme.palette.text.secondary,
-                      }}
-                    />
-                  </Box>
-                  <Box sx={{ minWidth: 0 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="body2" fontWeight={600} noWrap>
-                        {getDeviceLabel(session.deviceId)}
-                      </Typography>
-                      {session.isCurrent && (
-                        <Chip label="Este dispositivo" size="small" color="success" variant="outlined" />
+          )
+        }
+      />
+      {sessions.isLoading ? (
+        <CardContent className='flex flex-col gap-2'>
+          {Array.from({ length: 3 }, (_, i) => (
+            <Skeleton key={i} variant='rounded' height={48} />
+          ))}
+        </CardContent>
+      ) : sessions.isError ? (
+        <CardContent>
+          <Alert severity='error'>No se pudieron cargar las sesiones.</Alert>
+        </CardContent>
+      ) : !sessions.data?.length ? (
+        <CardContent>
+          <Typography color='text.secondary'>No hay sesiones activas.</Typography>
+        </CardContent>
+      ) : (
+        <TableContainer>
+          <Table aria-label='Sesiones activas'>
+            <TableHead>
+              <TableRow>
+                <TableCell>Dispositivo</TableCell>
+                <TableCell>Inicio de sesión</TableCell>
+                <TableCell align='right'>
+                  <span className='sr-only'>Acciones</span>
+                </TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {sessions.data.map((session) => {
+                const label = deviceLabel(session.deviceId);
+                return (
+                  <TableRow key={session.deviceId}>
+                    <TableCell>
+                      <div className='flex flex-wrap items-center gap-2'>
+                        <i className={session.isCurrent ? 'ri-computer-line text-xl' : 'ri-smartphone-line text-xl'} aria-hidden />
+                        <Typography className='font-medium' color='text.primary'>
+                          {label}
+                        </Typography>
+                        {session.isCurrent && <Chip size='small' variant='tonal' color='success' label='Este dispositivo' />}
+                      </div>
+                    </TableCell>
+                    <TableCell>{formatSessionDate(session.createdAt)}</TableCell>
+                    <TableCell align='right'>
+                      {!session.isCurrent && (
+                        <Tooltip title='Cerrar esta sesión'>
+                          <IconButton aria-label={`Cerrar la sesión de ${label}`} onClick={() => logoutDevice.mutate(session.deviceId)} disabled={logoutDevice.isPending}>
+                            <i className='ri-close-circle-line' aria-hidden />
+                          </IconButton>
+                        </Tooltip>
                       )}
-                    </Box>
-                    <Typography variant="caption" color="text.secondary">
-                      Inicio de sesión: {formatSessionDate(session.createdAt)}
-                    </Typography>
-                  </Box>
-                </Box>
-
-                {!session.isCurrent && (
-                  <Tooltip title="Cerrar esta sesión">
-                    <IconButton
-                      size="small"
-                      color="error"
-                      onClick={() => logoutDeviceMutation.mutate(session.deviceId)}
-                      disabled={logoutDeviceMutation.isPending}
-                    >
-                      <i className="ri-close-circle-line" style={{ fontSize: 20 }} />
-                    </IconButton>
-                  </Tooltip>
-                )}
-              </Box>
-            ))}
-          </Box>
-        )}
-      </Card>
-
-      {/* Confirm logout all dialog */}
-      <Dialog open={logoutAllOpen} onClose={() => setLogoutAllOpen(false)}>
-        <DialogTitle>Cerrar todas las sesiones</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Se cerrarán todas las sesiones en otros dispositivos. Tendrás que iniciar sesión
-            nuevamente en cada uno. Tu sesión actual no se verá afectada.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setLogoutAllOpen(false)} disabled={logoutAllMutation.isPending}>
-            Cancelar
-          </Button>
-          <Button
-            color="error"
-            variant="contained"
-            onClick={() => logoutAllMutation.mutate()}
-            disabled={logoutAllMutation.isPending}
-          >
-            {logoutAllMutation.isPending ? (
-              <CircularProgress size={20} color="inherit" />
-            ) : (
-              'Cerrar todas'
-            )}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-    </>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+      <ConfirmDialog
+        open={confirmAll}
+        title='Cerrar todas las sesiones'
+        description='Se cerrarán las sesiones en los demás dispositivos y tendrás que volver a iniciar sesión en cada uno. Esta sesión no se cierra.'
+        confirmLabel='Cerrar todas'
+        destructive={false}
+        onCancel={() => setConfirmAll(false)}
+        onConfirm={() => logoutAll.mutate()}
+      />
+    </Card>
   );
 }
 
-/* ─── Main export ─── */
 export default function SecurityTab() {
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-      <ChangePasswordSection />
-      <Divider />
-      <SessionsSection />
-    </Box>
+    <div className='flex flex-col gap-6'>
+      <ChangePasswordCard />
+      <SessionsCard />
+    </div>
   );
 }

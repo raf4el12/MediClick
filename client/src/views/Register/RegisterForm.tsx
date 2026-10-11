@@ -1,105 +1,36 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useForm, Controller } from 'react-hook-form';
-import { z } from 'zod';
+import { useEffect, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { isValidPhoneNumber } from 'libphonenumber-js';
 import { useRouter } from 'next/navigation';
-import Box from '@mui/material/Box';
-import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
-import MenuItem from '@mui/material/MenuItem';
-import Stepper from '@mui/material/Stepper';
 import Step from '@mui/material/Step';
 import StepLabel from '@mui/material/StepLabel';
+import Stepper from '@mui/material/Stepper';
 import Typography from '@mui/material/Typography';
-import Grid from '@mui/material/Grid';
-import { alpha } from '@mui/material/styles';
-import { PasswordField } from '@/components/shared/PasswordField';
-import { InternationalPhoneInput } from '@/components/shared/InternationalPhoneInput';
+import StepperWrapper from '@core/styles/stepper';
+import StepperCustomDot from '@/components/stepper-dot';
 import { authService } from '@/services/auth.service';
 import { useAppDispatch, useAppSelector } from '@/redux-store/hooks';
-import {
-  selectAuthLoading,
-  selectAuthError,
-  selectIsAuthenticated,
-  selectUser,
-  clearError,
-} from '@/redux-store/slices/auth';
+import { clearError, selectAuthError, selectAuthLoading, selectIsAuthenticated, selectUser } from '@/redux-store/slices/auth';
 import { registerThunk } from '@/redux-store/thunks/auth.thunks';
+import { REGISTER_STEPS, registerSchema, type RegisterFormValues } from './functions/register.schema';
+import StepCredentials from './steps/StepCredentials';
+import StepIdentification from './steps/StepIdentification';
+import StepMedicalInfo from './steps/StepMedicalInfo';
+import StepPersonalData from './steps/StepPersonalData';
 
-const DOCUMENT_TYPES = [
-  { value: 'DNI', label: 'DNI' },
-  { value: 'CE', label: 'Carné de Extranjería' },
-  { value: 'PASAPORTE', label: 'Pasaporte' },
+const STEP_HINTS = [
+  'Ingresa tu documento de identidad. Si es un DNI, completamos tus datos con RENIEC.',
+  'Usaremos tu correo para enviarte las confirmaciones de tus citas.',
+  'Esta información es necesaria para tu atención médica.',
+  'Crea una contraseña segura: mínimo 8 caracteres, con mayúscula, minúscula y número.',
 ];
 
-const GENDER_OPTIONS = [
-  { value: 'M', label: 'Masculino' },
-  { value: 'F', label: 'Femenino' },
-];
-
-const BLOOD_TYPE_OPTIONS = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
-
-const STEPS = ['Identificación', 'Datos Personales', 'Inf. Médica', 'Credenciales'];
-
-const registerSchema = z
-  .object({
-    typeDocument: z.string().min(1, 'Selecciona un tipo de documento'),
-    numberDocument: z
-      .string()
-      .min(1, 'El número de documento es obligatorio')
-      .max(20, 'Máximo 20 caracteres'),
-    name: z
-      .string()
-      .min(1, 'El nombre es obligatorio')
-      .max(100, 'Máximo 100 caracteres'),
-    lastName: z
-      .string()
-      .min(1, 'El apellido es obligatorio')
-      .max(100, 'Máximo 100 caracteres'),
-    email: z
-      .string()
-      .min(1, 'El email es obligatorio')
-      .email('Formato de email inválido'),
-    phone: z
-      .string()
-      .min(1, 'El teléfono es obligatorio')
-      .refine(isValidPhoneNumber, 'Número de teléfono inválido'),
-    birthday: z.string().optional(),
-    gender: z.string().optional(),
-    emergencyContact: z
-      .string()
-      .min(1, 'El contacto de emergencia es obligatorio')
-      .refine(isValidPhoneNumber, 'Número de teléfono inválido'),
-    bloodType: z.string().min(1, 'El tipo de sangre es obligatorio'),
-    allergies: z.string().max(500, 'Máximo 500 caracteres').optional().or(z.literal('')),
-    chronicConditions: z.string().max(500, 'Máximo 500 caracteres').optional().or(z.literal('')),
-    password: z
-      .string()
-      .min(8, 'La contraseña debe tener al menos 8 caracteres')
-      .regex(/(?=.*[a-z])/, 'Debe incluir al menos una letra minúscula')
-      .regex(/(?=.*[A-Z])/, 'Debe incluir al menos una letra mayúscula')
-      .regex(/(?=.*\d)/, 'Debe incluir al menos un número'),
-    confirmPassword: z.string().min(1, 'Confirma tu contraseña'),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: 'Las contraseñas no coinciden',
-    path: ['confirmPassword'],
-  });
-
-type RegisterFormValues = z.infer<typeof registerSchema>;
-
-const STEP_FIELDS: (keyof RegisterFormValues)[][] = [
-  ['typeDocument', 'numberDocument'],
-  ['name', 'lastName', 'email', 'phone', 'birthday', 'gender'],
-  ['emergencyContact', 'bloodType', 'allergies', 'chronicConditions'],
-  ['password', 'confirmPassword'],
-];
-
+/** Registro del paciente en cuatro pasos (layout `register-multi-steps` de Materio). */
 export function RegisterForm() {
   const dispatch = useAppDispatch();
   const router = useRouter();
@@ -107,20 +38,13 @@ export function RegisterForm() {
   const error = useAppSelector(selectAuthError);
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const user = useAppSelector(selectUser);
+  const headingRef = useRef<HTMLHeadingElement>(null);
 
   const [activeStep, setActiveStep] = useState(0);
   const [checking, setChecking] = useState(false);
-
   const [lookingUp, setLookingUp] = useState(false);
 
-  const {
-    control,
-    handleSubmit,
-    trigger,
-    getValues,
-    setValue,
-    setError,
-  } = useForm<RegisterFormValues>({
+  const { control, handleSubmit, trigger, getValues, setValue, setError } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
       typeDocument: 'DNI',
@@ -142,35 +66,33 @@ export function RegisterForm() {
   });
 
   useEffect(() => {
-    if (isAuthenticated && user) {
-      const target = user.role === 'PATIENT' ? '/patient' : '/dashboard';
-      router.push(target);
-    }
+    if (isAuthenticated && user) router.push(user.role === 'PATIENT' ? '/patient' : '/dashboard');
   }, [isAuthenticated, user, router]);
 
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       dispatch(clearError());
-    };
-  }, [dispatch]);
+    },
+    [dispatch],
+  );
 
-  const validateStep0 = async (): Promise<boolean> => {
-    const fieldsValid = await trigger(STEP_FIELDS[0]);
-    if (!fieldsValid) return false;
+  const goTo = (step: number) => {
+    setActiveStep(step);
+    // Lleva el foco al título del paso para que el lector de pantalla anuncie el cambio.
+    requestAnimationFrame(() => headingRef.current?.focus());
+  };
 
+  const validateIdentification = async () => {
+    if (!(await trigger(REGISTER_STEPS[0]!.fields))) return false;
     setChecking(true);
     try {
       const { typeDocument, numberDocument } = getValues();
       const { available } = await authService.checkDocument(typeDocument, numberDocument);
       if (!available) {
-        setError('numberDocument', {
-          type: 'server',
-          message: 'Este documento ya está registrado',
-        });
+        setError('numberDocument', { type: 'server', message: 'Este documento ya está registrado' });
         return false;
       }
-
-      // Consultar datos del DNI en RENIEC para autocompletar
+      // Autocompletar con RENIEC; si la consulta falla, el paciente escribe sus datos.
       if (typeDocument === 'DNI' && /^\d{8}$/.test(numberDocument)) {
         setLookingUp(true);
         try {
@@ -182,45 +104,32 @@ export function RegisterForm() {
             if (result.gender) setValue('gender', result.gender);
           }
         } catch {
-          // No bloquear el flujo si la consulta RENIEC falla
+          // Sin autocompletado.
         } finally {
           setLookingUp(false);
         }
       }
-
       return true;
     } catch {
-      setError('numberDocument', {
-        type: 'server',
-        message: 'No se pudo verificar el documento. Intenta de nuevo.',
-      });
+      setError('numberDocument', { type: 'server', message: 'No se pudo verificar el documento. Intenta de nuevo.' });
       return false;
     } finally {
       setChecking(false);
     }
   };
 
-  const validateStep1 = async (): Promise<boolean> => {
-    const fieldsValid = await trigger(STEP_FIELDS[1]);
-    if (!fieldsValid) return false;
-
+  const validatePersonalData = async () => {
+    if (!(await trigger(REGISTER_STEPS[1]!.fields))) return false;
     setChecking(true);
     try {
-      const { email } = getValues();
-      const { available } = await authService.checkEmail(email);
+      const { available } = await authService.checkEmail(getValues('email'));
       if (!available) {
-        setError('email', {
-          type: 'server',
-          message: 'Este email ya está registrado',
-        });
+        setError('email', { type: 'server', message: 'Este email ya está registrado' });
         return false;
       }
       return true;
     } catch {
-      setError('email', {
-        type: 'server',
-        message: 'No se pudo verificar el email. Intenta de nuevo.',
-      });
+      setError('email', { type: 'server', message: 'No se pudo verificar el email. Intenta de nuevo.' });
       return false;
     } finally {
       setChecking(false);
@@ -228,458 +137,80 @@ export function RegisterForm() {
   };
 
   const handleNext = async () => {
-    let canProceed = false;
-    if (activeStep === 0) {
-      canProceed = await validateStep0();
-    } else if (activeStep === 1) {
-      canProceed = await validateStep1();
-    } else if (activeStep === 2) {
-      canProceed = await trigger(STEP_FIELDS[2]);
-    }
-    if (canProceed) {
-      setActiveStep((prev) => prev + 1);
-    }
+    const ok =
+      activeStep === 0 ? await validateIdentification() : activeStep === 1 ? await validatePersonalData() : await trigger(REGISTER_STEPS[activeStep]!.fields);
+    if (ok) goTo(activeStep + 1);
   };
 
-  const handleBack = () => {
-    setActiveStep((prev) => prev - 1);
-  };
-
-  const onSubmit = (data: RegisterFormValues) => {
-    const { confirmPassword, ...payload } = data;
+  const onSubmit = (values: RegisterFormValues) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- la confirmación no viaja al servidor
+    const { confirmPassword, ...payload } = values;
     void dispatch(registerThunk(payload));
   };
 
-  const isStepLoading = checking || isLoading || lookingUp;
+  const busy = checking || lookingUp || isLoading;
+  const last = activeStep === REGISTER_STEPS.length - 1;
+  const current = REGISTER_STEPS[activeStep]!;
 
   return (
-    <Box
-      component="form"
-      onSubmit={handleSubmit(onSubmit)}
-      noValidate
-      sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}
-    >
-      {/* Stepper */}
-      <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 1 }}>
-        {STEPS.map((label) => (
-          <Step key={label}>
-            <StepLabel
-              slotProps={{
-                label: { sx: { fontSize: '0.75rem', mt: 0.5 } },
-              }}
-            >
-              {label}
+    <StepperWrapper className='flex flex-col gap-6'>
+      <Stepper activeStep={activeStep} aria-label='Pasos del registro'>
+        {REGISTER_STEPS.map((step, index) => (
+          <Step key={step.title}>
+            <StepLabel slots={{ stepIcon: StepperCustomDot }}>
+              <div className='step-label'>
+                <Typography className='step-number' color='text.primary'>{`0${index + 1}`}</Typography>
+                <div>
+                  <Typography className='step-title' color='text.primary'>
+                    {step.title}
+                  </Typography>
+                  <Typography className='step-subtitle'>{step.subtitle}</Typography>
+                </div>
+              </div>
             </StepLabel>
           </Step>
         ))}
       </Stepper>
 
-      {error && (
-        <Alert severity="error" onClose={() => dispatch(clearError())}>
-          {error}
-        </Alert>
-      )}
+      <form noValidate onSubmit={handleSubmit(onSubmit)} className='flex flex-col gap-5'>
+        <div>
+          <Typography ref={headingRef} tabIndex={-1} variant='h5' component='h2' className='outline-none'>
+            Paso {activeStep + 1} de {REGISTER_STEPS.length}: {current.title}
+          </Typography>
+          <Typography color='text.secondary'>{STEP_HINTS[activeStep]}</Typography>
+        </div>
 
-      {/* ── Step 1: Identificación ── */}
-      {activeStep === 0 && (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          <Box
-            sx={{
-              p: 2,
-              borderRadius: 2,
-              bgcolor: (t) => alpha(t.palette.info.main, 0.08),
-              border: (t) => `1px solid ${alpha(t.palette.info.main, 0.2)}`,
-            }}
-          >
-            <Typography variant="body2" color="info.main" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <i className="ri-information-line" style={{ fontSize: 18 }} />
-              Ingresa tu documento de identidad para comenzar el registro.
-            </Typography>
-          </Box>
+        {error && (
+          <Alert severity='error' onClose={() => dispatch(clearError())}>
+            {error}
+          </Alert>
+        )}
 
-          <Controller
-            name="typeDocument"
-            control={control}
-            render={({ field, fieldState: { error: fieldError } }) => (
-              <TextField
-                {...field}
-                select
-                label="Tipo de Documento"
-                error={!!fieldError}
-                helperText={fieldError?.message}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <Box sx={{ mr: 1, display: 'flex', color: 'action.active' }}>
-                        <i className="ri-id-card-line" style={{ fontSize: 20 }} />
-                      </Box>
-                    ),
-                  },
-                }}
-              >
-                {DOCUMENT_TYPES.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
-          />
+        {activeStep === 0 && <StepIdentification control={control} />}
+        {activeStep === 1 && <StepPersonalData control={control} />}
+        {activeStep === 2 && <StepMedicalInfo control={control} />}
+        {activeStep === 3 && <StepCredentials control={control} />}
 
-          <Controller
-            name="numberDocument"
-            control={control}
-            render={({ field, fieldState: { error: fieldError } }) => (
-              <TextField
-                {...field}
-                label="Número de Documento"
-                error={!!fieldError}
-                helperText={fieldError?.message}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <Box sx={{ mr: 1, display: 'flex', color: 'action.active' }}>
-                        <i className="ri-hashtag" style={{ fontSize: 20 }} />
-                      </Box>
-                    ),
-                  },
-                }}
-              />
-            )}
-          />
-        </Box>
-      )}
-
-      {/* ── Step 2: Datos Personales ── */}
-      {activeStep === 1 && (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Controller
-                name="name"
-                control={control}
-                render={({ field, fieldState: { error: fieldError } }) => (
-                  <TextField
-                    {...field}
-                    label="Nombres"
-                    fullWidth
-                    error={!!fieldError}
-                    helperText={fieldError?.message}
-                    slotProps={{
-                      input: {
-                        startAdornment: (
-                          <Box sx={{ mr: 1, display: 'flex', color: 'action.active' }}>
-                            <i className="ri-user-line" style={{ fontSize: 20 }} />
-                          </Box>
-                        ),
-                      },
-                    }}
-                  />
-                )}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Controller
-                name="lastName"
-                control={control}
-                render={({ field, fieldState: { error: fieldError } }) => (
-                  <TextField
-                    {...field}
-                    label="Apellidos"
-                    fullWidth
-                    error={!!fieldError}
-                    helperText={fieldError?.message}
-                  />
-                )}
-              />
-            </Grid>
-          </Grid>
-
-          <Controller
-            name="email"
-            control={control}
-            render={({ field, fieldState: { error: fieldError } }) => (
-              <TextField
-                {...field}
-                label="Correo Electrónico"
-                autoComplete="email"
-                error={!!fieldError}
-                helperText={fieldError?.message}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <Box sx={{ mr: 1, display: 'flex', color: 'action.active' }}>
-                        <i className="ri-mail-line" style={{ fontSize: 20 }} />
-                      </Box>
-                    ),
-                  },
-                }}
-              />
-            )}
-          />
-
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Controller
-                name="phone"
-                control={control}
-                render={({ field, fieldState: { error: fieldError } }) => (
-                  <InternationalPhoneInput
-                    value={field.value}
-                    onChange={(val) => field.onChange(val ?? '')}
-                    error={fieldError?.message}
-                    label="Celular"
-                  />
-                )}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Controller
-                name="birthday"
-                control={control}
-                render={({ field, fieldState: { error: fieldError } }) => (
-                  <TextField
-                    {...field}
-                    label="Fecha de Nacimiento"
-                    type="date"
-                    fullWidth
-                    error={!!fieldError}
-                    helperText={fieldError?.message}
-                    slotProps={{
-                      inputLabel: { shrink: true },
-                      input: {
-                        startAdornment: (
-                          <Box sx={{ mr: 1, display: 'flex', color: 'action.active' }}>
-                            <i className="ri-calendar-line" style={{ fontSize: 20 }} />
-                          </Box>
-                        ),
-                      },
-                    }}
-                  />
-                )}
-              />
-            </Grid>
-          </Grid>
-
-          <Controller
-            name="gender"
-            control={control}
-            render={({ field, fieldState: { error: fieldError } }) => (
-              <TextField
-                {...field}
-                select
-                label="Género (opcional)"
-                error={!!fieldError}
-                helperText={fieldError?.message}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <Box sx={{ mr: 1, display: 'flex', color: 'action.active' }}>
-                        <i className="ri-user-heart-line" style={{ fontSize: 20 }} />
-                      </Box>
-                    ),
-                  },
-                }}
-              >
-                <MenuItem value="">No especificar</MenuItem>
-                {GENDER_OPTIONS.map((opt) => (
-                  <MenuItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
-          />
-        </Box>
-      )}
-
-      {/* ── Step 3: Información Médica ── */}
-      {activeStep === 2 && (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          <Box
-            sx={{
-              p: 2,
-              borderRadius: 2,
-              bgcolor: (t) => alpha(t.palette.error.main, 0.08),
-              border: (t) => `1px solid ${alpha(t.palette.error.main, 0.2)}`,
-            }}
-          >
-            <Typography variant="body2" color="error.main" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <i className="ri-heart-pulse-line" style={{ fontSize: 18 }} />
-              Esta información es necesaria para tu atención médica.
-            </Typography>
-          </Box>
-
-          <Grid container spacing={2}>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Controller
-                name="emergencyContact"
-                control={control}
-                render={({ field, fieldState: { error: fieldError } }) => (
-                  <InternationalPhoneInput
-                    value={field.value}
-                    onChange={(val) => field.onChange(val ?? '')}
-                    error={fieldError?.message}
-                    label="Contacto de emergencia *"
-                  />
-                )}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
-              <Controller
-                name="bloodType"
-                control={control}
-                render={({ field, fieldState: { error: fieldError } }) => (
-                  <TextField
-                    {...field}
-                    select
-                    label="Tipo de sangre *"
-                    fullWidth
-                    error={!!fieldError}
-                    helperText={fieldError?.message}
-                    slotProps={{
-                      input: {
-                        startAdornment: (
-                          <Box sx={{ mr: 1, display: 'flex', color: 'action.active' }}>
-                            <i className="ri-drop-line" style={{ fontSize: 20 }} />
-                          </Box>
-                        ),
-                      },
-                    }}
-                  >
-                    <MenuItem value="">Seleccionar</MenuItem>
-                    {BLOOD_TYPE_OPTIONS.map((t) => (
-                      <MenuItem key={t} value={t}>{t}</MenuItem>
-                    ))}
-                  </TextField>
-                )}
-              />
-            </Grid>
-          </Grid>
-
-          <Controller
-            name="allergies"
-            control={control}
-            render={({ field, fieldState: { error: fieldError } }) => (
-              <TextField
-                {...field}
-                label="Alergias (opcional)"
-                multiline
-                minRows={2}
-                maxRows={4}
-                placeholder="Penicilina, Sulfas..."
-                error={!!fieldError}
-                helperText={fieldError?.message}
-              />
-            )}
-          />
-
-          <Controller
-            name="chronicConditions"
-            control={control}
-            render={({ field, fieldState: { error: fieldError } }) => (
-              <TextField
-                {...field}
-                label="Condiciones crónicas (opcional)"
-                multiline
-                minRows={2}
-                maxRows={4}
-                placeholder="Diabetes, Hipertensión..."
-                error={!!fieldError}
-                helperText={fieldError?.message}
-              />
-            )}
-          />
-        </Box>
-      )}
-
-      {/* ── Step 4: Credenciales ── */}
-      {activeStep === 3 && (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          <Box
-            sx={{
-              p: 2,
-              borderRadius: 2,
-              bgcolor: (t) => alpha(t.palette.warning.main, 0.08),
-              border: (t) => `1px solid ${alpha(t.palette.warning.main, 0.2)}`,
-            }}
-          >
-            <Typography variant="body2" color="warning.main" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <i className="ri-lock-line" style={{ fontSize: 18 }} />
-              Crea una contraseña segura: mínimo 8 caracteres, con mayúscula, minúscula y número.
-            </Typography>
-          </Box>
-
-          <Controller
-            name="password"
-            control={control}
-            render={({ field, fieldState: { error: fieldError } }) => (
-              <PasswordField
-                {...field}
-                label="Contraseña"
-                autoComplete="new-password"
-                error={!!fieldError}
-                helperText={fieldError?.message}
-              />
-            )}
-          />
-
-          <Controller
-            name="confirmPassword"
-            control={control}
-            render={({ field, fieldState: { error: fieldError } }) => (
-              <PasswordField
-                {...field}
-                label="Confirmar Contraseña"
-                autoComplete="new-password"
-                error={!!fieldError}
-                helperText={fieldError?.message}
-              />
-            )}
-          />
-        </Box>
-      )}
-
-      {/* Navigation buttons */}
-      <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
-        {activeStep > 0 && (
-          <Button
-            variant="outlined"
-            onClick={handleBack}
-            disabled={isStepLoading}
-            sx={{ flex: 1, py: 1.5 }}
-          >
+        <div className='flex flex-wrap justify-between gap-4'>
+          <Button variant='outlined' disabled={activeStep === 0 || busy} onClick={() => goTo(activeStep - 1)} startIcon={<i className='ri-arrow-left-line' aria-hidden />}>
             Atrás
           </Button>
-        )}
-        {activeStep < STEPS.length - 1 ? (
-          <Button
-            variant="contained"
-            onClick={handleNext}
-            disabled={isStepLoading}
-            sx={{ flex: 1, py: 1.5 }}
-          >
-            {checking ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              'Siguiente'
-            )}
-          </Button>
-        ) : (
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={isStepLoading}
-            sx={{ flex: 1, py: 1.5 }}
-          >
-            {isLoading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              'Crear Cuenta'
-            )}
-          </Button>
-        )}
-      </Box>
-    </Box>
+          {last ? (
+            <Button type='submit' variant='contained' disabled={busy} endIcon={isLoading ? <CircularProgress size={18} color='inherit' /> : <i className='ri-check-line' aria-hidden />}>
+              Crear cuenta
+            </Button>
+          ) : (
+            <Button
+              variant='contained'
+              disabled={busy}
+              onClick={() => void handleNext()}
+              endIcon={checking || lookingUp ? <CircularProgress size={18} color='inherit' /> : <i className='ri-arrow-right-line' aria-hidden />}
+            >
+              Siguiente
+            </Button>
+          )}
+        </div>
+      </form>
+    </StepperWrapper>
   );
 }

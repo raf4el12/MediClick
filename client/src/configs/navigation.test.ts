@@ -16,14 +16,14 @@ describe('navigationFor', () => {
       '/patient/book',
       '/patient/waitlist',
       '/patient/expediente',
-      '/patient/profile',
+      '/settings/account',
       '/notifications',
     ]);
     expect(menuFor('PATIENT').bottomNav?.map((l) => l.path)).toEqual([
       '/patient',
       '/patient/book',
       '/patient/appointments',
-      '/patient/profile',
+      '/settings/account',
     ]);
   });
 
@@ -66,7 +66,7 @@ describe('navigationFor', () => {
 describe('pageTitle', () => {
   it('toma el título de la navegación y de las rutas fuera del menú', () => {
     expect(pageTitle('/patient/book')).toBe('Reservar Cita');
-    expect(pageTitle('/settings/account')).toBe('Configuración');
+    expect(pageTitle('/settings/account')).toBe('Mi cuenta');
     expect(pageTitle('/ruta-desconocida')).toBe('MediClick');
   });
 });

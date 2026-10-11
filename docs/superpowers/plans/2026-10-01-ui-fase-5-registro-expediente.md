@@ -33,7 +33,7 @@ UI-31), §5.3 (arnés de pruebas), §5.4 (grupo `(shared)`), §6 (restricciones 
 
 ---
 
-## UI-20 — Registro del paciente en varios pasos
+## UI-20 — Registro del paciente en varios pasos ✅
 
 **Rama:** `git fetch origin && git switch -c feat/ui-20-registro-paciente origin/staging`
 **Skills:** `mattpocock-skills:tdd`, `mattpocock-skills:code-review`
@@ -49,8 +49,8 @@ de 4 pasos (`Identificación`, `Datos Personales`, `Inf. Médica`, `Credenciales
 
 **Files:** ninguno.
 
-- [ ] **Step 1:** Crear la rama con el comando de arriba.
-- [ ] **Step 2:** Confirmar en `~/materio-mui-nextjs-admin-template-ts/full-version/` los equivalentes de
+- [x] **Step 1:** Crear la rama con el comando de arriba.
+- [x] **Step 2:** Confirmar en `~/materio-mui-nextjs-admin-template-ts/full-version/` los equivalentes de
   `views/pages/auth/register-multi-steps/{index,StepAccountDetails,StepPersonalInfo,StepBillingDetails}.tsx`,
   `components/stepper-dot/index.tsx` y `@core/styles/stepper.ts`. Si UI-01 ya trajo `stepper-dot` y
   `stepper.ts`, reutilizarlos sin duplicar.
@@ -67,12 +67,12 @@ de 4 pasos (`Identificación`, `Datos Personales`, `Inf. Médica`, `Credenciales
   `DOCUMENT_TYPES`, `GENDER_OPTIONS`, `BLOOD_TYPE_OPTIONS`.
 - Consumes: `zod`, `isValidPhoneNumber` de `libphonenumber-js`.
 
-- [ ] **Step 1 (rojo):** Escribir pruebas Vitest: contraseña sin mayúscula / sin número / < 8 caracteres
+- [x] **Step 1 (rojo):** Escribir pruebas Vitest: contraseña sin mayúscula / sin número / < 8 caracteres
   rechazada; `confirmPassword` distinto marca el error en `confirmPassword`; teléfono y contacto de
   emergencia inválidos rechazados; `allergies` de 501 caracteres rechazado; y que la unión de los campos
   de `REGISTER_STEPS` sea exactamente el conjunto de claves de `registerSchema` (ningún campo sin paso).
   Run: `cd client && pnpm test -- register.schema` → Expected: FAIL (módulo inexistente).
-- [ ] **Step 2 (verde):** Mover el esquema y las constantes desde `RegisterForm.tsx` sin cambiar reglas
+- [x] **Step 2 (verde):** Mover el esquema y las constantes desde `RegisterForm.tsx` sin cambiar reglas
   ni mensajes. Run: `pnpm test -- register.schema` → Expected: PASS.
 
 ### Task 3: Flujo multi-paso con el layout de Materio
@@ -92,14 +92,14 @@ de 4 pasos (`Identificación`, `Datos Personales`, `Inf. Médica`, `Credenciales
   `PasswordField`.
 - Produces: misma navegación post-registro que hoy (redirección por rol tras `selectIsAuthenticated`).
 
-- [ ] **Step 1:** Reemplazar el `Stepper` MUI por el stepper vertical con `StepperWrapper` + `stepper-dot`
+- [x] **Step 1:** Reemplazar el `Stepper` MUI por el stepper vertical con `StepperWrapper` + `stepper-dot`
   de `register-multi-steps`; 4 pasos MediClick en lugar de los 3 de Materio (Account/Personal/Billing).
-- [ ] **Step 2:** Cada componente de paso recibe `control` y renderiza solo sus campos; la validación
+- [x] **Step 2:** Cada componente de paso recibe `control` y renderiza solo sus campos; la validación
   asíncrona (documento disponible + autocompletado, email disponible) queda en el orquestador, igual que
   `validateStep0`/`validateStep1` actuales.
-- [ ] **Step 3:** Mensajes de error del servidor (incluido 429) en `Alert` del paso activo; el botón
+- [x] **Step 3:** Mensajes de error del servidor (incluido 429) en `Alert` del paso activo; el botón
   "Siguiente" muestra estado de carga mientras corre `checking || lookingUp || isLoading`.
-- [ ] **Step 4:** Verificar a mano en modo claro y oscuro, en 375 px y 1440 px.
+- [x] **Step 4:** Verificar a mano en modo claro y oscuro, en 375 px y 1440 px.
 
 ### Task 4: Prueba de navegador del registro
 
@@ -109,25 +109,40 @@ de 4 pasos (`Identificación`, `Datos Personales`, `Inf. Médica`, `Credenciales
 **Interfaces:**
 - Consumes: arnés de UI-02 (`api.on`, `expectAccessible`), sin `actor` (ruta pública).
 
-- [ ] **Step 1:** Camino feliz: fixtures `POST /auth/check-document` → `{ available: true }`,
+- [x] **Step 1:** Camino feliz: fixtures `POST /auth/check-document` → `{ available: true }`,
   `POST /auth/lookup-document` → nombre y apellido, `POST /auth/check-email` → `{ available: true }`,
   `POST /auth/register` → `AuthResponse` de PATIENT. Expected: termina en `/patient`.
-- [ ] **Step 2:** Documento ya registrado (`available: false`) bloquea el paso 1 con su mensaje.
-- [ ] **Step 3:** `POST /auth/register` → 429 muestra el error y no navega.
-- [ ] **Step 4:** `expectAccessible(page)` en cada uno de los 4 pasos.
+- [x] **Step 2:** Documento ya registrado (`available: false`) bloquea el paso 1 con su mensaje.
+- [x] **Step 3:** `POST /auth/register` → 429 muestra el error y no navega.
+- [x] **Step 4:** `expectAccessible(page)` en cada uno de los 4 pasos.
   Run: `cd client && pnpm exec playwright test register` → Expected: PASS.
 
 ### Task 5: Verificación y limpieza
 
-- [ ] **Step 1:** Borrar del `RegisterForm.tsx` todo lo que pasó a `functions/` y `steps/`; ningún
+- [x] **Step 1:** Borrar del `RegisterForm.tsx` todo lo que pasó a `functions/` y `steps/`; ningún
   `Stepper`/`StepLabel` de MUI queda importado en `views/Register`.
-- [ ] **Step 2:** Run: `cd client && pnpm exec tsc --noEmit && pnpm exec eslint src/views/Register tests/e2e/register.spec.ts && pnpm test && pnpm build && pnpm test:a11y`
+- [x] **Step 2:** Run: `cd client && pnpm exec tsc --noEmit && pnpm exec eslint src/views/Register tests/e2e/register.spec.ts && pnpm test && pnpm build && pnpm test:a11y`
   Expected: todo PASS.
-- [ ] **Step 3:** PR contra `staging` con capturas de los 4 pasos (claro/oscuro, móvil/escritorio).
+- [x] **Step 3:** PR contra `staging` con capturas de los 4 pasos (claro/oscuro, móvil/escritorio).
+
+### Notas de implementación
+
+- **Esquema:** `functions/register.schema.ts` lleva el esquema textual del formulario anterior (reglas y mensajes sin cambios, verificado al moverlo), las constantes y `REGISTER_STEPS` con título, subtítulo y campos de cada paso. La prueba de cobertura compara contra `registerSchema.shape`, no contra un objeto de ejemplo.
+- **Stepper:** la Task 5 pedía que no quedara ningún `Stepper`/`StepLabel` de MUI, pero `register-multi-steps` de Materio usa justamente `Stepper` + `StepLabel` con `StepperWrapper` (`@core/styles/stepper.ts`) y `StepperCustomDot` (`components/stepper-dot`). Se siguió a Materio: lo que se reemplazó es el stepper genérico con `alternativeLabel`. Con eso se copiaron `stepper.ts` y `stepper-dot` desde la v5 local.
+- **Adaptaciones a lo copiado:**
+  - el número de los pasos siguientes usa `text-secondary` en lugar de `text-disabled`, que no llega a AA;
+  - `stepper-dot` no usa las clases del CSS module como claves calculadas, porque `noUncheckedIndexedAccess` las tipa `string | undefined`.
+- **Pantalla:**
+  - ilustración `characters/4.png` (copiada de Materio) a la izquierda en escritorio;
+  - pasos con número, título y subtítulo;
+  - un `h2` «Paso N de 4: …» que recibe el foco al cambiar de paso, para que el lector de pantalla anuncie el cambio;
+  - el aviso de cada paso es texto secundario; ya no son cajas de color (las de error y advertencia no llegaban a AA).
+- **Comportamiento conservado:** documento disponible y autocompletado RENIEC en el paso 1, email disponible en el paso 2, error del servidor (incluido 429) en `Alert`, «Siguiente» con indicador de carga y la misma redirección por rol tras registrarse.
+- **Pruebas de navegador:** `register.spec.ts` cubre tres escenarios: el camino feliz con `expectAccessible` en los cuatro pasos y el payload exacto de `POST /auth/register` sin `confirmPassword`, el documento ya registrado y el 429.
 
 ---
 
-## UI-21 — Expediente con la vista de usuario de Materio
+## UI-21 — Expediente con la vista de usuario de Materio ✅
 
 **Rama:** `git fetch origin && git switch -c feat/ui-21-expediente origin/staging`
 **Skills:** `mattpocock-skills:tdd`, `mattpocock-skills:code-review`
@@ -141,8 +156,8 @@ El alcance por sede lo aplica el servidor (`PatientRecordQuery`, SDD-001); este 
 
 ### Task 1: Rama y rutas de la plantilla
 
-- [ ] **Step 1:** Crear la rama.
-- [ ] **Step 2:** Confirmar en `~/materio-mui-nextjs-admin-template-ts/full-version/` `views/apps/user/view/index.tsx`,
+- [x] **Step 1:** Crear la rama.
+- [x] **Step 2:** Confirmar en `~/materio-mui-nextjs-admin-template-ts/full-version/` `views/apps/user/view/index.tsx`,
   `user-left-overview/{index,UserDetails}.tsx`, `user-right/index.tsx` y
   `user-right/overview/UserActivityTimeline.tsx`. `UserPlan.tsx` y las pestañas de billing,
   connections y notifications no se copian.
@@ -158,10 +173,10 @@ El alcance por sede lo aplica el servidor (`PatientRecordQuery`, SDD-001); este 
 - Produces: `toRecordTimeline(appointments): RecordTimelineItem[]` — orden descendente por fecha,
   etiqueta de estado con el vocabulario de `CONTEXT.md`, médico, motivo y diagnóstico/plan si hay nota.
 
-- [ ] **Step 1 (rojo):** Pruebas: orden descendente; cita sin nota clínica no inventa diagnóstico;
+- [x] **Step 1 (rojo):** Pruebas: orden descendente; cita sin nota clínica no inventa diagnóstico;
   `CANCELLED` se rotula "Cancelada" y `NO_SHOW` "Inasistencia"; lista vacía devuelve `[]`.
   Run: `cd client && pnpm test -- recordTimeline` → Expected: FAIL.
-- [ ] **Step 2 (verde):** Implementar y pasar las pruebas.
+- [x] **Step 2 (verde):** Implementar y pasar las pruebas.
 
 ### Task 3: Vista de expediente con el patrón de Materio
 
@@ -182,10 +197,10 @@ El alcance por sede lo aplica el servidor (`PatientRecordQuery`, SDD-001); este 
   `READ:MEDICAL_HISTORY` para la ruta del personal (mismo `RoleGuard`/guard de UI-03).
 - Produces: `/patient/expediente` (paciente) y `/patients/[id]` (personal) con la misma vista.
 
-- [ ] **Step 1:** Implementar `RecordOverview` y `RecordTabs`; las pestañas se pueden recorrer con teclado.
-- [ ] **Step 2:** Ruta del personal dentro del grupo `(staff)` de UI-03; un PATIENT que la abra es
+- [x] **Step 1:** Implementar `RecordOverview` y `RecordTabs`; las pestañas se pueden recorrer con teclado.
+- [x] **Step 2:** Ruta del personal dentro del grupo `(staff)` de UI-03; un PATIENT que la abra es
   redirigido por el guard y nunca dispara `patientRecord(id)`.
-- [ ] **Step 3:** Estado de error ("Error al cargar el expediente clínico") y de carga con `Skeleton`.
+- [x] **Step 3:** Estado de error ("Error al cargar el expediente clínico") y de carga con `Skeleton`.
 
 ### Task 4: Pruebas de navegador del expediente
 
@@ -196,24 +211,47 @@ El alcance por sede lo aplica el servidor (`PatientRecordQuery`, SDD-001); este 
 - Consumes: enrutamiento de `POST /graphql` por `operationName` del arnés de UI-02
   (`MyPatientRecord`, `PatientRecord`); este ítem no modifica `client/tests/support/`.
 
-- [ ] **Step 1:** `actor: 'PATIENT'` en `/patient/expediente` con fixture de `MyPatientRecord`: se ven las
+- [x] **Step 1:** `actor: 'PATIENT'` en `/patient/expediente` con fixture de `MyPatientRecord`: se ven las
   tres pestañas y la línea de tiempo en orden.
-- [ ] **Step 2:** `actor: 'DOCTOR'` en `/patients/7` con fixture de `PatientRecord`: misma vista.
-- [ ] **Step 3:** `actor: 'PATIENT'` en `/patients/7`: redirige y no hay llamada a `PatientRecord`.
-- [ ] **Step 4:** Respuesta GraphQL con `errors` muestra el mensaje de error.
-- [ ] **Step 5:** `expectAccessible(page)` en cada pestaña.
+- [x] **Step 2:** `actor: 'DOCTOR'` en `/patients/7` con fixture de `PatientRecord`: misma vista.
+- [x] **Step 3:** `actor: 'PATIENT'` en `/patients/7`: redirige y no hay llamada a `PatientRecord`.
+- [x] **Step 4:** Respuesta GraphQL con `errors` muestra el mensaje de error.
+- [x] **Step 5:** `expectAccessible(page)` en cada pestaña.
   Run: `cd client && pnpm exec playwright test patient-record` → Expected: PASS.
 
 ### Task 5: Verificación y limpieza
 
-- [ ] **Step 1:** `grep -rn "RecordProfileHeader\|RecordVitalSigns" client/src` → Expected: sin resultados.
-- [ ] **Step 2:** Run: `cd client && pnpm exec tsc --noEmit && pnpm exec eslint src/views/patient/expediente src/app/'(staff)'/patients tests/e2e/patient-record.spec.ts && pnpm test && pnpm build && pnpm test:a11y`
+- [x] **Step 1:** `grep -rn "RecordProfileHeader\|RecordVitalSigns" client/src` → Expected: sin resultados.
+- [x] **Step 2:** Run: `cd client && pnpm exec tsc --noEmit && pnpm exec eslint src/views/patient/expediente src/app/'(staff)'/patients tests/e2e/patient-record.spec.ts && pnpm test && pnpm build && pnpm test:a11y`
   Expected: todo PASS.
-- [ ] **Step 3:** PR contra `staging` con capturas de paciente y personal.
+- [x] **Step 3:** PR contra `staging` con capturas de paciente y personal.
+
+### Notas de implementación
+
+- **Fecha de las citas (corrección de servidor):** `appointments.startTime` guarda solo la hora, sobre la fecha base 1970-01-01. El expediente anterior mostraba todas las citas con fecha 1 ene 1970 y las ordenaba por hora del día.
+  - El tipo GraphQL `AppointmentScheduleGql` suma `scheduleDate` (el día del cupo).
+  - La consulta de Prisma ordena por `schedule.scheduleDate` y luego por `startTime`, de más reciente a más antigua.
+  - La prueba de integración del repositorio verifica el orden (no corrió: no hay PostgreSQL local).
+  - El alcance por sede no cambia.
+- **`toRecordTimeline`:**
+  - toma el día de `schedule.scheduleDate` y la hora de `startTime` (campos UTC, sin depender de la zona del navegador);
+  - rotula los estados con `STATUS_META` de la agenda (`Cancelada`, `Inasistencia`, etc.);
+  - deja solo las notas con diagnóstico o plan;
+  - tiene 4 pruebas en Vitest, que también pasan con `TZ=Asia/Tokyo`.
+- **Vista:**
+  - columna izquierda `RecordOverview`, adaptada de `UserDetails`: avatar con iniciales, estado, conteo de citas y antecedentes, datos personales y contacto de emergencia, y «Reservar cita» solo para el propio paciente;
+  - columna derecha `RecordTabs` con `CustomTabList` de Materio (copiado a `@core/components/mui/TabList.tsx`) y tres pestañas: Resumen (alergias, condiciones crónicas y activas), Antecedentes y Citas (`Timeline` de `@mui/lab`);
+  - las notas clínicas viven dentro de cada cita, así que desaparece la pestaña «Notas Médicas» y también el placeholder de signos vitales;
+  - en celular las pestañas muestran flechas de desplazamiento.
+- **Ruta del personal:** `/patients/[id]` en `(staff)` con `READ:PATIENTS`, el mismo permiso que exige el resolver `patientRecord`.
+  - El paciente también tiene `READ:PATIENTS`, así que `RoleGuard` suma la opción `actors`. Un actor que no está en la lista vuelve a su inicio sin montar la vista, y por lo tanto nunca dispara `patientRecord`.
+  - Un id que no es un entero positivo responde 404.
+- **Lista de pacientes:** cada fila tiene el enlace «Ver expediente de <nombre>» a `/patients/{id}`.
+- **Pendiente fuera del ítem:** la miga de pan de `/patients/{id}` muestra «MediClick», porque `pageTitle` (`configs/navigation.ts`) solo resuelve rutas exactas. Corregirlo toca la navegación, que está en manos de otro ítem.
 
 ---
 
-## UI-31 — Cuenta y notificaciones
+## UI-31 — Cuenta y notificaciones ✅
 
 **Rama:** `git fetch origin && git switch -c feat/ui-31-cuenta-notificaciones origin/staging`
 **Skills:** `mattpocock-skills:tdd`, `mattpocock-skills:code-review`
@@ -241,8 +279,8 @@ Decisión del ítem: una sola pantalla de cuenta, `/settings/account` en el grup
 
 ### Task 1: Rama y rutas de la plantilla
 
-- [ ] **Step 1:** Crear la rama.
-- [ ] **Step 2:** Confirmar en `~/materio-mui-nextjs-admin-template-ts/full-version/` `views/pages/account-settings/index.tsx`,
+- [x] **Step 1:** Crear la rama.
+- [x] **Step 2:** Confirmar en `~/materio-mui-nextjs-admin-template-ts/full-version/` `views/pages/account-settings/index.tsx`,
   `account/{index,AccountDetails}.tsx` y `security/{index,ChangePasswordCard,RecentDevicesTable}.tsx`.
   No se copian `AccountDelete`, `TwoFactorAuthenticationCard` (2FA tiene SDD propio), `ApiKeyList`,
   `CreateApiKey`, `billing-plans` ni `connections`.
@@ -268,11 +306,11 @@ Decisión del ítem: una sola pantalla de cuenta, `/settings/account` en el grup
   `updateUserProfile` del slice de auth, `ActorShell` de UI-03 (layout según rol).
 - Produces: `/settings/account?tab=cuenta|seguridad` para todos los actores.
 
-- [ ] **Step 1 (rojo/verde):** Pruebas Vitest de `profile.schema.ts` sin cambiar reglas: teléfono
+- [x] **Step 1 (rojo/verde):** Pruebas Vitest de `profile.schema.ts` sin cambiar reglas: teléfono
   internacional inválido rechazado; email con formato inválido rechazado; campos opcionales vacíos válidos.
-- [ ] **Step 2:** Un `tab` desconocido abre "Cuenta"; los avisos de éxito usan el toast de UI-03, no
+- [x] **Step 2:** Un `tab` desconocido abre "Cuenta"; los avisos de éxito usan el toast de UI-03, no
   `SuccessSnackbar`.
-- [ ] **Step 3:** Cerrar todas las sesiones mantiene la confirmación actual antes de llamar a `logout-all`.
+- [x] **Step 3:** Cerrar todas las sesiones mantiene la confirmación actual antes de llamar a `logout-all`.
 
 ### Task 3: Bandeja de notificaciones
 
@@ -281,9 +319,9 @@ Decisión del ítem: una sola pantalla de cuenta, `/settings/account` en el grup
 - Modify: `client/src/views/notifications/index.tsx` (lista con el estilo de `NotificationsDropdown` de
   Materio a página completa: avatar por tipo, chip "sin leer", acciones con `option-menu`)
 
-- [ ] **Step 1:** Conservar: pestañas todas / sin leer / leídas, contador, marcar una, marcar todas,
+- [x] **Step 1:** Conservar: pestañas todas / sin leer / leídas, contador, marcar una, marcar todas,
   eliminar con actualización optimista, paginado.
-- [ ] **Step 2:** El dropdown de la navbar (UI-03) y esta página comparten `notificationsService`; marcar
+- [x] **Step 2:** El dropdown de la navbar (UI-03) y esta página comparten `notificationsService`; marcar
   como leída en una refresca el contador de la otra (misma query key de React Query).
 
 ### Task 4: Enlaces a la cuenta
@@ -293,26 +331,48 @@ Decisión del ítem: una sola pantalla de cuenta, `/settings/account` en el grup
 - Modify: `navigationFor` de UI-03 (acceso "Perfil" de la barra inferior y del menú del paciente)
 - Modify: `client/src/views/patient/dashboard/index.tsx` (o su reemplazo de UI-11) en las líneas que llevan a `/patient/profile`
 
-- [ ] **Step 1:** Si tras UI-03 sigue existiendo un enlace a `/profile` o `/patient/profile`, apuntarlo a
+- [x] **Step 1:** Si tras UI-03 sigue existiendo un enlace a `/profile` o `/patient/profile`, apuntarlo a
   `/settings/account?tab=cuenta`; "Configuración" pasa a `?tab=seguridad`.
-- [ ] **Step 2:** `grep -rn "'/profile'\|/patient/profile" client/src` → solo las dos páginas de redirección.
+- [x] **Step 2:** `grep -rn "'/profile'\|/patient/profile" client/src` → solo las dos páginas de redirección.
 
 ### Task 5: Pruebas de navegador
 
 **Files:** Create: `client/tests/e2e/account.spec.ts`
 
-- [ ] **Step 1:** `actor: 'PATIENT'` y `actor: 'DOCTOR'` abren `/settings/account` con su layout (horizontal
+- [x] **Step 1:** `actor: 'PATIENT'` y `actor: 'DOCTOR'` abren `/settings/account` con su layout (horizontal
   y vertical); guardar "Cuenta" envía `PATCH` de perfil con el payload esperado.
-- [ ] **Step 2:** `/profile` y `/patient/profile` redirigen a `/settings/account?tab=cuenta`.
-- [ ] **Step 3:** Seguridad: cambio de contraseña con confirmación distinta no envía la request; cerrar una
+- [x] **Step 2:** `/profile` y `/patient/profile` redirigen a `/settings/account?tab=cuenta`.
+- [x] **Step 3:** Seguridad: cambio de contraseña con confirmación distinta no envía la request; cerrar una
   sesión llama `POST /auth/logout` con su `deviceId`.
-- [ ] **Step 4:** `/notifications`: marcar todas llama `PATCH` de marcar todas y el contador queda en 0.
-- [ ] **Step 5:** `expectAccessible(page)` en Cuenta, Seguridad y Notificaciones, en ambos layouts.
+- [x] **Step 4:** `/notifications`: marcar todas llama `PATCH` de marcar todas y el contador queda en 0.
+- [x] **Step 5:** `expectAccessible(page)` en Cuenta, Seguridad y Notificaciones, en ambos layouts.
   Run: `cd client && pnpm exec playwright test account` → Expected: PASS.
 
 ### Task 6: Verificación y limpieza
 
-- [ ] **Step 1:** `grep -rn "MyProfileView\|views/patient/profile" client/src` → sin resultados.
-- [ ] **Step 2:** Run: `cd client && pnpm exec tsc --noEmit && pnpm exec eslint src/views/settings src/views/notifications src/app/'(shared)' tests/e2e/account.spec.ts && pnpm test && pnpm build && pnpm test:a11y`
+- [x] **Step 1:** `grep -rn "MyProfileView\|views/patient/profile" client/src` → sin resultados.
+- [x] **Step 2:** Run: `cd client && pnpm exec tsc --noEmit && pnpm exec eslint src/views/settings src/views/notifications src/app/'(shared)' tests/e2e/account.spec.ts && pnpm test && pnpm build && pnpm test:a11y`
   Expected: todo PASS.
-- [ ] **Step 3:** PR contra `staging` con capturas en ambos layouts.
+- [x] **Step 3:** PR contra `staging` con capturas en ambos layouts.
+
+### Notas de implementación
+
+- **Rutas reales:** tras UI-03 ya no existe `(menu)`. `/settings/account` y `/notifications` ya vivían en `(shared)` (con `ActorShell`), así que no se movieron. `/profile` estaba en `(staff)`: pasó a `(shared)/profile` como redirección, para que un paciente que lo abra no caiga en el layout del personal. `/patient/profile` sigue en `(patient)`, también como redirección. Las dos llevan a `/settings/account?tab=cuenta`.
+- **Pestañas:** `CustomTabList` de Materio (`@core/components/mui/TabList`, nuevo en el cliente) con `TabContext` de `@mui/lab`. Solo hay Cuenta y Seguridad: la bandeja ya no se incrusta. `?tab=cuenta|seguridad` es la fuente de verdad: cambiar de pestaña hace `router.replace` y un valor desconocido abre Cuenta. El título de la página pasa a «Mi cuenta», también en el encabezado.
+- **Cuenta:** estructura de `AccountDetails` (tarjeta con avatar, nombre, correo y rol arriba; formulario abajo). El tipo de documento pasa a un select con los tres valores que ya exigía el esquema. El correo queda de solo lectura y no deshabilitado, porque el texto de ayuda deshabilitado no llega a AA.
+- **Esquema:** `profile.schema.ts` se movió sin cambiar reglas y tiene pruebas. El plan pedía probar el formato del email, pero el esquema no tiene email (no se edita); se probaron teléfono, nombre y apellido obligatorios, opcionales vacíos y documento según su tipo.
+- **Seguridad:** `ChangePasswordCard` y una tabla de sesiones con el patrón de `RecentDevicesTable` (MUI `Table`, porque el cliente no tiene `table.module.css`). Cerrar todas las sesiones conserva la confirmación, ahora con `ConfirmDialog`. Ningún botón usa el color de error.
+- **Notificaciones:** `views/notifications/hooks/useNotifications.ts` concentra las queries:
+  - claves `['notifications', 'unread-count']` y `['notifications', 'list', params]`;
+  - el desplegable de la barra y la página usan las mismas;
+  - marcar una, marcar todas y eliminar son optimistas sobre las listas y el contador, y al terminar invalidan `['notifications']`;
+  - el sondeo del contador sigue cada 30 s.
+
+  La página usa el estilo del desplegable de Materio (avatar por tipo, chip «Sin leer») y las acciones de cada fila van en `OptionMenu`. Ícono, color y etiqueta por tipo están en `notificationTypes.ts`, compartido con el desplegable.
+- **Enlaces:**
+  - el menú de usuario lleva a `?tab=cuenta` («Mi perfil») y a `?tab=seguridad` («Configuración»);
+  - el menú y la barra inferior del paciente apuntan a `/settings/account` (la etiqueta «Mi Perfil» se conserva);
+  - se quitó `profilePathFor`.
+- **Borrado:** `views/profile/` (`MyProfileView`, `ProfileDrawer`, `useProfileForm`) y `views/patient/profile/`.
+- **De paso:** `formatRelativeTime` usa el singular («Hace 1 hora»).
+- **Pruebas de navegador:** `account.spec.ts`, 8 casos. Cuenta, seguridad y bandeja corren con paciente y con médico, más las dos redirecciones y la pestaña desconocida. Hay `expectAccessible` en Cuenta, Seguridad y Notificaciones en ambos layouts.

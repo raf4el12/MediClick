@@ -1,312 +1,206 @@
 'use client';
 
-import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
-import Grid from '@mui/material/Grid';
-import TextField from '@mui/material/TextField';
 import Avatar from '@mui/material/Avatar';
-import Divider from '@mui/material/Divider';
-import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
+import Divider from '@mui/material/Divider';
+import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { authService } from '@/services/auth.service';
+import { InternationalPhoneInput } from '@/components/shared/InternationalPhoneInput';
 import { useAppDispatch } from '@/redux-store/hooks';
 import { updateUserProfile } from '@/redux-store/slices/auth';
-import { profileSchema, type ProfileFormValues } from '@/views/profile/functions/profile.schema';
-import { InternationalPhoneInput } from '@/components/shared/InternationalPhoneInput';
-import { notify } from '@/utils/notify';
+import { authService } from '@/services/auth.service';
 import type { ProfileResponse, UpdateProfileData } from '@/types/profile.types';
+import { notify } from '@/utils/notify';
+import { profileSchema, type ProfileFormValues } from './functions/profile.schema';
 
-const roleLabels: Record<string, string> = {
-    ADMIN: 'Administrador',
-    DOCTOR: 'Doctor',
-    RECEPTIONIST: 'Recepcionista',
-    PATIENT: 'Paciente',
+const ROLE_LABELS: Record<string, string> = {
+  SUPER_ADMIN: 'Administrador general',
+  ADMIN: 'Administrador',
+  DOCTOR: 'Doctor',
+  RECEPTIONIST: 'Recepcionista',
+  PATIENT: 'Paciente',
 };
 
-interface AccountTabProps {
-    userData: ProfileResponse;
-}
+const DOCUMENT_TYPES = [
+  { value: 'DNI', label: 'DNI' },
+  { value: 'CE', label: 'Carné de extranjería' },
+  { value: 'PASAPORTE', label: 'Pasaporte' },
+];
 
-export default function AccountTab({ userData }: AccountTabProps) {
-    const dispatch = useAppDispatch();
-    const queryClient = useQueryClient();
+const toFormValues = (user: ProfileResponse): ProfileFormValues => ({
+  name: user.profile?.name ?? '',
+  lastName: user.profile?.lastName ?? '',
+  phone: user.profile?.phone ?? '',
+  typeDocument: (user.profile?.typeDocument ?? '') as ProfileFormValues['typeDocument'],
+  numberDocument: user.profile?.numberDocument ?? '',
+  address: user.profile?.address ?? '',
+  state: user.profile?.state ?? '',
+  country: user.profile?.country ?? '',
+});
 
-    const profileValues: ProfileFormValues = {
-        name: userData.profile?.name ?? '',
-        lastName: userData.profile?.lastName ?? '',
-        phone: userData.profile?.phone ?? '',
-        typeDocument: (userData.profile?.typeDocument ?? '') as ProfileFormValues['typeDocument'],
-        numberDocument: userData.profile?.numberDocument ?? '',
-        address: userData.profile?.address ?? '',
-        state: userData.profile?.state ?? '',
-        country: userData.profile?.country ?? '',
-    };
+const TEXT_FIELDS = [
+  { name: 'name', label: 'Nombre', placeholder: 'Ej.: Juan', wide: false },
+  { name: 'lastName', label: 'Apellido', placeholder: 'Ej.: Pérez', wide: false },
+] as const;
 
-    const form = useForm<ProfileFormValues>({
-        resolver: zodResolver(profileSchema),
-        values: profileValues,
-        resetOptions: { keepDirtyValues: true },
-        mode: 'onBlur',
+const PLACE_FIELDS = [
+  { name: 'address', label: 'Dirección', placeholder: 'Ej.: Av. Javier Prado 1234', wide: true },
+  { name: 'state', label: 'Departamento', placeholder: 'Ej.: Lima', wide: false },
+  { name: 'country', label: 'País', placeholder: 'Ej.: Perú', wide: false },
+] as const;
+
+/** Datos personales (estructura de `AccountDetails` de Materio): tarjeta con avatar y rol, y el formulario. */
+export default function AccountTab({ userData }: { userData: ProfileResponse }) {
+  const dispatch = useAppDispatch();
+  const queryClient = useQueryClient();
+  const saved = toFormValues(userData);
+
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileSchema),
+    values: saved,
+    resetOptions: { keepDirtyValues: true },
+    mode: 'onBlur',
+  });
+  const {
+    control,
+    formState: { errors, isDirty },
+    reset,
+  } = form;
+
+  const mutation = useMutation({
+    mutationFn: (data: UpdateProfileData) => authService.updateProfile(data),
+    onSuccess: (updatedUser) => {
+      void queryClient.invalidateQueries({ queryKey: ['auth', 'profile'] });
+      dispatch(updateUserProfile({ name: updatedUser.profile?.name ?? updatedUser.name }));
+      reset(toFormValues(updatedUser));
+      notify('Perfil actualizado');
+    },
+    onError: () => notify('No se pudo actualizar el perfil. Inténtalo de nuevo.', 'error'),
+  });
+
+  const onSubmit = (data: ProfileFormValues) =>
+    mutation.mutate({
+      name: data.name,
+      lastName: data.lastName,
+      phone: data.phone || undefined,
+      typeDocument: data.typeDocument || undefined,
+      numberDocument: data.numberDocument || undefined,
+      address: data.address || undefined,
+      state: data.state || undefined,
+      country: data.country || undefined,
     });
 
-    const { control, formState: { errors, isDirty }, reset } = form;
+  const fullName = `${userData.profile?.name ?? userData.name} ${userData.profile?.lastName ?? ''}`.trim();
 
-    const mutation = useMutation({
-        mutationFn: (data: UpdateProfileData) => authService.updateProfile(data),
-        onSuccess: (updatedUser) => {
-            queryClient.invalidateQueries({ queryKey: ['auth', 'profile'] });
-            dispatch(
-                updateUserProfile({
-                    name: updatedUser.profile?.name ?? updatedUser.name,
-                }),
-            );
+  const textField = ({ name, label, placeholder, wide }: (typeof TEXT_FIELDS)[number] | (typeof PLACE_FIELDS)[number]) => (
+    <Controller
+      key={name}
+      name={name}
+      control={control}
+      render={({ field }) => (
+        <TextField
+          {...field}
+          id={`cuenta-${name}`}
+          fullWidth
+          label={label}
+          placeholder={placeholder}
+          error={!!errors[name]}
+          helperText={errors[name]?.message}
+          className={wide ? 'sm:col-span-2' : undefined}
+        />
+      )}
+    />
+  );
 
-            // Reset form with fresh server values so they persist on revisit
-            reset({
-                name: updatedUser.profile?.name ?? '',
-                lastName: updatedUser.profile?.lastName ?? '',
-                phone: updatedUser.profile?.phone ?? '',
-                typeDocument: (updatedUser.profile?.typeDocument ?? '') as ProfileFormValues['typeDocument'],
-                numberDocument: updatedUser.profile?.numberDocument ?? '',
-                address: updatedUser.profile?.address ?? '',
-                state: updatedUser.profile?.state ?? '',
-                country: updatedUser.profile?.country ?? '',
-            });
-
-            notify('Perfil actualizado correctamente', 'success');
-        },
-        onError: () => {
-            notify('Error al actualizar el perfil', 'error');
-        },
-    });
-
-    const onSubmit = (formData: ProfileFormValues) => {
-        const payload: UpdateProfileData = {
-            name: formData.name,
-            lastName: formData.lastName,
-            phone: formData.phone || undefined,
-            typeDocument: formData.typeDocument || undefined,
-            numberDocument: formData.numberDocument || undefined,
-            address: formData.address || undefined,
-            state: formData.state || undefined,
-            country: formData.country || undefined,
-        };
-        mutation.mutate(payload);
-    };
-
-    const handleReset = () => {
-        reset(profileValues);
-    };
-
-    const avatarSrc = '/images/avatarSidebar.jpg';
-    const fullName = `${userData.profile?.name ?? userData.name} ${userData.profile?.lastName ?? ''}`.trim();
-
-    return (
-        <>
-            <Card sx={{ p: { xs: 3, md: 4 }, bgcolor: 'background.paper', borderRadius: 2, boxShadow: 'none', border: '1px solid', borderColor: 'divider' }}>
-                {/* Cabecera del perfil */}
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, gap: 3, flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
-                    <Avatar
-                        src={avatarSrc}
-                        alt={fullName}
-                        variant="rounded"
-                        sx={{ width: 100, height: 100, borderRadius: 2, flexShrink: 0 }}
-                    />
-                    <Box sx={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                        <Typography variant="h6" fontWeight={600} noWrap>
-                            {fullName}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" noWrap>
-                            {userData.email}
-                        </Typography>
-                        <Box sx={{ mt: 1, display: 'flex', gap: 1, alignItems: 'center' }}>
-                            <Chip
-                                label={roleLabels[userData.role] ?? userData.role}
-                                size="small"
-                                color="primary"
-                                variant="outlined"
-                            />
-                        </Box>
-                    </Box>
-                </Box>
-
-                <Divider sx={{ mb: 4 }} />
-
-                {/* Formulario */}
-                <Box component="form" onSubmit={form.handleSubmit(onSubmit)}>
-                    <Grid container spacing={4}>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                            <Controller
-                                name="name"
-                                control={control}
-                                render={({ field }) => (
-                                    <TextField
-                                        {...field}
-                                        fullWidth
-                                        label="Nombre"
-                                        placeholder="Ej: Juan"
-                                        error={!!errors.name}
-                                        helperText={errors.name?.message}
-                                    />
-                                )}
-                            />
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                            <Controller
-                                name="lastName"
-                                control={control}
-                                render={({ field }) => (
-                                    <TextField
-                                        {...field}
-                                        fullWidth
-                                        label="Apellido"
-                                        placeholder="Ej: Pérez"
-                                        error={!!errors.lastName}
-                                        helperText={errors.lastName?.message}
-                                    />
-                                )}
-                            />
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                            <TextField
-                                fullWidth
-                                label="Correo Electrónico"
-                                value={userData.email}
-                                disabled
-                                helperText="El correo no se puede modificar"
-                            />
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                            <Controller
-                                name="phone"
-                                control={control}
-                                render={({ field }) => (
-                                    <InternationalPhoneInput
-                                        value={field.value}
-                                        onChange={(val) => field.onChange(val ?? '')}
-                                        error={errors.phone?.message}
-                                        label="Teléfono"
-                                    />
-                                )}
-                            />
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                            <Controller
-                                name="typeDocument"
-                                control={control}
-                                render={({ field }) => (
-                                    <TextField
-                                        {...field}
-                                        fullWidth
-                                        label="Tipo de Documento"
-                                        placeholder="Ej: DNI"
-                                        error={!!errors.typeDocument}
-                                        helperText={errors.typeDocument?.message}
-                                    />
-                                )}
-                            />
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                            <Controller
-                                name="numberDocument"
-                                control={control}
-                                render={({ field }) => (
-                                    <TextField
-                                        {...field}
-                                        fullWidth
-                                        label="Número de Documento"
-                                        placeholder="Ej: 12345678"
-                                        error={!!errors.numberDocument}
-                                        helperText={errors.numberDocument?.message}
-                                    />
-                                )}
-                            />
-                        </Grid>
-                        <Grid size={12}>
-                            <Controller
-                                name="address"
-                                control={control}
-                                render={({ field }) => (
-                                    <TextField
-                                        {...field}
-                                        fullWidth
-                                        label="Dirección"
-                                        placeholder="Ej: Av. Javier Prado 1234"
-                                        error={!!errors.address}
-                                        helperText={errors.address?.message}
-                                    />
-                                )}
-                            />
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                            <Controller
-                                name="state"
-                                control={control}
-                                render={({ field }) => (
-                                    <TextField
-                                        {...field}
-                                        fullWidth
-                                        label="Estado / Departamento"
-                                        placeholder="Ej: Lima"
-                                        error={!!errors.state}
-                                        helperText={errors.state?.message}
-                                    />
-                                )}
-                            />
-                        </Grid>
-                        <Grid size={{ xs: 12, sm: 6 }}>
-                            <Controller
-                                name="country"
-                                control={control}
-                                render={({ field }) => (
-                                    <TextField
-                                        {...field}
-                                        fullWidth
-                                        label="País"
-                                        placeholder="Ej: Perú"
-                                        error={!!errors.country}
-                                        helperText={errors.country?.message}
-                                    />
-                                )}
-                            />
-                        </Grid>
-
-                        {/* Botones */}
-                        <Grid size={12}>
-                            {mutation.isError && (
-                                <Alert severity="error" variant="outlined" sx={{ mb: 2 }}>
-                                    Error al actualizar el perfil. Inténtalo de nuevo.
-                                </Alert>
-                            )}
-                            <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
-                                <Button
-                                    type="submit"
-                                    variant="contained"
-                                    disabled={mutation.isPending || !isDirty}
-                                    sx={{ px: 4, textTransform: 'none' }}
-                                >
-                                    {mutation.isPending ? 'Guardando...' : 'Guardar Cambios'}
-                                </Button>
-                                <Button
-                                    variant="outlined"
-                                    color="secondary"
-                                    onClick={handleReset}
-                                    disabled={mutation.isPending || !isDirty}
-                                    sx={{ px: 4, textTransform: 'none' }}
-                                >
-                                    Restablecer
-                                </Button>
-                            </Box>
-                        </Grid>
-                    </Grid>
-                </Box>
-            </Card>
-
-        </>
-    );
+  return (
+    <Card>
+      <CardContent>
+        <div className='flex max-sm:flex-col items-center gap-6'>
+          <Avatar src='/images/avatarSidebar.jpg' alt='' variant='rounded' sx={{ width: 100, height: 100 }} />
+          <div className='flex flex-col gap-1 min-is-0 max-sm:items-center'>
+            <Typography variant='h5' component='h2'>
+              {fullName}
+            </Typography>
+            <Typography color='text.secondary'>{userData.email}</Typography>
+            <Chip size='small' variant='tonal' color='primary' label={ROLE_LABELS[userData.role] ?? userData.role} className='self-start max-sm:self-center' />
+          </div>
+        </div>
+      </CardContent>
+      <Divider />
+      <CardContent>
+        <form noValidate onSubmit={form.handleSubmit(onSubmit)} className='grid gap-5 sm:grid-cols-2'>
+          {TEXT_FIELDS.map(textField)}
+          {/* Solo lectura y no deshabilitado: el texto deshabilitado no llega al contraste AA. */}
+          <TextField
+            id='cuenta-email'
+            fullWidth
+            label='Correo electrónico'
+            value={userData.email}
+            helperText='El correo no se puede cambiar'
+            slotProps={{ input: { readOnly: true } }}
+          />
+          <Controller
+            name='phone'
+            control={control}
+            render={({ field }) => (
+              <InternationalPhoneInput value={field.value} onChange={(val) => field.onChange(val ?? '')} error={errors.phone?.message} label='Teléfono' />
+            )}
+          />
+          <Controller
+            name='typeDocument'
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                select
+                id='cuenta-tipo-documento'
+                fullWidth
+                label='Tipo de documento'
+                error={!!errors.typeDocument}
+                helperText={errors.typeDocument?.message}
+              >
+                <MenuItem value=''>Sin documento</MenuItem>
+                {DOCUMENT_TYPES.map((t) => (
+                  <MenuItem key={t.value} value={t.value}>
+                    {t.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
+          />
+          <Controller
+            name='numberDocument'
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                id='cuenta-numero-documento'
+                fullWidth
+                label='Número de documento'
+                placeholder='Ej.: 12345678'
+                error={!!errors.numberDocument}
+                helperText={errors.numberDocument?.message}
+              />
+            )}
+          />
+          {PLACE_FIELDS.map(textField)}
+          <div className='flex flex-wrap gap-3 sm:col-span-2'>
+            <Button type='submit' variant='contained' disabled={mutation.isPending || !isDirty}>
+              {mutation.isPending ? 'Guardando…' : 'Guardar cambios'}
+            </Button>
+            <Button variant='outlined' onClick={() => reset(saved)} disabled={mutation.isPending || !isDirty}>
+              Restablecer
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
+  );
 }
