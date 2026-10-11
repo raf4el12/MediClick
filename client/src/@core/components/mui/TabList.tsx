@@ -46,6 +46,7 @@ const TabList = styled(MuiTabList)<CustomTabListProps>(({ color, pill, theme, or
       '&:hover': {
         border: 0,
         backgroundColor: `var(--mui-palette-${color}-lightOpacity)`,
+        // Texto mezclado hacia --contrast-mix para llegar a AA sobre el fondo tonal.
         color: `color-mix(in srgb, var(--mui-palette-${color}-main) 55%, var(--contrast-mix, black))`,
         ...(orientation === 'vertical'
           ? {

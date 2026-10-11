@@ -251,7 +251,7 @@ El alcance por sede lo aplica el servidor (`PatientRecordQuery`, SDD-001); este 
 
 ---
 
-## UI-31 — Cuenta y notificaciones
+## UI-31 — Cuenta y notificaciones ✅
 
 **Rama:** `git fetch origin && git switch -c feat/ui-31-cuenta-notificaciones origin/staging`
 **Skills:** `mattpocock-skills:tdd`, `mattpocock-skills:code-review`
@@ -279,8 +279,8 @@ Decisión del ítem: una sola pantalla de cuenta, `/settings/account` en el grup
 
 ### Task 1: Rama y rutas de la plantilla
 
-- [ ] **Step 1:** Crear la rama.
-- [ ] **Step 2:** Confirmar en `~/materio-mui-nextjs-admin-template-ts/full-version/` `views/pages/account-settings/index.tsx`,
+- [x] **Step 1:** Crear la rama.
+- [x] **Step 2:** Confirmar en `~/materio-mui-nextjs-admin-template-ts/full-version/` `views/pages/account-settings/index.tsx`,
   `account/{index,AccountDetails}.tsx` y `security/{index,ChangePasswordCard,RecentDevicesTable}.tsx`.
   No se copian `AccountDelete`, `TwoFactorAuthenticationCard` (2FA tiene SDD propio), `ApiKeyList`,
   `CreateApiKey`, `billing-plans` ni `connections`.
@@ -306,11 +306,11 @@ Decisión del ítem: una sola pantalla de cuenta, `/settings/account` en el grup
   `updateUserProfile` del slice de auth, `ActorShell` de UI-03 (layout según rol).
 - Produces: `/settings/account?tab=cuenta|seguridad` para todos los actores.
 
-- [ ] **Step 1 (rojo/verde):** Pruebas Vitest de `profile.schema.ts` sin cambiar reglas: teléfono
+- [x] **Step 1 (rojo/verde):** Pruebas Vitest de `profile.schema.ts` sin cambiar reglas: teléfono
   internacional inválido rechazado; email con formato inválido rechazado; campos opcionales vacíos válidos.
-- [ ] **Step 2:** Un `tab` desconocido abre "Cuenta"; los avisos de éxito usan el toast de UI-03, no
+- [x] **Step 2:** Un `tab` desconocido abre "Cuenta"; los avisos de éxito usan el toast de UI-03, no
   `SuccessSnackbar`.
-- [ ] **Step 3:** Cerrar todas las sesiones mantiene la confirmación actual antes de llamar a `logout-all`.
+- [x] **Step 3:** Cerrar todas las sesiones mantiene la confirmación actual antes de llamar a `logout-all`.
 
 ### Task 3: Bandeja de notificaciones
 
@@ -319,9 +319,9 @@ Decisión del ítem: una sola pantalla de cuenta, `/settings/account` en el grup
 - Modify: `client/src/views/notifications/index.tsx` (lista con el estilo de `NotificationsDropdown` de
   Materio a página completa: avatar por tipo, chip "sin leer", acciones con `option-menu`)
 
-- [ ] **Step 1:** Conservar: pestañas todas / sin leer / leídas, contador, marcar una, marcar todas,
+- [x] **Step 1:** Conservar: pestañas todas / sin leer / leídas, contador, marcar una, marcar todas,
   eliminar con actualización optimista, paginado.
-- [ ] **Step 2:** El dropdown de la navbar (UI-03) y esta página comparten `notificationsService`; marcar
+- [x] **Step 2:** El dropdown de la navbar (UI-03) y esta página comparten `notificationsService`; marcar
   como leída en una refresca el contador de la otra (misma query key de React Query).
 
 ### Task 4: Enlaces a la cuenta
@@ -331,26 +331,48 @@ Decisión del ítem: una sola pantalla de cuenta, `/settings/account` en el grup
 - Modify: `navigationFor` de UI-03 (acceso "Perfil" de la barra inferior y del menú del paciente)
 - Modify: `client/src/views/patient/dashboard/index.tsx` (o su reemplazo de UI-11) en las líneas que llevan a `/patient/profile`
 
-- [ ] **Step 1:** Si tras UI-03 sigue existiendo un enlace a `/profile` o `/patient/profile`, apuntarlo a
+- [x] **Step 1:** Si tras UI-03 sigue existiendo un enlace a `/profile` o `/patient/profile`, apuntarlo a
   `/settings/account?tab=cuenta`; "Configuración" pasa a `?tab=seguridad`.
-- [ ] **Step 2:** `grep -rn "'/profile'\|/patient/profile" client/src` → solo las dos páginas de redirección.
+- [x] **Step 2:** `grep -rn "'/profile'\|/patient/profile" client/src` → solo las dos páginas de redirección.
 
 ### Task 5: Pruebas de navegador
 
 **Files:** Create: `client/tests/e2e/account.spec.ts`
 
-- [ ] **Step 1:** `actor: 'PATIENT'` y `actor: 'DOCTOR'` abren `/settings/account` con su layout (horizontal
+- [x] **Step 1:** `actor: 'PATIENT'` y `actor: 'DOCTOR'` abren `/settings/account` con su layout (horizontal
   y vertical); guardar "Cuenta" envía `PATCH` de perfil con el payload esperado.
-- [ ] **Step 2:** `/profile` y `/patient/profile` redirigen a `/settings/account?tab=cuenta`.
-- [ ] **Step 3:** Seguridad: cambio de contraseña con confirmación distinta no envía la request; cerrar una
+- [x] **Step 2:** `/profile` y `/patient/profile` redirigen a `/settings/account?tab=cuenta`.
+- [x] **Step 3:** Seguridad: cambio de contraseña con confirmación distinta no envía la request; cerrar una
   sesión llama `POST /auth/logout` con su `deviceId`.
-- [ ] **Step 4:** `/notifications`: marcar todas llama `PATCH` de marcar todas y el contador queda en 0.
-- [ ] **Step 5:** `expectAccessible(page)` en Cuenta, Seguridad y Notificaciones, en ambos layouts.
+- [x] **Step 4:** `/notifications`: marcar todas llama `PATCH` de marcar todas y el contador queda en 0.
+- [x] **Step 5:** `expectAccessible(page)` en Cuenta, Seguridad y Notificaciones, en ambos layouts.
   Run: `cd client && pnpm exec playwright test account` → Expected: PASS.
 
 ### Task 6: Verificación y limpieza
 
-- [ ] **Step 1:** `grep -rn "MyProfileView\|views/patient/profile" client/src` → sin resultados.
-- [ ] **Step 2:** Run: `cd client && pnpm exec tsc --noEmit && pnpm exec eslint src/views/settings src/views/notifications src/app/'(shared)' tests/e2e/account.spec.ts && pnpm test && pnpm build && pnpm test:a11y`
+- [x] **Step 1:** `grep -rn "MyProfileView\|views/patient/profile" client/src` → sin resultados.
+- [x] **Step 2:** Run: `cd client && pnpm exec tsc --noEmit && pnpm exec eslint src/views/settings src/views/notifications src/app/'(shared)' tests/e2e/account.spec.ts && pnpm test && pnpm build && pnpm test:a11y`
   Expected: todo PASS.
-- [ ] **Step 3:** PR contra `staging` con capturas en ambos layouts.
+- [x] **Step 3:** PR contra `staging` con capturas en ambos layouts.
+
+### Notas de implementación
+
+- **Rutas reales:** tras UI-03 ya no existe `(menu)`. `/settings/account` y `/notifications` ya vivían en `(shared)` (con `ActorShell`), así que no se movieron. `/profile` estaba en `(staff)`: pasó a `(shared)/profile` como redirección, para que un paciente que lo abra no caiga en el layout del personal. `/patient/profile` sigue en `(patient)`, también como redirección. Las dos llevan a `/settings/account?tab=cuenta`.
+- **Pestañas:** `CustomTabList` de Materio (`@core/components/mui/TabList`, nuevo en el cliente) con `TabContext` de `@mui/lab`. Solo hay Cuenta y Seguridad: la bandeja ya no se incrusta. `?tab=cuenta|seguridad` es la fuente de verdad: cambiar de pestaña hace `router.replace` y un valor desconocido abre Cuenta. El título de la página pasa a «Mi cuenta», también en el encabezado.
+- **Cuenta:** estructura de `AccountDetails` (tarjeta con avatar, nombre, correo y rol arriba; formulario abajo). El tipo de documento pasa a un select con los tres valores que ya exigía el esquema. El correo queda de solo lectura y no deshabilitado, porque el texto de ayuda deshabilitado no llega a AA.
+- **Esquema:** `profile.schema.ts` se movió sin cambiar reglas y tiene pruebas. El plan pedía probar el formato del email, pero el esquema no tiene email (no se edita); se probaron teléfono, nombre y apellido obligatorios, opcionales vacíos y documento según su tipo.
+- **Seguridad:** `ChangePasswordCard` y una tabla de sesiones con el patrón de `RecentDevicesTable` (MUI `Table`, porque el cliente no tiene `table.module.css`). Cerrar todas las sesiones conserva la confirmación, ahora con `ConfirmDialog`. Ningún botón usa el color de error.
+- **Notificaciones:** `views/notifications/hooks/useNotifications.ts` concentra las queries:
+  - claves `['notifications', 'unread-count']` y `['notifications', 'list', params]`;
+  - el desplegable de la barra y la página usan las mismas;
+  - marcar una, marcar todas y eliminar son optimistas sobre las listas y el contador, y al terminar invalidan `['notifications']`;
+  - el sondeo del contador sigue cada 30 s.
+
+  La página usa el estilo del desplegable de Materio (avatar por tipo, chip «Sin leer») y las acciones de cada fila van en `OptionMenu`. Ícono, color y etiqueta por tipo están en `notificationTypes.ts`, compartido con el desplegable.
+- **Enlaces:**
+  - el menú de usuario lleva a `?tab=cuenta` («Mi perfil») y a `?tab=seguridad` («Configuración»);
+  - el menú y la barra inferior del paciente apuntan a `/settings/account` (la etiqueta «Mi Perfil» se conserva);
+  - se quitó `profilePathFor`.
+- **Borrado:** `views/profile/` (`MyProfileView`, `ProfileDrawer`, `useProfileForm`) y `views/patient/profile/`.
+- **De paso:** `formatRelativeTime` usa el singular («Hace 1 hora»).
+- **Pruebas de navegador:** `account.spec.ts`, 8 casos. Cuenta, seguridad y bandeja corren con paciente y con médico, más las dos redirecciones y la pestaña desconocida. Hay `expectAccessible` en Cuenta, Seguridad y Notificaciones en ambos layouts.

@@ -45,11 +45,11 @@ export function formatRelativeTime(dateStr: string): string {
   const diffMin = Math.floor(diffMs / 60_000);
 
   if (diffMin < 1) return 'Ahora mismo';
-  if (diffMin < 60) return `Hace ${diffMin} minutos`;
+  if (diffMin < 60) return `Hace ${diffMin} ${diffMin === 1 ? 'minuto' : 'minutos'}`;
   const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `Hace ${diffH} horas`;
+  if (diffH < 24) return `Hace ${diffH} ${diffH === 1 ? 'hora' : 'horas'}`;
   const diffD = Math.floor(diffH / 24);
-  if (diffD < 7) return `Hace ${diffD} días`;
+  if (diffD < 7) return `Hace ${diffD} ${diffD === 1 ? 'día' : 'días'}`;
 
   return date.toLocaleDateString(LOCALE, {
     day: 'numeric',

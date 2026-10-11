@@ -1,450 +1,142 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import Typography from '@mui/material/Typography';
+import { useState } from 'react';
 import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
-import Tabs from '@mui/material/Tabs';
-import Tab from '@mui/material/Tab';
 import Divider from '@mui/material/Divider';
-import CircularProgress from '@mui/material/CircularProgress';
 import Pagination from '@mui/material/Pagination';
-import Tooltip from '@mui/material/Tooltip';
-import Fade from '@mui/material/Fade';
-import { alpha } from '@mui/material/styles';
-
-import { notificationsService } from '@/services/notifications.service';
-import { notify } from '@/utils/notify';
-import type { PaginatedNotifications } from './types';
-import { NotificationType } from './types';
+import Skeleton from '@mui/material/Skeleton';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
+import Typography from '@mui/material/Typography';
+import classnames from 'classnames';
+import CustomAvatar from '@core/components/mui/Avatar';
+import OptionMenu from '@core/components/option-menu';
+import { formatRelativeTime } from '@/utils/formatDate';
+import { useNotificationActions, useNotificationList, useUnreadCount } from './hooks/useNotifications';
+import { typeOf } from './notificationTypes';
 
 const PAGE_SIZE = 10;
 
-const typeConfig: Record<string, { icon: string; color: string; label: string }> = {
-    [NotificationType.APPOINTMENT_CONFIRMED]: {
-        icon: 'ri-check-double-line',
-        color: '#10b981',
-        label: 'Confirmada',
-    },
-    [NotificationType.APPOINTMENT_CANCELLED]: {
-        icon: 'ri-close-circle-line',
-        color: '#ef4444',
-        label: 'Cancelada',
-    },
-    [NotificationType.APPOINTMENT_REMINDER]: {
-        icon: 'ri-alarm-line',
-        color: '#f59e0b',
-        label: 'Recordatorio',
-    },
-    [NotificationType.APPOINTMENT_RESCHEDULED]: {
-        icon: 'ri-calendar-event-line',
-        color: '#6366f1',
-        label: 'Reprogramada',
-    },
-    [NotificationType.NEW_APPOINTMENT]: {
-        icon: 'ri-calendar-check-line',
-        color: '#3b82f6',
-        label: 'Nueva cita',
-    },
-    [NotificationType.GENERAL]: {
-        icon: 'ri-information-line',
-        color: '#8b5cf6',
-        label: 'General',
-    },
-};
-
-import { formatRelativeTime } from '@/utils/formatDate';
-
 type TabFilter = 'all' | 'unread' | 'read';
 
+const EMPTY: Record<TabFilter, string> = {
+  all: 'No tienes notificaciones',
+  unread: 'No tienes notificaciones sin leer',
+  read: 'No tienes notificaciones leídas',
+};
+
+/** Bandeja de notificaciones a página completa (estilo del `NotificationsDropdown` de Materio). */
 export default function NotificationsView() {
-    const [tab, setTab] = useState<TabFilter>('all');
-    const [page, setPage] = useState(1);
-    const [data, setData] = useState<PaginatedNotifications | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [unreadCount, setUnreadCount] = useState(0);
+  const [tab, setTab] = useState<TabFilter>('all');
+  const [page, setPage] = useState(1);
+  const isRead = tab === 'unread' ? false : tab === 'read' ? true : undefined;
+  const list = useNotificationList({ page, limit: PAGE_SIZE, ...(isRead === undefined ? {} : { isRead }) });
+  const unread = useUnreadCount();
+  const { markAsRead, markAllAsRead, remove } = useNotificationActions();
+  const unreadCount = unread.data ?? 0;
+  const rows = list.data?.data ?? [];
 
-    const fetchNotifications = useCallback(async () => {
-        setLoading(true);
-        try {
-            const isReadParam = tab === 'unread' ? false : tab === 'read' ? true : undefined;
-            const res = await notificationsService.getMyNotifications({
-                page,
-                limit: PAGE_SIZE,
-                isRead: isReadParam,
-            });
-            setData(res);
-        } catch {
-            // ignore
-        } finally {
-            setLoading(false);
-        }
-    }, [tab, page]);
-
-    const fetchUnread = useCallback(async () => {
-        try {
-            const res = await notificationsService.getUnreadCount();
-            setUnreadCount(res.count);
-        } catch {
-            // ignore
-        }
-    }, []);
-
-    useEffect(() => {
-        void fetchNotifications();
-        void fetchUnread();
-    }, [fetchNotifications, fetchUnread]);
-
-    const handleTabChange = (_: React.SyntheticEvent, newValue: TabFilter) => {
-        setTab(newValue);
-        setPage(1);
-    };
-
-    const handleMarkAsRead = async (id: number) => {
-        try {
-            await notificationsService.markAsRead(id);
-            // Optimistic update
-            setData((prev) => {
-                if (!prev) return prev;
-                return {
-                    ...prev,
-                    data: prev.data.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
-                };
-            });
-            setUnreadCount((prev) => Math.max(0, prev - 1));
-        } catch {
-            notify('Error al marcar la notificación como leída', 'error');
-        }
-    };
-
-    const handleMarkAllAsRead = async () => {
-        try {
-            await notificationsService.markAllAsRead();
-            setData((prev) => {
-                if (!prev) return prev;
-                return {
-                    ...prev,
-                    data: prev.data.map((n) => ({ ...n, isRead: true })),
-                };
-            });
-            setUnreadCount(0);
-        } catch {
-            notify('Error al marcar todas como leídas', 'error');
-        }
-    };
-
-    const handleDelete = async (id: number) => {
-        try {
-            await notificationsService.deleteNotification(id);
-            // Remove from list
-            setData((prev) => {
-                if (!prev) return prev;
-                const updated = prev.data.filter((n) => n.id !== id);
-                return { ...prev, data: updated, total: prev.total - 1 };
-            });
-            void fetchUnread();
-        } catch {
-            notify('Error al eliminar la notificación', 'error');
-        }
-    };
-
-    const notifications = data?.data ?? [];
-
-    return (
-        <Box sx={{ maxWidth: 800, mx: 'auto' }}>
-            {/* Header */}
-            <Box
-                sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    mb: 3,
-                    flexWrap: 'wrap',
-                    gap: 2,
-                }}
-            >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Box
-                        sx={{
-                            width: 44,
-                            height: 44,
-                            borderRadius: '12px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
-                            color: 'primary.main',
-                        }}
-                    >
-                        <i className="ri-notification-4-line" style={{ fontSize: 24 }} />
-                    </Box>
-                    <Box>
-                        <Typography variant="h5" fontWeight={700}>
-                            Notificaciones
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            {unreadCount > 0
-                                ? `${unreadCount} sin leer`
-                                : 'Todas leídas'}
-                        </Typography>
-                    </Box>
-                </Box>
-                {unreadCount > 0 && (
-                    <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<i className="ri-check-double-line" />}
-                        onClick={handleMarkAllAsRead}
-                        sx={{ textTransform: 'none', fontWeight: 600, borderRadius: '8px' }}
-                    >
-                        Marcar todas como leídas
-                    </Button>
-                )}
-            </Box>
-
-            {/* Tabs */}
-            <Card
-                sx={{
-                    borderRadius: '12px',
-                    boxShadow: (theme) =>
-                        theme.palette.mode === 'dark'
-                            ? '0 2px 12px rgba(0,0,0,0.3)'
-                            : '0 2px 12px rgba(0,0,0,0.04)',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    overflow: 'hidden',
-                }}
-            >
-                <Box sx={{ px: 2, pt: 1 }}>
-                    <Tabs
-                        value={tab}
-                        onChange={handleTabChange}
-                        sx={{
-                            '& .MuiTab-root': {
-                                textTransform: 'none',
-                                fontWeight: 600,
-                                fontSize: '0.875rem',
-                                minHeight: 44,
-                            },
-                        }}
-                    >
-                        <Tab label="Todas" value="all" />
-                        <Tab
-                            label={
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                                    No leídas
-                                    {unreadCount > 0 && (
-                                        <Chip
-                                            label={unreadCount}
-                                            size="small"
-                                            color="error"
-                                            sx={{ height: 20, fontSize: '0.7rem', fontWeight: 700 }}
-                                        />
-                                    )}
-                                </Box>
-                            }
-                            value="unread"
-                        />
-                        <Tab label="Leídas" value="read" />
-                    </Tabs>
-                </Box>
-
-                <Divider />
-
-                {/* List */}
-                {loading ? (
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            py: 8,
-                        }}
-                    >
-                        <CircularProgress size={32} />
-                    </Box>
-                ) : notifications.length === 0 ? (
-                    <Box sx={{ textAlign: 'center', py: 8, px: 2 }}>
-                        <i
-                            className="ri-notification-off-line"
-                            style={{ fontSize: 56, opacity: 0.15 }}
-                        />
-                        <Typography
-                            variant="h6"
-                            color="text.secondary"
-                            fontWeight={600}
-                            sx={{ mt: 2 }}
-                        >
-                            {tab === 'unread'
-                                ? 'No tienes notificaciones sin leer'
-                                : tab === 'read'
-                                    ? 'No tienes notificaciones leídas'
-                                    : 'No tienes notificaciones'}
-                        </Typography>
-                        <Typography variant="body2" color="text.disabled" sx={{ mt: 0.5 }}>
-                            Las notificaciones aparecerán aquí cuando haya actividad
-                        </Typography>
-                    </Box>
-                ) : (
-                    notifications.map((n, idx) => {
-                        const config = typeConfig[n.type] ?? { icon: 'ri-information-line', color: '#8b5cf6', label: 'General' };
-                        return (
-                            <Fade in key={n.id} timeout={200 + idx * 50}>
-                                <Box>
-                                    <Box
-                                        sx={{
-                                            display: 'flex',
-                                            gap: 2,
-                                            px: 3,
-                                            py: 2,
-                                            bgcolor: (theme) =>
-                                                n.isRead
-                                                    ? 'transparent'
-                                                    : alpha(theme.palette.primary.main, 0.03),
-                                            borderLeft: n.isRead
-                                                ? '3px solid transparent'
-                                                : `3px solid ${config.color}`,
-                                            transition: 'background-color 200ms',
-                                            '&:hover': { bgcolor: 'action.hover' },
-                                        }}
-                                    >
-                                        {/* Icon */}
-                                        <Box
-                                            sx={{
-                                                width: 42,
-                                                height: 42,
-                                                borderRadius: '10px',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                bgcolor: alpha(config.color, 0.12),
-                                                color: config.color,
-                                                flexShrink: 0,
-                                            }}
-                                        >
-                                            <i className={config.icon} style={{ fontSize: 20 }} />
-                                        </Box>
-
-                                        {/* Content */}
-                                        <Box sx={{ flex: 1, minWidth: 0 }}>
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 1,
-                                                    mb: 0.25,
-                                                }}
-                                            >
-                                                <Typography
-                                                    variant="body2"
-                                                    fontWeight={n.isRead ? 500 : 700}
-                                                    sx={{ fontSize: '0.875rem' }}
-                                                >
-                                                    {n.title}
-                                                </Typography>
-                                                <Chip
-                                                    label={config.label}
-                                                    size="small"
-                                                    sx={{
-                                                        height: 20,
-                                                        fontSize: '0.65rem',
-                                                        fontWeight: 600,
-                                                        bgcolor: alpha(config.color, 0.1),
-                                                        color: config.color,
-                                                    }}
-                                                />
-                                            </Box>
-                                            <Typography
-                                                variant="body2"
-                                                color="text.secondary"
-                                                sx={{ fontSize: '0.8125rem', lineHeight: 1.5 }}
-                                            >
-                                                {n.message}
-                                            </Typography>
-                                            <Typography
-                                                variant="caption"
-                                                color="text.disabled"
-                                                sx={{ mt: 0.5, display: 'block', fontSize: '0.75rem' }}
-                                            >
-                                                {formatRelativeTime(n.createdAt)}
-                                            </Typography>
-                                        </Box>
-
-                                        {/* Actions */}
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                alignItems: 'center',
-                                                gap: 0.5,
-                                                flexShrink: 0,
-                                            }}
-                                        >
-                                            {!n.isRead && (
-                                                <Tooltip title="Marcar como leída">
-                                                    <IconButton
-                                                        size="small"
-                                                        onClick={() => void handleMarkAsRead(n.id)}
-                                                        sx={{ color: 'primary.main' }}
-                                                    >
-                                                        <i
-                                                            className="ri-check-line"
-                                                            style={{ fontSize: 18 }}
-                                                        />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            )}
-                                            <Tooltip title="Eliminar">
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => void handleDelete(n.id)}
-                                                    sx={{
-                                                        color: 'text.disabled',
-                                                        '&:hover': { color: 'error.main' },
-                                                    }}
-                                                >
-                                                    <i
-                                                        className="ri-delete-bin-7-line"
-                                                        style={{ fontSize: 16 }}
-                                                    />
-                                                </IconButton>
-                                            </Tooltip>
-                                        </Box>
-                                    </Box>
-                                    {idx < notifications.length - 1 && <Divider />}
-                                </Box>
-                            </Fade>
-                        );
-                    })
-                )}
-
-                {/* Pagination */}
-                {data && data.totalPages > 1 && (
-                    <>
-                        <Divider />
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                justifyContent: 'center',
-                                py: 2,
-                            }}
-                        >
-                            <Pagination
-                                count={data.totalPages}
-                                page={page}
-                                onChange={(_, value) => setPage(value)}
-                                color="primary"
-                                shape="rounded"
-                                size="small"
-                            />
-                        </Box>
-                    </>
-                )}
-            </Card>
-
-        </Box>
-    );
+  return (
+    <div className='flex flex-col gap-6 max-is-[860px] mli-auto is-full'>
+      <div className='flex flex-wrap items-end justify-between gap-3'>
+        <div>
+          <Typography variant='h4' component='h1'>
+            Notificaciones
+          </Typography>
+          <Typography color='text.secondary'>{unreadCount > 0 ? `${unreadCount} sin leer` : 'Todas leídas'}</Typography>
+        </div>
+        {unreadCount > 0 && (
+          <Button variant='outlined' startIcon={<i className='ri-check-double-line' aria-hidden />} onClick={() => markAllAsRead.mutate()} disabled={markAllAsRead.isPending}>
+            Marcar todas como leídas
+          </Button>
+        )}
+      </div>
+      <Card>
+        <Tabs
+          value={tab}
+          onChange={(_, value: TabFilter) => {
+            setTab(value);
+            setPage(1);
+          }}
+          aria-label='Filtrar notificaciones'
+          className='pli-4'
+        >
+          <Tab label='Todas' value='all' />
+          <Tab
+            value='unread'
+            label={
+              <span className='flex items-center gap-2'>
+                Sin leer
+                {unreadCount > 0 && <Chip size='small' variant='tonal' color='primary' label={unreadCount} />}
+              </span>
+            }
+          />
+          <Tab label='Leídas' value='read' />
+        </Tabs>
+        <Divider />
+        {list.isLoading ? (
+          <CardContent className='flex flex-col gap-3'>
+            {Array.from({ length: 4 }, (_, i) => (
+              <Skeleton key={i} variant='rounded' height={64} />
+            ))}
+          </CardContent>
+        ) : rows.length === 0 ? (
+          <CardContent className='flex flex-col items-center gap-2 plb-12 text-center'>
+            <i className='ri-notification-off-line text-5xl' aria-hidden style={{ color: 'var(--mui-palette-text-secondary)' }} />
+            <Typography variant='h6' component='p'>
+              {EMPTY[tab]}
+            </Typography>
+            <Typography color='text.secondary'>Las notificaciones aparecerán aquí cuando haya actividad en tus citas.</Typography>
+          </CardContent>
+        ) : (
+          <ul className='m-0 p-0 list-none'>
+            {rows.map((n, index) => {
+              const type = typeOf(n.type);
+              return (
+                <li key={n.id} className={classnames('flex gap-4 pli-5 plb-4', { 'border-be': index < rows.length - 1 })}>
+                  <CustomAvatar color={type.color} skin='light-static' aria-hidden>
+                    <i className={type.icon} />
+                  </CustomAvatar>
+                  <div className='flex flex-col gap-1 flex-auto min-is-0'>
+                    <div className='flex flex-wrap items-center gap-2'>
+                      <Typography className={n.isRead ? 'font-normal' : 'font-medium'} color='text.primary'>
+                        {n.title}
+                      </Typography>
+                      {!n.isRead && <Chip size='small' variant='tonal' color='primary' label='Sin leer' />}
+                    </div>
+                    <Typography variant='body2' color='text.secondary'>
+                      {n.message}
+                    </Typography>
+                    <Typography variant='caption' color='text.secondary'>
+                      {type.label} · {formatRelativeTime(n.createdAt)}
+                    </Typography>
+                  </div>
+                  <OptionMenu
+                    iconButtonProps={{ 'aria-label': `Acciones de «${n.title}»` }}
+                    options={[
+                      ...(n.isRead
+                        ? []
+                        : [{ text: 'Marcar como leída', icon: 'ri-check-line', menuItemProps: { className: 'gap-2', onClick: () => markAsRead.mutate(n) } }]),
+                      { text: 'Eliminar', icon: 'ri-delete-bin-7-line', menuItemProps: { className: 'gap-2', onClick: () => remove.mutate(n) } },
+                    ]}
+                  />
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        {list.data && list.data.totalPages > 1 && (
+          <>
+            <Divider />
+            <div className='flex justify-center plb-4'>
+              <Pagination count={list.data.totalPages} page={page} onChange={(_, value) => setPage(value)} color='primary' shape='rounded' />
+            </div>
+          </>
+        )}
+      </Card>
+    </div>
+  );
 }
