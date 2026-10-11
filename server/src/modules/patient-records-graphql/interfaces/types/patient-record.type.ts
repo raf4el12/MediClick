@@ -54,6 +54,8 @@ export class AppointmentDoctorGql {
 
 @ObjectType()
 export class AppointmentScheduleGql {
+  @Field({ description: 'Día de la cita; startTime solo trae la hora' })
+  scheduleDate: Date;
   @Field(() => AppointmentDoctorGql, { nullable: true })
   doctor?: AppointmentDoctorGql;
 }

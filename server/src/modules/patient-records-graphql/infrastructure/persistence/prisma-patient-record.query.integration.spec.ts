@@ -255,6 +255,13 @@ describeDatabase('PrismaPatientRecordQuery (PostgreSQL)', () => {
       kind: 'GLOBAL',
     });
     expect(patientView?.appointments).toHaveLength(2);
+    // startTime es solo la hora (base 1970-01-01): el día sale del cupo y ordena de más reciente a más antigua.
+    expect(
+      patientView?.appointments?.map((item) => item.schedule?.scheduleDate),
+    ).toEqual([
+      new Date('2026-09-02T00:00:00Z'),
+      new Date('2026-09-01T00:00:00Z'),
+    ]);
     expect(globalView?.medicalHistory).toHaveLength(2);
   });
 });
