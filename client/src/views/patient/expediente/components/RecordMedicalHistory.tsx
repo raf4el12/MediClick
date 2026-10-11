@@ -1,130 +1,64 @@
 'use client';
 
-import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
-import Grid from '@mui/material/Grid';
-import { alpha, useTheme } from '@mui/material/styles';
+import Typography from '@mui/material/Typography';
+import CustomAvatar from '@core/components/mui/Avatar';
 import type { PatientRecordMedicalHistory } from '../types';
 
-const statusConfig: Record<string, { label: string; color: 'success' | 'warning' | 'info'; icon: string }> = {
+export const HISTORY_STATUS: Record<string, { label: string; color: 'success' | 'warning' | 'info'; icon: string }> = {
   ACTIVE: { label: 'Activo', color: 'warning', icon: 'ri-error-warning-line' },
   CHRONIC: { label: 'Crónico', color: 'info', icon: 'ri-heart-pulse-line' },
   RESOLVED: { label: 'Resuelto', color: 'success', icon: 'ri-check-line' },
 };
 
-interface Props {
-  history: PatientRecordMedicalHistory[];
-}
+const dayLabel = (date: string) =>
+  new Intl.DateTimeFormat('es-PE', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(date));
 
-function formatDiagnosedDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString('es-PE', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
-}
-
-export default function RecordMedicalHistory({ history }: Props) {
-  const theme = useTheme();
-
+/** Pestaña "Antecedentes": el historial médico del paciente. */
+export default function RecordMedicalHistory({ history }: { history: PatientRecordMedicalHistory[] }) {
   if (history.length === 0) {
     return (
-      <Card sx={{ borderRadius: '16px', border: `1px solid ${theme.palette.divider}`, boxShadow: 'none' }}>
-        <CardContent sx={{ py: 8, textAlign: 'center' }}>
-          <i className="ri-file-list-3-line" style={{ fontSize: 56, color: theme.palette.text.disabled }} />
-          <Typography variant="h6" fontWeight={600} color="text.secondary" sx={{ mt: 2 }}>
-            Historial Médico
-          </Typography>
-          <Typography variant="body2" color="text.disabled" sx={{ mt: 0.5 }}>
-            No hay historial médico registrado.
-          </Typography>
+      <Card>
+        <CardContent>
+          <Typography color='text.secondary'>No hay antecedentes registrados.</Typography>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Grid container spacing={2}>
+    <ul className='grid gap-6 m-0 p-0 list-none md:grid-cols-2'>
       {history.map((item, index) => {
-        const config = statusConfig[item.status ?? ''] ?? {
-          label: item.status ?? 'Sin estado',
-          color: 'info' as const,
-          icon: 'ri-information-line',
-        };
-
+        const status = HISTORY_STATUS[item.status ?? ''] ?? { label: item.status ?? 'Sin estado', color: 'info' as const, icon: 'ri-information-line' };
         return (
-          <Grid key={index} size={{ xs: 12, md: 6 }}>
-            <Card
-              sx={{
-                borderRadius: '16px',
-                height: '100%',
-                border: `1px solid ${theme.palette.divider}`,
-                boxShadow: 'none',
-                transition: 'border-color 0.2s, box-shadow 0.2s',
-                '&:hover': {
-                  borderColor: alpha(theme.palette[config.color].main, 0.4),
-                  boxShadow: `0 4px 20px ${alpha(theme.palette[config.color].main, 0.08)}`,
-                },
-              }}
-            >
-              <CardContent sx={{ p: 3 }}>
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1, mb: 1 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-                    <Box
-                      sx={{
-                        width: 36,
-                        height: 36,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderRadius: '10px',
-                        bgcolor: alpha(theme.palette[config.color].main, 0.1),
-                        flexShrink: 0,
-                      }}
-                    >
-                      <i className={config.icon} style={{ fontSize: 18, color: theme.palette[config.color].main }} />
-                    </Box>
-                    <Typography variant="body1" fontWeight={700}>
+          <li key={`${item.condition}-${index}`}>
+            <Card className='bs-full'>
+              <CardContent className='flex flex-col gap-2'>
+                <div className='flex items-start justify-between gap-2'>
+                  <div className='flex items-center gap-3'>
+                    <CustomAvatar variant='rounded' skin='light' color={status.color} size={36} aria-hidden>
+                      <i className={status.icon} />
+                    </CustomAvatar>
+                    <Typography variant='h6' component='h3'>
                       {item.condition}
                     </Typography>
-                  </Box>
-                  <Chip
-                    label={config.label}
-                    size="small"
-                    color={config.color}
-                    variant="outlined"
-                    sx={{ fontWeight: 600, fontSize: '0.7rem', borderRadius: '8px', flexShrink: 0 }}
-                  />
-                </Box>
-
-                {item.description && (
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1, ml: 6 }}>
-                    {item.description}
-                  </Typography>
-                )}
-
-                {item.notes && (
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, ml: 6, fontStyle: 'italic' }}>
-                    {item.notes}
-                  </Typography>
-                )}
-
+                  </div>
+                  <Chip size='small' variant='tonal' color={status.color} label={status.label} />
+                </div>
+                {item.description && <Typography>{item.description}</Typography>}
+                {item.notes && <Typography color='text.secondary'>{item.notes}</Typography>}
                 {item.diagnosedDate && (
-                  <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 1.5, ml: 6 }}>
-                    <i className="ri-calendar-line" style={{ fontSize: 12, marginRight: 4, verticalAlign: 'middle' }} />
-                    Diagnosticado: {formatDiagnosedDate(item.diagnosedDate)}
+                  <Typography variant='body2' color='text.secondary'>
+                    Diagnosticado el {dayLabel(item.diagnosedDate)}
                   </Typography>
                 )}
               </CardContent>
             </Card>
-          </Grid>
+          </li>
         );
       })}
-    </Grid>
+    </ul>
   );
 }
