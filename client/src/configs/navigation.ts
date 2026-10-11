@@ -37,7 +37,7 @@ const sections: { title: string; items: NavItem[] }[] = [
       { title: 'Reservar Cita', path: '/patient/book', icon: 'ri-add-circle-line', actors: ['PATIENT'] },
       { title: 'Lista de Espera', path: '/patient/waitlist', icon: 'ri-time-line', actors: ['PATIENT'] },
       { title: 'Mi Expediente', path: '/patient/expediente', icon: 'ri-file-chart-line', actors: ['PATIENT'] },
-      { title: 'Mi Perfil', path: '/patient/profile', icon: 'ri-user-line', actors: ['PATIENT'] },
+      { title: 'Mi Perfil', path: '/settings/account', icon: 'ri-user-line', actors: ['PATIENT'] },
       {
         title: 'Notificaciones',
         path: '/notifications',
@@ -171,13 +171,12 @@ const sections: { title: string; items: NavItem[] }[] = [
   },
 ];
 
-const BOTTOM_NAV_PATHS = ['/patient', '/patient/book', '/patient/appointments', '/patient/profile'];
+const BOTTOM_NAV_PATHS = ['/patient', '/patient/book', '/patient/appointments', '/settings/account'];
 
 // Rutas sin ítem de menú propio (o con un título distinto al del menú).
 const EXTRA_TITLES: Record<string, string> = {
   '/': 'Dashboard',
-  '/profile': 'Mi Perfil',
-  '/settings/account': 'Configuración',
+  '/settings/account': 'Mi cuenta',
 };
 
 export function actorFor(role: string | null | undefined): Actor {
@@ -195,11 +194,6 @@ const HOME_BY_ACTOR: Record<Actor, string> = {
 
 export function homePathFor(actor: Actor): string {
   return HOME_BY_ACTOR[actor];
-}
-
-/** Destino de "Mi perfil": el paciente tiene su propia página. */
-export function profilePathFor(actor: Actor): string {
-  return actor === 'PATIENT' ? '/patient/profile' : '/profile';
 }
 
 export function canFrom(permissions: string[]): Can {

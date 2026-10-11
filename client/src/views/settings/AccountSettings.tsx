@@ -1,163 +1,84 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
-import Box from '@mui/material/Box';
-import Tabs from '@mui/material/Tabs';
-import Tab from '@mui/material/Tab';
-import Skeleton from '@mui/material/Skeleton';
+import type { SyntheticEvent } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Card from '@mui/material/Card';
-import Divider from '@mui/material/Divider';
-import Grid from '@mui/material/Grid';
+import CardContent from '@mui/material/CardContent';
+import Skeleton from '@mui/material/Skeleton';
+import Tab from '@mui/material/Tab';
+import Typography from '@mui/material/Typography';
+import TabContext from '@mui/lab/TabContext';
+import TabPanel from '@mui/lab/TabPanel';
 import { useQuery } from '@tanstack/react-query';
+import CustomTabList from '@core/components/mui/TabList';
 import { authService } from '@/services/auth.service';
 import AccountTab from './account/AccountTab';
 import SecurityTab from './security/SecurityTab';
-import NotificationsView from '@/views/notifications';
 
-interface TabPanelProps {
-    children?: React.ReactNode;
-    index: number;
-    value: number;
-}
+const TABS = ['cuenta', 'seguridad'] as const;
+type SettingsTab = (typeof TABS)[number];
 
-function CustomTabPanel(props: TabPanelProps) {
-    const { children, value, index, ...other } = props;
+/** Pestaña pedida en `?tab=`; una desconocida abre "Cuenta". */
+const tabFrom = (value: string | null): SettingsTab => (TABS as readonly string[]).includes(value ?? '') ? (value as SettingsTab) : 'cuenta';
 
-    return (
-        <div
-            role="tabpanel"
-            hidden={value !== index}
-            id={`settings-tabpanel-${index}`}
-            aria-labelledby={`settings-tab-${index}`}
-            {...other}
-        >
-            {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+function AccountSkeleton() {
+  return (
+    <Card>
+      <CardContent className='flex flex-col gap-6'>
+        <div className='flex items-center gap-6'>
+          <Skeleton variant='rounded' width={100} height={100} />
+          <div className='flex flex-col gap-2 flex-1'>
+            <Skeleton variant='text' width={200} height={28} />
+            <Skeleton variant='text' width={240} />
+          </div>
         </div>
-    );
+        <div className='grid gap-5 sm:grid-cols-2'>
+          {Array.from({ length: 8 }, (_, i) => (
+            <Skeleton key={i} variant='rounded' height={56} />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
-function a11yProps(index: number) {
-    return {
-        id: `settings-tab-${index}`,
-        'aria-controls': `settings-tabpanel-${index}`,
-    };
-}
-
-function AccountTabSkeleton() {
-    return (
-        <Card sx={{ p: { xs: 3, md: 4 }, bgcolor: 'background.paper', borderRadius: 2, boxShadow: 'none', border: '1px solid', borderColor: 'divider' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 4, gap: 3 }}>
-                <Skeleton variant="rounded" width={100} height={100} />
-                <Box sx={{ flex: 1 }}>
-                    <Skeleton variant="text" width={200} height={28} />
-                    <Skeleton variant="text" width={250} height={20} />
-                    <Skeleton variant="rounded" width={100} height={24} sx={{ mt: 1 }} />
-                </Box>
-            </Box>
-            <Divider sx={{ mb: 4 }} />
-            <Grid container spacing={4}>
-                {Array.from({ length: 8 }).map((_, i) => (
-                    <Grid size={{ xs: 12, sm: 6 }} key={i}>
-                        <Skeleton variant="rounded" height={56} />
-                    </Grid>
-                ))}
-            </Grid>
-        </Card>
-    );
-}
-
-const TAB_MAP: Record<string, number> = {
-    account: 0,
-    security: 1,
-    notifications: 2,
-};
-
+/** Cuenta del usuario (patrón `account-settings` de Materio): datos personales y seguridad del acceso. */
 export default function AccountSettings() {
-    const searchParams = useSearchParams();
-    const [value, setValue] = useState(0);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const tab = tabFrom(searchParams.get('tab'));
 
-    useEffect(() => {
-        const tabParam = searchParams.get('tab');
-        if (tabParam && tabParam in TAB_MAP) {
-            setValue(TAB_MAP[tabParam] ?? 0);
-        }
-    }, [searchParams]);
+  const { data: userData, isLoading } = useQuery({
+    queryKey: ['auth', 'profile'],
+    queryFn: () => authService.getProfile(),
+    staleTime: 2 * 60 * 1000,
+  });
 
-    const { data: userData, isLoading } = useQuery({
-        queryKey: ['auth', 'profile'],
-        queryFn: () => authService.getProfile(),
-        staleTime: 2 * 60 * 1000,
-    });
+  const handleChange = (_: SyntheticEvent, value: SettingsTab) => {
+    router.replace(`${pathname}?tab=${value}`, { scroll: false });
+  };
 
-    const handleChange = (_event: React.SyntheticEvent, newValue: number) => {
-        setValue(newValue);
-    };
-
-    return (
-        <Box sx={{ width: '100%' }}>
-            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <Tabs
-                    value={value}
-                    onChange={handleChange}
-                    aria-label="settings tabs"
-                    variant="scrollable"
-                    scrollButtons="auto"
-                    sx={{
-                        '& .MuiTabs-indicator': {
-                            backgroundColor: 'primary.main',
-                        },
-                        '& .MuiTab-root': {
-                            textTransform: 'none',
-                            fontWeight: 500,
-                            fontSize: '0.9rem',
-                            minHeight: 48,
-                            color: 'text.secondary',
-                            display: 'flex',
-                            flexDirection: 'row',
-                            gap: 1,
-                            '&.Mui-selected': {
-                                color: 'primary.main',
-                            },
-                        }
-                    }}
-                >
-                    <Tab
-                        icon={<i className="ri-user-3-line" style={{ fontSize: 18 }} />}
-                        label="Cuenta"
-                        {...a11yProps(0)}
-                    />
-                    <Tab
-                        icon={<i className="ri-lock-password-line" style={{ fontSize: 18 }} />}
-                        label="Seguridad"
-                        {...a11yProps(1)}
-                    />
-                    <Tab
-                        icon={<i className="ri-notification-4-line" style={{ fontSize: 18 }} />}
-                        label="Notificaciones"
-                        {...a11yProps(2)}
-                    />
-                </Tabs>
-            </Box>
-
-            {/* Account Tab */}
-            <CustomTabPanel value={value} index={0}>
-                {isLoading || !userData ? (
-                    <AccountTabSkeleton />
-                ) : (
-                    <AccountTab userData={userData} />
-                )}
-            </CustomTabPanel>
-
-            {/* Security Tab */}
-            <CustomTabPanel value={value} index={1}>
-                <SecurityTab />
-            </CustomTabPanel>
-
-            {/* Notifications Tab */}
-            <CustomTabPanel value={value} index={2}>
-                <NotificationsView />
-            </CustomTabPanel>
-        </Box>
-    );
+  return (
+    <div className='flex flex-col gap-6'>
+      <div>
+        <Typography variant='h4' component='h1'>
+          Mi cuenta
+        </Typography>
+        <Typography color='text.secondary'>Tus datos personales y la seguridad de tu acceso.</Typography>
+      </div>
+      <TabContext value={tab}>
+        <CustomTabList onChange={handleChange} variant='scrollable' pill='true' aria-label='Secciones de la cuenta'>
+          <Tab label='Cuenta' icon={<i className='ri-user-3-line' aria-hidden />} iconPosition='start' value='cuenta' />
+          <Tab label='Seguridad' icon={<i className='ri-lock-password-line' aria-hidden />} iconPosition='start' value='seguridad' />
+        </CustomTabList>
+        <TabPanel value='cuenta' className='p-0'>
+          {isLoading || !userData ? <AccountSkeleton /> : <AccountTab userData={userData} />}
+        </TabPanel>
+        <TabPanel value='seguridad' className='p-0'>
+          <SecurityTab />
+        </TabPanel>
+      </TabContext>
+    </div>
+  );
 }

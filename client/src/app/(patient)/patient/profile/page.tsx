@@ -1,10 +1,6 @@
-import { RoleGuard } from '@/components/shared/RoleGuard';
-import PatientProfileView from '@/views/patient/profile';
+import { redirect } from 'next/navigation';
 
+// La cuenta de todos los actores vive en /settings/account (UI-31).
 export default function PatientProfilePage() {
-  return (
-    <RoleGuard permissions={[{ action: 'READ', subject: 'APPOINTMENTS' }]}>
-      <PatientProfileView />
-    </RoleGuard>
-  );
+  redirect('/settings/account?tab=cuenta');
 }

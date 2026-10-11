@@ -27,9 +27,6 @@ import { useAppDispatch, useAppSelector } from '@/redux-store/hooks'
 import { selectUser } from '@/redux-store/slices/auth'
 import { logoutThunk } from '@/redux-store/thunks/auth.thunks'
 
-// Util Imports
-import { actorFor, profilePathFor } from '@configs/navigation'
-
 // Styled component for badge content
 const BadgeContentSpan = styled('span')({
   width: 8,
@@ -122,12 +119,12 @@ const UserDropdown = () => {
                   <Divider className='mlb-1' />
                   <MenuItem
                     className='gap-3'
-                    onClick={e => handleDropdownClose(e, profilePathFor(actorFor(user?.role)))}
+                    onClick={e => handleDropdownClose(e, '/settings/account?tab=cuenta')}
                   >
                     <i className='ri-user-3-line' />
                     <Typography color='text.primary'>Mi perfil</Typography>
                   </MenuItem>
-                  <MenuItem className='gap-3' onClick={e => handleDropdownClose(e, '/settings/account')}>
+                  <MenuItem className='gap-3' onClick={e => handleDropdownClose(e, '/settings/account?tab=seguridad')}>
                     <i className='ri-settings-4-line' />
                     <Typography color='text.primary'>Configuración</Typography>
                   </MenuItem>

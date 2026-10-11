@@ -1,7 +1,7 @@
 'use client'
 
 // React Imports
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 import type { MouseEvent, ReactNode } from 'react'
 
 // Next Imports
@@ -26,12 +26,9 @@ import type { Theme } from '@mui/material/styles'
 // Third Party Components
 import classnames from 'classnames'
 import PerfectScrollbar from 'react-perfect-scrollbar'
-import { toast } from 'react-toastify'
 
 // Type Imports
-import type { ThemeColor } from '@core/types'
 import type { Notification } from '@/views/notifications/types'
-import { NotificationType } from '@/views/notifications/types'
 
 // Component Imports
 import CustomAvatar from '@core/components/mui/Avatar'
@@ -42,19 +39,9 @@ import themeConfig from '@configs/themeConfig'
 // Hook Imports
 import { useSettings } from '@core/hooks/useSettings'
 
-// Service Imports
-import { notificationsService } from '@/services/notifications.service'
-
-const POLLING_INTERVAL = 30_000
-
-const typeAvatar: Record<string, { icon: string; color: ThemeColor }> = {
-  [NotificationType.APPOINTMENT_CONFIRMED]: { icon: 'ri-check-double-line', color: 'success' },
-  [NotificationType.APPOINTMENT_CANCELLED]: { icon: 'ri-close-circle-line', color: 'error' },
-  [NotificationType.APPOINTMENT_REMINDER]: { icon: 'ri-alarm-line', color: 'warning' },
-  [NotificationType.APPOINTMENT_RESCHEDULED]: { icon: 'ri-calendar-event-line', color: 'info' },
-  [NotificationType.NEW_APPOINTMENT]: { icon: 'ri-calendar-check-line', color: 'primary' },
-  [NotificationType.GENERAL]: { icon: 'ri-information-line', color: 'secondary' }
-}
+// Notificaciones: mismas queries que la página /notifications
+import { useNotificationActions, useNotificationList, useUnreadCount } from '@/views/notifications/hooks/useNotifications'
+import { typeOf } from '@/views/notifications/notificationTypes'
 
 function relativeTime(dateStr: string): string {
   const diffMin = Math.floor((Date.now() - new Date(dateStr).getTime()) / 60_000)
@@ -83,9 +70,6 @@ const ScrollWrapper = ({ children, hidden }: { children: ReactNode; hidden: bool
 const NotificationsDropdown = () => {
   // States
   const [open, setOpen] = useState(false)
-  const [unreadCount, setUnreadCount] = useState(0)
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [loading, setLoading] = useState(false)
 
   // Refs
   const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null)
@@ -96,67 +80,19 @@ const NotificationsDropdown = () => {
   const isSmallScreen = useMediaQuery((theme: Theme) => theme.breakpoints.down('sm'))
   const { settings } = useSettings()
 
-  const fetchUnreadCount = useCallback(async () => {
-    try {
-      const res = await notificationsService.getUnreadCount()
+  const unread = useUnreadCount()
+  const recent = useNotificationList({ page: 1, limit: 5 }, open)
+  const { markAsRead, markAllAsRead } = useNotificationActions()
+  const unreadCount = unread.data ?? 0
+  const notifications = recent.data?.data ?? []
+  const loading = recent.isLoading
 
-      setUnreadCount(res.count)
-    } catch {
-      // El sondeo no interrumpe al usuario si falla
-    }
-  }, [])
+  // Al abrirse, la lista vuelve a pedirse (se habilita la query y sus datos están vencidos).
+  const handleToggle = () => setOpen(prev => !prev)
 
-  const fetchRecent = useCallback(async () => {
-    setLoading(true)
-
-    try {
-      const [res, countRes] = await Promise.all([
-        notificationsService.getMyNotifications({ page: 1, limit: 5 }),
-        notificationsService.getUnreadCount()
-      ])
-
-      setNotifications(res.data)
-      setUnreadCount(countRes.count)
-    } catch {
-      toast.error('No se pudieron cargar las notificaciones')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    void fetchUnreadCount()
-    const interval = setInterval(() => void fetchUnreadCount(), POLLING_INTERVAL)
-
-    return () => clearInterval(interval)
-  }, [fetchUnreadCount])
-
-  const handleToggle = () => {
-    if (!open) void fetchRecent()
-    setOpen(prev => !prev)
-  }
-
-  const handleMarkAsRead = async (event: MouseEvent<HTMLElement>, notification: Notification) => {
+  const handleMarkAsRead = (event: MouseEvent<HTMLElement>, notification: Notification) => {
     event.stopPropagation()
-    if (notification.isRead) return
-
-    try {
-      await notificationsService.markAsRead(notification.id)
-      setNotifications(prev => prev.map(n => (n.id === notification.id ? { ...n, isRead: true } : n)))
-      setUnreadCount(prev => Math.max(0, prev - 1))
-    } catch {
-      toast.error('Error al marcar la notificación como leída')
-    }
-  }
-
-  const handleMarkAllAsRead = async () => {
-    try {
-      await notificationsService.markAllAsRead()
-      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))
-      setUnreadCount(0)
-    } catch {
-      toast.error('Error al marcar todas como leídas')
-    }
+    if (!notification.isRead) markAsRead.mutate(notification)
   }
 
   const handleViewAll = () => {
@@ -213,7 +149,12 @@ const NotificationsDropdown = () => {
                     )}
                     {unreadCount > 0 && (
                       <Tooltip title='Marcar todas como leídas'>
-                        <IconButton size='small' onClick={handleMarkAllAsRead} className='text-textPrimary'>
+                        <IconButton
+                          size='small'
+                          onClick={() => markAllAsRead.mutate()}
+                          className='text-textPrimary'
+                          aria-label='Marcar todas como leídas'
+                        >
                           <i className='ri-mail-open-line' />
                         </IconButton>
                       </Tooltip>
@@ -231,7 +172,7 @@ const NotificationsDropdown = () => {
                       </Typography>
                     ) : (
                       notifications.map((notification, index) => {
-                        const avatar = typeAvatar[notification.type] ?? typeAvatar[NotificationType.GENERAL]!
+                        const avatar = typeOf(notification.type)
 
                         return (
                           <div
