@@ -47,7 +47,10 @@ export class PrismaPatientRecordQuery implements IPatientRecordQueryPort {
         },
         appointments: {
           where: { deleted: false, ...appointmentScope },
-          orderBy: { startTime: 'desc' },
+          orderBy: [
+            { schedule: { scheduleDate: 'desc' } },
+            { startTime: 'desc' },
+          ],
           include: {
             clinicalNotes: {
               where: {
@@ -103,6 +106,7 @@ export class PrismaPatientRecordQuery implements IPatientRecordQueryPort {
         reason: app.reason ?? undefined,
         schedule: app.schedule
           ? {
+              scheduleDate: app.schedule.scheduleDate,
               doctor: app.schedule.doctor?.profile
                 ? {
                     name: app.schedule.doctor.profile.name,

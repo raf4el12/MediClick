@@ -29,6 +29,8 @@ export interface AppointmentDoctor {
 }
 
 export interface AppointmentSchedule {
+  /** Día de la cita: `startTime` solo guarda la hora (base 1970-01-01). */
+  scheduleDate: Date;
   doctor?: AppointmentDoctor;
 }
 

@@ -32,6 +32,7 @@ const PATIENT_RECORD_FIELDS = `
     status
     reason
     schedule {
+      scheduleDate
       doctor {
         name
         lastName

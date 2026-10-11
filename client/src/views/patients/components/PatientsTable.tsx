@@ -1,6 +1,7 @@
 'use client';
 
 import { memo, useMemo } from 'react';
+import Link from 'next/link';
 import Card from '@mui/material/Card';
 import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
@@ -203,6 +204,18 @@ export const PatientsTable = memo(function PatientsTable({
         meta: { align: 'center' },
         cell: ({ row }) => (
           <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+            <Tooltip title="Ver expediente">
+              <IconButton
+                component={Link}
+                href={`/patients/${row.original.id}`}
+                size="small"
+                color="primary"
+                aria-label={`Ver expediente de ${row.original.profile.name} ${row.original.profile.lastName}`}
+                onClick={(e: React.MouseEvent) => e.stopPropagation()}
+              >
+                <i className="ri-file-user-line" style={{ fontSize: 18 }} />
+              </IconButton>
+            </Tooltip>
             <Tooltip title="Editar">
               <IconButton
                 size="small"

@@ -29,6 +29,8 @@ export interface PatientRecordDoctor {
 }
 
 export interface PatientRecordSchedule {
+  /** Día de la cita (ISO a medianoche UTC); `startTime` solo trae la hora sobre 1970-01-01. */
+  scheduleDate: string;
   doctor?: PatientRecordDoctor;
 }
 
