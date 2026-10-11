@@ -142,7 +142,7 @@ de 4 pasos (`Identificación`, `Datos Personales`, `Inf. Médica`, `Credenciales
 
 ---
 
-## UI-21 — Expediente con la vista de usuario de Materio
+## UI-21 — Expediente con la vista de usuario de Materio ✅
 
 **Rama:** `git fetch origin && git switch -c feat/ui-21-expediente origin/staging`
 **Skills:** `mattpocock-skills:tdd`, `mattpocock-skills:code-review`
@@ -156,8 +156,8 @@ El alcance por sede lo aplica el servidor (`PatientRecordQuery`, SDD-001); este 
 
 ### Task 1: Rama y rutas de la plantilla
 
-- [ ] **Step 1:** Crear la rama.
-- [ ] **Step 2:** Confirmar en `~/materio-mui-nextjs-admin-template-ts/full-version/` `views/apps/user/view/index.tsx`,
+- [x] **Step 1:** Crear la rama.
+- [x] **Step 2:** Confirmar en `~/materio-mui-nextjs-admin-template-ts/full-version/` `views/apps/user/view/index.tsx`,
   `user-left-overview/{index,UserDetails}.tsx`, `user-right/index.tsx` y
   `user-right/overview/UserActivityTimeline.tsx`. `UserPlan.tsx` y las pestañas de billing,
   connections y notifications no se copian.
@@ -173,10 +173,10 @@ El alcance por sede lo aplica el servidor (`PatientRecordQuery`, SDD-001); este 
 - Produces: `toRecordTimeline(appointments): RecordTimelineItem[]` — orden descendente por fecha,
   etiqueta de estado con el vocabulario de `CONTEXT.md`, médico, motivo y diagnóstico/plan si hay nota.
 
-- [ ] **Step 1 (rojo):** Pruebas: orden descendente; cita sin nota clínica no inventa diagnóstico;
+- [x] **Step 1 (rojo):** Pruebas: orden descendente; cita sin nota clínica no inventa diagnóstico;
   `CANCELLED` se rotula "Cancelada" y `NO_SHOW` "Inasistencia"; lista vacía devuelve `[]`.
   Run: `cd client && pnpm test -- recordTimeline` → Expected: FAIL.
-- [ ] **Step 2 (verde):** Implementar y pasar las pruebas.
+- [x] **Step 2 (verde):** Implementar y pasar las pruebas.
 
 ### Task 3: Vista de expediente con el patrón de Materio
 
@@ -197,10 +197,10 @@ El alcance por sede lo aplica el servidor (`PatientRecordQuery`, SDD-001); este 
   `READ:MEDICAL_HISTORY` para la ruta del personal (mismo `RoleGuard`/guard de UI-03).
 - Produces: `/patient/expediente` (paciente) y `/patients/[id]` (personal) con la misma vista.
 
-- [ ] **Step 1:** Implementar `RecordOverview` y `RecordTabs`; las pestañas se pueden recorrer con teclado.
-- [ ] **Step 2:** Ruta del personal dentro del grupo `(staff)` de UI-03; un PATIENT que la abra es
+- [x] **Step 1:** Implementar `RecordOverview` y `RecordTabs`; las pestañas se pueden recorrer con teclado.
+- [x] **Step 2:** Ruta del personal dentro del grupo `(staff)` de UI-03; un PATIENT que la abra es
   redirigido por el guard y nunca dispara `patientRecord(id)`.
-- [ ] **Step 3:** Estado de error ("Error al cargar el expediente clínico") y de carga con `Skeleton`.
+- [x] **Step 3:** Estado de error ("Error al cargar el expediente clínico") y de carga con `Skeleton`.
 
 ### Task 4: Pruebas de navegador del expediente
 
@@ -211,20 +211,43 @@ El alcance por sede lo aplica el servidor (`PatientRecordQuery`, SDD-001); este 
 - Consumes: enrutamiento de `POST /graphql` por `operationName` del arnés de UI-02
   (`MyPatientRecord`, `PatientRecord`); este ítem no modifica `client/tests/support/`.
 
-- [ ] **Step 1:** `actor: 'PATIENT'` en `/patient/expediente` con fixture de `MyPatientRecord`: se ven las
+- [x] **Step 1:** `actor: 'PATIENT'` en `/patient/expediente` con fixture de `MyPatientRecord`: se ven las
   tres pestañas y la línea de tiempo en orden.
-- [ ] **Step 2:** `actor: 'DOCTOR'` en `/patients/7` con fixture de `PatientRecord`: misma vista.
-- [ ] **Step 3:** `actor: 'PATIENT'` en `/patients/7`: redirige y no hay llamada a `PatientRecord`.
-- [ ] **Step 4:** Respuesta GraphQL con `errors` muestra el mensaje de error.
-- [ ] **Step 5:** `expectAccessible(page)` en cada pestaña.
+- [x] **Step 2:** `actor: 'DOCTOR'` en `/patients/7` con fixture de `PatientRecord`: misma vista.
+- [x] **Step 3:** `actor: 'PATIENT'` en `/patients/7`: redirige y no hay llamada a `PatientRecord`.
+- [x] **Step 4:** Respuesta GraphQL con `errors` muestra el mensaje de error.
+- [x] **Step 5:** `expectAccessible(page)` en cada pestaña.
   Run: `cd client && pnpm exec playwright test patient-record` → Expected: PASS.
 
 ### Task 5: Verificación y limpieza
 
-- [ ] **Step 1:** `grep -rn "RecordProfileHeader\|RecordVitalSigns" client/src` → Expected: sin resultados.
-- [ ] **Step 2:** Run: `cd client && pnpm exec tsc --noEmit && pnpm exec eslint src/views/patient/expediente src/app/'(staff)'/patients tests/e2e/patient-record.spec.ts && pnpm test && pnpm build && pnpm test:a11y`
+- [x] **Step 1:** `grep -rn "RecordProfileHeader\|RecordVitalSigns" client/src` → Expected: sin resultados.
+- [x] **Step 2:** Run: `cd client && pnpm exec tsc --noEmit && pnpm exec eslint src/views/patient/expediente src/app/'(staff)'/patients tests/e2e/patient-record.spec.ts && pnpm test && pnpm build && pnpm test:a11y`
   Expected: todo PASS.
-- [ ] **Step 3:** PR contra `staging` con capturas de paciente y personal.
+- [x] **Step 3:** PR contra `staging` con capturas de paciente y personal.
+
+### Notas de implementación
+
+- **Fecha de las citas (corrección de servidor):** `appointments.startTime` guarda solo la hora, sobre la fecha base 1970-01-01. El expediente anterior mostraba todas las citas con fecha 1 ene 1970 y las ordenaba por hora del día.
+  - El tipo GraphQL `AppointmentScheduleGql` suma `scheduleDate` (el día del cupo).
+  - La consulta de Prisma ordena por `schedule.scheduleDate` y luego por `startTime`, de más reciente a más antigua.
+  - La prueba de integración del repositorio verifica el orden (no corrió: no hay PostgreSQL local).
+  - El alcance por sede no cambia.
+- **`toRecordTimeline`:**
+  - toma el día de `schedule.scheduleDate` y la hora de `startTime` (campos UTC, sin depender de la zona del navegador);
+  - rotula los estados con `STATUS_META` de la agenda (`Cancelada`, `Inasistencia`, etc.);
+  - deja solo las notas con diagnóstico o plan;
+  - tiene 4 pruebas en Vitest, que también pasan con `TZ=Asia/Tokyo`.
+- **Vista:**
+  - columna izquierda `RecordOverview`, adaptada de `UserDetails`: avatar con iniciales, estado, conteo de citas y antecedentes, datos personales y contacto de emergencia, y «Reservar cita» solo para el propio paciente;
+  - columna derecha `RecordTabs` con `CustomTabList` de Materio (copiado a `@core/components/mui/TabList.tsx`) y tres pestañas: Resumen (alergias, condiciones crónicas y activas), Antecedentes y Citas (`Timeline` de `@mui/lab`);
+  - las notas clínicas viven dentro de cada cita, así que desaparece la pestaña «Notas Médicas» y también el placeholder de signos vitales;
+  - en celular las pestañas muestran flechas de desplazamiento.
+- **Ruta del personal:** `/patients/[id]` en `(staff)` con `READ:PATIENTS`, el mismo permiso que exige el resolver `patientRecord`.
+  - El paciente también tiene `READ:PATIENTS`, así que `RoleGuard` suma la opción `actors`. Un actor que no está en la lista vuelve a su inicio sin montar la vista, y por lo tanto nunca dispara `patientRecord`.
+  - Un id que no es un entero positivo responde 404.
+- **Lista de pacientes:** cada fila tiene el enlace «Ver expediente de <nombre>» a `/patients/{id}`.
+- **Pendiente fuera del ítem:** la miga de pan de `/patients/{id}` muestra «MediClick», porque `pageTitle` (`configs/navigation.ts`) solo resuelve rutas exactas. Corregirlo toca la navegación, que está en manos de otro ítem.
 
 ---
 
