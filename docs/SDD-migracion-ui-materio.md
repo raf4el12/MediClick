@@ -230,7 +230,7 @@ expectAccessible(page)                          // axe WCAG 2.0/2.1 A y AA
 | UI-28 ✅ | 6 Admin | Pantallas clínicas del personal: notas clínicas, recetas e historia médica | — | UI-22 | `tdd` |
 | UI-30 ✅ | 6 Admin | Lista de espera del personal | — | UI-22 | `tdd` |
 | UI-26 ✅ | 7 Público | Endpoints públicos del perfil del médico: solo campos profesionales y reseñas visibles, con throttle; bloqueado hasta corregir el throttle evadible (§9) | Sí | — | `mediclick-tenant-safety` + `tdd` |
-| UI-27 | 7 Público | Landing de Materio y perfil público del médico | — | UI-26, UI-04, UI-08 (médico preseleccionado) | `tdd` |
+| UI-27 ✅ | 7 Público | Landing de Materio y perfil público del médico | — | UI-26, UI-04, UI-08 (médico preseleccionado) | `tdd` |
 
 UI-02 se adelantó a UI-01: no usa nada de Materio y deja cubierto por pruebas el cambio de base
 visual. La tabla se ordena por fase; los ID UI-28 a UI-31 se agregaron al revisar las pantallas sin
