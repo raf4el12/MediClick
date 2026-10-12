@@ -22,6 +22,8 @@ import { formatDate } from '@/utils/formatDate';
 import { getInitials } from '@/utils/getInitials';
 import { notify } from '@/utils/notify';
 import type { Review, ReviewModerationParams } from '../types';
+import ReviewsStatistics from './ReviewsStatistics';
+import TotalReviews from './TotalReviews';
 
 type Visibility = 'all' | 'visible' | 'hidden';
 
@@ -47,6 +49,12 @@ export default function ReviewsModerationView() {
   const reviews = useQuery({
     queryKey: ['reviews', 'moderation', params],
     queryFn: () => reviewsService.listForModeration(params),
+    placeholderData: keepPreviousData,
+  });
+  // Los agregados siguen el filtro de médico; estado y calificación solo acotan la tabla.
+  const stats = useQuery({
+    queryKey: ['reviews', 'moderation', 'stats', doctorId],
+    queryFn: () => reviewsService.getStats(doctorId !== '' ? { doctorId } : {}),
     placeholderData: keepPreviousData,
   });
   const doctors = useQuery({
@@ -138,6 +146,10 @@ export default function ReviewsModerationView() {
           Reseñas
         </Typography>
         <Typography color='text.secondary'>Reseñas de los médicos de la sede. Una reseña oculta no se muestra ni cuenta en la calificación del médico.</Typography>
+      </div>
+      <div className='grid gap-6 lg:grid-cols-2'>
+        <TotalReviews stats={stats.data} loading={stats.isLoading} />
+        <ReviewsStatistics stats={stats.data} loading={stats.isLoading} />
       </div>
       <Card>
         <div className='flex flex-wrap items-center gap-4 p-5'>

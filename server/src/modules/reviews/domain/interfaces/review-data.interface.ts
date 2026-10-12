@@ -38,3 +38,18 @@ export interface ReviewModerationFilters {
   rating?: number;
   doctorId?: number;
 }
+
+export interface ReviewStatsFilters {
+  /** Sede de los médicos; `null` no acota (actor global). */
+  clinicId: number | null;
+  doctorId?: number;
+}
+
+export interface ReviewStats {
+  total: number;
+  visible: number;
+  /** Promedio de las visibles sin redondear (null si no hay). */
+  averageRating: number | null;
+  /** Reseñas visibles por calificación 1..5. */
+  distribution: Record<1 | 2 | 3 | 4 | 5, number>;
+}

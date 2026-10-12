@@ -37,3 +37,18 @@ export interface ReviewModerationParams {
   currentPage?: number;
   pageSize?: number; // máximo 100
 }
+
+export interface ReviewStatsParams {
+  doctorId?: number;
+}
+
+export type ReviewRating = 1 | 2 | 3 | 4 | 5;
+
+/** Agregados de la sede del actor: la distribución y el promedio cuentan solo visibles. */
+export interface ReviewStats {
+  total: number;
+  visible: number;
+  hidden: number;
+  averageRating: number | null;
+  distribution: Record<ReviewRating, number>;
+}

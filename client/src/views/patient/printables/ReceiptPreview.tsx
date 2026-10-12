@@ -7,24 +7,33 @@ import { appointmentsService } from '@/services/appointments.service';
 import { paymentsService } from '@/services/payments.service';
 import { formatPrice } from '@/views/booking/format';
 import { PAYMENT_METHOD_LABELS } from '@/views/payment/labels';
-import { DetailList, PrintableLayout, PrintableMessage, appointmentWhen } from './PrintableLayout';
+import { BACK_TO_MY_APPOINTMENTS, DetailList, PrintableLayout, PrintableMessage, appointmentWhen, type PrintableBack } from './PrintableLayout';
+
+export const BACK_TO_PAYMENTS: PrintableBack = { href: '/payments', label: 'Volver a Pagos' };
+
+interface ReceiptPreviewProps {
+  appointmentId: number;
+  /** El paciente carga su cita con `my/:id`; el personal, la cita de su sede con `/appointments/:id`. */
+  source?: 'patient' | 'staff';
+}
 
 /** Comprobante de pago de una cita: sus transacciones aprobadas (seña y saldo). */
-export function ReceiptPreview({ appointmentId }: { appointmentId: number }) {
+export function ReceiptPreview({ appointmentId, source = 'patient' }: ReceiptPreviewProps) {
+  const back = source === 'staff' ? BACK_TO_PAYMENTS : BACK_TO_MY_APPOINTMENTS;
   const appointmentQuery = useQuery({
-    queryKey: ['patient', 'appointment', appointmentId],
-    queryFn: () => appointmentsService.getMyAppointment(appointmentId),
+    queryKey: [source, 'appointment', appointmentId],
+    queryFn: () => (source === 'staff' ? appointmentsService.getById(appointmentId) : appointmentsService.getMyAppointment(appointmentId)),
     retry: false,
   });
   const receiptsQuery = useQuery({
-    queryKey: ['patient', 'receipts', appointmentId],
+    queryKey: [source, 'receipts', appointmentId],
     queryFn: () => paymentsService.getReceipts(appointmentId),
     enabled: appointmentQuery.isSuccess,
     retry: false,
   });
 
   if (appointmentQuery.isLoading || receiptsQuery.isLoading) return <CircularProgress aria-label='Cargando el comprobante' />;
-  if (appointmentQuery.isError || !appointmentQuery.data) return <PrintableMessage>No encontramos esta cita.</PrintableMessage>;
+  if (appointmentQuery.isError || !appointmentQuery.data) return <PrintableMessage back={back}>No encontramos esta cita.</PrintableMessage>;
 
   const appointment = appointmentQuery.data;
   const receipts = receiptsQuery.data ?? [];
@@ -35,7 +44,7 @@ export function ReceiptPreview({ appointmentId }: { appointmentId: number }) {
     iso ? new Intl.DateTimeFormat('es', { dateStyle: 'medium', timeStyle: 'short', timeZone: timezone }).format(new Date(iso)) : '—';
 
   return (
-    <PrintableLayout title='Comprobante de pago' reference={`Cita #${appointment.id}`} appointment={appointment}>
+    <PrintableLayout title='Comprobante de pago' reference={`Cita #${appointment.id}`} appointment={appointment} back={back}>
       <DetailList
         items={[
           ['Paciente', `${appointment.patient.name} ${appointment.patient.lastName}`],

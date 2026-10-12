@@ -272,7 +272,7 @@ Hecho en la rama `feat/ui-24-moderacion-resenas-backend`, antes que la pantalla 
 - La tabla va sobre `DataTable` de UI-22, con paginación de servidor (`currentPage`, `pageSize`). Los filtros Estado, Calificación y Médico viajan como `isVisible`, `rating` y `doctorId`, y cambiar uno vuelve a la primera página.
 - La calificación usa `Rating` de solo lectura con nombre «N de 5 estrellas», y el estado se rotula «Visible» o «Reseña oculta».
 - «Ocultar» y «Mostrar» confirman con el `ConfirmDialog` compartido, que explica el efecto en la calificación del médico. Después envían `PATCH /reviews/:id/visibility` y vuelven a pedir la lista.
-- **Sin `ReviewsStatistics` ni `TotalReviews`:** el servidor no tiene un endpoint de agregados, y calcularlos sobre la página visible daría números engañosos. Si se quieren, es un endpoint nuevo.
+- ~~**Sin `ReviewsStatistics` ni `TotalReviews`**~~: resuelto (2026-10-11). `GET /reviews/stats` devuelve total, visibles, ocultas, promedio y distribución por calificación de las visibles, con el alcance de sede de la moderación y `doctorId` opcional; las tarjetas `TotalReviews` y `ReviewsStatistics` (recharts) siguen el filtro de médico y se refrescan al ocultar o mostrar.
 - `reviews-moderation.spec.ts` cubre filtros, ocultar, mostrar y el bloqueo del paciente, con `expectAccessible` en la tabla y en la confirmación.
 
 ---
@@ -335,7 +335,7 @@ usan recharts.
   - cada monto va con la moneda de su transacción (`formatPrice`, que respeta la convención de cada moneda: el peso colombiano sin decimales);
   - estados de la transacción: Aprobada, Pendiente, Seña, Reembolsada, Rechazada y Cancelada;
   - React Query en lugar del `useEffect` con `fetch`.
-- **Sin enlace al comprobante:** la vista imprimible de UI-12 vive en `(patient)` y carga la cita con `GET /appointments/my/:id`, que solo responde al paciente dueño. Un enlace desde la lista del personal no funcionaría sin un endpoint de cita para el personal; queda fuera de este ítem.
+- ~~**Sin enlace al comprobante**~~: resuelto (2026-10-11). `GET /appointments/:id` devuelve al personal la cita de su sede (o cualquiera a un actor global; el médico solo las suyas) con la forma de `my/:id`, y `ReceiptPreview` la carga con `source='staff'` desde `/payments/:appointmentId/comprobante`, enlazado en cada transacción aprobada de la lista.
 - **`toDashboardKpis`:**
   - ocupación redondeada con `Math.round` del porcentaje del servidor, como el dashboard anterior;
   - progreso por cupos, sin dividir por cero;

@@ -6,6 +6,7 @@ import {
 import type { AuthenticatedUser } from '../domain/interfaces/authenticated-user.interface.js';
 
 export type AppointmentOperation =
+  | 'READ'
   | 'READ_PAYMENT'
   | 'CANCEL'
   | 'RESCHEDULE'
