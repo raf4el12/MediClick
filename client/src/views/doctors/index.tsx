@@ -1,100 +1,70 @@
 'use client';
 
-import { useCallback } from 'react';
-import Grid from '@mui/material/Grid';
-import Button from '@mui/material/Button';
-import { useDoctors } from './hooks/useDoctors';
+import dynamic from 'next/dynamic';
+import Typography from '@mui/material/Typography';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog/ConfirmDialog';
+import { notify } from '@/utils/notify';
 import { DoctorsTable } from './components/DoctorsTable';
 import { EditDoctorDrawer } from './components/EditDoctorDrawer';
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog/ConfirmDialog';
-import dynamic from 'next/dynamic';
-import CircularProgress from '@mui/material/CircularProgress';
-import Box from '@mui/material/Box';
-import { PageHeader } from '@/components/shared/PageHeader';
-import { notify } from '@/utils/notify';
+import { useDoctors } from './hooks/useDoctors';
 
-const DynamicLoading = () => (
-  <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-    <CircularProgress size={28} />
-  </Box>
-);
+const DoctorDetailDialog = dynamic(() => import('./components/DoctorDetailDialog').then((m) => m.DoctorDetailDialog));
 
-const DoctorDetailDialog = dynamic(
-  () => import('./components/DoctorDetailDialog').then((m) => m.DoctorDetailDialog),
-  { loading: DynamicLoading },
-);
-
+/** Gestión de médicos: filtros, búsqueda y tabla paginada en el servidor (UI-22). */
 export default function DoctorsView() {
   const controller = useDoctors();
 
-  const handleCreateSuccess = useCallback(() => {
+  const handleCreated = () => {
     controller.refreshData();
-    notify('Doctor registrado exitosamente', 'success');
-  }, [controller.refreshData]);
-
-  const handleEditSuccess = useCallback(() => {
-    controller.closeEditDrawer();
-    controller.refreshData();
-    notify('Doctor actualizado exitosamente', 'success');
-  }, [controller.closeEditDrawer, controller.refreshData]);
-
-  const handleDelete = async () => {
-    const success = await controller.confirmDelete();
-    if (success) {
-      notify('Doctor eliminado exitosamente', 'success');
-    } else {
-      notify('Error al eliminar el doctor', 'error');
-    }
+    notify('Médico registrado');
   };
 
+  const handleEdited = () => {
+    controller.closeEditDrawer();
+    controller.refreshData();
+    notify('Médico actualizado');
+  };
+
+  const handleDelete = async () => {
+    const ok = await controller.confirmDelete();
+    notify(ok ? 'Médico eliminado' : 'No se pudo eliminar el médico', ok ? 'success' : 'error');
+  };
+
+  const toDelete = controller.deleteDoctor;
+
   return (
-    <Grid container spacing={3}>
-      <Grid size={12}>
-        <PageHeader
-          title="Doctores"
-          subtitle="Administra el equipo médico de la clínica"
-        >
-          <Button
-            variant="contained"
-            startIcon={<i className="ri-add-line" />}
-            onClick={controller.openCreateDrawer}
-          >
-            Nuevo Doctor
-          </Button>
-        </PageHeader>
-        <DoctorsTable
-          {...controller}
-          refreshData={handleCreateSuccess}
-          onEdit={controller.openEditDrawer}
-          onDelete={controller.openDeleteDialog}
-        />
-      </Grid>
-
-      <DoctorDetailDialog
-        doctor={controller.detailDoctor}
-        onClose={controller.closeDetail}
+    <div className='flex flex-col gap-6'>
+      <div>
+        <Typography variant='h4' component='h1'>
+          Médicos
+        </Typography>
+        <Typography color='text.secondary'>El equipo médico de la sede, sus especialidades y su estado.</Typography>
+      </div>
+      <DoctorsTable
+        {...controller}
+        onCreated={handleCreated}
+        onEdit={controller.openEditDrawer}
+        onDelete={controller.openDeleteDialog}
       />
-
+      <DoctorDetailDialog doctor={controller.detailDoctor} onClose={controller.closeDetail} />
       <EditDoctorDrawer
         open={!!controller.editDoctor}
         doctor={controller.editDoctor}
         specialties={controller.specialties}
         clinics={controller.clinics}
         onClose={controller.closeEditDrawer}
-        onSuccess={handleEditSuccess}
+        onSuccess={handleEdited}
       />
-
       <ConfirmDialog
-        open={!!controller.deleteDoctor}
-        title="¿Eliminar doctor?"
-        description={`Se eliminará al doctor ${controller.deleteDoctor?.profile.name ?? ''} ${controller.deleteDoctor?.profile.lastName ?? ''}. Esta acción no se puede deshacer.`}
-        confirmLabel="Eliminar"
-        cancelLabel="Cancelar"
-        destructive
+        open={!!toDelete}
+        title='¿Eliminar médico?'
+        description={`Se eliminará a ${toDelete?.profile.name ?? ''} ${toDelete?.profile.lastName ?? ''}. Esta acción no se puede deshacer.`}
+        confirmLabel='Eliminar'
+        cancelLabel='Cancelar'
+        destructive={false}
         onConfirm={() => void handleDelete()}
         onCancel={controller.closeDeleteDialog}
       />
-
-    </Grid>
+    </div>
   );
 }

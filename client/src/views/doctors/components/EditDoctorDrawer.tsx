@@ -136,6 +136,7 @@ export function EditDoctorDrawer({ open, doctor, specialties, clinics, onClose, 
             variant="temporary"
             onClose={handleClose}
             ModalProps={KEEP_MOUNTED}
+            slotProps={{ paper: { role: 'dialog', 'aria-modal': true, 'aria-labelledby': 'editar-medico-titulo' } }}
             sx={{ '& .MuiDrawer-paper': { width: { xs: 320, sm: 480 } } }}
         >
             <Box
@@ -147,8 +148,8 @@ export function EditDoctorDrawer({ open, doctor, specialties, clinics, onClose, 
                     py: 2,
                 }}
             >
-                <Typography variant="h5">Editar Doctor</Typography>
-                <IconButton size="small" onClick={handleClose} aria-label="Cerrar formulario">
+                <Typography variant="h5" component="h2" id="editar-medico-titulo">Editar médico</Typography>
+                <IconButton size="small" onClick={handleClose} aria-label="Cerrar formulario de médico">
                     <i className="ri-close-line" style={{ fontSize: 24 }} />
                 </IconButton>
             </Box>
@@ -340,7 +341,7 @@ export function EditDoctorDrawer({ open, doctor, specialties, clinics, onClose, 
                             'Actualizar'
                         )}
                     </Button>
-                    <Button variant="outlined" color="error" onClick={handleClose}>
+                    <Button variant="outlined" onClick={handleClose}>
                         Cancelar
                     </Button>
                 </Box>
