@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { rolesService } from '@/services/roles.service';
+import { extractApiError } from '@/utils/extractApiError';
 import type { RoleDto, PermissionDto } from '../types';
 
 export function useRoles() {
@@ -9,19 +10,13 @@ export function useRoles() {
   const [permissions, setPermissions] = useState<PermissionDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [editRole, setEditRole] = useState<RoleDto | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<RoleDto | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const [rolesData, permsData] = await Promise.all([
-        rolesService.findAll(),
-        rolesService.getAllPermissions(),
-      ]);
+      const [rolesData, permsData] = await Promise.all([rolesService.findAll(), rolesService.getAllPermissions()]);
       setRoles(rolesData);
       setPermissions(permsData);
     } catch {
@@ -35,30 +30,19 @@ export function useRoles() {
     void fetchData();
   }, [fetchData]);
 
-  const openCreateDrawer = () => {
-    setEditRole(null);
-    setDrawerOpen(true);
-  };
-
-  const openEditDrawer = (role: RoleDto) => {
-    setEditRole(role);
-    setDrawerOpen(true);
-  };
-
-  const closeDrawer = () => {
-    setDrawerOpen(false);
-    setEditRole(null);
-  };
-
-  const handleDelete = async () => {
-    if (!deleteTarget) return;
+  /** Borra el rol elegido; devuelve si se pudo. */
+  const handleDelete = async (): Promise<boolean> => {
+    if (!deleteTarget) return false;
     try {
       await rolesService.delete(deleteTarget.id);
       await fetchData();
-    } catch {
-      setError('Error al eliminar el rol');
+      return true;
+    } catch (err) {
+      setError(extractApiError(err, 'Error al eliminar el rol').message);
+      return false;
+    } finally {
+      setDeleteTarget(null);
     }
-    setDeleteTarget(null);
   };
 
   return {
@@ -66,12 +50,7 @@ export function useRoles() {
     permissions,
     loading,
     error,
-    drawerOpen,
-    editRole,
     deleteTarget,
-    openCreateDrawer,
-    openEditDrawer,
-    closeDrawer,
     setDeleteTarget,
     handleDelete,
     refreshData: fetchData,
