@@ -120,6 +120,13 @@ const sections: { title: string; items: NavItem[] }[] = [
         actors: STAFF_ACTORS,
         permissions: [{ action: 'READ', subject: 'MEDICAL_HISTORY' }],
       },
+      {
+        title: 'Reseñas',
+        path: '/reviews',
+        icon: 'ri-star-smile-line',
+        actors: ['STAFF'],
+        permissions: [{ action: 'UPDATE', subject: 'REVIEWS' }],
+      },
     ],
   },
   {
