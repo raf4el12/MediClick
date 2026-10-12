@@ -255,7 +255,7 @@ Hecho en la rama `feat/ui-24-moderacion-resenas-backend`, antes que la pantalla 
 
 ---
 
-## UI-25 — Pagos, dashboard de administración y reportes
+## UI-25 — Pagos, dashboard de administración y reportes ✅
 
 **Rama:** `git fetch origin && git switch -c feat/ui-25-pagos-dashboard-reportes origin/staging`
 **Skills:** `mattpocock-skills:tdd`
@@ -273,9 +273,9 @@ usan recharts.
 - Modify: `client/src/views/payments/index.tsx` (lista sobre `DataTable` con el estilo de `InvoiceListTable.tsx`:
   chips de estado de pago, monto con moneda de la sede, fecha, cita, enlace al comprobante de UI-12)
 
-- [ ] **Step 1 (rojo):** e2e `client/tests/e2e/payments.spec.ts` con `actor: 'PATIENT'` en `/payments`:
+- [x] **Step 1 (rojo):** e2e `client/tests/e2e/payments.spec.ts` con `actor: 'PATIENT'` en `/payments`:
   redirige y **no** se registra ninguna llamada a `GET /payments` (el arnés falla si ocurre).
-- [ ] **Step 2 (verde):** guard de grupo `(staff)` además del permiso. Con `actor: 'ADMIN'`: filtros
+- [x] **Step 2 (verde):** guard de grupo `(staff)` además del permiso. Con `actor: 'ADMIN'`: filtros
   `status`, `dateFrom`, `dateTo` y `limit ≤ 100`; axe AA.
 
 ### Task 2: Dashboard y reportes con tarjetas y gráficos de Materio
@@ -292,12 +292,47 @@ usan recharts.
 - Produces: `toDashboardKpis(summary, occupancy, revenue)` → tarjetas (puro, con porcentajes y
   variaciones redondeadas igual que hoy).
 
-- [ ] **Step 1 (rojo/verde):** Pruebas de `toDashboardKpis`: ocupación con `totalSlots = 0` no divide por
+- [x] **Step 1 (rojo/verde):** Pruebas de `toDashboardKpis`: ocupación con `totalSlots = 0` no divide por
   cero; ingresos con moneda de la sede; estados con etiquetas de `CONTEXT.md`.
-- [ ] **Step 2:** Ningún import de `apexcharts`/`react-apexcharts` en el cliente
+- [x] **Step 2:** Ningún import de `apexcharts`/`react-apexcharts` en el cliente
   (`grep -rn apexcharts client/src` vacío).
-- [ ] **Step 3:** e2e `client/tests/e2e/admin-dashboard.spec.ts` con fixtures de `/reports/*`: tarjetas y
+- [x] **Step 3:** e2e `client/tests/e2e/admin-dashboard.spec.ts` con fixtures de `/reports/*`: tarjetas y
   gráficos renderizan; gráficos con título accesible; axe AA en ambos modos de color.
+
+### Notas de implementación
+
+- **Estado real distinto del plan:**
+  - `/payments` ya vivía en `(staff)`;
+  - no quedaba ApexCharts en el cliente;
+  - el paciente ya no tiene `READ:PAYMENTS` en `rbac-policy.ts` (sin el permiso, antes iba al 401).
+
+  Igual se agregó el guard de grupo, `RoleGuard` con `actors={['STAFF', 'DOCTOR']}`, para que un paciente con permisos viejos en una base sin `seed-rbac` vuelva a su inicio sin pedir `GET /payments`. El médico conserva el acceso porque tiene `READ:PAYMENTS` y la entrada del menú. `misc-pages.spec.ts` prueba ahora el 401 sobre `/reports`.
+- **Pagos:**
+  - lista sobre `DataTable` con filtros de estado, desde y hasta, y tamaños de página 10/25/50/100 (100 es el `@Max` del servidor);
+  - la página se manda como `page` (desde 1) y `limit`;
+  - cada monto va con la moneda de su transacción (`formatPrice`, que respeta la convención de cada moneda: el peso colombiano sin decimales);
+  - estados de la transacción: Aprobada, Pendiente, Seña, Reembolsada, Rechazada y Cancelada;
+  - React Query en lugar del `useEffect` con `fetch`.
+- **Sin enlace al comprobante:** la vista imprimible de UI-12 vive en `(patient)` y carga la cita con `GET /appointments/my/:id`, que solo responde al paciente dueño. Un enlace desde la lista del personal no funcionaría sin un endpoint de cita para el personal; queda fuera de este ítem.
+- **`toDashboardKpis`:**
+  - ocupación redondeada con `Math.round` del porcentaje del servidor, como el dashboard anterior;
+  - progreso por cupos, sin dividir por cero;
+  - ingresos con la moneda del reporte;
+  - los seis estados en orden fijo con las etiquetas de `STATUS_META` (las de la agenda).
+
+  `useDashboard` suma `GET /reports/revenue`, un endpoint existente, y el arnés del administrador tiene su respuesta por defecto.
+- **Dashboard:**
+  - tarjetas `card-statistics/HorizontalWithSubtitle` copiadas de Materio, sin la variación (`trend`), que ningún reporte informa;
+  - citas del mes por estado, ocupación con barra con nombre y los ingresos del mes;
+  - los gráficos de estado y de citas por día, y accesos rápidos.
+
+  Se quitó «Citas completadas hoy», que mezclaba las completadas del mes con las citas de hoy, y «Doctores activos x/x», que siempre daba 100 %. `shell.spec.ts` ya no excluye el contenido del dashboard de axe.
+- **Gráficos:**
+  - `ChartCard` reúne tarjeta, esqueleto, vacío y `AppRecharts` (copiado de Materio, con los ejes en `text-secondary` en vez de `text-disabled`);
+  - cada gráfico es un `role="img"` con una descripción de sus datos;
+  - los colores van por variables CSS del tema (`fill="var(--mui-palette-…)"`), así que el modo oscuro usa su paleta;
+  - el arco de ocupación cambia de color y el número va en el color del texto.
+- **Pendiente para `DataTable` (UI-22):** a 390 px el paginador de `TablePagination` queda un poco recortado a la derecha.
 
 ---
 
