@@ -46,6 +46,7 @@ export function AddEditUserDrawer({
       variant="temporary"
       onClose={handleReset}
       ModalProps={KEEP_MOUNTED}
+      slotProps={{ paper: { role: 'dialog', 'aria-modal': true, 'aria-labelledby': 'usuario-drawer-titulo' } }}
       sx={{ '& .MuiDrawer-paper': { width: { xs: 320, sm: 480 } } }}
     >
       <Box
@@ -57,10 +58,10 @@ export function AddEditUserDrawer({
           py: 2,
         }}
       >
-        <Typography variant="h5">
-          {isEdit ? 'Editar Usuario' : 'Nuevo Usuario'}
+        <Typography variant="h5" component="h2" id="usuario-drawer-titulo">
+          {isEdit ? 'Editar usuario' : 'Nuevo usuario'}
         </Typography>
-        <IconButton size="small" onClick={handleReset}>
+        <IconButton size="small" onClick={handleReset} aria-label="Cerrar formulario de usuario">
           <i className="ri-close-line" style={{ fontSize: 24 }} />
         </IconButton>
       </Box>
@@ -148,7 +149,7 @@ export function AddEditUserDrawer({
                 label="Rol"
               >
                 <MenuItem value="ADMIN">Administrador</MenuItem>
-                <MenuItem value="DOCTOR">Doctor</MenuItem>
+                <MenuItem value="DOCTOR">Médico</MenuItem>
                 <MenuItem value="RECEPTIONIST">Recepcionista</MenuItem>
               </Select>
             )}
@@ -287,7 +288,7 @@ export function AddEditUserDrawer({
               'Crear'
             )}
           </Button>
-          <Button variant="outlined" color="error" onClick={handleReset}>
+          <Button variant="outlined" onClick={handleReset}>
             Cancelar
           </Button>
         </Box>
