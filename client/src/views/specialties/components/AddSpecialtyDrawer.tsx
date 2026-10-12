@@ -178,6 +178,7 @@ export function AddSpecialtyDrawer({ open, drawerData, categories, clinics, onCl
               value={field.value ?? ''}
               onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
               helperText='Global aplica a todas las sedes'
+              slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
             >
               <MenuItem value=''>Global (todas las sedes)</MenuItem>
               {clinics.map((c) => (
