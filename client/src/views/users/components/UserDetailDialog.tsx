@@ -38,9 +38,9 @@ export function UserDetailDialog({ user, onClose }: UserDetailDialogProps) {
         }}
       >
         <Typography variant="h6" component="div" fontWeight={600}>
-          Detalle del Usuario
+          Detalle del usuario
         </Typography>
-        <IconButton size="small" onClick={onClose}>
+        <IconButton size="small" onClick={onClose} aria-label="Cerrar detalle del usuario">
           <i className="ri-close-line" style={{ fontSize: 22 }} />
         </IconButton>
       </DialogTitle>
@@ -84,6 +84,7 @@ export function UserDetailDialog({ user, onClose }: UserDetailDialogProps) {
                 <Chip
                   label={roleInfo.label}
                   color={roleInfo.color}
+                  variant="tonal"
                   size="small"
                 />
               </Box>
@@ -95,7 +96,8 @@ export function UserDetailDialog({ user, onClose }: UserDetailDialogProps) {
               <Box sx={{ mt: 0.5 }}>
                 <Chip
                   label={user.isActive ? 'Activo' : 'Inactivo'}
-                  color={user.isActive ? 'success' : 'error'}
+                  color={user.isActive ? 'success' : 'secondary'}
+                  variant="tonal"
                   size="small"
                 />
               </Box>
