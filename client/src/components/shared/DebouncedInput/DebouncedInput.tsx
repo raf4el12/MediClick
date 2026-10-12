@@ -22,12 +22,15 @@ export const DebouncedInput = memo(function DebouncedInput({
   }, [initialValue]);
 
   useEffect(() => {
+    // Sin cambio respecto del valor recibido no hay nada que emitir: al montarse, emitir '' devolvía
+    // la tabla a la página 1 aunque el usuario ya hubiera avanzado.
+    if (value === initialValue) return;
     const timeout = setTimeout(() => {
       onChange(value);
     }, debounce);
 
     return () => clearTimeout(timeout);
-  }, [value, onChange, debounce]);
+  }, [value, initialValue, onChange, debounce]);
 
   return (
     <TextField
