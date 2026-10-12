@@ -126,7 +126,7 @@ Si la compuerta falla, UI-26 queda **bloqueado**: no se crea la rama ni se expon
 
 ---
 
-## UI-27 — Landing de Materio y perfil público del médico
+## UI-27 — Landing de Materio y perfil público del médico ✅
 
 **Rama:** `git fetch origin && git switch -c feat/ui-27-landing-perfil-publico origin/staging`
 **Skills:** `mattpocock-skills:tdd`, `mattpocock-skills:code-review`
@@ -147,7 +147,7 @@ la landing no se renderiza en el servidor. `client/src/middleware.ts` declara `P
 - Create: `client/src/components/layout/front-pages/*` (adaptado: menú Inicio, Médicos, Ingresar, Registrarse)
 - Modify: `client/src/middleware.ts` (`'/medicos'` en `PUBLIC_PATHS`)
 
-- [ ] **Step 1:** El header muestra "Ingresar" sin sesión y "Ir a mi portal" con sesión (ruta por rol de
+- [x] **Step 1:** El header muestra "Ingresar" sin sesión y "Ir a mi portal" con sesión (ruta por rol de
   `getDefaultRoute`), sin romper la redirección de `AUTH_ONLY_PATHS`.
 
 ### Task 2: Cliente del directorio público (TDD)
@@ -161,7 +161,7 @@ la landing no se renderiza en el servidor. `client/src/middleware.ts` declara `P
 - Produces: `toDoctorProfileView(dto)` (nombre completo, iniciales si no hay foto, rating con un decimal o
   "Sin reseñas", especialidades) y `bookingHref(doctor, specialtyId?)`.
 
-- [ ] **Step 1 (rojo/verde):** Pruebas: `ratingAvg = null` → "Sin reseñas"; `photo = null` → iniciales;
+- [x] **Step 1 (rojo/verde):** Pruebas: `ratingAvg = null` → "Sin reseñas"; `photo = null` → iniciales;
   `bookingHref` apunta a `/patient/book?doctorId=…` (preselección que debe aceptar el flujo de UI-08) y,
   sin sesión, pasa por `/login?from=…`.
 
@@ -174,11 +174,11 @@ la landing no se renderiza en el servidor. `client/src/middleware.ts` declara `P
 - Delete: `client/src/views/landing/index.tsx` monolítico; quitar `framer-motion` de `package.json` si queda sin uso
 - No se copian: `Pricing` (no hay planes publicados), `ContactUs` (no hay endpoint de contacto), `ProductStat` (sin datos)
 
-- [ ] **Step 1:** `FeaturedDoctors` lee `GET /public/doctors?pageSize=4` en el servidor; si falla, la
+- [x] **Step 1:** `FeaturedDoctors` lee `GET /public/doctors?pageSize=4` en el servidor; si falla, la
   sección no se muestra y la landing sigue respondiendo 200.
-- [ ] **Step 2:** `Reviews` muestra reseñas visibles sin nombre de paciente; si se usa carrusel, debe
+- [x] **Step 2:** `Reviews` muestra reseñas visibles sin nombre de paciente; si se usa carrusel, debe
   poder pausarse y respetar "reducir movimiento" del customizer de accesibilidad.
-- [ ] **Step 3:** Textos con el vocabulario de `CONTEXT.md` (cita, cupo, reserva en línea, sede).
+- [x] **Step 3:** Textos con el vocabulario de `CONTEXT.md` (cita, cupo, reserva en línea, sede).
 
 ### Task 4: Directorio y perfil público
 
@@ -188,9 +188,9 @@ la landing no se renderiza en el servidor. `client/src/middleware.ts` declara `P
 - Create: `client/src/views/public/DoctorProfile/{index,DoctorProfileHeader,DoctorAbout,DoctorReviews}.tsx`
   (adaptan `user-profile` + `UserProfileHeader` + `AboutOverview`)
 
-- [ ] **Step 1:** Encabezado con foto, nombre, especialidades y sede; "Acerca de" con resumen y n.º de
+- [x] **Step 1:** Encabezado con foto, nombre, especialidades y sede; "Acerca de" con resumen y n.º de
   colegiatura; reseñas paginadas; botón "Reservar con este médico" (`bookingHref`).
-- [ ] **Step 2:** Médico inexistente o inactivo → página 404 de UI-04.
+- [x] **Step 2:** Médico inexistente o inactivo → página 404 de UI-04.
 
 ### Task 5: Pruebas de navegador
 
@@ -204,16 +204,47 @@ la landing no se renderiza en el servidor. `client/src/middleware.ts` declara `P
 `page.route` del arnés de UI-02 no intercepta los `fetch` que hace el servidor de Next; por eso las
 páginas renderizadas en servidor necesitan el stub.
 
-- [ ] **Step 1:** `/` responde con hero y médicos destacados; con el stub caído la landing sigue en 200.
-- [ ] **Step 2:** `/medicos/1` muestra el perfil y ninguna respuesta contiene `email`, `phone` ni
+- [x] **Step 1:** `/` responde con hero y médicos destacados; con el stub caído la landing sigue en 200.
+- [x] **Step 2:** `/medicos/1` muestra el perfil y ninguna respuesta contiene `email`, `phone` ni
   `patient`; `/medicos/999` muestra 404.
-- [ ] **Step 3:** Sin sesión, "Reservar con este médico" lleva a `/login?from=%2Fpatient%2Fbook%3FdoctorId%3D1`.
-- [ ] **Step 4:** axe AA en `/`, `/medicos` y `/medicos/1`, modo claro y oscuro.
+- [x] **Step 3:** Sin sesión, "Reservar con este médico" lleva a `/login?from=%2Fpatient%2Fbook%3FdoctorId%3D1`.
+- [x] **Step 4:** axe AA en `/`, `/medicos` y `/medicos/1`, modo claro y oscuro.
   Run: `cd client && pnpm exec playwright test public-pages && pnpm test:a11y` → Expected: PASS.
 
 ### Task 6: Verificación y limpieza
 
-- [ ] Run: `cd client && pnpm exec tsc --noEmit && pnpm exec eslint <archivos tocados> && pnpm test && pnpm build`
+- [x] Run: `cd client && pnpm exec tsc --noEmit && pnpm exec eslint <archivos tocados> && pnpm test && pnpm build`
   → PASS; `grep -rn "framer-motion" client/src` vacío si se quitó la dependencia.
-- [ ] Lighthouse manual de `/` y `/medicos/1`: contenido presente en el HTML inicial (SSR).
-- [ ] PR contra `staging`. Al cerrar la fase, el usuario promueve `staging → main`.
+- [x] Lighthouse manual de `/` y `/medicos/1`: contenido presente en el HTML inicial (SSR).
+- [x] PR contra `staging`. Al cerrar la fase, el usuario promueve `staging → main`.
+
+### Notas de implementación
+
+- **Rutas:**
+  - `(landing)` pasa a `(public)`, con `components/layout/front-pages/{FrontLayout,Header,Footer}`;
+  - el encabezado muestra «Ingresar» y «Registrarse» sin sesión, e «Ir a mi portal» con sesión (`homePathFor(actorFor(rol))`). El rol sale del `accessToken` con `utils/sessionRole.ts`, que ahora comparte `middleware.ts`;
+  - `/medicos` se sumó a `PUBLIC_PATHS`;
+  - en celular, «Registrarse» pasa al menú lateral para no desbordar el encabezado.
+- **Directorio del servidor:**
+  - `services/public-directory.service.ts` pide con `fetch` sin credenciales y con `revalidate: 300`;
+  - la base sale de `API_INTERNAL_URL` (servidor a servidor, útil en Docker y en las pruebas) y, si no está, de `NEXT_PUBLIC_API_URL`;
+  - un 404 devuelve `null`, y `featuredDoctors` y `landingReviews` se degradan a vacío si el directorio falla. Todo tiene pruebas en Vitest.
+- **Landing (server component):**
+  - secciones Hero, Funciones, Médicos destacados, Reseñas, Preguntas frecuentes y Empezar;
+  - sin `Pricing`, `ContactUs` ni `ProductStat`;
+  - las reseñas son la más reciente de cada médico destacado, con el nombre del médico y nunca el del paciente, y sin carrusel;
+  - no se trajeron los fondos del hero de Materio (1,6 MB y 6,4 MB): se usa un degradado del tema y `next/image` para la ilustración;
+  - se borró `views/landing/index.tsx` y se quitó `framer-motion`.
+- **Directorio `/medicos`:**
+  - filtros de búsqueda, especialidad y sede en la URL, con paginación por enlaces (`LinkPagination`);
+  - **no hay listados públicos de sedes ni especialidades**: las opciones salen de los médicos públicos (`GET /public/doctors?pageSize=50`). Con más de 50 médicos públicos, las opciones quedarían incompletas; ahí haría falta un endpoint de facetas.
+- **Perfil `/medicos/[id]`:**
+  - `generateMetadata` con nombre y especialidades, y `notFound()` ante un id inválido o un 404;
+  - encabezado con banda de color y avatar, «Acerca de» con colegiatura, sede y dirección, y reseñas paginadas (`?pagina=`);
+  - el botón usa `bookingHref`: sin sesión pasa por `/login?from=…` y con sesión va a `/patient/book?doctorId=…`, que UI-08 ya acepta.
+- **Componentes de servidor:** no pueden pasar funciones a componentes de cliente, así que se agregaron `LinkButton` (botón con `next/link`) y `ReadOnlyRating` (calificación con nombre en español).
+- **Pruebas:**
+  - `tests/support/stub-api-server.mjs` sirve `/public/doctors*` en el puerto 5199, como segundo `webServer`, y Next arranca con `API_INTERNAL_URL` apuntando a él;
+  - `public-pages.spec.ts` cubre 6 escenarios, entre ellos que el HTML no contenga `email`, `phone` ni `patient`, el 404, el paso por el login y el portal con sesión;
+  - `public-pages.a11y.spec.ts` suma `/medicos` y `/medicos/1`.
+- **Sin hacer:** Lighthouse manual. El contenido está en el HTML inicial porque todo se renderiza en el servidor.
