@@ -13,7 +13,8 @@ test.describe('páginas de error', () => {
   });
 
   test('una ruta sin permiso lleva al 401', async ({ page }) => {
-    await page.goto('/payments');
+    // /payments ya no sirve: su guard devuelve al paciente a su inicio (UI-25).
+    await page.goto('/reports');
 
     await expect(page).toHaveURL(/\/401$/, { timeout: 15_000 });
     await expect(page.getByRole('heading', { level: 1, name: 'No tienes acceso' })).toBeVisible();

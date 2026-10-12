@@ -1,238 +1,187 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import Box from '@mui/material/Box';
+import { useMemo, useState } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
+import Alert from '@mui/material/Alert';
 import Card from '@mui/material/Card';
-import Typography from '@mui/material/Typography';
+import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
-import CircularProgress from '@mui/material/CircularProgress';
-import Pagination from '@mui/material/Pagination';
-import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import { alpha } from '@mui/material/styles';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import { DataTable, type DataTablePagination } from '@/components/shared/DataTable';
 import { paymentsService } from '@/services/payments.service';
-import type { PaginatedPayments, PaymentStatus, PaymentQueryParams } from './types';
+import { formatPrice } from '@/views/booking/format';
+import type { PaymentQueryParams, PaymentStatus, Transaction } from './types';
 
-const PAGE_SIZE = 20;
+type ChipColor = 'success' | 'warning' | 'info' | 'secondary' | 'error';
 
-const STATUS_CONFIG: Record<PaymentStatus, { label: string; color: string }> = {
-  PAID:      { label: 'Pagado',    color: '#10b981' },
-  PENDING:   { label: 'Pendiente', color: '#f59e0b' },
-  PARTIAL:   { label: 'Parcial',   color: '#6366f1' },
-  REFUNDED:  { label: 'Reembolso', color: '#3b82f6' },
-  FAILED:    { label: 'Fallido',   color: '#ef4444' },
-  CANCELLED: { label: 'Cancelado', color: '#6b7280' },
+/** Estado de una transacción de pago (no de la cita). */
+const STATUS: Record<PaymentStatus, { label: string; color: ChipColor }> = {
+  PAID: { label: 'Aprobada', color: 'success' },
+  PENDING: { label: 'Pendiente', color: 'warning' },
+  PARTIAL: { label: 'Seña', color: 'info' },
+  REFUNDED: { label: 'Reembolsada', color: 'secondary' },
+  FAILED: { label: 'Rechazada', color: 'error' },
+  CANCELLED: { label: 'Cancelada', color: 'secondary' },
 };
 
 const METHOD_LABELS: Record<string, string> = {
   CASH: 'Efectivo',
-  CREDIT_CARD: 'Tarjeta crédito',
-  DEBIT_CARD: 'Tarjeta débito',
+  CREDIT_CARD: 'Tarjeta de crédito',
+  DEBIT_CARD: 'Tarjeta de débito',
   TRANSFER: 'Transferencia',
   INSURANCE: 'Seguro',
   OTHER: 'Otro',
 };
 
-function formatAmount(amount: number, currency: string) {
-  return new Intl.NumberFormat('es-PE', { style: 'currency', currency }).format(amount);
-}
+const formatDateTime = (iso: string) =>
+  new Intl.DateTimeFormat('es-PE', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('es-PE', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
+const columns: ColumnDef<Transaction>[] = [
+  {
+    id: 'appointment',
+    header: 'Cita',
+    cell: ({ row }) => <Typography color='text.primary' className='font-medium'>#{row.original.appointmentId}</Typography>,
+  },
+  {
+    id: 'payer',
+    header: 'Pagador',
+    cell: ({ row }) => row.original.payerEmail ?? '—',
+  },
+  {
+    id: 'amount',
+    header: 'Monto',
+    meta: { align: 'right' },
+    cell: ({ row }) => (
+      <Typography color='text.primary' className='font-medium tabular-nums'>
+        {formatPrice(row.original.amount, row.original.currency)}
+      </Typography>
+    ),
+  },
+  {
+    id: 'method',
+    header: 'Método',
+    meta: { hiddenOnMobile: true },
+    cell: ({ row }) => (row.original.paymentMethod ? (METHOD_LABELS[row.original.paymentMethod] ?? row.original.paymentMethod) : '—'),
+  },
+  {
+    id: 'status',
+    header: 'Estado',
+    cell: ({ row }) => {
+      const status = STATUS[row.original.status] ?? { label: row.original.status, color: 'secondary' as const };
+      return <Chip size='small' variant='tonal' color={status.color} label={status.label} />;
+    },
+  },
+  {
+    id: 'date',
+    header: 'Fecha',
+    meta: { hiddenOnMobile: true },
+    cell: ({ row }) => formatDateTime(row.original.createdAt),
+  },
+];
 
+/** Transacciones de pago de la sede (patrón `invoice/list` de Materio), solo para el personal. */
 export default function PaymentsView() {
-  const [page, setPage] = useState(1);
-  const [statusFilter, setStatusFilter] = useState<PaymentStatus | ''>('');
-  const [data, setData] = useState<PaginatedPayments | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState<PaymentStatus | ''>('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [pagination, setPagination] = useState<DataTablePagination>({ pageIndex: 0, pageSize: 10 });
 
-  const fetchPayments = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params: PaymentQueryParams = { page, limit: PAGE_SIZE };
-      if (statusFilter) params.status = statusFilter;
-      const res = await paymentsService.listPayments(params);
-      setData(res);
-    } catch {
-      // ignore
-    } finally {
-      setLoading(false);
-    }
-  }, [page, statusFilter]);
+  // El servidor acepta `limit` hasta 100: es el mayor tamaño de página ofrecido.
+  const params = useMemo<PaymentQueryParams>(
+    () => ({
+      ...(status ? { status } : {}),
+      ...(dateFrom ? { dateFrom } : {}),
+      ...(dateTo ? { dateTo } : {}),
+      page: pagination.pageIndex + 1,
+      limit: pagination.pageSize,
+    }),
+    [status, dateFrom, dateTo, pagination],
+  );
 
-  useEffect(() => {
-    void fetchPayments();
-  }, [fetchPayments]);
+  const payments = useQuery({
+    queryKey: ['payments', params],
+    queryFn: () => paymentsService.listPayments(params),
+    placeholderData: keepPreviousData,
+  });
 
-  const handleStatusChange = (value: string) => {
-    setStatusFilter(value as PaymentStatus | '');
-    setPage(1);
-  };
-
-  const transactions = data?.data ?? [];
+  const resetPage = () => setPagination((p) => ({ ...p, pageIndex: 0 }));
 
   return (
-    <Box sx={{ maxWidth: 960, mx: 'auto' }}>
-      {/* Header */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Box
-            sx={{
-              width: 44,
-              height: 44,
-              borderRadius: '12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
-              color: 'primary.main',
+    <div className='flex flex-col gap-6'>
+      <div>
+        <Typography variant='h4' component='h1'>
+          Pagos
+        </Typography>
+        <Typography color='text.secondary'>Transacciones de pago de las citas de la sede.</Typography>
+      </div>
+      <Card>
+        <CardContent className='flex flex-wrap gap-4'>
+          <TextField
+            select
+            id='pagos-estado'
+            size='small'
+            label='Estado'
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value as PaymentStatus | '');
+              resetPage();
             }}
+            className='is-full sm:is-48'
           >
-            <i className="ri-bank-card-line" style={{ fontSize: 24 }} />
-          </Box>
-          <Box>
-            <Typography variant="h5" fontWeight={700}>Pagos</Typography>
-            <Typography variant="body2" color="text.secondary">
-              {data ? `${data.total} transacciones` : 'Cargando...'}
-            </Typography>
-          </Box>
-        </Box>
-
-        <FormControl size="small" sx={{ minWidth: 160 }}>
-          <InputLabel>Estado</InputLabel>
-          <Select
-            label="Estado"
-            value={statusFilter}
-            onChange={(e) => handleStatusChange(e.target.value)}
-          >
-            <MenuItem value="">Todos</MenuItem>
-            {(Object.keys(STATUS_CONFIG) as PaymentStatus[]).map((s) => (
-              <MenuItem key={s} value={s}>{STATUS_CONFIG[s].label}</MenuItem>
+            <MenuItem value=''>Todas</MenuItem>
+            {(Object.keys(STATUS) as PaymentStatus[]).map((s) => (
+              <MenuItem key={s} value={s}>
+                {STATUS[s].label}
+              </MenuItem>
             ))}
-          </Select>
-        </FormControl>
-      </Box>
-
-      {/* Table card */}
-      <Card
-        sx={{
-          borderRadius: '12px',
-          boxShadow: (theme) => theme.palette.mode === 'dark' ? '0 2px 12px rgba(0,0,0,0.3)' : '0 2px 12px rgba(0,0,0,0.04)',
-          border: '1px solid',
-          borderColor: 'divider',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Column headers */}
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: '80px 1fr 120px 140px 120px 120px',
-            px: 3,
-            py: 1.5,
-            bgcolor: 'action.hover',
-            borderBottom: '1px solid',
-            borderColor: 'divider',
-          }}
-        >
-          {['#Cita', 'Pagador', 'Monto', 'Método', 'Estado', 'Fecha'].map((h) => (
-            <Typography key={h} variant="caption" fontWeight={700} color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              {h}
-            </Typography>
-          ))}
-        </Box>
-
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
-            <CircularProgress size={32} />
-          </Box>
-        ) : transactions.length === 0 ? (
-          <Box sx={{ textAlign: 'center', py: 8, px: 2 }}>
-            <i className="ri-bank-card-line" style={{ fontSize: 56, opacity: 0.15 }} />
-            <Typography variant="h6" color="text.secondary" fontWeight={600} sx={{ mt: 2 }}>
-              Sin transacciones
-            </Typography>
-            <Typography variant="body2" color="text.disabled" sx={{ mt: 0.5 }}>
-              {statusFilter ? 'No hay pagos con ese estado' : 'Aún no hay pagos registrados'}
-            </Typography>
-          </Box>
-        ) : (
-          transactions.map((tx, idx) => {
-            const cfg = STATUS_CONFIG[tx.status] ?? { label: tx.status, color: '#6b7280' };
-            return (
-              <Box key={tx.id}>
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: '80px 1fr 120px 140px 120px 120px',
-                    px: 3,
-                    py: 1.75,
-                    alignItems: 'center',
-                    '&:hover': { bgcolor: 'action.hover' },
-                    transition: 'background-color 150ms',
-                  }}
-                >
-                  <Typography variant="body2" color="text.secondary" fontWeight={500}>
-                    #{tx.appointmentId}
-                  </Typography>
-                  <Typography variant="body2" sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {tx.payerEmail ?? '—'}
-                  </Typography>
-                  <Typography variant="body2" fontWeight={600}>
-                    {formatAmount(tx.amount, tx.currency)}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {tx.paymentMethod ? (METHOD_LABELS[tx.paymentMethod] ?? tx.paymentMethod) : '—'}
-                  </Typography>
-                  <Chip
-                    label={cfg.label}
-                    size="small"
-                    sx={{
-                      height: 22,
-                      fontSize: '0.7rem',
-                      fontWeight: 700,
-                      bgcolor: alpha(cfg.color, 0.1),
-                      color: cfg.color,
-                      border: 'none',
-                      width: 'fit-content',
-                    }}
-                  />
-                  <Typography variant="caption" color="text.secondary">
-                    {formatDate(tx.createdAt)}
-                  </Typography>
-                </Box>
-                {idx < transactions.length - 1 && <Divider />}
-              </Box>
-            );
-          })
+          </TextField>
+          <TextField
+            id='pagos-desde'
+            size='small'
+            type='date'
+            label='Desde'
+            value={dateFrom}
+            onChange={(e) => {
+              setDateFrom(e.target.value);
+              resetPage();
+            }}
+            slotProps={{ inputLabel: { shrink: true } }}
+            className='is-full sm:is-44'
+          />
+          <TextField
+            id='pagos-hasta'
+            size='small'
+            type='date'
+            label='Hasta'
+            value={dateTo}
+            onChange={(e) => {
+              setDateTo(e.target.value);
+              resetPage();
+            }}
+            slotProps={{ inputLabel: { shrink: true } }}
+            className='is-full sm:is-44'
+          />
+        </CardContent>
+        {payments.isError && (
+          <Alert severity='error' className='mli-5 mbe-4'>
+            No se pudieron cargar las transacciones. Vuelve a intentarlo en unos minutos.
+          </Alert>
         )}
-
-        {data && data.totalPages > 1 && (
-          <>
-            <Divider />
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
-              <Pagination
-                count={data.totalPages}
-                page={page}
-                onChange={(_, v) => setPage(v)}
-                color="primary"
-                shape="rounded"
-                size="small"
-              />
-            </Box>
-          </>
-        )}
+        <DataTable
+          label='Transacciones de pago'
+          columns={columns}
+          rows={payments.data?.data ?? []}
+          totalRows={payments.data?.total ?? 0}
+          pagination={pagination}
+          onPaginationChange={setPagination}
+          pageSizeOptions={[10, 25, 50, 100]}
+          isLoading={payments.isLoading}
+          emptyMessage={status || dateFrom || dateTo ? 'No hay transacciones con esos filtros.' : 'Todavía no hay transacciones de pago.'}
+        />
       </Card>
-    </Box>
+    </div>
   );
 }
