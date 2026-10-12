@@ -2,8 +2,11 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsEnum, IsBoolean, IsString } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
+import { SortableBy } from '../../../../shared/utils/dtos/sortable-by.decorator.js';
+import { APPOINTMENT_SORT_FIELDS } from './appointment-dashboard-filter.dto.js';
 import { PaginationDto } from '../../../../shared/utils/dtos/pagination-dto.js';
 
+@SortableBy(APPOINTMENT_SORT_FIELDS)
 export class MyAppointmentsFilterDto extends PaginationDto {
   @ApiPropertyOptional({
     enum: AppointmentStatus,

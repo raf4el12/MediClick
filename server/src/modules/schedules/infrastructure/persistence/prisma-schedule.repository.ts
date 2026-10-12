@@ -6,6 +6,7 @@ import {
   ScheduleWithRelations,
   ScheduleWithAvailability,
   ScheduleWindow,
+  SlotWindow,
   CreateScheduleData,
   DoctorBooking,
 } from '../../domain/interfaces/schedule-data.interface.js';
@@ -283,6 +284,52 @@ export class PrismaScheduleRepository implements IScheduleRepository {
       scheduleDate: row.schedule.scheduleDate,
       startTime: row.startTime,
       endTime: row.endTime,
+    }));
+  }
+
+  async findSlotWindowsInRange(filter: {
+    doctorId?: number;
+    clinicId?: number;
+    from: Date;
+    to: Date;
+  }): Promise<SlotWindow[]> {
+    const rows = await this.prisma.schedules.findMany({
+      where: {
+        ...(filter.doctorId !== undefined ? { doctorId: filter.doctorId } : {}),
+        ...(filter.clinicId !== undefined
+          ? { doctor: { clinicId: filter.clinicId } }
+          : {}),
+        scheduleDate: {
+          gte: utcDayRange(filter.from).start,
+          lt: utcDayRange(filter.to).end,
+        },
+      },
+      select: {
+        id: true,
+        doctorId: true,
+        clinicId: true,
+        scheduleDate: true,
+        timeFrom: true,
+        timeTo: true,
+        doctor: { select: { clinicId: true } },
+        specialty: { select: { duration: true, bufferMinutes: true } },
+      },
+      orderBy: [
+        { doctorId: 'asc' },
+        { scheduleDate: 'asc' },
+        { timeFrom: 'asc' },
+      ],
+    });
+
+    return rows.map((row) => ({
+      id: row.id,
+      doctorId: row.doctorId,
+      clinicId: row.clinicId ?? row.doctor.clinicId ?? null,
+      scheduleDate: row.scheduleDate,
+      timeFrom: row.timeFrom,
+      timeTo: row.timeTo,
+      durationMinutes: row.specialty.duration,
+      bufferMinutes: row.specialty.bufferMinutes ?? 0,
     }));
   }
 }

@@ -35,6 +35,7 @@ import { MarkNoShowAppointmentUseCase } from '../../application/use-cases/mark-n
 import { GetMyAppointmentsUseCase } from '../../application/use-cases/get-my-appointments.use-case.js';
 import { GetMyAppointmentsSummaryUseCase } from '../../application/use-cases/get-my-appointments-summary.use-case.js';
 import { GetMyAppointmentUseCase } from '../../application/use-cases/get-my-appointment.use-case.js';
+import { GetAppointmentUseCase } from '../../application/use-cases/get-appointment.use-case.js';
 import { GetCancellationPreviewUseCase } from '../../application/use-cases/get-cancellation-preview.use-case.js';
 import { MyAppointmentsSummaryResponseDto } from '../../application/dto/my-appointments-summary-response.dto.js';
 import { CancellationPreviewResponseDto } from '../../application/dto/cancellation-preview-response.dto.js';
@@ -81,6 +82,7 @@ export class AppointmentController {
     private readonly getMyAppointmentsSummaryUseCase: GetMyAppointmentsSummaryUseCase,
     private readonly getMyAppointmentUseCase: GetMyAppointmentUseCase,
     private readonly getCancellationPreviewUseCase: GetCancellationPreviewUseCase,
+    private readonly getAppointmentUseCase: GetAppointmentUseCase,
   ) {}
 
   @Get('my')
@@ -424,5 +426,27 @@ export class AppointmentController {
     @Body() dto: RespondReminderDto,
   ): Promise<ReminderResponseResult> {
     return this.respondAppointmentReminderUseCase.execute(dto.token);
+  }
+
+  // Al final: `:id` no debe adelantarse a `my`, `doctor/today` ni `actions/respond`.
+  @Get(':id')
+  @Auth()
+  @RequirePermissions('READ', 'APPOINTMENTS')
+  @ApiOperation({
+    summary: 'Detalle de una cita para el personal, con su sede',
+    description:
+      'Misma forma que `GET /appointments/my/:id`. Personal de la sede de la cita, ' +
+      'el médico de la cita o un actor global; el paciente usa `my/:id`.',
+  })
+  @ApiResponse({ status: 200, type: AppointmentResponseDto })
+  @ApiResponse({
+    status: 404,
+    description: 'Cita inexistente o fuera de alcance',
+  })
+  getAppointment(
+    @CurrentUser() actor: AuthenticatedUser,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<AppointmentResponseDto> {
+    return this.getAppointmentUseCase.execute(actor, id);
   }
 }

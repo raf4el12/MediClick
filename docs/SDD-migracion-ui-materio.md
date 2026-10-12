@@ -272,8 +272,11 @@ su fase.
    crean seleccionando un rango y se editan en un drawer, y `/holidays` como vista anual;
    detalle en "Decisiones UI-17" del plan de la Fase 4.
 3. ~~Mutaciones de UI-18~~: resuelto (2026-10-10, UI-17). Solo la vista previa de impacto (M1),
-   un endpoint de lectura. Reofrecer a la lista de espera los cupos que libera quitar un bloqueo
-   o feriado (M4) queda fuera de esta fase: es una regla nueva y va en un ítem propio.
+   un endpoint de lectura. ~~Reofrecer a la lista de espera los cupos que libera quitar un bloqueo
+   o feriado (M4)~~: resuelto (2026-10-11) en un ítem propio. Borrar, desactivar o achicar un
+   bloqueo o feriado publica `availability.restriction_lifted` con los días liberados; un listener
+   de la lista de espera recalcula los cupos libres con `computeSlots` y ofrece cada uno con
+   `FindNextMatch`. Al levantar un feriado se completan antes los bloques de agenda del día.
 4. ¿Reagendar puede cambiar de médico o de especialidad? El glosario define el reagendamiento
    como mover la cita a otro cupo conservando su identidad, pero el caso de uso acepta un cupo de
    otro médico o especialidad. Bloquea el arrastre entre médicos en UI-16; hasta decidirlo,

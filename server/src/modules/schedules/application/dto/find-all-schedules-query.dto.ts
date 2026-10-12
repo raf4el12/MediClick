@@ -1,8 +1,19 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type, Transform } from 'class-transformer';
 import { IsInt, IsOptional, IsString, IsBoolean } from 'class-validator';
+import { SortableBy } from '../../../../shared/utils/dtos/sortable-by.decorator.js';
 import { PaginationDto } from '../../../../shared/utils/dtos/pagination-dto.js';
 
+export const SCHEDULE_SORT_FIELDS = [
+  'id',
+  'scheduleDate',
+  'timeFrom',
+  'timeTo',
+  'createdAt',
+  'updatedAt',
+] as const;
+
+@SortableBy(SCHEDULE_SORT_FIELDS)
 export class FindAllSchedulesQueryDto extends PaginationDto {
   @ApiPropertyOptional({
     example: 1,

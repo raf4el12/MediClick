@@ -6,6 +6,8 @@ import { IReviewRepository } from '../../domain/repositories/review.repository.j
 import {
   CreateReviewData,
   ReviewModerationFilters,
+  ReviewStats,
+  ReviewStatsFilters,
   ReviewWithRelations,
 } from '../../domain/interfaces/review-data.interface.js';
 import type { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
@@ -134,6 +136,52 @@ export class PrismaReviewRepository implements IReviewRepository {
       currentPage: Math.floor(page.offset / page.limit) + 1,
       rows: rows as unknown as ReviewWithRelations[],
     };
+  }
+
+  async stats(filters: ReviewStatsFilters): Promise<ReviewStats> {
+    const where: Prisma.ReviewsWhereInput = {
+      ...doctorClinicScope(filters.clinicId),
+      ...(filters.doctorId !== undefined && { doctorId: filters.doctorId }),
+    };
+    const visibleWhere = { ...where, isVisible: true };
+
+    // El callback de $transaction no hereda el tenant: el alcance de sede va
+    // explícito en `where`, por la sede del médico.
+    return this.prisma.$transaction(async (tx) => {
+      const [total, visibleAgg, byRating] = await Promise.all([
+        tx.reviews.count({ where }),
+        tx.reviews.aggregate({
+          where: visibleWhere,
+          _avg: { rating: true },
+          _count: { _all: true },
+        }),
+        tx.reviews.groupBy({
+          by: ['rating'],
+          where: visibleWhere,
+          _count: { _all: true },
+        }),
+      ]);
+
+      const distribution: ReviewStats['distribution'] = {
+        1: 0,
+        2: 0,
+        3: 0,
+        4: 0,
+        5: 0,
+      };
+      for (const row of byRating) {
+        if (row.rating >= 1 && row.rating <= 5) {
+          distribution[row.rating as 1 | 2 | 3 | 4 | 5] = row._count._all;
+        }
+      }
+
+      return {
+        total,
+        visible: visibleAgg._count._all,
+        averageRating: visibleAgg._avg.rating,
+        distribution,
+      };
+    });
   }
 
   // Promedio y conteo sobre reseñas VISIBLES (una oculta no cuenta).

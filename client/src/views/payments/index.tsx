@@ -10,6 +10,7 @@ import Chip from '@mui/material/Chip';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import LinkButton from '@/components/shared/LinkButton';
 import { DataTable, type DataTablePagination } from '@/components/shared/DataTable';
 import { paymentsService } from '@/services/payments.service';
 import { formatPrice } from '@/views/booking/format';
@@ -79,6 +80,25 @@ const columns: ColumnDef<Transaction>[] = [
     header: 'Fecha',
     meta: { hiddenOnMobile: true },
     cell: ({ row }) => formatDateTime(row.original.createdAt),
+  },
+  {
+    id: 'receipt',
+    header: 'Comprobante',
+    // Solo una transacción aprobada tiene comprobante; el documento lista todas las aprobadas de la cita.
+    cell: ({ row }) =>
+      row.original.status === 'PAID' ? (
+        <LinkButton
+          href={`/payments/${row.original.appointmentId}/comprobante`}
+          size='small'
+          variant='outlined'
+          aria-label={`Ver comprobante de la cita #${row.original.appointmentId}`}
+          startIcon={<i className='ri-file-text-line' aria-hidden />}
+        >
+          Ver
+        </LinkButton>
+      ) : (
+        '—'
+      ),
   },
 ];
 

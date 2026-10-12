@@ -21,6 +21,7 @@ import { MarkNoShowAppointmentUseCase } from './use-cases/mark-no-show-appointme
 import { GetMyAppointmentsUseCase } from './use-cases/get-my-appointments.use-case.js';
 import { GetMyAppointmentsSummaryUseCase } from './use-cases/get-my-appointments-summary.use-case.js';
 import { GetMyAppointmentUseCase } from './use-cases/get-my-appointment.use-case.js';
+import { GetAppointmentUseCase } from './use-cases/get-appointment.use-case.js';
 import { GetCancellationPreviewUseCase } from './use-cases/get-cancellation-preview.use-case.js';
 import { CreatePatientAppointmentUseCase } from './use-cases/create-patient-appointment.use-case.js';
 import { ExpirePendingAppointmentsUseCase } from './use-cases/expire-pending-appointments.use-case.js';
@@ -67,6 +68,7 @@ import { IssueAppointmentQrUseCase } from './use-cases/issue-appointment-qr.use-
     GetMyAppointmentsUseCase,
     GetMyAppointmentsSummaryUseCase,
     GetMyAppointmentUseCase,
+    GetAppointmentUseCase,
     GetCancellationPreviewUseCase,
     CreatePatientAppointmentUseCase,
     ExpirePendingAppointmentsUseCase,

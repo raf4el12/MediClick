@@ -1,5 +1,5 @@
 import { expectAccessible } from '../support/accessible';
-import type { ApiRequest } from '../support/api';
+import { reply, type ApiRequest } from '../support/api';
 import { expect, test } from '../support/fixtures';
 
 const transaction = (overrides: Record<string, unknown> = {}) => ({
@@ -17,6 +17,37 @@ const transaction = (overrides: Record<string, unknown> = {}) => ({
   createdAt: '2026-10-08T14:58:00.000Z',
   ...overrides,
 });
+
+const appointment = {
+  id: 101,
+  patientId: 100,
+  scheduleId: 10,
+  startTime: '09:00',
+  endTime: '09:30',
+  reason: null,
+  notes: null,
+  status: 'COMPLETED',
+  paymentStatus: 'PAID',
+  amount: 150,
+  cancelReason: null,
+  cancellationFee: null,
+  isOverbook: false,
+  pendingUntil: null,
+  patient: { id: 100, name: 'Ana', lastName: 'Paciente', email: 'ana.paciente@test.local' },
+  schedule: {
+    id: 10,
+    scheduleDate: '2026-10-08T00:00:00.000Z',
+    timeFrom: '08:00',
+    timeTo: '12:00',
+    doctor: { id: 1, name: 'Lucía', lastName: 'Paredes' },
+    specialty: { id: 2, name: 'Cardiología' },
+  },
+  timezone: 'America/Lima',
+  hasPrescription: false,
+  notesCount: 0,
+  createdAt: '2026-10-01T10:00:00.000Z',
+  clinic: { id: 1, name: 'Sede Miraflores', address: 'Av. Larco 1150, Miraflores', currency: 'PEN' },
+};
 
 const page1 = {
   data: [
@@ -83,5 +114,43 @@ test.describe('pagos del personal', () => {
     await page.getByRole('combobox', { name: /Filas por página/ }).click();
     await page.getByRole('option', { name: '100' }).click();
     await expect.poll(() => queries.at(-1)).toContain('page=1&limit=100');
+  });
+
+  test('solo una transacción aprobada enlaza al comprobante de su cita', async ({ page, api }) => {
+    api.on('GET /payments', page1);
+
+    await page.goto('/payments', { timeout: 30_000 });
+
+    const table = page.getByRole('table', { name: 'Transacciones de pago' });
+    await expect(table.getByRole('link', { name: 'Ver comprobante de la cita #101' })).toHaveAttribute('href', '/payments/101/comprobante');
+    await expect(table.getByRole('link', { name: /Ver comprobante/ })).toHaveCount(1);
+  });
+
+  test('el comprobante del personal carga la cita de la sede y sus pagos aprobados', async ({ page, api }) => {
+    const asked: string[] = [];
+    api.on('GET /appointments/:id', ({ path }: ApiRequest) => {
+      asked.push(path);
+      return appointment;
+    });
+    api.on('GET /payments/appointment/:id/receipts', [transaction({ paidAt: '2026-10-08T15:00:00.000Z', gatewayId: 'MP-101' })]);
+
+    await page.goto('/payments/101/comprobante', { timeout: 30_000 });
+
+    await expect(page.getByRole('heading', { level: 1, name: 'Comprobante de pago' })).toBeVisible();
+    await expect(page.getByText('Sede Miraflores')).toBeVisible();
+    await expect(page.getByText('Ana Paciente')).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'MP-101' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Volver a Pagos' })).toHaveAttribute('href', '/payments');
+    expect(asked).toEqual(['/appointments/101']);
+    await expectAccessible(page);
+  });
+
+  test('una cita de otra sede no muestra datos', async ({ page, api }) => {
+    api.on('GET /appointments/:id', reply(404, { message: 'Cita no encontrada' }));
+
+    await page.goto('/payments/999/comprobante', { timeout: 30_000 });
+
+    await expect(page.getByText('No encontramos esta cita.')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Volver a Pagos' })).toBeVisible();
   });
 });

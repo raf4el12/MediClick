@@ -24,18 +24,32 @@ const doctors = {
   rows: [{ id: 12, profile: { name: 'Lucía', lastName: 'Paredes' }, specialties: [], clinicId: 1, isActive: true }],
 };
 
+const stats = {
+  total: 7,
+  visible: 5,
+  hidden: 2,
+  averageRating: 4.2,
+  distribution: { 1: 0, 2: 0, 3: 1, 4: 2, 5: 2 },
+};
+
 const table = (page: Page) => page.getByRole('table', { name: 'Reseñas' });
 
 test.describe('moderación de reseñas', () => {
   test.use({ actor: 'ADMIN' });
 
   let queries: URLSearchParams[];
+  let statsQueries: URLSearchParams[];
   let hidden: boolean;
 
   test.beforeEach(({ api }) => {
     queries = [];
+    statsQueries = [];
     hidden = false;
     api.on('GET /doctors', doctors);
+    api.on('GET /reviews/stats', ({ query }: ApiRequest) => {
+      statsQueries.push(query);
+      return stats;
+    });
     api.on('GET /reviews', ({ query }: ApiRequest) => {
       queries.push(query);
       const rows = [review(1, ['Ana', 'Torres'], 5, { isVisible: !hidden }), review(2, ['Bruno', 'Salazar'], 1, { isVisible: false, comment: 'Lenguaje ofensivo' })];
@@ -50,6 +64,18 @@ test.describe('moderación de reseñas', () => {
     await expect(table(page).getByRole('row', { name: /Ana Torres/ })).toContainText('Visible');
     await expect(table(page).getByRole('row', { name: /Bruno Salazar/ })).toContainText('Reseña oculta');
     await expect(table(page).getByRole('row', { name: /Ana Torres/ }).getByRole('img', { name: '5 de 5 estrellas' })).toBeVisible();
+
+    // Los agregados vienen del servidor, no de la página visible.
+    const total = page.getByRole('region', { name: 'Calificación de la sede' });
+    await expect(total.getByText('7 reseñas en total')).toBeVisible();
+    await expect(total.getByText('2 ocultas')).toBeVisible();
+    await expect(total.getByLabel('Promedio 4.2 de 5')).toBeVisible();
+    await expect(total.getByRole('progressbar', { name: '4 estrellas: 2 de 5' })).toBeVisible();
+    const statistics = page.getByRole('region', { name: 'Estadísticas de reseñas' });
+    await expect(statistics.getByText('5 reseñas visibles')).toBeVisible();
+    await expect(statistics.getByText('80 %')).toBeVisible();
+    await expect(statistics.getByRole('img', { name: /Reseñas visibles por calificación/ })).toBeVisible();
+    expect(statsQueries[0]?.has('doctorId')).toBe(false);
     await expectAccessible(page);
 
     await page.getByRole('combobox', { name: 'Estado' }).click();
@@ -63,6 +89,9 @@ test.describe('moderación de reseñas', () => {
     await page.getByRole('combobox', { name: 'Médico' }).click();
     await page.getByRole('option', { name: 'Lucía Paredes' }).click();
     await expect.poll(() => queries.at(-1)?.get('doctorId')).toBe('12');
+    // Los agregados siguen el filtro de médico; estado y calificación no los cambian.
+    await expect.poll(() => statsQueries.at(-1)?.get('doctorId')).toBe('12');
+    expect(statsQueries).toHaveLength(2);
   });
 
   test('ocultar una reseña pide confirmación, envía la visibilidad y refresca la lista', async ({ page, api }) => {

@@ -1,5 +1,8 @@
 import { UpdateHolidayUseCase } from './update-holiday.use-case.js';
-import { AVAILABILITY_RESTRICTION_CHANGED_EVENT } from '../../../../shared/events/availability-events.interface.js';
+import {
+  AVAILABILITY_RESTRICTION_CHANGED_EVENT,
+  AVAILABILITY_RESTRICTION_LIFTED_EVENT,
+} from '../../../../shared/events/availability-events.interface.js';
 import type { IHolidayRepository } from '../../domain/repositories/holiday.repository.js';
 import type { HolidayEntity } from '../../domain/entities/holiday.entity.js';
 
@@ -71,6 +74,53 @@ describe('UpdateHolidayUseCase', () => {
         },
         actorId: 42,
       }),
+    );
+  });
+
+  it('mover el feriado libera el día anterior', async () => {
+    await useCase.execute(1, { date: '2030-06-03' }, 42, 7);
+
+    expect(eventEmitter.emit).toHaveBeenCalledWith(
+      AVAILABILITY_RESTRICTION_LIFTED_EVENT,
+      expect.objectContaining({
+        restrictionType: 'HOLIDAY',
+        restrictionId: 1,
+        clinicId: 7,
+        doctorId: null,
+        liftedRanges: [
+          {
+            startDate: new Date('2030-06-01T00:00:00.000Z'),
+            endDate: new Date('2030-06-01T00:00:00.000Z'),
+          },
+        ],
+        actorId: 42,
+      }),
+    );
+  });
+
+  it('desactivar el feriado libera su día; renombrarlo no libera nada', async () => {
+    holidayRepository.update.mockResolvedValue(
+      buildHoliday({ isActive: false }),
+    );
+    await useCase.execute(1, { isActive: false }, 42, 7);
+    expect(eventEmitter.emit).toHaveBeenCalledWith(
+      AVAILABILITY_RESTRICTION_LIFTED_EVENT,
+      expect.objectContaining({
+        liftedRanges: [
+          {
+            startDate: new Date('2030-06-01T00:00:00.000Z'),
+            endDate: new Date('2030-06-01T00:00:00.000Z'),
+          },
+        ],
+      }),
+    );
+
+    eventEmitter.emit.mockClear();
+    holidayRepository.update.mockResolvedValue(buildHoliday({ name: 'Otro' }));
+    await useCase.execute(1, { name: 'Otro' }, 42, 7);
+    expect(eventEmitter.emit).not.toHaveBeenCalledWith(
+      AVAILABILITY_RESTRICTION_LIFTED_EVENT,
+      expect.anything(),
     );
   });
 

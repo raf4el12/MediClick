@@ -153,6 +153,13 @@ export const appointmentsService = {
     return response.data;
   },
 
+  // Personal: cita de su sede (o cualquiera para un actor global), con la misma forma que `my/:id`
+  getById: async (id: number): Promise<Appointment> => {
+    const response = await api.get<Appointment>(`/appointments/${id}`);
+
+    return response.data;
+  },
+
   getCheckInQr: async (id: number): Promise<CheckInQr> => {
     const response = await api.get<CheckInQr>(`/appointments/${id}/check-in-qr`);
 

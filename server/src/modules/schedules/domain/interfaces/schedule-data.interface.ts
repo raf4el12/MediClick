@@ -64,3 +64,15 @@ export interface DoctorBooking {
   startTime: Date;
   endTime: Date;
 }
+
+/**
+ * Bloque de agenda con lo necesario para fragmentarlo en cupos sin otra
+ * consulta: la sede efectiva (del bloque o del médico) y la duración y el
+ * descanso de su especialidad.
+ */
+export interface SlotWindow extends ScheduleWindow {
+  doctorId: number;
+  clinicId: number | null;
+  durationMinutes: number;
+  bufferMinutes: number;
+}
