@@ -1,6 +1,9 @@
-import { IsInt, IsString, IsOptional } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsInt, IsString, IsOptional, IsIn } from 'class-validator';
+import { Type, Transform } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+
+export const ORDER_BY_MODES = ['asc', 'desc'] as const;
+export type OrderByMode = (typeof ORDER_BY_MODES)[number];
 
 export class PaginationDto {
   @ApiPropertyOptional({
@@ -41,11 +44,15 @@ export class PaginationDto {
 
   @ApiPropertyOptional({
     example: 'desc',
-    description: 'Modo de ordenamiento (ASC o DESC)',
+    enum: ORDER_BY_MODES,
+    description: 'Modo de ordenamiento (asc o desc)',
   })
   @IsOptional()
-  @IsString()
-  orderByMode?: string;
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.toLowerCase() : value,
+  )
+  @IsIn(ORDER_BY_MODES, { message: 'orderByMode debe ser asc o desc' })
+  orderByMode?: OrderByMode;
 
   @ApiPropertyOptional({
     example: 5,

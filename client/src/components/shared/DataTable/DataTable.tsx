@@ -13,6 +13,8 @@ declare module '@tanstack/react-table' {
     align?: 'left' | 'center' | 'right';
     /** La columna se oculta en pantallas angostas. */
     hiddenOnMobile?: boolean;
+    /** Columna del servidor por la que ordena (solo las tablas que no usan `enableSorting`). */
+    sortField?: string;
   }
 }
 
