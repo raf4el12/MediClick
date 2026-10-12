@@ -59,6 +59,7 @@ describe('AppointmentQrController (Rutas QR del Controlador)', () => {
       {} as any, // getMyAppointmentsSummaryUseCase
       {} as any, // getMyAppointmentUseCase
       {} as any, // getCancellationPreviewUseCase
+      {} as any, // getAppointmentUseCase
     );
   });
 

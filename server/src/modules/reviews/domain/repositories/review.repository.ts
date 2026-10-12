@@ -1,6 +1,8 @@
 import {
   CreateReviewData,
   ReviewModerationFilters,
+  ReviewStats,
+  ReviewStatsFilters,
   ReviewWithRelations,
 } from '../interfaces/review-data.interface.js';
 import type { PaginatedResult } from '../../../../shared/domain/interfaces/paginated-result.interface.js';
@@ -43,4 +45,6 @@ export interface IReviewRepository {
     filters: ReviewModerationFilters,
     page: { offset: number; limit: number },
   ): Promise<PaginatedResult<ReviewWithRelations>>;
+  /** Agregados para moderar: total, visibles, promedio y distribución de visibles. */
+  stats(filters: ReviewStatsFilters): Promise<ReviewStats>;
 }

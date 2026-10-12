@@ -22,11 +22,14 @@ import {
   PaginatedReviewResponseDto,
 } from '../../application/dto/review-response.dto.js';
 import { ListReviewsQueryDto } from '../../application/dto/list-reviews-query.dto.js';
+import { ReviewStatsQueryDto } from '../../application/dto/review-stats-query.dto.js';
+import { ReviewStatsResponseDto } from '../../application/dto/review-stats-response.dto.js';
 import { CreateReviewUseCase } from '../../application/use-cases/create-review.use-case.js';
 import { GetDoctorReviewsUseCase } from '../../application/use-cases/get-doctor-reviews.use-case.js';
 import { GetMyReviewsUseCase } from '../../application/use-cases/get-my-reviews.use-case.js';
 import { SetReviewVisibilityUseCase } from '../../application/use-cases/set-review-visibility.use-case.js';
 import { ListReviewsForModerationUseCase } from '../../application/use-cases/list-reviews-for-moderation.use-case.js';
+import { GetReviewStatsUseCase } from '../../application/use-cases/get-review-stats.use-case.js';
 import type { AuthenticatedUser } from '../../../../shared/domain/interfaces/authenticated-user.interface.js';
 
 @ApiTags('Reviews')
@@ -38,6 +41,7 @@ export class ReviewController {
     private readonly getMyReviewsUseCase: GetMyReviewsUseCase,
     private readonly setReviewVisibilityUseCase: SetReviewVisibilityUseCase,
     private readonly listReviewsForModerationUseCase: ListReviewsForModerationUseCase,
+    private readonly getReviewStatsUseCase: GetReviewStatsUseCase,
   ) {}
 
   @Post()
@@ -73,6 +77,24 @@ export class ReviewController {
     @CurrentUser() actor: AuthenticatedUser,
   ): Promise<PaginatedReviewResponseDto> {
     return this.listReviewsForModerationUseCase.execute(query, actor);
+  }
+
+  @Get('stats')
+  @Auth()
+  @RequirePermissions('UPDATE', 'REVIEWS')
+  @ApiOperation({
+    summary:
+      'Agregados de reseñas para moderar, con el alcance de sede del actor',
+    description:
+      'Total, visibles, ocultas, promedio y distribución por calificación de las ' +
+      'visibles. Mismo alcance que el listado de moderación; `doctorId` acota a un médico.',
+  })
+  @ApiResponse({ status: 200, type: ReviewStatsResponseDto })
+  async stats(
+    @Query() query: ReviewStatsQueryDto,
+    @CurrentUser() actor: AuthenticatedUser,
+  ): Promise<ReviewStatsResponseDto> {
+    return this.getReviewStatsUseCase.execute(query, actor);
   }
 
   @Get('my')
