@@ -13,11 +13,21 @@ const publicPages: PublicPage[] = [
     name: 'página de inicio',
     path: '/',
     ready: async (page) => {
-      const headline = page
-        .getByText('Gestiona tus citas, pacientes y clínicas en', { exact: false })
-        .first();
-      await expect(headline).toBeVisible();
-      await expect(headline.locator('..')).toHaveCSS('opacity', '1');
+      await expect(page.getByRole('heading', { level: 1, name: /Reserva tu cita médica/ })).toBeVisible();
+    },
+  },
+  {
+    name: 'directorio de médicos',
+    path: '/medicos',
+    ready: async (page) => {
+      await expect(page.getByRole('list', { name: 'Médicos' })).toBeVisible();
+    },
+  },
+  {
+    name: 'perfil público del médico',
+    path: '/medicos/1',
+    ready: async (page) => {
+      await expect(page.getByRole('heading', { level: 1, name: 'Lucía Paredes' })).toBeVisible();
     },
   },
   {
