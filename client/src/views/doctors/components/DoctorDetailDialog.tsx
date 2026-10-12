@@ -34,9 +34,9 @@ export function DoctorDetailDialog({ doctor, onClose }: DoctorDetailDialogProps)
         }}
       >
         <Typography component="span" variant="h6" fontWeight={600}>
-          Detalle del Doctor
+          Detalle del médico
         </Typography>
-        <IconButton size="small" onClick={onClose}>
+        <IconButton size="small" onClick={onClose} aria-label="Cerrar detalle del médico">
           <i className="ri-close-line" style={{ fontSize: 22 }} />
         </IconButton>
       </DialogTitle>
@@ -98,7 +98,8 @@ export function DoctorDetailDialog({ doctor, onClose }: DoctorDetailDialogProps)
               <Box sx={{ mt: 0.5 }}>
                 <Chip
                   label={doctor.isActive ? 'Activo' : 'Inactivo'}
-                  color={doctor.isActive ? 'success' : 'error'}
+                  color={doctor.isActive ? 'success' : 'secondary'}
+                  variant="tonal"
                   size="small"
                 />
               </Box>
