@@ -1,25 +1,21 @@
 'use client';
 
 import { useEffect } from 'react';
-import Dialog from '@mui/material/Dialog';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import MenuItem from '@mui/material/MenuItem';
 import CircularProgress from '@mui/material/CircularProgress';
+import Divider from '@mui/material/Divider';
+import Drawer from '@mui/material/Drawer';
 import IconButton from '@mui/material/IconButton';
+import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import { alpha, useTheme } from '@mui/material/styles';
-
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-
 import type { Patient } from '@/views/patients/types';
+import { medicalHistorySchema, type MedicalHistoryFormValues } from '../functions/medical-history.schema';
+import { HISTORY_STATUS, HISTORY_STATUSES } from '../status';
 import type { MedicalHistory } from '../types';
 import { MedicalHistoryStatus } from '../types';
-import { medicalHistorySchema, type MedicalHistoryFormValues } from '../functions/medical-history.schema';
 
 interface MedicalHistoryFormProps {
   open: boolean;
@@ -31,23 +27,10 @@ interface MedicalHistoryFormProps {
   submitting: boolean;
 }
 
-const STATUS_OPTIONS = [
-  { value: MedicalHistoryStatus.ACTIVE, label: 'Activa' },
-  { value: MedicalHistoryStatus.CHRONIC, label: 'Crónica' },
-  { value: MedicalHistoryStatus.RESOLVED, label: 'Resuelta' },
-];
-
-export function MedicalHistoryForm({
-  open,
-  onClose,
-  onSubmit,
-  entry,
-  patients,
-  selectedPatientId,
-  submitting,
-}: MedicalHistoryFormProps) {
-  const theme = useTheme();
+/** Alta y edición de un antecedente en un drawer lateral (patrón `AddUserDrawer` de Materio). */
+export function MedicalHistoryForm({ open, onClose, onSubmit, entry, patients, selectedPatientId, submitting }: MedicalHistoryFormProps) {
   const isEdit = !!entry;
+  const title = isEdit ? 'Editar entrada' : 'Nueva entrada';
 
   const {
     control,
@@ -67,199 +50,157 @@ export function MedicalHistoryForm({
   });
 
   useEffect(() => {
-    if (open) {
-      if (entry) {
-        reset({
-          patientId: entry.patientId,
-          condition: entry.condition,
-          description: entry.description ?? '',
-          diagnosedDate: entry.diagnosedDate ? entry.diagnosedDate.split('T')[0] : '',
-          status: entry.status,
-          notes: entry.notes ?? '',
-        });
-      } else {
-        reset({
-          patientId: selectedPatientId ?? 0,
-          condition: '',
-          description: '',
-          diagnosedDate: '',
-          status: MedicalHistoryStatus.ACTIVE,
-          notes: '',
-        });
-      }
-    }
+    if (!open) return;
+    reset(
+      entry
+        ? {
+            patientId: entry.patientId,
+            condition: entry.condition,
+            description: entry.description ?? '',
+            diagnosedDate: entry.diagnosedDate ? entry.diagnosedDate.split('T')[0] : '',
+            status: entry.status,
+            notes: entry.notes ?? '',
+          }
+        : {
+            patientId: selectedPatientId ?? 0,
+            condition: '',
+            description: '',
+            diagnosedDate: '',
+            status: MedicalHistoryStatus.ACTIVE,
+            notes: '',
+          },
+    );
   }, [open, entry, selectedPatientId, reset]);
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      {/* Header */}
-      <Box
-        sx={{
-          px: 3,
-          pt: 2.5,
-          pb: 2,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderBottom: `3px solid ${theme.palette.primary.main}`,
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Box
-            sx={{
-              width: 36,
-              height: 36,
-              borderRadius: 2,
-              bgcolor: alpha(theme.palette.primary.main, 0.1),
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <i
-              className={isEdit ? 'ri-pencil-line' : 'ri-add-circle-line'}
-              style={{ fontSize: 20, color: theme.palette.primary.main }}
-            />
-          </Box>
-          <Typography variant="h6" component="span" fontWeight={700}>
-            {isEdit ? 'Editar Entrada' : 'Nueva Entrada'}
-          </Typography>
-        </Box>
-        <IconButton size="small" onClick={onClose}>
-          <i className="ri-close-line" style={{ fontSize: 20 }} />
+    <Drawer
+      open={open}
+      anchor='right'
+      onClose={onClose}
+      slotProps={{ paper: { role: 'dialog', 'aria-modal': true, 'aria-label': title, className: 'is-full sm:is-[440px]' } }}
+    >
+      <div className='flex items-center justify-between pli-5 plb-4'>
+        <Typography variant='h5' component='h2'>
+          {title}
+        </Typography>
+        <IconButton size='small' aria-label='Cerrar' onClick={onClose}>
+          <i className='ri-close-line text-2xl' aria-hidden />
         </IconButton>
-      </Box>
-
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <DialogContent sx={{ pt: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-          {!isEdit && (
-            <Controller
-              name="patientId"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  select
-                  label="Paciente"
-                  error={!!errors.patientId}
-                  helperText={errors.patientId?.message}
-                  fullWidth
-                  disabled={!!selectedPatientId}
-                >
-                  {patients.map((p) => (
-                    <MenuItem key={p.id} value={p.id}>
-                      {p.profile.name} {p.profile.lastName}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
+      </div>
+      <Divider />
+      <form className='flex flex-col gap-5 p-5' onSubmit={handleSubmit(onSubmit)}>
+        {!isEdit && (
+          <Controller
+            name='patientId'
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                id='historial-paciente'
+                select
+                label='Paciente'
+                error={!!errors.patientId}
+                helperText={errors.patientId?.message}
+                fullWidth
+                disabled={!!selectedPatientId}
+              >
+                {patients.map((p) => (
+                  <MenuItem key={p.id} value={p.id}>
+                    {p.profile.name} {p.profile.lastName}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
+          />
+        )}
+        <Controller
+          name='condition'
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              id='historial-condicion'
+              label='Condición'
+              error={!!errors.condition}
+              helperText={errors.condition?.message}
+              fullWidth
+              placeholder='Diabetes tipo 2, hipertensión…'
             />
           )}
-
-          <Controller
-            name="condition"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Condición"
-                error={!!errors.condition}
-                helperText={errors.condition?.message}
-                fullWidth
-                placeholder="Ej: Diabetes tipo 2, Hipertensión..."
-              />
-            )}
-          />
-
-          <Controller
-            name="description"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Descripción"
-                multiline
-                rows={3}
-                error={!!errors.description}
-                helperText={errors.description?.message}
-                fullWidth
-                placeholder="Descripción detallada de la condición..."
-              />
-            )}
-          />
-
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Controller
-              name="diagnosedDate"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Fecha de Diagnóstico"
-                  type="date"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  error={!!errors.diagnosedDate}
-                  helperText={errors.diagnosedDate?.message}
-                  fullWidth
-                />
-              )}
+        />
+        <Controller
+          name='description'
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              id='historial-descripcion'
+              label='Descripción'
+              multiline
+              rows={3}
+              error={!!errors.description}
+              helperText={errors.description?.message}
+              fullWidth
             />
-
-            <Controller
-              name="status"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  select
-                  label="Estado"
-                  error={!!errors.status}
-                  helperText={errors.status?.message}
-                  fullWidth
-                >
-                  {STATUS_OPTIONS.map((opt) => (
-                    <MenuItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            />
-          </Box>
-
+          )}
+        />
+        <div className='grid gap-4 sm:grid-cols-2'>
           <Controller
-            name="notes"
+            name='diagnosedDate'
             control={control}
             render={({ field }) => (
               <TextField
                 {...field}
-                label="Notas"
-                multiline
-                rows={3}
-                error={!!errors.notes}
-                helperText={errors.notes?.message}
+                id='historial-diagnostico'
+                label='Fecha de diagnóstico'
+                type='date'
+                slotProps={{ inputLabel: { shrink: true } }}
+                error={!!errors.diagnosedDate}
+                helperText={errors.diagnosedDate?.message}
                 fullWidth
-                placeholder="Notas adicionales, medicación, observaciones..."
               />
             )}
           />
-        </DialogContent>
-
-        <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>
-          <Button onClick={onClose} disabled={submitting} variant="outlined" size="small">
+          <Controller
+            name='status'
+            control={control}
+            render={({ field }) => (
+              <TextField {...field} id='historial-estado' select label='Estado' error={!!errors.status} helperText={errors.status?.message} fullWidth>
+                {HISTORY_STATUSES.map((s) => (
+                  <MenuItem key={s} value={s}>
+                    {HISTORY_STATUS[s].label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            )}
+          />
+        </div>
+        <Controller
+          name='notes'
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              id='historial-notas'
+              label='Notas'
+              multiline
+              rows={3}
+              error={!!errors.notes}
+              helperText={errors.notes?.message}
+              fullWidth
+              placeholder='Medicación, observaciones…'
+            />
+          )}
+        />
+        <div className='flex gap-3'>
+          <Button type='submit' variant='contained' disabled={submitting} startIcon={submitting ? <CircularProgress size={16} color='inherit' /> : null}>
+            {isEdit ? 'Guardar cambios' : 'Guardar'}
+          </Button>
+          <Button variant='outlined' onClick={onClose} disabled={submitting}>
             Cancelar
           </Button>
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={submitting}
-            startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : null}
-            size="small"
-          >
-            {isEdit ? 'Actualizar' : 'Guardar'}
-          </Button>
-        </DialogActions>
+        </div>
       </form>
-    </Dialog>
+    </Drawer>
   );
 }

@@ -1,18 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import type { CreateClinicalNotePayload } from '../types';
 
 interface ClinicalNoteFormProps {
   appointmentId: number;
   loading: boolean;
-  onSubmit: (payload: CreateClinicalNotePayload) => Promise<void>;
+  onSubmit: (payload: CreateClinicalNotePayload) => Promise<unknown>;
 }
 
 export function ClinicalNoteForm({ appointmentId, loading, onSubmit }: ClinicalNoteFormProps) {
@@ -26,8 +25,7 @@ export function ClinicalNoteForm({ appointmentId, loading, onSubmit }: ClinicalN
     setFormError(null);
 
     if (!diagnosis.trim() && !summary.trim() && !plan.trim()) {
-      setFormError('Debes completar al menos un campo antes de guardar.');
-
+      setFormError('Completa al menos un campo antes de guardar.');
       return;
     }
 
@@ -38,67 +36,48 @@ export function ClinicalNoteForm({ appointmentId, loading, onSubmit }: ClinicalN
       ...(plan.trim() ? { plan: plan.trim() } : {}),
     };
 
-    await onSubmit(payload);
-    setDiagnosis('');
-    setSummary('');
-    setPlan('');
+    try {
+      await onSubmit(payload);
+      setDiagnosis('');
+      setSummary('');
+      setPlan('');
+    } catch {
+      // El drawer muestra el mensaje del servidor.
+    }
   };
 
   return (
-    <Box component="form" onSubmit={(e) => { void handleSubmit(e); }} sx={{ mt: 1 }}>
-      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1.5 }}>
-        Agregar nueva nota
+    <form className='flex flex-col gap-4' onSubmit={(e) => void handleSubmit(e)}>
+      <Typography variant='h6' component='h3'>
+        Agregar nota
       </Typography>
-
-      {formError && (
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          {formError}
-        </Alert>
-      )}
-
+      {formError && <Alert severity='warning'>{formError}</Alert>}
+      <TextField id='nota-diagnostico' label='Diagnóstico' value={diagnosis} onChange={(e) => setDiagnosis(e.target.value)} fullWidth size='small' disabled={loading} />
       <TextField
-        label="Diagnóstico"
-        value={diagnosis}
-        onChange={(e) => setDiagnosis(e.target.value)}
-        fullWidth
-        size="small"
-        sx={{ mb: 2 }}
-        disabled={loading}
-      />
-
-      <TextField
-        label="Resumen / Anamnesis"
+        id='nota-resumen'
+        label='Resumen / anamnesis'
         value={summary}
         onChange={(e) => setSummary(e.target.value)}
         fullWidth
         multiline
         minRows={3}
-        size="small"
-        sx={{ mb: 2 }}
+        size='small'
         disabled={loading}
       />
-
       <TextField
-        label="Plan de tratamiento"
+        id='nota-plan'
+        label='Plan de tratamiento'
         value={plan}
         onChange={(e) => setPlan(e.target.value)}
         fullWidth
         multiline
         minRows={3}
-        size="small"
-        sx={{ mb: 2 }}
+        size='small'
         disabled={loading}
       />
-
-      <Button
-        type="submit"
-        variant="contained"
-        fullWidth
-        disabled={loading}
-        startIcon={loading ? <CircularProgress size={16} color="inherit" /> : undefined}
-      >
-        {loading ? 'Guardando...' : 'Guardar Nota'}
+      <Button type='submit' variant='contained' disabled={loading} startIcon={loading ? <CircularProgress size={16} color='inherit' /> : undefined}>
+        Guardar nota
       </Button>
-    </Box>
+    </form>
   );
 }

@@ -227,7 +227,7 @@ expectAccessible(page)                          // axe WCAG 2.0/2.1 A y AA
 | UI-23 ✅ | 6 Admin | Roles y permisos con las vistas de Materio | — | UI-22 | `tdd` |
 | UI-24 ✅ | 6 Admin | Moderación de reseñas con alcance de sede y listado por sede | Sí | UI-22 | `mediclick-tenant-safety` + `tdd` |
 | UI-25 | 6 Admin | Pagos, dashboard de administración y reportes en recharts; `/payments` solo en `(staff)` | — | UI-22 | `tdd` |
-| UI-28 | 6 Admin | Pantallas clínicas del personal: notas clínicas, recetas e historia médica | — | UI-22 | `tdd` |
+| UI-28 ✅ | 6 Admin | Pantallas clínicas del personal: notas clínicas, recetas e historia médica | — | UI-22 | `tdd` |
 | UI-30 ✅ | 6 Admin | Lista de espera del personal | — | UI-22 | `tdd` |
 | UI-26 ✅ | 7 Público | Endpoints públicos del perfil del médico: solo campos profesionales y reseñas visibles, con throttle; bloqueado hasta corregir el throttle evadible (§9) | Sí | — | `mediclick-tenant-safety` + `tdd` |
 | UI-27 | 7 Público | Landing de Materio y perfil público del médico | — | UI-26, UI-04, UI-08 (médico preseleccionado) | `tdd` |

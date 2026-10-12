@@ -301,7 +301,7 @@ usan recharts.
 
 ---
 
-## UI-28 — Pantallas clínicas del personal
+## UI-28 — Pantallas clínicas del personal ✅
 
 **Rama:** `git fetch origin && git switch -c feat/ui-28-pantallas-clinicas origin/staging`
 **Skills:** `mattpocock-skills:tdd`, `mattpocock-skills:code-review`
@@ -334,10 +334,10 @@ Estado verificado (comportamiento a conservar):
 - Produces: mismas acciones; la cita seleccionada se refleja en la URL (`?appointmentId=`) para poder
   compartir y recargar el drawer abierto.
 
-- [ ] **Step 1 (rojo/verde):** Prueba Vitest del parseo de `?appointmentId=` (`functions/selectedAppointment.ts`):
+- [x] **Step 1 (rojo/verde):** Prueba Vitest del parseo de `?appointmentId=` (`functions/selectedAppointment.ts`):
   número válido → id; vacío, negativo o no numérico → `null`.
-- [ ] **Step 2:** Mantener la carga diferida del panel de recetas y el estado de error del panel.
-- [ ] **Step 3:** Etiquetas con vocabulario de `CONTEXT.md` (cita, paciente, médico).
+- [x] **Step 2:** Mantener la carga diferida del panel de recetas y el estado de error del panel.
+- [x] **Step 3:** Etiquetas con vocabulario de `CONTEXT.md` (cita, paciente, médico).
 
 ### Task 2: Antecedentes con tarjetas y lista de Materio
 
@@ -348,20 +348,46 @@ Estado verificado (comportamiento a conservar):
 - Delete: `MedicalHistoryKPIs.tsx` (absorbido); `MedicalHistoryDeleteDialog.tsx` si se usa el `ConfirmDialog` único de UI-22
 - Create: `client/src/views/medical-history/functions/historyCounts.ts` + `historyCounts.test.ts`
 
-- [ ] **Step 1 (rojo/verde):** `historyCounts(entries)` → `{ active, chronic, resolved }` igual que el
+- [x] **Step 1 (rojo/verde):** `historyCounts(entries)` → `{ active, chronic, resolved }` igual que el
   cálculo actual de `MedicalHistoryKPIs.tsx:77-79`; lista vacía → ceros.
-- [ ] **Step 2:** Sin paciente elegido: alta deshabilitada y estado vacío explicativo (como hoy).
+- [x] **Step 2:** Sin paciente elegido: alta deshabilitada y estado vacío explicativo (como hoy).
 
 ### Task 3: Pruebas de navegador
 
 **Files:** Create: `client/tests/e2e/clinical-screens.spec.ts`
 
-- [ ] **Step 1:** `actor: 'DOCTOR'` en `/clinical-notes`: elegir cita abre el drawer con sus notas; guardar
+- [x] **Step 1:** `actor: 'DOCTOR'` en `/clinical-notes`: elegir cita abre el drawer con sus notas; guardar
   envía `POST /clinical-notes` con `appointmentId` y recarga.
-- [ ] **Step 2:** `/prescriptions`: crear receta envía `POST /prescriptions`; "Descargar PDF" pide el PDF de esa cita.
-- [ ] **Step 3:** `/medical-history`: elegir paciente carga lista y tarjetas; cambiar estado envía `PATCH .../status`.
-- [ ] **Step 4:** `actor: 'PATIENT'` no entra a ninguna de las tres rutas; `expectAccessible` con drawer abierto y cerrado.
+- [x] **Step 2:** `/prescriptions`: crear receta envía `POST /prescriptions`; "Descargar PDF" pide el PDF de esa cita.
+- [x] **Step 3:** `/medical-history`: elegir paciente carga lista y tarjetas; cambiar estado envía `PATCH .../status`.
+- [x] **Step 4:** `actor: 'PATIENT'` no entra a ninguna de las tres rutas; `expectAccessible` con drawer abierto y cerrado.
   Run: `cd client && pnpm exec playwright test clinical-screens` → Expected: PASS.
+
+### Notas de implementación
+
+- **Pieza común de notas y recetas** (`views/clinical-shared`):
+  - `ClinicalAppointmentsTable`: filtros desde, hasta, estado y búsqueda, más la tabla de citas sobre `DataTable`. Cada pantalla aporta su columna (notas o receta) y la acción que abre el drawer.
+  - `ClinicalDrawer`: drawer derecho al estilo `AddUserDrawer`, de ancho completo en celular.
+  - `useSelectedAppointmentId`: guarda la cita en `?appointmentId=`, con `parseAppointmentId` y sus pruebas.
+  - Las dos tablas anteriores (`ClinicalNotesTable`, `PrescriptionsTable`) se borraron.
+- **Selección por URL:** la cita abierta sale de la URL, así que recargar o compartir el enlace reabre el drawer.
+  - Si la cita no está en la página visible de la tabla, el título del drawer sale de las notas o de la receta.
+  - Las páginas envuelven la vista en `Suspense`, porque `useSearchParams` lo exige.
+- **Datos del drawer:** las notas y la receta se piden con React Query con las mismas claves que el espacio de atención del médico (UI-16): `['clinical-notes', 'appointment', id]` y `['prescription', 'appointment', id]`. Así las dos vistas comparten caché.
+  - En la receta, un 404 sigue siendo «todavía sin receta».
+  - Crear invalida esa clave y vuelve a pedir la tabla, como antes.
+  - Un error al crear se muestra en el drawer; antes quedaba sin manejar.
+- **Formularios:** se conservan `ClinicalNoteForm` y `PrescriptionForm`, reestilizados y sin cambiar sus reglas ni sus payloads, en lugar de reutilizar las pestañas de UI-16. La receta del personal tiene «Válida hasta», notas por medicamento y la validación de los cuatro campos obligatorios, que la pestaña del médico no tiene.
+- **Estados de la cita:** etiquetas y colores de `views/agenda/status.ts` (vocabulario de `CONTEXT.md`: «Inasistencia», «En curso») en lugar de los propios de cada tabla. La columna dice «Médico», no «Doctor».
+- **Historial médico:**
+  - las tarjetas usan el patrón `HorizontalWithSubtitle` sin tendencia, porque no hay datos de variación. Son un componente local para no chocar con UI-25, que trae `card-statistics`;
+  - la lista pasa de tarjetas a `DataTable` con tamaños 12, 24 y 48. El hook gana `handleLimitChange`;
+  - alta, edición y detalle pasan a drawers; la baja usa el `ConfirmDialog` compartido;
+  - se borraron `MedicalHistoryKPIs`, `MedicalHistoryList` y `MedicalHistoryDeleteDialog`;
+  - los errores de crear, editar, cambiar estado o eliminar, que antes quedaban sin manejar, ahora se avisan con `notify`.
+- **Acceso:** las tres rutas piden además `actors={['DOCTOR', 'STAFF']}`. El paciente tiene `READ:CLINICAL_NOTES`, `READ:PRESCRIPTIONS` y `READ:MEDICAL_HISTORY` para lo suyo; con este filtro vuelve a su inicio sin pedir datos.
+- **Encabezado «Acciones» alineado a la derecha:** va dentro de un elemento, porque la regla `[align='right'] > *` de `table.module.css` alinea hijos y no texto suelto.
+- `SkeletonTable` queda sin uso en estas pantallas pero no se borra aquí: lo borra el último PR de UI-22.
 
 ---
 
