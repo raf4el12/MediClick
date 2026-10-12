@@ -1,20 +1,34 @@
 'use client';
 
-import Box from '@mui/material/Box';
+import { useCallback } from 'react';
+import Button from '@mui/material/Button';
 import { DebouncedInput } from '@/components/shared/DebouncedInput';
 
 interface CategoryFiltersProps {
+  searchValue: string;
   onSearch: (value: string) => void;
+  onAddClick: () => void;
 }
 
-export function CategoryFilters({ onSearch }: CategoryFiltersProps) {
+/** Búsqueda y alta de categorías (barra de la lista de usuarios de Materio). */
+export function CategoryFilters({ searchValue, onSearch, onAddClick }: CategoryFiltersProps) {
+  // DebouncedInput avisa también al montar: solo se busca si el texto cambió.
+  const handleSearch = useCallback((value: string) => {
+    if (value !== searchValue) onSearch(value);
+  }, [searchValue, onSearch]);
+
   return (
-    <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mb: 3 }}>
+    <div className='flex flex-wrap items-center justify-between gap-4 p-5'>
       <DebouncedInput
-        placeholder="Buscar categorías..."
-        onChange={onSearch}
-        sx={{ minWidth: 250 }}
+        value={searchValue}
+        onChange={handleSearch}
+        placeholder='Buscar categorías'
+        className='max-sm:is-full sm:is-72'
+        slotProps={{ htmlInput: { 'aria-label': 'Buscar categorías' } }}
       />
-    </Box>
+      <Button variant='contained' startIcon={<i className='ri-add-line' aria-hidden />} onClick={onAddClick} className='max-sm:is-full'>
+        Nueva categoría
+      </Button>
+    </div>
   );
 }
