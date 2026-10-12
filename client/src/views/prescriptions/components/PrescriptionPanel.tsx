@@ -1,174 +1,100 @@
 'use client';
 
-import { memo } from 'react';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import CardHeader from '@mui/material/CardHeader';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import Skeleton from '@mui/material/Skeleton';
 import Alert from '@mui/material/Alert';
-import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
-import Table from '@mui/material/Table';
-import TableHead from '@mui/material/TableHead';
-import TableBody from '@mui/material/TableBody';
-import TableRow from '@mui/material/TableRow';
-import TableCell from '@mui/material/TableCell';
-import type { Appointment } from '@/views/appointments/types';
+import Skeleton from '@mui/material/Skeleton';
+import Typography from '@mui/material/Typography';
+import { formatDate } from '@/utils/formatDate';
 import type { Prescription, CreatePrescriptionPayload } from '../types';
 import { PrescriptionForm } from './PrescriptionForm';
 
-import { formatDate } from '@/utils/formatDate';
-
 interface PrescriptionPanelProps {
-  appointment: Appointment | null;
+  appointmentId: number;
   prescription: Prescription | null;
   loadingPrescription: boolean;
   loadingCreate: boolean;
   panelError: string | null;
-  onClose: () => void;
-  onCreatePrescription: (payload: CreatePrescriptionPayload) => Promise<void>;
-  onDownloadPdf?: () => void;
-  loadingDownload?: boolean;
+  createError: string | null;
+  onCreatePrescription: (payload: CreatePrescriptionPayload) => Promise<unknown>;
+  onDownloadPdf: () => void;
+  loadingDownload: boolean;
 }
 
-export const PrescriptionPanel = memo(function PrescriptionPanel({
-  appointment,
+/** Contenido del drawer de receta: la receta de la cita o el formulario para crearla. */
+export function PrescriptionPanel({
+  appointmentId,
   prescription,
   loadingPrescription,
   loadingCreate,
   panelError,
-  onClose,
+  createError,
   onCreatePrescription,
   onDownloadPdf,
   loadingDownload,
 }: PrescriptionPanelProps) {
-  if (!appointment) {
+  if (loadingPrescription) {
     return (
-      <Card sx={{ position: 'sticky', top: 80, height: '100%' }}>
-        <CardContent
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            py: 8,
-            textAlign: 'center',
-          }}
-        >
-          <i className="ri-medicine-bottle-line" style={{ fontSize: 48, opacity: 0.3 }} />
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-            Selecciona una cita para ver su receta
-          </Typography>
-        </CardContent>
-      </Card>
+      <div className='flex flex-col gap-3'>
+        <Skeleton variant='rounded' height={100} />
+        <Skeleton variant='rounded' height={60} />
+      </div>
+    );
+  }
+
+  if (panelError && !prescription) return <Alert severity='error'>{panelError}</Alert>;
+
+  if (!prescription) {
+    return (
+      <div className='flex flex-col gap-4'>
+        {createError && <Alert severity='error'>{createError}</Alert>}
+        <PrescriptionForm key={appointmentId} appointmentId={appointmentId} loading={loadingCreate} onSubmit={onCreatePrescription} />
+      </div>
     );
   }
 
   return (
-    <Card sx={{ position: 'sticky', top: 80 }}>
-      <CardHeader
-        title={
-          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-            {appointment.patient.name} {appointment.patient.lastName}
+    <div className='flex flex-col gap-4'>
+      {panelError && <Alert severity='error'>{panelError}</Alert>}
+      <Typography variant='h6' component='h3'>
+        Receta del {formatDate(prescription.createdAt)}
+      </Typography>
+      {prescription.instructions && (
+        <div>
+          <Typography variant='caption' color='text.secondary'>
+            Instrucciones
           </Typography>
-        }
-        subheader={
-          <Typography variant="caption" color="text.secondary">
-            {appointment.schedule.specialty.name} — {appointment.schedule.scheduleDate}
+          <Typography>{prescription.instructions}</Typography>
+        </div>
+      )}
+      {prescription.validUntil && (
+        <div>
+          <Typography variant='caption' color='text.secondary'>
+            Válida hasta
           </Typography>
-        }
-        action={
-          <IconButton size="small" onClick={onClose}>
-            <i className="ri-close-line" style={{ fontSize: 18 }} />
-          </IconButton>
-        }
-      />
-
-      <Divider />
-
-      <CardContent>
-        {panelError ? (
-          <Alert severity="error">{panelError}</Alert>
-        ) : loadingPrescription ? (
-          <>
-            <Skeleton variant="rectangular" height={100} sx={{ mb: 2, borderRadius: 1 }} />
-            <Skeleton variant="rectangular" height={60} sx={{ borderRadius: 1 }} />
-          </>
-        ) : prescription ? (
-          <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
-              Receta existente
-            </Typography>
-
-            {prescription.instructions && (
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="caption" color="text.secondary">
-                  Instrucciones
-                </Typography>
-                <Typography variant="body2">{prescription.instructions}</Typography>
-              </Box>
-            )}
-
-            {prescription.validUntil && (
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="caption" color="text.secondary">
-                  Válida hasta
-                </Typography>
-                <Typography variant="body2">{formatDate(prescription.validUntil)}</Typography>
-              </Box>
-            )}
-
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-              Medicamentos ({prescription.items.length})
-            </Typography>
-
-            <Box sx={{ overflowX: 'auto' }}>
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={{ fontWeight: 600, fontSize: 12 }}>Medicamento</TableCell>
-                    <TableCell sx={{ fontWeight: 600, fontSize: 12 }}>Dosis</TableCell>
-                    <TableCell sx={{ fontWeight: 600, fontSize: 12 }}>Frecuencia</TableCell>
-                    <TableCell sx={{ fontWeight: 600, fontSize: 12 }}>Duración</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {prescription.items.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell sx={{ fontSize: 12 }}>{item.medication}</TableCell>
-                      <TableCell sx={{ fontSize: 12 }}>{item.dosage}</TableCell>
-                      <TableCell sx={{ fontSize: 12 }}>{item.frequency}</TableCell>
-                      <TableCell sx={{ fontSize: 12 }}>{item.duration}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Box>
-
-            {onDownloadPdf && (
-              <Button
-                variant="outlined"
-                startIcon={<i className="ri-download-2-line" />}
-                onClick={onDownloadPdf}
-                disabled={loadingDownload}
-                size="small"
-                sx={{ mt: 2 }}
-              >
-                {loadingDownload ? 'Descargando...' : 'Descargar PDF'}
-              </Button>
-            )}
-          </Box>
-        ) : (
-          <PrescriptionForm
-            appointmentId={appointment.id}
-            loading={loadingCreate}
-            onSubmit={onCreatePrescription}
-          />
-        )}
-      </CardContent>
-    </Card>
+          <Typography>{formatDate(prescription.validUntil)}</Typography>
+        </div>
+      )}
+      <section aria-labelledby='receta-medicamentos' className='flex flex-col gap-2'>
+        <Typography id='receta-medicamentos' variant='subtitle2'>
+          Medicamentos ({prescription.items.length})
+        </Typography>
+        <ol className='flex flex-col gap-2 m-0 ps-5'>
+          {prescription.items.map((item) => (
+            <li key={item.id}>
+              <Typography variant='body2' color='text.primary' className='font-medium'>
+                {item.medication}
+              </Typography>
+              <Typography variant='body2' color='text.secondary'>
+                {item.dosage} · {item.frequency} · {item.duration}
+                {item.notes ? ` · ${item.notes}` : ''}
+              </Typography>
+            </li>
+          ))}
+        </ol>
+      </section>
+      <Button variant='outlined' className='self-start' startIcon={<i className='ri-download-2-line' aria-hidden />} onClick={onDownloadPdf} disabled={loadingDownload}>
+        Descargar PDF
+      </Button>
+    </div>
   );
-});
+}
