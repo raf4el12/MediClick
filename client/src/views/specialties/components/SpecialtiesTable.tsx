@@ -1,34 +1,21 @@
 'use client';
 
-import { memo, useMemo } from 'react';
-import Card from '@mui/material/Card';
-import Typography from '@mui/material/Typography';
-import Chip from '@mui/material/Chip';
-import IconButton from '@mui/material/IconButton';
-import TablePagination from '@mui/material/TablePagination';
-import Table from '@mui/material/Table';
-import TableHead from '@mui/material/TableHead';
-import TableBody from '@mui/material/TableBody';
-import TableRow from '@mui/material/TableRow';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableSortLabel from '@mui/material/TableSortLabel';
-import Box from '@mui/material/Box';
+import { useMemo } from 'react';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
-import {
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
-import { SkeletonTable } from '@/components/shared/SkeletonTable';
-import type { Specialty, Category } from '../types';
+import Card from '@mui/material/Card';
+import Chip from '@mui/material/Chip';
+import Divider from '@mui/material/Divider';
+import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+import { createColumnHelper } from '@tanstack/react-table';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { DataTable } from '@/components/shared/DataTable';
 import type { PaginatedResponse } from '@/types/pagination.types';
 import type { Clinic } from '@/views/clinics/types';
-import { SpecialtyFilters } from './SpecialtyFilters';
+import type { Category, Specialty } from '../types';
 import { AddSpecialtyDrawer } from './AddSpecialtyDrawer';
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { SpecialtyFilters } from './SpecialtyFilters';
 
 const columnHelper = createColumnHelper<Specialty>();
 
@@ -47,8 +34,7 @@ interface SpecialtiesTableProps {
     totalPages: number;
     categoryId?: number;
   };
-  setPagination: React.Dispatch<React.SetStateAction<SpecialtiesTableProps['pagination']>>;
-  debouncedSearch: (value: string) => void;
+  setPagination: (updater: React.SetStateAction<SpecialtiesTableProps['pagination']>) => void;
   handleCategoryFilter: (categoryId: number | undefined) => void;
   drawerOpen: boolean;
   drawerData: { data: Specialty | null; action: 'Create' | 'Update' };
@@ -60,9 +46,11 @@ interface SpecialtiesTableProps {
   openDeleteDialog: (id: number) => void;
   handleDelete: (confirmed: boolean) => void;
   refreshData: () => void;
+  onSaved: () => void;
 }
 
-export const SpecialtiesTable = memo(function SpecialtiesTable({
+/** Lista de especialidades sobre `DataTable` (patrón `user/list` de Materio). */
+export function SpecialtiesTable({
   data,
   categories,
   clinics,
@@ -70,7 +58,6 @@ export const SpecialtiesTable = memo(function SpecialtiesTable({
   error,
   pagination,
   setPagination,
-  debouncedSearch,
   handleCategoryFilter,
   drawerOpen,
   drawerData,
@@ -82,81 +69,54 @@ export const SpecialtiesTable = memo(function SpecialtiesTable({
   openDeleteDialog,
   handleDelete,
   refreshData,
+  onSaved,
 }: SpecialtiesTableProps) {
   const columns = useMemo(
     () => [
       columnHelper.accessor('name', {
         header: 'Nombre',
+        enableSorting: true,
         cell: ({ row }) => (
-          <Typography color="text.primary" sx={{ fontWeight: 500 }}>
+          <Typography color='text.primary' className='font-medium'>
             {row.original.name}
           </Typography>
         ),
       }),
       columnHelper.accessor('category', {
         header: 'Categoría',
-        meta: { align: 'center' },
-        cell: ({ row }) => (
-          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-            <Chip
-              label={row.original.category.name}
-              size="small"
-              variant="outlined"
-              color="primary"
-            />
-          </Box>
-        ),
+        cell: ({ row }) => <Chip label={row.original.category.name} size='small' variant='outlined' />,
       }),
       columnHelper.accessor('clinicId', {
         header: 'Sede',
-        meta: { hiddenOnMobile: true, align: 'center' },
+        meta: { hiddenOnMobile: true },
         cell: ({ row }) => {
           const clinic = clinics.find((c) => c.id === row.original.clinicId);
-          return (
-            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-              <Chip
-                label={clinic ? clinic.name : 'Global'}
-                variant={clinic ? 'filled' : 'outlined'}
-                size="small"
-                color={clinic ? 'info' : 'default'}
-              />
-            </Box>
-          );
+          return <Chip label={clinic ? clinic.name : 'Global'} size='small' variant={clinic ? 'tonal' : 'outlined'} color={clinic ? 'info' : 'default'} />;
         },
       }),
       columnHelper.accessor('duration', {
-        id: 'duration',
         header: 'Duración',
-        cell: ({ row }) => (
-          <Typography>
-            {row.original.duration ? `${row.original.duration} min` : 'N/A'}
-          </Typography>
-        ),
+        enableSorting: true,
         meta: { hiddenOnMobile: true },
+        cell: ({ row }) => <Typography>{row.original.duration ? `${row.original.duration} min` : '—'}</Typography>,
       }),
       columnHelper.accessor('price', {
-        id: 'price',
         header: 'Precio',
-        cell: ({ row }) => (
-          <Typography>
-            {row.original.price != null
-              ? `S/ ${row.original.price.toFixed(2)}`
-              : 'N/A'}
-          </Typography>
-        ),
+        enableSorting: true,
         meta: { hiddenOnMobile: true },
+        cell: ({ row }) => <Typography>{row.original.price != null ? `S/ ${row.original.price.toFixed(2)}` : '—'}</Typography>,
       }),
       columnHelper.accessor('isActive', {
         header: 'Estado',
+        enableSorting: true,
         meta: { align: 'center' },
         cell: ({ row }) => (
-          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-            <Chip
-              label={row.original.isActive ? 'Activo' : 'Inactivo'}
-              color={row.original.isActive ? 'success' : 'error'}
-              size="small"
-            />
-          </Box>
+          <Chip
+            variant='tonal'
+            size='small'
+            label={row.original.isActive ? 'Activa' : 'Inactiva'}
+            color={row.original.isActive ? 'success' : 'secondary'}
+          />
         ),
       }),
       columnHelper.display({
@@ -164,217 +124,77 @@ export const SpecialtiesTable = memo(function SpecialtiesTable({
         header: 'Acciones',
         meta: { align: 'center' },
         cell: ({ row }) => (
-          <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-            <IconButton
-              size="small"
-              color="primary"
-              aria-label="Editar especialidad"
-              onClick={() => openEditDrawer(row.original)}
-              sx={{ minWidth: 44, minHeight: 44 }}
-            >
-              <i className="ri-pencil-line" style={{ fontSize: 18 }} />
+          <div className='flex justify-center'>
+            <IconButton aria-label={`Editar ${row.original.name}`} onClick={() => openEditDrawer(row.original)}>
+              <i className='ri-pencil-line text-textSecondary' aria-hidden />
             </IconButton>
-            <IconButton
-              size="small"
-              color="error"
-              aria-label="Eliminar especialidad"
-              onClick={() => openDeleteDialog(row.original.id)}
-              sx={{ minWidth: 44, minHeight: 44 }}
-            >
-              <i className="ri-delete-bin-line" style={{ fontSize: 18 }} />
+            <IconButton aria-label={`Eliminar ${row.original.name}`} onClick={() => openDeleteDialog(row.original.id)}>
+              <i className='ri-delete-bin-7-line text-textSecondary' aria-hidden />
             </IconButton>
-          </Box>
+          </div>
         ),
       }),
     ],
     [openEditDrawer, openDeleteDialog, clinics],
   );
 
-  const table = useReactTable({
-    data: data.rows,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-    pageCount: pagination.totalPages,
-    state: {
-      pagination: {
-        pageIndex: pagination.currentPage - 1,
-        pageSize: pagination.pageSize,
-      },
-    },
-  });
-
   return (
     <>
       <Card>
-        <Box sx={{ p: 3, pt: 4 }}>
-          <SpecialtyFilters
-            categories={categories}
-            selectedCategory={pagination.categoryId}
-            onCategoryChange={handleCategoryFilter}
-            onSearch={debouncedSearch}
-          />
-
-          {error && (
-            <Alert
-              severity="error"
-              sx={{ mb: 2 }}
-              action={
-                <Button color="inherit" size="small" onClick={refreshData}>
-                  Reintentar
-                </Button>
-              }
-            >
-              {error}
-            </Alert>
-          )}
-
-          <TableContainer sx={{ overflowX: 'auto' }}>
-            <Table sx={{ minWidth: 600 }}>
-              <TableHead>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => {
-                      const meta = header.column.columnDef.meta as Record<string, any> | undefined;
-                      const isHiddenOnMobile = meta?.hiddenOnMobile;
-                      const align = meta?.align || 'left';
-                      return (
-                        <TableCell
-                          key={header.id}
-                          align={align as any}
-                          sx={{
-                            fontWeight: 600,
-                            ...(isHiddenOnMobile && { display: { xs: 'none', sm: 'table-cell' } }),
-                          }}
-                        >
-                          {header.isPlaceholder ? null : (
-                            <TableSortLabel
-                              active={pagination.orderBy === header.id}
-                              direction={
-                                pagination.orderBy === header.id
-                                  ? pagination.orderByMode
-                                  : 'asc'
-                              }
-                              onClick={() => {
-                                if (header.id === 'actions') return;
-                                setPagination((prev) => ({
-                                  ...prev,
-                                  orderBy: header.id,
-                                  orderByMode:
-                                    prev.orderBy === header.id &&
-                                      prev.orderByMode === 'asc'
-                                      ? 'desc'
-                                      : 'asc',
-                                  currentPage: 1,
-                                }));
-                              }}
-                              hideSortIcon={header.id === 'actions'}
-                            >
-                              {flexRender(
-                                header.column.columnDef.header,
-                                header.getContext(),
-                              )}
-                            </TableSortLabel>
-                          )}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-              </TableHead>
-              <TableBody>
-                {loading ? (
-                  <SkeletonTable
-                    rowsNum={pagination.pageSize}
-                    colNum={columns.length}
-                  />
-                ) : table.getRowModel().rows.length > 0 ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id} hover sx={{ cursor: 'pointer' }}>
-                      {row.getVisibleCells().map((cell) => {
-                        const meta = cell.column.columnDef.meta as Record<string, any> | undefined;
-                        const isHiddenOnMobile = meta?.hiddenOnMobile;
-                        const align = meta?.align || 'left';
-                        return (
-                          <TableCell
-                            key={cell.id}
-                            align={align as any}
-                            sx={isHiddenOnMobile ? { display: { xs: 'none', sm: 'table-cell' } } : undefined}
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      sx={{ textAlign: 'center', py: 6 }}
-                    >
-                      <i className="ri-stethoscope-line" style={{ fontSize: 48, display: 'block', marginBottom: 8 }} />
-                      <Typography color="text.secondary" sx={{ mb: 2 }}>
-                        No hay especialidades disponibles
-                      </Typography>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<i className="ri-add-line" />}
-                        onClick={openCreateDrawer}
-                      >
-                        Registrar especialidad
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          <TablePagination
-            component="div"
-            rowsPerPageOptions={[8, 15, 25]}
-            count={data.totalRows}
-            rowsPerPage={pagination.pageSize}
-            page={pagination.currentPage - 1}
-            labelRowsPerPage="Filas por página:"
-            onPageChange={(_, page) =>
-              setPagination((prev) => ({
-                ...prev,
-                currentPage: page + 1,
-              }))
+        <SpecialtyFilters
+          categories={categories}
+          selectedCategory={pagination.categoryId}
+          onCategoryChange={handleCategoryFilter}
+          searchValue={pagination.searchValue}
+          onSearch={(searchValue) => setPagination((prev) => ({ ...prev, searchValue, currentPage: 1 }))}
+          onAddClick={openCreateDrawer}
+        />
+        <Divider />
+        {error && (
+          <Alert
+            severity='error'
+            className='m-5'
+            action={
+              <Button color='inherit' size='small' onClick={refreshData}>
+                Reintentar
+              </Button>
             }
-            onRowsPerPageChange={(e) =>
-              setPagination((prev) => ({
-                ...prev,
-                pageSize: Number(e.target.value),
-                currentPage: 1,
-              }))
-            }
-          />
-        </Box>
+          >
+            {error}
+          </Alert>
+        )}
+        <DataTable
+          label='Especialidades'
+          columns={columns}
+          rows={data.rows}
+          totalRows={data.totalRows}
+          isLoading={loading}
+          pagination={{ pageIndex: pagination.currentPage - 1, pageSize: pagination.pageSize }}
+          onPaginationChange={({ pageIndex, pageSize }) => setPagination((prev) => ({ ...prev, currentPage: pageIndex + 1, pageSize }))}
+          pageSizeOptions={[8, 15, 25]}
+          sorting={{ id: pagination.orderBy, desc: pagination.orderByMode === 'desc' }}
+          onSortingChange={({ id, desc }) => setPagination((prev) => ({ ...prev, orderBy: id, orderByMode: desc ? 'desc' : 'asc', currentPage: 1 }))}
+          emptyMessage={
+            <div className='flex flex-col items-center gap-3 plb-6'>
+              <Typography>No hay especialidades que coincidan.</Typography>
+              <Button variant='outlined' size='small' startIcon={<i className='ri-add-line' aria-hidden />} onClick={openCreateDrawer}>
+                Registrar especialidad
+              </Button>
+            </div>
+          }
+        />
       </Card>
 
-      <AddSpecialtyDrawer
-        open={drawerOpen}
-        drawerData={drawerData}
-        categories={categories}
-        clinics={clinics}
-        onClose={closeDrawer}
-        onSuccess={refreshData}
-      />
+      <AddSpecialtyDrawer open={drawerOpen} drawerData={drawerData} categories={categories} clinics={clinics} onClose={closeDrawer} onSuccess={onSaved} />
 
       <ConfirmDialog
         open={confirmDialogOpen}
-        title="Eliminar Especialidad"
-        description="¿Estás seguro de que deseas eliminar esta especialidad? Esta acción no se puede deshacer."
+        title='Eliminar especialidad'
+        description='¿Seguro que quieres eliminar esta especialidad? Esta acción no se puede deshacer.'
+        destructive={false}
         onConfirm={() => void handleDelete(true)}
         onCancel={() => setConfirmDialogOpen(false)}
       />
     </>
   );
-});
+}
