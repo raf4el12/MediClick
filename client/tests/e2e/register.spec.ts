@@ -17,6 +17,18 @@ function acceptRegister(api: ApiMock, context: BrowserContext, appURL: string, o
 
 const step = (page: Page, title: string) => page.getByRole('heading', { level: 2, name: new RegExp(title) });
 
+/**
+ * Primer campo tras cargar la página: si se escribe antes de que React hidrate, el valor se pierde
+ * al hidratar. Se reintenta hasta que el valor queda.
+ */
+async function fillDocument(page: Page, value: string) {
+  const input = page.getByLabel('Número de documento');
+  await expect(async () => {
+    await input.fill(value);
+    await expect(input).toHaveValue(value, { timeout: 1_000 });
+  }).toPass({ timeout: 15_000 });
+}
+
 async function fillPhone(page: Page, label: string, digits: string) {
   const input = page.getByLabel(label, { exact: true });
   await input.click();
@@ -40,7 +52,7 @@ test.describe('registro del paciente', () => {
     await expect(step(page, 'Identificación')).toBeVisible();
     await expectAccessible(page);
 
-    await page.getByLabel('Número de documento').fill('45678912');
+    await fillDocument(page, '45678912');
     await page.getByRole('button', { name: 'Siguiente' }).click();
 
     await expect(step(page, 'Datos personales')).toBeVisible();
@@ -87,7 +99,7 @@ test.describe('registro del paciente', () => {
     api.on('POST /auth/check-document', { available: false });
 
     await page.goto('/register', { timeout: 30_000 });
-    await page.getByLabel('Número de documento').fill('45678912');
+    await fillDocument(page, '45678912');
     await page.getByRole('button', { name: 'Siguiente' }).click();
 
     await expect(page.getByText('Este documento ya está registrado')).toBeVisible();
@@ -98,7 +110,7 @@ test.describe('registro del paciente', () => {
     api.on('POST /auth/register', reply(429, { message: 'Demasiados intentos. Espera un minuto y vuelve a intentarlo.' }));
 
     await page.goto('/register', { timeout: 30_000 });
-    await page.getByLabel('Número de documento').fill('45678912');
+    await fillDocument(page, '45678912');
     await page.getByRole('button', { name: 'Siguiente' }).click();
     await page.getByLabel('Correo electrónico').fill('ana.torres@test.local');
     await fillPhone(page, 'Celular', '987654321');
