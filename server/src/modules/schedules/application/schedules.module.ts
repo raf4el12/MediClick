@@ -11,6 +11,7 @@ import { FindAllSchedulesUseCase } from './use-cases/find-all-schedules.use-case
 import { GetAvailableTimeSlotsUseCase } from './use-cases/get-available-time-slots.use-case.js';
 import { GetAvailableDaysUseCase } from './use-cases/get-available-days.use-case.js';
 import { ScheduleRegenerationService } from '../domain/services/schedule-regeneration.service.js';
+import { FreeSlotsService } from '../domain/services/free-slots.service.js';
 import { ScheduleController } from '../interfaces/controllers/schedule.controller.js';
 
 @Module({
@@ -33,7 +34,13 @@ import { ScheduleController } from '../interfaces/controllers/schedule.controlle
     GetAvailableTimeSlotsUseCase,
     GetAvailableDaysUseCase,
     ScheduleRegenerationService,
+    FreeSlotsService,
   ],
-  exports: ['IScheduleRepository', ScheduleRegenerationService],
+  exports: [
+    'IScheduleRepository',
+    ScheduleRegenerationService,
+    FreeSlotsService,
+    GenerateSchedulesUseCase,
+  ],
 })
 export class SchedulesModule {}

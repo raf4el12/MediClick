@@ -2,6 +2,7 @@ import {
   ScheduleWithRelations,
   ScheduleWithAvailability,
   ScheduleWindow,
+  SlotWindow,
   CreateScheduleData,
   DoctorBooking,
 } from '../interfaces/schedule-data.interface.js';
@@ -86,4 +87,16 @@ export interface IScheduleRepository {
     from: Date,
     to: Date,
   ): Promise<DoctorBooking[]>;
+
+  /**
+   * Bloques de agenda entre dos días inclusive, de todas las especialidades,
+   * de un médico o de todos los médicos de una sede (sin ninguno de los dos,
+   * de todas las sedes). Ordenados por médico, fecha y hora de inicio.
+   */
+  findSlotWindowsInRange(filter: {
+    doctorId?: number;
+    clinicId?: number;
+    from: Date;
+    to: Date;
+  }): Promise<SlotWindow[]>;
 }

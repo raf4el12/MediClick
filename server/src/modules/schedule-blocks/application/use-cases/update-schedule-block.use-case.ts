@@ -12,7 +12,10 @@ import {
 } from '../dto/update-schedule-block.dto.js';
 import { ScheduleBlockResponseDto } from '../dto/schedule-block-response.dto.js';
 import type { IScheduleBlockRepository } from '../../domain/repositories/schedule-block.repository.js';
-import { UpdateScheduleBlockData } from '../../domain/interfaces/schedule-block-data.interface.js';
+import {
+  UpdateScheduleBlockData,
+  ScheduleBlockWithDoctor,
+} from '../../domain/interfaces/schedule-block-data.interface.js';
 import { ScheduleRegenerationService } from '../../../schedules/domain/services/schedule-regeneration.service.js';
 import {
   timeStringToDate,
@@ -20,8 +23,12 @@ import {
 } from '../../../../shared/utils/date-time.utils.js';
 import {
   AVAILABILITY_RESTRICTION_CHANGED_EVENT,
+  AVAILABILITY_RESTRICTION_LIFTED_EVENT,
   type AvailabilityRestrictionChangedEvent,
+  type AvailabilityRestrictionLiftedEvent,
+  type AvailabilityRestrictionRange,
 } from '../../../../shared/events/availability-events.interface.js';
+import { liftedDayRanges } from '../../../../shared/events/availability-restriction-ranges.js';
 
 @Injectable()
 export class UpdateScheduleBlockUseCase {
@@ -154,6 +161,23 @@ export class UpdateScheduleBlockUseCase {
       restrictionEvent,
     );
 
+    const liftedRanges = this.liftedRanges(existing, updated);
+    if (liftedRanges.length > 0) {
+      const liftedEvent: AvailabilityRestrictionLiftedEvent = {
+        restrictionType: 'SCHEDULE_BLOCK',
+        restrictionId: updated.id,
+        clinicId: updated.doctor.clinicId,
+        doctorId: updated.doctorId,
+        liftedRanges,
+        occurredAt: new Date(),
+        actorId,
+      };
+      this.eventEmitter.emit(
+        AVAILABILITY_RESTRICTION_LIFTED_EVENT,
+        liftedEvent,
+      );
+    }
+
     return {
       id: updated.id,
       doctorId: updated.doctorId,
@@ -171,5 +195,35 @@ export class UpdateScheduleBlockUseCase {
         lastName: updated.doctor.profile.lastName,
       },
     };
+  }
+
+  /**
+   * Días que dejaron de estar restringidos: los que el rango nuevo ya no
+   * cubre, todo el rango si el bloqueo quedó inactivo y, si cambió el tipo o
+   * las horas de un bloqueo por rango horario, también los días que siguen
+   * bloqueados (la lista de espera recalcula qué cupos están libres).
+   */
+  private liftedRanges(
+    existing: ScheduleBlockWithDoctor,
+    updated: ScheduleBlockWithDoctor,
+  ): AvailabilityRestrictionRange[] {
+    if (!existing.isActive) return [];
+    const previous = {
+      startDate: existing.startDate,
+      endDate: existing.endDate,
+    };
+    if (!updated.isActive) return liftedDayRanges(previous, null);
+
+    const current = {
+      startDate: updated.startDate,
+      endDate: updated.endDate,
+    };
+    const lifted = liftedDayRanges(previous, current);
+    const hoursChanged =
+      existing.type !== updated.type ||
+      existing.timeFrom?.getTime() !== updated.timeFrom?.getTime() ||
+      existing.timeTo?.getTime() !== updated.timeTo?.getTime();
+    if (hoursChanged) lifted.push(current);
+    return lifted;
   }
 }

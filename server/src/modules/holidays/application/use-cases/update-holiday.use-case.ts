@@ -12,8 +12,11 @@ import { UpdateHolidayData } from '../../domain/interfaces/holiday-data.interfac
 import type { HolidayEntity } from '../../domain/entities/holiday.entity.js';
 import {
   AVAILABILITY_RESTRICTION_CHANGED_EVENT,
+  AVAILABILITY_RESTRICTION_LIFTED_EVENT,
   type AvailabilityRestrictionChangedEvent,
+  type AvailabilityRestrictionLiftedEvent,
 } from '../../../../shared/events/availability-events.interface.js';
+import { liftedDayRanges } from '../../../../shared/events/availability-restriction-ranges.js';
 
 @Injectable()
 export class UpdateHolidayUseCase {
@@ -113,6 +116,31 @@ export class UpdateHolidayUseCase {
       AVAILABILITY_RESTRICTION_CHANGED_EVENT,
       restrictionEvent,
     );
+
+    // El día anterior queda libre si el feriado se desactivó o se movió de fecha.
+    const liftedRanges = !existing.isActive
+      ? []
+      : liftedDayRanges(
+          { startDate: existing.date, endDate: existing.date },
+          updated.isActive
+            ? { startDate: updated.date, endDate: updated.date }
+            : null,
+        );
+    if (liftedRanges.length > 0) {
+      const liftedEvent: AvailabilityRestrictionLiftedEvent = {
+        restrictionType: 'HOLIDAY',
+        restrictionId: updated.id,
+        clinicId: updated.clinicId,
+        doctorId: null,
+        liftedRanges,
+        occurredAt: new Date(),
+        actorId,
+      };
+      this.eventEmitter.emit(
+        AVAILABILITY_RESTRICTION_LIFTED_EVENT,
+        liftedEvent,
+      );
+    }
 
     for (const createdHoliday of createdRecurringHolidays) {
       this.eventEmitter.emit(AVAILABILITY_RESTRICTION_CHANGED_EVENT, {

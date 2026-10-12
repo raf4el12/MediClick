@@ -19,6 +19,7 @@ import { GetMyWaitlistUseCase } from './use-cases/get-my-waitlist.use-case.js';
 import { GetClinicWaitlistUseCase } from './use-cases/get-clinic-waitlist.use-case.js';
 import { AddWaitlistPriorityUseCase } from './use-cases/add-waitlist-priority.use-case.js';
 import { SlotReleasedListener } from './listeners/slot-released.listener.js';
+import { RestrictionLiftedListener } from './listeners/restriction-lifted.listener.js';
 import { WaitlistNotificationListener } from './listeners/waitlist-notification.listener.js';
 import { ExpireStaleOffersUseCase } from './jobs/expire-stale-offers.use-case.js';
 import { ExpireStaleEntriesUseCase } from './jobs/expire-stale-entries.use-case.js';
@@ -55,6 +56,7 @@ import { WaitlistController } from '../interfaces/controllers/waitlist.controlle
     GetClinicWaitlistUseCase,
     AddWaitlistPriorityUseCase,
     SlotReleasedListener,
+    RestrictionLiftedListener,
     WaitlistNotificationListener,
     ExpireStaleOffersUseCase,
     ExpireStaleEntriesUseCase,
