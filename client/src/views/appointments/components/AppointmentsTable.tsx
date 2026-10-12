@@ -149,7 +149,7 @@ export const AppointmentsTable = memo(function AppointmentsTable({
       }),
       columnHelper.accessor('status', {
         header: 'Estado',
-        meta: { align: 'center' },
+        meta: { align: 'center', sortField: 'status' },
         cell: ({ row }) => {
           const config = statusConfig[row.original.status] ?? {
             label: row.original.status,
@@ -165,7 +165,7 @@ export const AppointmentsTable = memo(function AppointmentsTable({
       columnHelper.display({
         id: 'payment',
         header: 'Pago',
-        meta: { align: 'center', hiddenOnMobile: true },
+        meta: { align: 'center', hiddenOnMobile: true, sortField: 'paymentStatus' },
         cell: ({ row }) => (
           <Box sx={{ display: 'flex', justifyContent: 'center' }}>
             <PaymentStatusBadge paymentStatus={row.original.paymentStatus} />
@@ -280,6 +280,8 @@ export const AppointmentsTable = memo(function AppointmentsTable({
                       const meta = header.column.columnDef.meta as Record<string, any> | undefined;
                       const isHiddenOnMobile = meta?.hiddenOnMobile;
                       const align = meta?.align || 'left';
+                      // Solo las columnas con una columna escalar del servidor se ordenan.
+                      const sortField: string | undefined = meta?.sortField;
                       return (
                         <TableCell
                           key={header.id}
@@ -289,20 +291,25 @@ export const AppointmentsTable = memo(function AppointmentsTable({
                             ...(isHiddenOnMobile && { display: { xs: 'none', sm: 'table-cell' } }),
                           }}
                         >
-                          {header.isPlaceholder ? null : (
+                          {header.isPlaceholder ? null : !sortField ? (
+                            flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )
+                          ) : (
                             <TableSortLabel
-                              active={pagination.orderBy === header.id}
+                              active={pagination.orderBy === sortField}
                               direction={
-                                pagination.orderBy === header.id
+                                pagination.orderBy === sortField
                                   ? pagination.orderByMode
                                   : 'asc'
                               }
                               onClick={() => {
                                 setPagination((prev) => ({
                                   ...prev,
-                                  orderBy: header.id,
+                                  orderBy: sortField,
                                   orderByMode:
-                                    prev.orderBy === header.id &&
+                                    prev.orderBy === sortField &&
                                       prev.orderByMode === 'asc'
                                       ? 'desc'
                                       : 'asc',

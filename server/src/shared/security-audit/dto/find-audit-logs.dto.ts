@@ -1,8 +1,19 @@
 import { IsOptional, IsEnum, IsDateString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { SecurityEventType } from '@prisma/client';
+import { SortableBy } from '../../../shared/utils/dtos/sortable-by.decorator.js';
 import { PaginationDto } from '../../utils/dtos/pagination-dto.js';
 
+export const AUDIT_LOG_SORT_FIELDS = [
+  'id',
+  'eventType',
+  'email',
+  'ip',
+  'resource',
+  'createdAt',
+] as const;
+
+@SortableBy(AUDIT_LOG_SORT_FIELDS)
 export class FindAuditLogsDto extends PaginationDto {
   @ApiPropertyOptional({
     enum: SecurityEventType,

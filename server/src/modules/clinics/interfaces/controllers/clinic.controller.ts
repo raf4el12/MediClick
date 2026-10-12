@@ -18,7 +18,7 @@ import {
   CurrentUser,
 } from '../../../../shared/decorators/index.js';
 import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
-import { PaginationDto } from '../../../../shared/utils/dtos/pagination-dto.js';
+import { FindAllClinicsQueryDto } from '../../application/dto/find-all-clinics-query.dto.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreateClinicDto } from '../../application/dto/create-clinic.dto.js';
 import { UpdateClinicDto } from '../../application/dto/update-clinic.dto.js';
@@ -65,7 +65,7 @@ export class ClinicController {
     type: PaginatedClinicResponseDto,
   })
   async findAll(
-    @Query() paginationDto: PaginationDto,
+    @Query() paginationDto: FindAllClinicsQueryDto,
   ): Promise<PaginatedClinicResponseDto> {
     const pagination = new PaginationImproved(
       paginationDto.searchValue,

@@ -14,7 +14,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Auth, CurrentClinic } from '../../../../shared/decorators/index.js';
 import { RequirePermissions } from '../../../../shared/decorators/require-permissions.decorator.js';
-import { PaginationDto } from '../../../../shared/utils/dtos/pagination-dto.js';
+import { FindAllCategoriesQueryDto } from '../../application/dto/find-all-categories-query.dto.js';
 import { PaginationImproved } from '../../../../shared/utils/value-objects/pagination-improved.value-object.js';
 import { CreateCategoryDto } from '../../application/dto/create-category.dto.js';
 import { UpdateCategoryDto } from '../../application/dto/update-category.dto.js';
@@ -60,7 +60,7 @@ export class CategoryController {
     type: PaginatedCategoryResponseDto,
   })
   async findAll(
-    @Query() paginationDto: PaginationDto,
+    @Query() paginationDto: FindAllCategoriesQueryDto,
     @Query('clinicId') clinicId?: string,
   ): Promise<PaginatedCategoryResponseDto> {
     const pagination = new PaginationImproved(

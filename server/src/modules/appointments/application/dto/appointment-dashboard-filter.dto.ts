@@ -8,8 +8,25 @@ import {
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { AppointmentStatus } from '../../../../shared/domain/enums/appointment-status.enum.js';
+import { SortableBy } from '../../../../shared/utils/dtos/sortable-by.decorator.js';
 import { PaginationDto } from '../../../../shared/utils/dtos/pagination-dto.js';
 
+export const APPOINTMENT_SORT_FIELDS = [
+  'id',
+  'startTime',
+  'endTime',
+  'status',
+  'paymentStatus',
+  'amount',
+  'isAtRisk',
+  'isOverbook',
+  'confirmedAt',
+  'checkedInAt',
+  'createdAt',
+  'updatedAt',
+] as const;
+
+@SortableBy(APPOINTMENT_SORT_FIELDS)
 export class AppointmentDashboardFilterDto extends PaginationDto {
   @ApiPropertyOptional({
     example: '2026-03-01',
