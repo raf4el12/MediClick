@@ -1,34 +1,21 @@
 'use client';
 
-import { memo, useMemo } from 'react';
-import Card from '@mui/material/Card';
-import Typography from '@mui/material/Typography';
-import Chip from '@mui/material/Chip';
-import IconButton from '@mui/material/IconButton';
-import TablePagination from '@mui/material/TablePagination';
-import Table from '@mui/material/Table';
-import TableHead from '@mui/material/TableHead';
-import TableBody from '@mui/material/TableBody';
-import TableRow from '@mui/material/TableRow';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableSortLabel from '@mui/material/TableSortLabel';
-import Box from '@mui/material/Box';
+import { useMemo } from 'react';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
-import {
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
-import { SkeletonTable } from '@/components/shared/SkeletonTable';
-import type { Category } from '../types';
+import Card from '@mui/material/Card';
+import Chip from '@mui/material/Chip';
+import Divider from '@mui/material/Divider';
+import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+import { createColumnHelper } from '@tanstack/react-table';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { DataTable } from '@/components/shared/DataTable';
 import type { PaginatedResponse } from '@/types/pagination.types';
 import type { Clinic } from '@/views/clinics/types';
-import { CategoryFilters } from './CategoryFilters';
+import type { Category } from '../types';
 import { AddCategoryDrawer } from './AddCategoryDrawer';
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { CategoryFilters } from './CategoryFilters';
 
 const columnHelper = createColumnHelper<Category>();
 
@@ -45,8 +32,7 @@ interface CategoriesTableProps {
     orderByMode: 'asc' | 'desc';
     totalPages: number;
   };
-  setPagination: React.Dispatch<React.SetStateAction<CategoriesTableProps['pagination']>>;
-  debouncedSearch: (value: string) => void;
+  setPagination: (updater: React.SetStateAction<CategoriesTableProps['pagination']>) => void;
   drawerOpen: boolean;
   drawerData: { data: Category | null; action: 'Create' | 'Update' };
   openCreateDrawer: () => void;
@@ -57,16 +43,17 @@ interface CategoriesTableProps {
   openDeleteDialog: (id: number) => void;
   handleDelete: (confirmed: boolean) => void;
   refreshData: () => void;
+  onSaved: () => void;
 }
 
-export const CategoriesTable = memo(function CategoriesTable({
+/** Lista de categorías sobre `DataTable` (patrón `user/list` de Materio). */
+export function CategoriesTable({
   data,
   loading,
   error,
   clinics,
   pagination,
   setPagination,
-  debouncedSearch,
   drawerOpen,
   drawerData,
   openCreateDrawer,
@@ -77,273 +64,127 @@ export const CategoriesTable = memo(function CategoriesTable({
   openDeleteDialog,
   handleDelete,
   refreshData,
+  onSaved,
 }: CategoriesTableProps) {
   const columns = useMemo(
     () => [
       columnHelper.accessor('name', {
         header: 'Nombre',
+        enableSorting: true,
         cell: ({ row }) => (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            {row.original.icon && (
-              <i className={row.original.icon} style={{ fontSize: 20 }} />
-            )}
-            <Typography color="text.primary" sx={{ fontWeight: 500 }}>
+          <div className='flex items-center gap-3'>
+            {row.original.icon && <i className={`${row.original.icon} text-xl`} aria-hidden />}
+            <Typography color='text.primary' className='font-medium'>
               {row.original.name}
             </Typography>
-          </Box>
+          </div>
         ),
       }),
       columnHelper.accessor('description', {
         header: 'Descripción',
-        cell: ({ row }) => (
-          <Typography
-            color="text.secondary"
-            sx={{
-              maxWidth: 300,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {row.original.description ?? 'Sin descripción'}
-          </Typography>
-        ),
         meta: { hiddenOnMobile: true },
+        cell: ({ row }) => <Typography className='max-is-[300px] truncate'>{row.original.description ?? 'Sin descripción'}</Typography>,
       }),
       columnHelper.accessor('clinicId', {
         header: 'Sede',
+        meta: { hiddenOnMobile: true },
         cell: ({ row }) => {
           const clinic = clinics.find((c) => c.id === row.original.clinicId);
-          return (
-            <Chip
-              label={clinic ? clinic.name : 'Global'}
-              variant={clinic ? 'filled' : 'outlined'}
-              size="small"
-              color={clinic ? 'info' : 'default'}
-            />
-          );
+          return <Chip label={clinic ? clinic.name : 'Global'} size='small' variant={clinic ? 'tonal' : 'outlined'} color={clinic ? 'info' : 'default'} />;
         },
-        meta: { hiddenOnMobile: true },
       }),
       columnHelper.accessor('order', {
         header: 'Orden',
-        cell: ({ row }) => (
-          <Typography>{row.original.order ?? '-'}</Typography>
-        ),
+        enableSorting: true,
+        meta: { align: 'center' },
+        cell: ({ row }) => <Typography>{row.original.order ?? '—'}</Typography>,
       }),
       columnHelper.accessor('isActive', {
         header: 'Estado',
+        enableSorting: true,
+        meta: { align: 'center' },
         cell: ({ row }) => (
           <Chip
-            label={row.original.isActive ? 'Activo' : 'Inactivo'}
-            color={row.original.isActive ? 'success' : 'error'}
-            size="small"
+            variant='tonal'
+            size='small'
+            label={row.original.isActive ? 'Activa' : 'Inactiva'}
+            color={row.original.isActive ? 'success' : 'secondary'}
           />
         ),
       }),
       columnHelper.display({
         id: 'actions',
         header: 'Acciones',
+        meta: { align: 'center' },
         cell: ({ row }) => (
-          <Box sx={{ display: 'flex', gap: 0.5 }}>
-            <IconButton
-              size="small"
-              color="primary"
-              aria-label="Editar categoría"
-              onClick={() => openEditDrawer(row.original)}
-              sx={{ minWidth: 44, minHeight: 44 }}
-            >
-              <i className="ri-pencil-line" style={{ fontSize: 18 }} />
+          <div className='flex justify-center'>
+            <IconButton aria-label={`Editar ${row.original.name}`} onClick={() => openEditDrawer(row.original)}>
+              <i className='ri-pencil-line text-textSecondary' aria-hidden />
             </IconButton>
-            <IconButton
-              size="small"
-              color="error"
-              aria-label="Eliminar categoría"
-              onClick={() => openDeleteDialog(row.original.id)}
-              sx={{ minWidth: 44, minHeight: 44 }}
-            >
-              <i className="ri-delete-bin-line" style={{ fontSize: 18 }} />
+            <IconButton aria-label={`Eliminar ${row.original.name}`} onClick={() => openDeleteDialog(row.original.id)}>
+              <i className='ri-delete-bin-7-line text-textSecondary' aria-hidden />
             </IconButton>
-          </Box>
+          </div>
         ),
       }),
     ],
     [openEditDrawer, openDeleteDialog, clinics],
   );
 
-  const table = useReactTable({
-    data: data.rows,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-    pageCount: pagination.totalPages,
-    state: {
-      pagination: {
-        pageIndex: pagination.currentPage - 1,
-        pageSize: pagination.pageSize,
-      },
-    },
-  });
-
   return (
     <>
       <Card>
-        <Box sx={{ p: 3, pt: 4 }}>
-          <CategoryFilters onSearch={debouncedSearch} />
-
-          {error && (
-            <Alert
-              severity="error"
-              sx={{ mb: 2 }}
-              action={
-                <Button color="inherit" size="small" onClick={refreshData}>
-                  Reintentar
-                </Button>
-              }
-            >
-              {error}
-            </Alert>
-          )}
-
-          <TableContainer sx={{ overflowX: 'auto' }}>
-            <Table sx={{ minWidth: 550 }}>
-              <TableHead>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => {
-                      const isHiddenOnMobile = (header.column.columnDef.meta as Record<string, boolean> | undefined)?.hiddenOnMobile;
-                      return (
-                        <TableCell
-                          key={header.id}
-                          sx={{
-                            fontWeight: 600,
-                            ...(isHiddenOnMobile && { display: { xs: 'none', sm: 'table-cell' } }),
-                          }}
-                        >
-                          {header.isPlaceholder ? null : (
-                            <TableSortLabel
-                              active={pagination.orderBy === header.id}
-                              direction={
-                                pagination.orderBy === header.id
-                                  ? pagination.orderByMode
-                                  : 'asc'
-                              }
-                              onClick={() => {
-                                if (header.id === 'actions') return;
-                                setPagination((prev) => ({
-                                  ...prev,
-                                  orderBy: header.id,
-                                  orderByMode:
-                                    prev.orderBy === header.id &&
-                                      prev.orderByMode === 'asc'
-                                      ? 'desc'
-                                      : 'asc',
-                                  currentPage: 1,
-                                }));
-                              }}
-                              hideSortIcon={header.id === 'actions'}
-                            >
-                              {flexRender(
-                                header.column.columnDef.header,
-                                header.getContext(),
-                              )}
-                            </TableSortLabel>
-                          )}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-              </TableHead>
-              <TableBody>
-                {loading ? (
-                  <SkeletonTable
-                    rowsNum={pagination.pageSize}
-                    colNum={columns.length}
-                  />
-                ) : table.getRowModel().rows.length > 0 ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id} hover sx={{ cursor: 'pointer' }}>
-                      {row.getVisibleCells().map((cell) => {
-                        const isHiddenOnMobile = (cell.column.columnDef.meta as Record<string, boolean> | undefined)?.hiddenOnMobile;
-                        return (
-                          <TableCell
-                            key={cell.id}
-                            sx={isHiddenOnMobile ? { display: { xs: 'none', sm: 'table-cell' } } : undefined}
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      sx={{ textAlign: 'center', py: 6 }}
-                    >
-                      <i className="ri-folder-line" style={{ fontSize: 48, display: 'block', marginBottom: 8 }} />
-                      <Typography color="text.secondary" sx={{ mb: 2 }}>
-                        No hay categorías disponibles
-                      </Typography>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<i className="ri-add-line" />}
-                        onClick={openCreateDrawer}
-                      >
-                        Registrar categoría
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          <TablePagination
-            component="div"
-            rowsPerPageOptions={[8, 15, 25]}
-            count={data.totalRows}
-            rowsPerPage={pagination.pageSize}
-            page={pagination.currentPage - 1}
-            labelRowsPerPage="Filas por página:"
-            onPageChange={(_, page) =>
-              setPagination((prev) => ({
-                ...prev,
-                currentPage: page + 1,
-              }))
+        <CategoryFilters
+          searchValue={pagination.searchValue}
+          onSearch={(searchValue) => setPagination((prev) => ({ ...prev, searchValue, currentPage: 1 }))}
+          onAddClick={openCreateDrawer}
+        />
+        <Divider />
+        {error && (
+          <Alert
+            severity='error'
+            className='m-5'
+            action={
+              <Button color='inherit' size='small' onClick={refreshData}>
+                Reintentar
+              </Button>
             }
-            onRowsPerPageChange={(e) =>
-              setPagination((prev) => ({
-                ...prev,
-                pageSize: Number(e.target.value),
-                currentPage: 1,
-              }))
-            }
-          />
-        </Box>
+          >
+            {error}
+          </Alert>
+        )}
+        <DataTable
+          label='Categorías'
+          columns={columns}
+          rows={data.rows}
+          totalRows={data.totalRows}
+          isLoading={loading}
+          pagination={{ pageIndex: pagination.currentPage - 1, pageSize: pagination.pageSize }}
+          onPaginationChange={({ pageIndex, pageSize }) => setPagination((prev) => ({ ...prev, currentPage: pageIndex + 1, pageSize }))}
+          pageSizeOptions={[8, 15, 25]}
+          sorting={{ id: pagination.orderBy, desc: pagination.orderByMode === 'desc' }}
+          onSortingChange={({ id, desc }) => setPagination((prev) => ({ ...prev, orderBy: id, orderByMode: desc ? 'desc' : 'asc', currentPage: 1 }))}
+          emptyMessage={
+            <div className='flex flex-col items-center gap-3 plb-6'>
+              <Typography>No hay categorías que coincidan.</Typography>
+              <Button variant='outlined' size='small' startIcon={<i className='ri-add-line' aria-hidden />} onClick={openCreateDrawer}>
+                Registrar categoría
+              </Button>
+            </div>
+          }
+        />
       </Card>
 
-      <AddCategoryDrawer
-        open={drawerOpen}
-        drawerData={drawerData}
-        clinics={clinics}
-        onClose={closeDrawer}
-        onSuccess={refreshData}
-      />
+      <AddCategoryDrawer open={drawerOpen} drawerData={drawerData} clinics={clinics} onClose={closeDrawer} onSuccess={onSaved} />
 
       <ConfirmDialog
         open={confirmDialogOpen}
-        title="Eliminar Categoría"
-        description="¿Estás seguro de que deseas eliminar esta categoría? Esta acción no se puede deshacer."
+        title='Eliminar categoría'
+        description='¿Seguro que quieres eliminar esta categoría? Esta acción no se puede deshacer.'
+        destructive={false}
         onConfirm={() => void handleDelete(true)}
         onCancel={() => setConfirmDialogOpen(false)}
       />
     </>
   );
-});
+}
