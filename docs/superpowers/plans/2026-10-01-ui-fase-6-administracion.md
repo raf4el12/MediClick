@@ -365,7 +365,7 @@ Estado verificado (comportamiento a conservar):
 
 ---
 
-## UI-30 — Lista de espera del personal
+## UI-30 — Lista de espera del personal ✅
 
 **Rama:** `git fetch origin && git switch -c feat/ui-30-lista-espera-personal origin/staging`
 **Skills:** `mattpocock-skills:tdd`, `mattpocock-skills:code-review`
@@ -389,19 +389,30 @@ servidor), tabla `#`, Paciente, Especialidad, Médico preferido, Ventana, Franja
 - Produces: `toWaitlistRows(entries)` → posición, ventana de fechas y franja con textos de `CONTEXT.md`
   ("Entrada en lista de espera", "Prioridad de espera").
 
-- [ ] **Step 1 (rojo/verde):** Pruebas de `toWaitlistRows`: conserva el orden recibido (el servidor ya
+- [x] **Step 1 (rojo/verde):** Pruebas de `toWaitlistRows`: conserva el orden recibido (el servidor ya
   ordena por prioridad y llegada); la posición `#` empieza en 1; médico preferido ausente → "Cualquiera".
-- [ ] **Step 2:** Si `DataTable` (UI-22) no admite lista completa, agregar ese modo allí con su prueba,
+- [x] **Step 2:** Si `DataTable` (UI-22) no admite lista completa, agregar ese modo allí con su prueba,
   sin duplicar paginación en esta vista.
 
 ### Task 2: Pruebas de navegador
 
 **Files:** Create: `client/tests/e2e/waitlist-staff.spec.ts`
 
-- [ ] **Step 1:** `actor: 'RECEPTIONIST'`: filtrar por especialidad envía `specialtyId`; subir prioridad
+- [x] **Step 1:** `actor: 'RECEPTIONIST'`: filtrar por especialidad envía `specialtyId`; subir prioridad
   envía el `delta` elegido y refresca la lista.
-- [ ] **Step 2:** `expectAccessible(page)` con el diálogo abierto.
+- [x] **Step 2:** `expectAccessible(page)` con el diálogo abierto.
   Run: `cd client && pnpm exec playwright test waitlist-staff` → Expected: PASS.
+
+### Notas de implementación
+
+- **`toWaitlistRows`:** devuelve la posición desde 1, el médico preferido (o «Cualquiera»), la ventana de días con `formatDate` (UTC) y la franja con `TIME_PREFERENCE_LABELS`, en el orden que manda el servidor. Son 3 pruebas en Vitest.
+- **Vista:**
+  - sigue el patrón `user/list` de Materio, con una tarjeta «Filtros» (especialidad y médico; «Doctor» pasa a «Médico», como dice `CONTEXT.md`);
+  - la tabla es `DataTable` en modo de lista completa, sin `pagination`, porque `GET /waitlist` no pagina. Ese modo ya venía en `DataTable` (UI-22), así que no hubo que tocarlo;
+  - médico preferido, ventana y franja se ocultan en celular;
+  - cada acción tiene nombre accesible («Subir la prioridad de …»).
+- **`PriorityDialog`:** toma el estilo de Materio con el mismo payload (`{ delta }` de 1 a 100). El valor se reinicia al cambiar de entrada sin `useEffect`.
+- **Pruebas de navegador:** `waitlist-staff.spec.ts` cubre la cola en orden con posición y «Cualquiera», el filtro por especialidad (`specialtyId=2`) y subir la prioridad (`PATCH /waitlist/7/priority {delta: 25}` y vuelve a pedir la cola), con `expectAccessible` en la página y con el diálogo abierto.
 
 ---
 
