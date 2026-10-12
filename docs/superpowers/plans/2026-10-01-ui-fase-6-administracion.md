@@ -76,10 +76,10 @@ primero con `DataTable` + pacientes.
   (`aria-sort`), estado vacío y de carga, selector de tamaño de página.
 - Consumes: `@tanstack/react-table`, `@core/styles/table.module.css`, `TablePagination` de MUI.
 
-- [ ] **Step 1 (rojo):** Pruebas Vitest + Testing Library: cambiar de página llama `onPaginationChange`
+- [x] **Step 1 (rojo):** Pruebas Vitest + Testing Library: cambiar de página llama `onPaginationChange`
   con el índice correcto; `isLoading` muestra skeleton y no filas; `rows=[]` muestra `emptyMessage`;
   ordenar marca `aria-sort`. Run: `cd client && pnpm test -- DataTable` → Expected: FAIL.
-- [ ] **Step 2 (verde):** Implementar hasta PASS.
+- [x] **Step 2 (verde):** Implementar hasta PASS.
 
 ### Task 2: Seis pantallas sobre el patrón de lista de Materio
 
@@ -95,12 +95,35 @@ primero con `DataTable` + pacientes.
   `client/src/services/<e>.service.ts`.
 - Produces: misma funcionalidad CRUD que hoy.
 
-- [ ] **Step 1:** Pacientes primero; `PatientDetailDialog` se reemplaza por la acción "Ver expediente"
+- [x] **Step 1:** Pacientes primero; `PatientDetailDialog` se reemplaza por la acción "Ver expediente"
   (UI-21) más el drawer de edición; borrar el diálogo si queda sin uso.
 - [ ] **Step 2:** Resto de entidades. Tarjetas de resumen (`card-statistics/HorizontalWithSubtitle`) solo
   si el endpoint ya devuelve el conteo; no agregar llamadas `pageSize: 1` nuevas.
 - [ ] **Step 3:** Confirmación de borrado con el `ConfirmDialog` compartido existente o
   `components/dialogs/confirmation-dialog` de Materio (uno solo; borrar el otro).
+
+### Notas de implementación (DataTable y pacientes)
+
+- **`DataTable`** (`components/shared/DataTable`):
+  - `<table>` nativa con `@core/styles/table.module.css` de Materio y `TablePagination` en español (`Ir a la página siguiente`…);
+  - `pagination` va desde 0: las vistas que usan `currentPage` desde 1 restan uno;
+  - el orden es de servidor y solo en columnas con `enableSorting: true`, con `aria-sort` en el encabezado;
+  - `isLoading` muestra un esqueleto y marca `aria-busy`, y sin filas aparece `emptyMessage`;
+  - sin `pagination` es una lista completa, para UI-30;
+  - `meta.align` y `meta.hiddenOnMobile` se declaran con la ampliación de `ColumnMeta`;
+  - cinco pruebas con Testing Library sobre jsdom. Vitest ahora acepta `.test.tsx`, con `// @vitest-environment jsdom` por archivo.
+- **Pacientes:**
+  - tarjetas con `activeCount`/`inactiveCount`, que ya devuelve el endpoint, y filtros de búsqueda (`DebouncedInput`) y estado;
+  - columnas con avatar, documento, teléfono, edad, sangre, registro, estado y acciones;
+  - **solo se ordena por sangre, registro y estado.** Antes cualquier encabezado mandaba su id como `orderBy`, y el repositorio lo usa como campo de Prisma: ordenar por «Nombre» fallaba en el servidor;
+  - la columna «Última visita» mostraba la fecha de registro: ahora se llama «Registro»;
+  - `PatientDetailDialog` se borró; «Ver expediente» lleva a `/patients/{id}` (UI-21);
+  - los drawers tienen rol de diálogo con nombre, campos obligatorios con `required` (el asterisco pasa a ser parte del nombre accesible) y «Cancelar» sin color de error;
+  - el botón de RENIEC tenía un `aria-label` en un `span`: ahora está en el botón, con `describeChild`.
+- **Compartidos:**
+  - `CustomAvatar` con `skin='light'` mezcla el texto hacia `--contrast-mix`: las iniciales en 15 px no llegaban a AA;
+  - `InternationalPhoneInput` acepta `required`;
+  - `shell.spec.ts` tenía una carrera: el contador de notificaciones del fixture no bajaba tras marcar como leída.
 
 ### Task 3: Pruebas de navegador
 
