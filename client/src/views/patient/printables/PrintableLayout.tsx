@@ -9,6 +9,14 @@ import Typography from '@mui/material/Typography';
 import Logo from '@/components/layout/shared/Logo';
 import type { Appointment } from '@/views/appointments/types';
 
+/** Adónde vuelve el documento: a Mis citas para el paciente, a Pagos para el personal. */
+export interface PrintableBack {
+  href: string;
+  label: string;
+}
+
+export const BACK_TO_MY_APPOINTMENTS: PrintableBack = { href: '/patient/appointments', label: 'Volver a Mis citas' };
+
 interface PrintableLayoutProps {
   title: string;
   /** Línea bajo el título, p. ej. "Cita #501". */
@@ -16,6 +24,7 @@ interface PrintableLayoutProps {
   appointment?: Appointment;
   /** Acciones extra junto a Imprimir (p. ej. descargar el PDF). */
   actions?: React.ReactNode;
+  back?: PrintableBack;
   children: React.ReactNode;
 }
 
@@ -23,7 +32,7 @@ interface PrintableLayoutProps {
  * Documento imprimible con la presentación de la vista previa imprimible de Materio:
  * encabezado con la sede, contenido y acciones a la derecha (ocultas al imprimir).
  */
-export function PrintableLayout({ title, reference, appointment, actions, children }: PrintableLayoutProps) {
+export function PrintableLayout({ title, reference, appointment, actions, back = BACK_TO_MY_APPOINTMENTS, children }: PrintableLayoutProps) {
   return (
     <div className='grid gap-6 md:grid-cols-[minmax(0,1fr)_260px]'>
       <Card className='printable-document'>
@@ -54,8 +63,8 @@ export function PrintableLayout({ title, reference, appointment, actions, childr
             Imprimir
           </Button>
           {actions}
-          <Button component={Link} href='/patient/appointments' variant='outlined' startIcon={<i className='ri-arrow-left-line' />}>
-            Volver a Mis citas
+          <Button component={Link} href={back.href} variant='outlined' startIcon={<i className='ri-arrow-left-line' />}>
+            {back.label}
           </Button>
         </CardContent>
       </Card>
@@ -89,13 +98,13 @@ export function appointmentWhen(a: Appointment): string {
   return `${day}, ${a.startTime} (hora de la sede)`;
 }
 
-export function PrintableMessage({ children }: { children: React.ReactNode }) {
+export function PrintableMessage({ children, back = BACK_TO_MY_APPOINTMENTS }: { children: React.ReactNode; back?: PrintableBack }) {
   return (
     <Card>
       <CardContent className='flex flex-col items-start gap-4'>
         <Typography>{children}</Typography>
-        <Button component={Link} href='/patient/appointments' variant='outlined'>
-          Volver a Mis citas
+        <Button component={Link} href={back.href} variant='outlined'>
+          {back.label}
         </Button>
       </CardContent>
     </Card>

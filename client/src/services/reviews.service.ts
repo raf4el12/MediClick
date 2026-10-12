@@ -5,6 +5,8 @@ import type {
   DoctorReviews,
   CreateReviewPayload,
   ReviewModerationParams,
+  ReviewStats,
+  ReviewStatsParams,
 } from '@/views/reviews/types';
 
 export const reviewsService = {
@@ -42,6 +44,13 @@ export const reviewsService = {
     const response = await api.get<PaginatedResponse<Review>>('/reviews', {
       params,
     });
+
+    return response.data;
+  },
+
+  // Moderación: agregados de la sede del actor (requiere UPDATE:REVIEWS)
+  getStats: async (params: ReviewStatsParams = {}): Promise<ReviewStats> => {
+    const response = await api.get<ReviewStats>('/reviews/stats', { params });
 
     return response.data;
   },
