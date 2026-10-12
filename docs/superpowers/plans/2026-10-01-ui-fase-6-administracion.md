@@ -141,7 +141,7 @@ primero con `DataTable` + pacientes.
 
 ---
 
-## UI-23 — Roles y permisos
+## UI-23 — Roles y permisos ✅
 
 **Rama:** `git fetch origin && git switch -c feat/ui-23-roles-permisos origin/staging`
 **Skills:** `mattpocock-skills:tdd`
@@ -159,7 +159,7 @@ rechaza borrar roles con `isSystem` (`roles/application/use-cases/delete-role.us
 - Produces: `toPermissionMatrix(permissions, selectedIds)` (filas por sujeto, columnas por acción, usando
   `permissionsMeta`) y `fromPermissionMatrix(matrix): number[]` (ids para el payload).
 
-- [ ] **Step 1 (rojo/verde):** Pruebas: ida y vuelta conserva los ids; marcar `MANAGE` de un sujeto marca
+- [x] **Step 1 (rojo/verde):** Pruebas: ida y vuelta conserva los ids; marcar `MANAGE` de un sujeto marca
   todas sus acciones si así lo hace hoy `PermissionsDialog` (verificar y replicar, no inventar regla);
   sujeto sin permisos devuelve fila vacía.
 
@@ -172,9 +172,25 @@ rechaza borrar roles con `isSystem` (`roles/application/use-cases/delete-role.us
 - Create: `client/src/views/roles/components/RoleDialog.tsx` (adapta `components/dialogs/role-dialog`: nombre + matriz)
 - Delete: `RoleFormDrawer.tsx`, `PermissionsDialog.tsx` (absorbidos por `RoleDialog`)
 
-- [ ] **Step 1:** Roles `isSystem` se muestran sin botón de borrar y con la matriz de solo lectura.
-- [ ] **Step 2:** Prueba e2e `client/tests/e2e/roles.spec.ts`: editar un rol envía los ids esperados;
+- [x] **Step 1:** Roles `isSystem` se muestran sin botón de borrar y con la matriz de solo lectura.
+- [x] **Step 2:** Prueba e2e `client/tests/e2e/roles.spec.ts`: editar un rol envía los ids esperados;
   un rol de sistema no ofrece borrar; `expectAccessible` con el diálogo abierto.
+
+### Notas de implementación
+
+- **Regla verificada:** `PermissionsDialog` era de solo lectura; la edición vivía en `RoleFormDrawer`.
+  - Ahí, la casilla del módulo marcaba o quitaba todas sus acciones, y «Seleccionar todo» hacía lo mismo con todos los permisos.
+  - Marcar `MANAGE` no arrastraba a las demás acciones, así que no se inventó esa cascada.
+  - `permissionMatrix.ts` replica esas reglas con `toggleSubject`, `toggleAll` y `togglePermission`, y además expone `rowState` para la casilla indeterminada.
+  - Las filas empiezan por «Todos» y siguen por nombre; las acciones, por «Gestionar». Son 6 pruebas en Vitest.
+- **Pantalla:** sigue el patrón de `views/apps/roles` y `components/dialogs/role-dialog` de Materio.
+  - Una tarjeta por rol muestra el resumen de permisos, el tipo y la acción «Editar rol» o «Ver permisos». Otra tarjeta, con la ilustración `characters/1.png`, sirve para agregar un rol.
+  - El listado usa `DataTable` en modo de lista completa (`GET /roles` no pagina). Ahí está «Eliminar» para los roles personalizados; los de sistema muestran «No se puede eliminar».
+  - Editar se hace solo desde las tarjetas, para no repetir el mismo botón en dos lugares.
+- **Diálogo:** lleva nombre, descripción, búsqueda de módulo y una tabla de matriz con casilla por módulo y por acción, cada una con nombre accesible («Pacientes: Leer», «Pacientes: todas las acciones»).
+  - Los roles de sistema se abren en solo lectura con el título «Permisos de X», casillas deshabilitadas y solo «Cerrar». El servidor rechaza editarlos y borrarlos (`update-role` y `delete-role`).
+- **Borrado:** `RoleFormDrawer.tsx` y `PermissionsDialog.tsx`. `useRoles` pierde el estado del drawer y `handleDelete` informa si salió bien. La confirmación usa el `ConfirmDialog` compartido con `destructive={false}`.
+- **Pruebas de navegador:** `roles.spec.ts` cubre editar (ids enviados), crear (payload), eliminar con confirmación y el rol de sistema, con `expectAccessible` en la página y con el diálogo abierto.
 
 ---
 
