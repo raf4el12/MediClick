@@ -18,6 +18,9 @@ type AppointmentGql {
 
 type AppointmentScheduleGql {
   doctor: AppointmentDoctorGql
+
+  """Día de la cita; startTime solo trae la hora"""
+  scheduleDate: DateTime!
 }
 
 type ClinicalNoteGql {

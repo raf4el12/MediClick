@@ -43,3 +43,24 @@ export interface SlotReleasedEvent {
   endTime: Date;
   clinicId: number | null;
 }
+
+/**
+ * Una restricción dejó de aplicar sobre uno o más días: se borró, se desactivó
+ * o su rango se achicó o movió. Lo consume la lista de espera para reofrecer
+ * los cupos que quedaron libres. `liftedRanges` son días de agenda; el
+ * consumidor recalcula qué cupos están libres de verdad.
+ */
+export const AVAILABILITY_RESTRICTION_LIFTED_EVENT =
+  'availability.restriction_lifted';
+
+export interface AvailabilityRestrictionLiftedEvent {
+  restrictionType: 'HOLIDAY' | 'SCHEDULE_BLOCK';
+  restrictionId: number;
+  /** null = feriado global (afecta todas las sedes). */
+  clinicId: number | null;
+  /** null cuando la restricción afecta a una sede y no a un médico concreto. */
+  doctorId: number | null;
+  liftedRanges: AvailabilityRestrictionRange[];
+  occurredAt: Date;
+  actorId: number;
+}

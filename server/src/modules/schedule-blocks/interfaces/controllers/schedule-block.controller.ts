@@ -114,7 +114,8 @@ export class ScheduleBlockController {
   async delete(
     @Param('id', ParseIntPipe) id: number,
     @CurrentClinic() clinicId: number | null,
+    @CurrentUser('id') actorId: number,
   ): Promise<void> {
-    return this.deleteScheduleBlockUseCase.execute(id, clinicId);
+    return this.deleteScheduleBlockUseCase.execute(id, clinicId, actorId);
   }
 }

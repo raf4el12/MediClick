@@ -134,7 +134,8 @@ export class HolidayController {
   async delete(
     @Param('id', ParseIntPipe) id: number,
     @CurrentClinic() clinicId: number | null,
+    @CurrentUser('id') actorId: number,
   ): Promise<void> {
-    return this.deleteHolidayUseCase.execute(id, clinicId);
+    return this.deleteHolidayUseCase.execute(id, clinicId, actorId);
   }
 }
