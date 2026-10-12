@@ -1,45 +1,40 @@
 'use client';
 
-import { memo, useMemo, useState } from 'react';
-import Card from '@mui/material/Card';
-import Typography from '@mui/material/Typography';
-import { StatusBadge } from '@/@core/components/mui/StatusBadge';
-import IconButton from '@mui/material/IconButton';
-import TablePagination from '@mui/material/TablePagination';
-import Table from '@mui/material/Table';
-import TableHead from '@mui/material/TableHead';
-import TableBody from '@mui/material/TableBody';
-import TableRow from '@mui/material/TableRow';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableSortLabel from '@mui/material/TableSortLabel';
-import Box from '@mui/material/Box';
+import { memo, useCallback, useMemo, useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
-import {
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
-import { SkeletonTable } from '@/components/shared/SkeletonTable';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CardHeader from '@mui/material/CardHeader';
+import Chip from '@mui/material/Chip';
+import Divider from '@mui/material/Divider';
+import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+import { createColumnHelper } from '@tanstack/react-table';
+import OptionMenu from '@core/components/option-menu';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import type { User } from '../types';
-import type { PaginatedResponse } from '@/types/pagination.types';
-import { UserFilters } from './UserFilters';
-import { AddEditUserDrawer } from './AddEditUserDrawer';
+import { DataTable } from '@/components/shared/DataTable';
+import type { DataTableSorting } from '@/components/shared/DataTable/DataTable';
+import { DebouncedInput } from '@/components/shared/DebouncedInput';
 import { useAppDispatch } from '@/redux-store/hooks';
 import { deleteUserThunk } from '@/redux-store/thunks/users.thunks';
+import type { PaginatedResponse } from '@/types/pagination.types';
+import { notify } from '@/utils/notify';
+import type { User } from '../types';
+import { AddEditUserDrawer } from './AddEditUserDrawer';
+import { UserFilters } from './UserFilters';
 
 const columnHelper = createColumnHelper<User>();
 
-const ROLE_LABELS: Record<string, { label: string; color: 'primary' | 'secondary' | 'success' | 'warning' | 'info' }> = {
-  ADMIN: { label: 'Admin', color: 'primary' },
-  DOCTOR: { label: 'Doctor', color: 'info' },
-  RECEPTIONIST: { label: 'Recepcionista', color: 'secondary' },
+const ROLE_LABELS: Record<string, { label: string; color: 'primary' | 'info' | 'success' | 'warning' | 'secondary' }> = {
+  ADMIN: { label: 'Administrador', color: 'primary' },
+  DOCTOR: { label: 'Médico', color: 'info' },
+  RECEPTIONIST: { label: 'Recepcionista', color: 'warning' },
   PATIENT: { label: 'Paciente', color: 'success' },
-  USER: { label: 'Usuario', color: 'warning' },
 };
+
+/** Columnas que el servidor sabe ordenar: campos propios de `Users`. */
+const SORTABLE = ['name', 'isActive'];
 
 interface UsersTableProps {
   data: PaginatedResponse<User>;
@@ -54,7 +49,7 @@ interface UsersTableProps {
     totalPages: number;
     role?: string;
   };
-  setPagination: React.Dispatch<React.SetStateAction<UsersTableProps['pagination']>>;
+  setPagination: (updater: React.SetStateAction<UsersTableProps['pagination']>) => void;
   debouncedSearch: (value: string) => void;
   handleRoleFilter: (role: string | undefined) => void;
   drawerOpen: boolean;
@@ -66,6 +61,9 @@ interface UsersTableProps {
   refreshData: () => void;
 }
 
+const displayName = (u: User) => (u.profile ? `${u.profile.name} ${u.profile.lastName}` : u.name);
+
+/** Lista de usuarios del personal con el patrón `user/list` de Materio sobre `DataTable`. */
 export const UsersTable = memo(function UsersTable({
   data,
   loading,
@@ -88,297 +86,147 @@ export const UsersTable = memo(function UsersTable({
   const handleDelete = async () => {
     if (!deleteTarget) return;
     const result = await dispatch(deleteUserThunk(deleteTarget.id));
+    setDeleteTarget(null);
     if (deleteUserThunk.fulfilled.match(result)) {
       refreshData();
+      notify('Usuario eliminado');
+    } else {
+      notify('No se pudo eliminar el usuario', 'error');
     }
-    setDeleteTarget(null);
+  };
+
+  const handleSaved = () => {
+    refreshData();
+    notify(editUser ? 'Usuario actualizado' : 'Usuario creado');
   };
 
   const columns = useMemo(
     () => [
-      columnHelper.display({
-        id: 'fullName',
+      columnHelper.accessor('name', {
         header: 'Usuario',
+        enableSorting: true,
         cell: ({ row }) => (
-          <Box>
-            <Typography color="text.primary" sx={{ fontWeight: 500 }}>
-              {row.original.profile
-                ? `${row.original.profile.name} ${row.original.profile.lastName}`
-                : row.original.name}
+          <div className='flex flex-col'>
+            <Typography color='text.primary' className='font-medium'>
+              {displayName(row.original)}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {row.original.email}
-            </Typography>
-          </Box>
+            <Typography variant='body2'>{row.original.email}</Typography>
+          </div>
         ),
       }),
       columnHelper.accessor('role', {
         header: 'Rol',
-        meta: { align: 'center' },
-        cell: ({ row }) => {
-          const roleInfo = ROLE_LABELS[row.original.role] ?? {
-            label: row.original.role,
-            color: 'warning' as const,
-          };
-          return (
-            <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-              <StatusBadge
-                label={roleInfo.label}
-                color={roleInfo.color}
-                size="small"
-                variant="outlined"
-              />
-            </Box>
-          );
+        cell: ({ getValue }) => {
+          const role = ROLE_LABELS[getValue()] ?? { label: getValue(), color: 'secondary' as const };
+          return <Chip label={role.label} size='small' variant='tonal' color={role.color} />;
         },
       }),
       columnHelper.display({
         id: 'phone',
         header: 'Teléfono',
-        meta: { hiddenOnMobile: true, align: 'center' },
-        cell: ({ row }) => (
-          <Typography>
-            {row.original.profile?.phone ?? 'N/A'}
-          </Typography>
-        ),
+        meta: { hiddenOnMobile: true },
+        cell: ({ row }) => <Typography>{row.original.profile?.phone ?? '—'}</Typography>,
       }),
       columnHelper.accessor('isActive', {
         header: 'Estado',
-        meta: { align: 'center' },
-        cell: ({ row }) => (
-          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-            <StatusBadge
-              label={row.original.isActive ? 'Activo' : 'Inactivo'}
-              color={row.original.isActive ? 'success' : 'error'}
-              size="small"
-            />
-          </Box>
+        enableSorting: true,
+        cell: ({ getValue }) => (
+          <Chip label={getValue() ? 'Activo' : 'Inactivo'} size='small' variant='tonal' color={getValue() ? 'success' : 'secondary'} />
         ),
       }),
       columnHelper.display({
         id: 'actions',
         header: 'Acciones',
-        meta: { align: 'center' },
         cell: ({ row }) => (
-          <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-            <IconButton
-              size="small"
-              color="primary"
-              aria-label="Ver detalle de usuario"
-              onClick={() => openDetail(row.original)}
-              sx={{ minWidth: 44, minHeight: 44 }}
-            >
-              <i className="ri-eye-line" style={{ fontSize: 18 }} />
+          <div className='flex items-center'>
+            <IconButton aria-label={`Editar a ${displayName(row.original)}`} onClick={() => openEditDrawer(row.original)}>
+              <i className='ri-pencil-line text-textSecondary' aria-hidden />
             </IconButton>
-            <IconButton
-              size="small"
-              color="info"
-              aria-label="Editar usuario"
-              onClick={() => openEditDrawer(row.original)}
-              sx={{ minWidth: 44, minHeight: 44 }}
-            >
-              <i className="ri-pencil-line" style={{ fontSize: 18 }} />
-            </IconButton>
-            <IconButton
-              size="small"
-              color="error"
-              aria-label="Eliminar usuario"
-              onClick={() => setDeleteTarget(row.original)}
-              sx={{ minWidth: 44, minHeight: 44 }}
-            >
-              <i className="ri-delete-bin-line" style={{ fontSize: 18 }} />
-            </IconButton>
-          </Box>
+            <OptionMenu
+              iconButtonProps={{ 'aria-label': `Más acciones para ${displayName(row.original)}` }}
+              iconClassName='text-textSecondary'
+              options={[
+                { text: 'Ver detalle', icon: 'ri-eye-line', menuItemProps: { className: 'flex items-center gap-2', onClick: () => openDetail(row.original) } },
+                { text: 'Eliminar', icon: 'ri-delete-bin-7-line', menuItemProps: { className: 'flex items-center gap-2', onClick: () => setDeleteTarget(row.original) } },
+              ]}
+            />
+          </div>
         ),
       }),
     ],
     [openDetail, openEditDrawer],
   );
 
-  const table = useReactTable({
-    data: data.rows,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-    pageCount: pagination.totalPages,
-    state: {
-      pagination: {
-        pageIndex: pagination.currentPage - 1,
-        pageSize: pagination.pageSize,
-      },
+  // DebouncedInput avisa también al montarse; solo se busca si el texto cambió, para no volver a la página 1.
+  const currentSearch = pagination.searchValue;
+  const handleSearch = useCallback(
+    (value: string) => {
+      if (value !== currentSearch) debouncedSearch(value);
     },
-  });
+    [currentSearch, debouncedSearch],
+  );
+
+  const sorting: DataTableSorting | null = SORTABLE.includes(pagination.orderBy)
+    ? { id: pagination.orderBy, desc: pagination.orderByMode === 'desc' }
+    : null;
 
   return (
-    <>
-      <Card>
-        <Box sx={{ p: 3, pt: 4 }}>
-          <UserFilters
-            selectedRole={pagination.role}
-            onRoleChange={handleRoleFilter}
-            onSearch={debouncedSearch}
-          />
-
-          {error && (
-            <Alert
-              severity="error"
-              sx={{ mb: 2 }}
-              action={
-                <Button color="inherit" size="small" onClick={refreshData}>
-                  Reintentar
-                </Button>
-              }
-            >
-              {error}
-            </Alert>
-          )}
-
-          <TableContainer sx={{ overflowX: 'auto' }}>
-            <Table sx={{ minWidth: 600 }}>
-              <TableHead>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => {
-                      const meta = header.column.columnDef.meta as Record<string, any> | undefined;
-                      const isHiddenOnMobile = meta?.hiddenOnMobile;
-                      const align = meta?.align || 'left';
-
-                      return (
-                        <TableCell
-                          key={header.id}
-                          align={align as any}
-                          sx={{
-                            fontWeight: 600,
-                            ...(isHiddenOnMobile && { display: { xs: 'none', sm: 'table-cell' } }),
-                          }}
-                        >
-                          {header.isPlaceholder ? null : (
-                            <TableSortLabel
-                              active={pagination.orderBy === header.id}
-                              direction={
-                                pagination.orderBy === header.id
-                                  ? pagination.orderByMode
-                                  : 'asc'
-                              }
-                              onClick={() => {
-                                if (header.id === 'actions') return;
-                                setPagination((prev) => ({
-                                  ...prev,
-                                  orderBy: header.id,
-                                  orderByMode:
-                                    prev.orderBy === header.id &&
-                                      prev.orderByMode === 'asc'
-                                      ? 'desc'
-                                      : 'asc',
-                                  currentPage: 1,
-                                }));
-                              }}
-                              hideSortIcon={header.id === 'actions'}
-                            >
-                              {flexRender(
-                                header.column.columnDef.header,
-                                header.getContext(),
-                              )}
-                            </TableSortLabel>
-                          )}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-              </TableHead>
-              <TableBody>
-                {loading ? (
-                  <SkeletonTable
-                    rowsNum={pagination.pageSize}
-                    colNum={columns.length}
-                  />
-                ) : table.getRowModel().rows.length > 0 ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id} hover sx={{ cursor: 'pointer' }}>
-                      {row.getVisibleCells().map((cell) => {
-                        const meta = cell.column.columnDef.meta as Record<string, any> | undefined;
-                        const isHiddenOnMobile = meta?.hiddenOnMobile;
-                        const align = meta?.align || 'left';
-
-                        return (
-                          <TableCell
-                            key={cell.id}
-                            align={align as any}
-                            sx={isHiddenOnMobile ? { display: { xs: 'none', sm: 'table-cell' } } : undefined}
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      sx={{ textAlign: 'center', py: 6 }}
-                    >
-                      <i className="ri-user-settings-line" style={{ fontSize: 48, display: 'block', marginBottom: 8 }} />
-                      <Typography color="text.secondary" sx={{ mb: 2 }}>
-                        No hay usuarios disponibles
-                      </Typography>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<i className="ri-add-line" />}
-                        onClick={openCreateDrawer}
-                      >
-                        Registrar usuario
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          <TablePagination
-            component="div"
-            rowsPerPageOptions={[8, 15, 25]}
-            count={data.totalRows}
-            rowsPerPage={pagination.pageSize}
-            page={pagination.currentPage - 1}
-            labelRowsPerPage="Filas por página:"
-            onPageChange={(_, page) =>
-              setPagination((prev) => ({
-                ...prev,
-                currentPage: page + 1,
-              }))
-            }
-            onRowsPerPageChange={(e) =>
-              setPagination((prev) => ({
-                ...prev,
-                pageSize: Number(e.target.value),
-                currentPage: 1,
-              }))
-            }
-          />
-        </Box>
-      </Card>
-
-      <AddEditUserDrawer
-        open={drawerOpen}
-        editUser={editUser}
-        onClose={closeDrawer}
-        onSuccess={refreshData}
+    <Card>
+      <CardHeader title='Filtros' />
+      <CardContent>
+        <UserFilters selectedRole={pagination.role} onRoleChange={handleRoleFilter} />
+      </CardContent>
+      <Divider />
+      <div className='flex flex-col items-start justify-between gap-4 p-5 sm:flex-row sm:items-center'>
+        <DebouncedInput
+          placeholder='Buscar usuario'
+          value={pagination.searchValue}
+          onChange={handleSearch}
+          className='max-sm:is-full'
+          slotProps={{ htmlInput: { 'aria-label': 'Buscar usuario' } }}
+        />
+        <Button variant='contained' startIcon={<i className='ri-add-line' aria-hidden />} onClick={openCreateDrawer} className='max-sm:is-full'>
+          Nuevo usuario
+        </Button>
+      </div>
+      {error && (
+        <Alert
+          severity='error'
+          className='mli-5 mbe-5'
+          action={
+            <Button color='inherit' size='small' onClick={refreshData}>
+              Reintentar
+            </Button>
+          }
+        >
+          {error}
+        </Alert>
+      )}
+      <DataTable
+        label='Usuarios'
+        columns={columns}
+        rows={data.rows}
+        totalRows={data.totalRows}
+        pagination={{ pageIndex: pagination.currentPage - 1, pageSize: pagination.pageSize }}
+        onPaginationChange={({ pageIndex, pageSize }) =>
+          setPagination((prev) => ({ ...prev, currentPage: pageSize === prev.pageSize ? pageIndex + 1 : 1, pageSize }))
+        }
+        pageSizeOptions={[8, 15, 25]}
+        sorting={sorting}
+        onSortingChange={(s) => setPagination((prev) => ({ ...prev, orderBy: s.id, orderByMode: s.desc ? 'desc' : 'asc', currentPage: 1 }))}
+        isLoading={loading}
+        emptyMessage='No hay usuarios que coincidan con los filtros.'
       />
-
+      <AddEditUserDrawer open={drawerOpen} editUser={editUser} onClose={closeDrawer} onSuccess={handleSaved} />
       <ConfirmDialog
         open={!!deleteTarget}
-        title="Eliminar Usuario"
-        description={`¿Estás seguro de eliminar a ${deleteTarget?.profile ? `${deleteTarget.profile.name} ${deleteTarget.profile.lastName}` : deleteTarget?.name}? Esta acción no se puede deshacer.`}
-        onConfirm={handleDelete}
+        title='¿Eliminar usuario?'
+        description={`Se eliminará a ${deleteTarget ? displayName(deleteTarget) : ''}. Esta acción no se puede deshacer.`}
+        confirmLabel='Eliminar'
+        destructive={false}
+        onConfirm={() => void handleDelete()}
         onCancel={() => setDeleteTarget(null)}
       />
-    </>
+    </Card>
   );
 });

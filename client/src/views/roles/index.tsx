@@ -1,67 +1,82 @@
 'use client';
 
 import { useState } from 'react';
-import Grid from '@mui/material/Grid';
-import { useRoles } from './hooks/useRoles';
-import { RolesTable } from './components/RolesTable';
-import { RoleFormDrawer } from './components/RoleFormDrawer';
-import { PermissionsDialog } from './components/PermissionsDialog';
-import { notify } from '@/utils/notify';
+import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
+import Card from '@mui/material/Card';
+import Typography from '@mui/material/Typography';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { notify } from '@/utils/notify';
+import { useRoles } from './hooks/useRoles';
+import { RoleCards } from './components/RoleCards';
+import { RoleDialog } from './components/RoleDialog';
+import { RolesTable } from './components/RolesTable';
 import type { RoleDto } from './types';
 
+/** Roles y permisos (patrón `views/apps/roles` de Materio): tarjetas por rol, listado y diálogo con la matriz. */
 export default function RolesView() {
   const controller = useRoles();
-  const [viewRole, setViewRole] = useState<RoleDto | null>(null);
-
-  const handleSuccess = () => {
-    controller.refreshData();
-    notify('Operación realizada exitosamente', 'success');
-  };
+  // `undefined`: cerrado; `null`: rol nuevo.
+  const [dialogRole, setDialogRole] = useState<RoleDto | null | undefined>(undefined);
 
   const handleDelete = async () => {
-    await controller.handleDelete();
-    notify('Rol eliminado exitosamente', 'success');
+    const ok = await controller.handleDelete();
+    if (ok) notify('Rol eliminado');
   };
 
   return (
-    <Grid container spacing={3}>
-      <Grid size={12}>
-        <RolesTable
-          roles={controller.roles}
-          loading={controller.loading}
-          error={controller.error}
-          totalPermissions={controller.permissions.length}
-          onAdd={controller.openCreateDrawer}
-          onEdit={controller.openEditDrawer}
-          onDelete={controller.setDeleteTarget}
-          onRefresh={controller.refreshData}
-          onViewPermissions={setViewRole}
+    <div className='flex flex-col gap-6'>
+      <div>
+        <Typography variant='h4' component='h1' className='mbe-1'>
+          Roles y permisos
+        </Typography>
+        <Typography>Cada rol define qué puede ver y hacer su equipo en cada módulo de MediClick.</Typography>
+      </div>
+      {controller.error && (
+        <Alert
+          severity='error'
+          action={
+            <Button color='inherit' size='small' onClick={() => void controller.refreshData()}>
+              Reintentar
+            </Button>
+          }
+        >
+          {controller.error}
+        </Alert>
+      )}
+      <RoleCards roles={controller.roles} loading={controller.loading} onOpen={setDialogRole} onAdd={() => setDialogRole(null)} />
+      <div>
+        <Typography variant='h4' component='h2' className='mbe-1'>
+          Todos los roles
+        </Typography>
+        <Typography>Los roles de sistema vienen con MediClick y no se pueden modificar ni eliminar.</Typography>
+      </div>
+      <Card>
+        <RolesTable roles={controller.roles} loading={controller.loading} onDelete={controller.setDeleteTarget} />
+      </Card>
+
+      {dialogRole !== undefined && (
+        <RoleDialog
+          key={dialogRole?.id ?? 'nuevo'}
+          role={dialogRole}
+          permissions={controller.permissions}
+          onClose={() => setDialogRole(undefined)}
+          onSaved={(created) => {
+            setDialogRole(undefined);
+            notify(created ? 'Rol creado' : 'Rol actualizado');
+            void controller.refreshData();
+          }}
         />
-      </Grid>
-
-      <RoleFormDrawer
-        open={controller.drawerOpen}
-        editRole={controller.editRole}
-        permissions={controller.permissions}
-        onClose={controller.closeDrawer}
-        onSuccess={handleSuccess}
-      />
-
-      <PermissionsDialog
-        key={viewRole?.id ?? 'closed'}
-        role={viewRole}
-        onClose={() => setViewRole(null)}
-      />
+      )}
 
       <ConfirmDialog
         open={!!controller.deleteTarget}
-        title="Eliminar Rol"
-        description={`¿Estás seguro de eliminar el rol "${controller.deleteTarget?.name}"? Los usuarios asignados a este rol perderán sus permisos.`}
-        onConfirm={handleDelete}
+        title='Eliminar el rol'
+        description={`Los usuarios con el rol «${controller.deleteTarget?.name ?? ''}» perderán sus permisos.`}
+        destructive={false}
+        onConfirm={() => void handleDelete()}
         onCancel={() => controller.setDeleteTarget(null)}
       />
-
-    </Grid>
+    </div>
   );
 }

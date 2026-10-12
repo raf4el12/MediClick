@@ -10,7 +10,7 @@ import { reportsService } from '@/services/reports.service';
 import { getTodayInTimezone, nowInTimezone } from '@/utils/timezone';
 import { useAppSelector } from '@/redux-store/hooks';
 import { selectUser } from '@/redux-store/slices/auth';
-import type { AppointmentsSummary, ScheduleOccupancy } from '@/views/reports/types';
+import type { AppointmentsSummary, RevenueReport, ScheduleOccupancy } from '@/views/reports/types';
 
 interface DashboardStats {
   todayAppointments: number;
@@ -23,6 +23,7 @@ interface DashboardData {
   stats: DashboardStats;
   summary: AppointmentsSummary | null;
   occupancy: ScheduleOccupancy | null;
+  revenue: RevenueReport | null;
   loading: boolean;
 }
 
@@ -74,6 +75,11 @@ export function useDashboard(): DashboardData {
         queryFn: () => reportsService.getScheduleOccupancy(month, year),
         staleTime: 5 * 60 * 1000,
       },
+      {
+        queryKey: ['dashboard', 'revenue', month, year],
+        queryFn: () => reportsService.getRevenue(month, year),
+        staleTime: 5 * 60 * 1000,
+      },
     ],
   });
 
@@ -84,6 +90,7 @@ export function useDashboard(): DashboardData {
     specialtiesResult,
     summaryResult,
     occupancyResult,
+    revenueResult,
   ] = results;
 
   const loading = results.some((r) => r.isLoading);
@@ -105,6 +112,7 @@ export function useDashboard(): DashboardData {
 
   const summary: AppointmentsSummary | null = summaryResult?.data ?? null;
   const occupancy: ScheduleOccupancy | null = occupancyResult?.data ?? null;
+  const revenue: RevenueReport | null = revenueResult?.data ?? null;
 
-  return { stats, summary, occupancy, loading };
+  return { stats, summary, occupancy, revenue, loading };
 }

@@ -1,21 +1,18 @@
 'use client';
 
-import Drawer from '@mui/material/Drawer';
-import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
-import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
-import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
+import Divider from '@mui/material/Divider';
+import Drawer from '@mui/material/Drawer';
+import IconButton from '@mui/material/IconButton';
 import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import { Controller } from 'react-hook-form';
+import type { Clinic } from '@/views/clinics/types';
 import { useCategoryForm } from '../hooks/useCategoryForm';
 import type { Category } from '../types';
-import type { Clinic } from '@/views/clinics/types';
-
-const KEEP_MOUNTED = { keepMounted: true };
 
 interface AddCategoryDrawerProps {
   open: boolean;
@@ -25,135 +22,92 @@ interface AddCategoryDrawerProps {
   onSuccess: () => void;
 }
 
-export function AddCategoryDrawer({
-  open,
-  drawerData,
-  clinics,
-  onClose,
-  onSuccess,
-}: AddCategoryDrawerProps) {
-  const { control, errors, handleSubmit, isLoading, submitError, handleReset } =
-    useCategoryForm({ drawerData, onSuccess, onClose });
+/** Alta y edición de una categoría (estructura de `AddUserDrawer` de Materio). */
+export function AddCategoryDrawer({ open, drawerData, clinics, onClose, onSuccess }: AddCategoryDrawerProps) {
+  const { control, errors, handleSubmit, isLoading, submitError, handleReset } = useCategoryForm({ drawerData, onSuccess, onClose });
+  const title = drawerData.action === 'Update' ? 'Editar categoría' : 'Nueva categoría';
 
   return (
     <Drawer
       open={open}
-      anchor="right"
-      variant="temporary"
+      anchor='right'
+      variant='temporary'
       onClose={handleReset}
-      ModalProps={KEEP_MOUNTED}
-      sx={{ '& .MuiDrawer-paper': { width: { xs: 320, sm: 420 } } }}
+      ModalProps={{ keepMounted: true }}
+      slotProps={{ paper: { role: 'dialog', 'aria-modal': true, 'aria-labelledby': 'categoria-drawer-titulo' } }}
+      sx={{ '& .MuiDrawer-paper': { width: { xs: 300, sm: 420 } } }}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          px: 3,
-          py: 2,
-        }}
-      >
-        <Typography variant="h5">
-          {drawerData.action === 'Update'
-            ? 'Editar Categoría'
-            : 'Nueva Categoría'}
+      <div className='flex items-center justify-between pli-5 plb-4'>
+        <Typography id='categoria-drawer-titulo' variant='h5' component='h2'>
+          {title}
         </Typography>
-        <IconButton size="small" onClick={handleReset}>
-          <i className="ri-close-line" style={{ fontSize: 24 }} />
+        <IconButton size='small' onClick={handleReset} aria-label='Cerrar'>
+          <i className='ri-close-line text-2xl' aria-hidden />
         </IconButton>
-      </Box>
+      </div>
       <Divider />
-
-      <Box
-        component="form"
-        onSubmit={handleSubmit}
-        sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}
-      >
-        {submitError && (
-          <Alert severity="error">{submitError}</Alert>
-        )}
+      <form onSubmit={handleSubmit} noValidate className='flex flex-col gap-5 p-5'>
+        {submitError && <Alert severity='error'>{submitError}</Alert>}
 
         <Controller
-          name="name"
+          name='name'
           control={control}
           render={({ field }) => (
-            <TextField
-              {...field}
-              fullWidth
-              label="Nombre"
-              placeholder="Ej: Medicina General"
-              error={!!errors.name}
-              helperText={errors.name?.message}
-            />
+            <TextField {...field} id='categoria-nombre' fullWidth label='Nombre' placeholder='Medicina General' error={!!errors.name} helperText={errors.name?.message} />
           )}
         />
-
         <Controller
-          name="description"
+          name='description'
           control={control}
           render={({ field }) => (
             <TextField
               {...field}
+              id='categoria-descripcion'
               fullWidth
               multiline
               minRows={3}
               maxRows={5}
-              label="Descripción"
-              placeholder="Descripción de la categoría"
+              label='Descripción'
+              placeholder='Qué especialidades agrupa'
               error={!!errors.description}
               helperText={errors.description?.message}
             />
           )}
         />
-
+        <div className='grid gap-5 sm:grid-cols-2'>
+          <Controller
+            name='icon'
+            control={control}
+            render={({ field }) => (
+              <TextField {...field} id='categoria-icono' fullWidth label='Ícono' placeholder='ri-heart-pulse-line' error={!!errors.icon} helperText={errors.icon?.message} />
+            )}
+          />
+          <Controller
+            name='color'
+            control={control}
+            render={({ field }) => (
+              <TextField {...field} id='categoria-color' fullWidth label='Color' placeholder='#4CAF50' error={!!errors.color} helperText={errors.color?.message} />
+            )}
+          />
+        </div>
         <Controller
-          name="icon"
+          name='clinicId'
           control={control}
           render={({ field }) => (
             <TextField
-              {...field}
-              fullWidth
-              label="Ícono"
-              placeholder="Ej: ri-heart-pulse-line"
-              error={!!errors.icon}
-              helperText={errors.icon?.message}
-            />
-          )}
-        />
-
-        <Controller
-          name="color"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              fullWidth
-              label="Color"
-              placeholder="Ej: #4CAF50"
-              error={!!errors.color}
-              helperText={errors.color?.message}
-            />
-          )}
-        />
-
-        <Controller
-          name="clinicId"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
               select
+              id='categoria-sede'
               fullWidth
-              label="Sede"
+              label='Sede'
+              name={field.name}
+              inputRef={field.ref}
+              onBlur={field.onBlur}
               value={field.value ?? ''}
-              onChange={(e) =>
-                field.onChange(
-                  e.target.value === '' ? undefined : Number(e.target.value),
-                )
-              }
-              helperText="Dejar en 'Global' para que aplique a todas las sedes"
+              onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+              helperText='Global aplica a todas las sedes'
+              slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
             >
-              <MenuItem value="">Global (Todas las sedes)</MenuItem>
+              <MenuItem value=''>Global (todas las sedes)</MenuItem>
               {clinics.map((c) => (
                 <MenuItem key={c.id} value={c.id}>
                   {c.name}
@@ -162,52 +116,36 @@ export function AddCategoryDrawer({
             </TextField>
           )}
         />
-
         <Controller
-          name="order"
+          name='order'
           control={control}
           render={({ field }) => (
             <TextField
-              {...field}
+              id='categoria-orden'
               fullWidth
-              type="number"
-              label="Orden"
-              placeholder="0"
+              type='number'
+              label='Orden'
+              placeholder='0'
+              name={field.name}
+              inputRef={field.ref}
+              onBlur={field.onBlur}
+              value={field.value ?? ''}
+              onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
               error={!!errors.order}
               helperText={errors.order?.message}
-              value={field.value ?? ''}
-              onChange={(e) =>
-                field.onChange(
-                  e.target.value === '' ? undefined : Number(e.target.value),
-                )
-              }
             />
           )}
         />
 
-        <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
-          <Button
-            variant="contained"
-            type="submit"
-            disabled={isLoading}
-            sx={{ minWidth: 120 }}
-          >
-            {isLoading ? (
-              <>
-                <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
-                Guardando...
-              </>
-            ) : drawerData.action === 'Update' ? (
-              'Actualizar'
-            ) : (
-              'Crear'
-            )}
+        <div className='flex items-center gap-4'>
+          <Button variant='contained' type='submit' disabled={isLoading} startIcon={isLoading ? <CircularProgress size={18} color='inherit' /> : undefined}>
+            {drawerData.action === 'Update' ? 'Actualizar' : 'Crear'}
           </Button>
-          <Button variant="outlined" color="error" onClick={handleReset}>
+          <Button variant='outlined' onClick={handleReset}>
             Cancelar
           </Button>
-        </Box>
-      </Box>
+        </div>
+      </form>
     </Drawer>
   );
 }

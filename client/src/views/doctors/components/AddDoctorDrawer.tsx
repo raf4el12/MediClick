@@ -52,6 +52,7 @@ export function AddDoctorDrawer({
       variant="temporary"
       onClose={handleReset}
       ModalProps={KEEP_MOUNTED}
+      slotProps={{ paper: { role: 'dialog', 'aria-modal': true, 'aria-labelledby': 'nuevo-medico-titulo' } }}
       sx={{ '& .MuiDrawer-paper': { width: { xs: 320, sm: 480 } } }}
     >
       <Box
@@ -63,8 +64,8 @@ export function AddDoctorDrawer({
           py: 2,
         }}
       >
-        <Typography variant="h5">Nuevo Doctor</Typography>
-        <IconButton size="small" onClick={handleReset} aria-label="Cerrar formulario de doctor">
+        <Typography variant="h5" component="h2" id="nuevo-medico-titulo">Nuevo médico</Typography>
+        <IconButton size="small" onClick={handleReset} aria-label="Cerrar formulario de médico">
           <i className="ri-close-line" style={{ fontSize: 24 }} />
         </IconButton>
       </Box>
@@ -328,7 +329,7 @@ export function AddDoctorDrawer({
               'Registrar'
             )}
           </Button>
-          <Button variant="outlined" color="error" onClick={handleReset}>
+          <Button variant="outlined" onClick={handleReset}>
             Cancelar
           </Button>
         </Box>

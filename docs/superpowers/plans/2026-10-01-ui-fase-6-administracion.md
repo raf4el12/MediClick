@@ -54,7 +54,7 @@ Feriados (`/holidays`) no entra en UI-22: se rediseña sobre el calendario en UI
 
 ---
 
-## UI-22 — Tablas de gestión
+## UI-22 — Tablas de gestión ✅
 
 **Rama:** `git fetch origin && git switch -c feat/ui-22-tablas-gestion origin/staging`
 **Skills:** `mattpocock-skills:codebase-design`, `mattpocock-skills:tdd`
@@ -76,10 +76,10 @@ primero con `DataTable` + pacientes.
   (`aria-sort`), estado vacío y de carga, selector de tamaño de página.
 - Consumes: `@tanstack/react-table`, `@core/styles/table.module.css`, `TablePagination` de MUI.
 
-- [ ] **Step 1 (rojo):** Pruebas Vitest + Testing Library: cambiar de página llama `onPaginationChange`
+- [x] **Step 1 (rojo):** Pruebas Vitest + Testing Library: cambiar de página llama `onPaginationChange`
   con el índice correcto; `isLoading` muestra skeleton y no filas; `rows=[]` muestra `emptyMessage`;
   ordenar marca `aria-sort`. Run: `cd client && pnpm test -- DataTable` → Expected: FAIL.
-- [ ] **Step 2 (verde):** Implementar hasta PASS.
+- [x] **Step 2 (verde):** Implementar hasta PASS.
 
 ### Task 2: Seis pantallas sobre el patrón de lista de Materio
 
@@ -95,30 +95,75 @@ primero con `DataTable` + pacientes.
   `client/src/services/<e>.service.ts`.
 - Produces: misma funcionalidad CRUD que hoy.
 
-- [ ] **Step 1:** Pacientes primero; `PatientDetailDialog` se reemplaza por la acción "Ver expediente"
+- [x] **Step 1:** Pacientes primero; `PatientDetailDialog` se reemplaza por la acción "Ver expediente"
   (UI-21) más el drawer de edición; borrar el diálogo si queda sin uso.
-- [ ] **Step 2:** Resto de entidades. Tarjetas de resumen (`card-statistics/HorizontalWithSubtitle`) solo
+- [x] **Step 2:** Resto de entidades. Tarjetas de resumen (`card-statistics/HorizontalWithSubtitle`) solo
   si el endpoint ya devuelve el conteo; no agregar llamadas `pageSize: 1` nuevas.
-- [ ] **Step 3:** Confirmación de borrado con el `ConfirmDialog` compartido existente o
+- [x] **Step 3:** Confirmación de borrado con el `ConfirmDialog` compartido existente o
   `components/dialogs/confirmation-dialog` de Materio (uno solo; borrar el otro).
+
+### Notas de implementación (DataTable y pacientes)
+
+- **`DataTable`** (`components/shared/DataTable`):
+  - `<table>` nativa con `@core/styles/table.module.css` de Materio y `TablePagination` en español (`Ir a la página siguiente`…);
+  - `pagination` va desde 0: las vistas que usan `currentPage` desde 1 restan uno;
+  - el orden es de servidor y solo en columnas con `enableSorting: true`, con `aria-sort` en el encabezado;
+  - `isLoading` muestra un esqueleto y marca `aria-busy`, y sin filas aparece `emptyMessage`;
+  - sin `pagination` es una lista completa, para UI-30;
+  - `meta.align` y `meta.hiddenOnMobile` se declaran con la ampliación de `ColumnMeta`;
+  - cinco pruebas con Testing Library sobre jsdom. Vitest ahora acepta `.test.tsx`, con `// @vitest-environment jsdom` por archivo.
+- **Pacientes:**
+  - tarjetas con `activeCount`/`inactiveCount`, que ya devuelve el endpoint, y filtros de búsqueda (`DebouncedInput`) y estado;
+  - columnas con avatar, documento, teléfono, edad, sangre, registro, estado y acciones;
+  - **solo se ordena por sangre, registro y estado.** Antes cualquier encabezado mandaba su id como `orderBy`, y el repositorio lo usa como campo de Prisma: ordenar por «Nombre» fallaba en el servidor;
+  - la columna «Última visita» mostraba la fecha de registro: ahora se llama «Registro»;
+  - `PatientDetailDialog` se borró; «Ver expediente» lleva a `/patients/{id}` (UI-21);
+  - los drawers tienen rol de diálogo con nombre, campos obligatorios con `required` (el asterisco pasa a ser parte del nombre accesible) y «Cancelar» sin color de error;
+  - el botón de RENIEC tenía un `aria-label` en un `span`: ahora está en el botón, con `describeChild`.
+- **Compartidos:**
+  - `CustomAvatar` con `skin='light'` mezcla el texto hacia `--contrast-mix`: las iniciales en 15 px no llegaban a AA;
+  - `InternationalPhoneInput` acepta `required`;
+  - `shell.spec.ts` tenía una carrera: el contador de notificaciones del fixture no bajaba tras marcar como leída.
+
+### Notas de implementación (resto de entidades y cierre)
+
+Se entregó en seis PRs: #81 (`DataTable` y pacientes), #87 (médicos), #89 (usuarios), #80 (sedes), #88 (especialidades) y #90 (categorías).
+
+- **Orden por columna:**
+  - todas las tablas anteriores mandaban como `orderBy` el id de cualquier columna (nombre completo, rol, sede, categoría, teléfono…), y los repositorios lo usan como campo de Prisma, así que esas columnas fallaban en el servidor;
+  - ahora solo se ordena por campos escalares del modelo: médicos por CMP y estado; usuarios por nombre y estado; sedes, especialidades y categorías por nombre, zona horaria, moneda, teléfono, duración, precio, orden o estado.
+- **Búsqueda:** `DebouncedInput` emitía el valor inicial al montarse y la tabla volvía a la página 1 un segundo después de cargar. Ahora solo emite cuando el texto difiere del valor recibido (con prueba). Algunas vistas conservan además su propia guarda, que es inofensiva.
+- **Acciones de fila:**
+  - pacientes, sedes, especialidades y categorías usan botones con nombre por fila;
+  - médicos y usuarios dejan «Editar» visible y el resto en `option-menu` («Más acciones para …»).
+- **Tarjetas de resumen:** solo en pacientes, cuyo endpoint ya devuelve los conteos. Las demás entidades no los traen y no se agregaron llamadas nuevas.
+- **Textos y accesibilidad comunes:**
+  - drawers con rol de diálogo y título;
+  - campos obligatorios con `required`;
+  - «Cancelar» y las confirmaciones sin rojo;
+  - chips tonales de estado («Activo/a», «Inactivo/a»);
+  - «Sedes» en lugar de «Clínicas» y «Médico» en lugar de «Doctor» en las pantallas (el menú todavía dice «Doctores»);
+  - en especialidades y categorías, el selector de sede muestra «Global (todas las sedes)».
+- **`SkeletonTable` no se borró:** todavía lo usa la lista de citas del personal (`views/appointments/components/AppointmentsTable.tsx`), que no es parte de esta fase.
+- **Sin probar contra un backend real.** La edición desde el drawer de sedes, especialidades y categorías no tiene escenario propio en las specs.
 
 ### Task 3: Pruebas de navegador
 
 **Files:** Create: `client/tests/e2e/admin-tables.spec.ts`
 
-- [ ] **Step 1:** Tabla de prueba por entidad con `actor: 'ADMIN'`: lista con fixture paginado, búsqueda
+- [x] **Step 1:** Tabla de prueba por entidad con `actor: 'ADMIN'`: lista con fixture paginado, búsqueda
   envía `searchValue`, página 2 envía `currentPage=2`, crear desde el drawer envía el payload esperado.
-- [ ] **Step 2:** `expectAccessible(page)` en cada ruta y con el drawer abierto.
+- [x] **Step 2:** `expectAccessible(page)` en cada ruta y con el drawer abierto.
   Run: `cd client && pnpm exec playwright test admin-tables` → Expected: PASS.
 
 ### Task 4: Verificación y limpieza
 
-- [ ] Run: `cd client && pnpm exec tsc --noEmit && pnpm exec eslint <archivos tocados> && pnpm test && pnpm build && pnpm test:a11y` → PASS.
-- [ ] Ningún `*Table.tsx` de gestión reimplementa paginación ni skeleton fuera de `DataTable`.
+- [x] Run: `cd client && pnpm exec tsc --noEmit && pnpm exec eslint <archivos tocados> && pnpm test && pnpm build && pnpm test:a11y` → PASS.
+- [x] Ningún `*Table.tsx` de gestión reimplementa paginación ni skeleton fuera de `DataTable`.
 
 ---
 
-## UI-23 — Roles y permisos
+## UI-23 — Roles y permisos ✅
 
 **Rama:** `git fetch origin && git switch -c feat/ui-23-roles-permisos origin/staging`
 **Skills:** `mattpocock-skills:tdd`
@@ -136,7 +181,7 @@ rechaza borrar roles con `isSystem` (`roles/application/use-cases/delete-role.us
 - Produces: `toPermissionMatrix(permissions, selectedIds)` (filas por sujeto, columnas por acción, usando
   `permissionsMeta`) y `fromPermissionMatrix(matrix): number[]` (ids para el payload).
 
-- [ ] **Step 1 (rojo/verde):** Pruebas: ida y vuelta conserva los ids; marcar `MANAGE` de un sujeto marca
+- [x] **Step 1 (rojo/verde):** Pruebas: ida y vuelta conserva los ids; marcar `MANAGE` de un sujeto marca
   todas sus acciones si así lo hace hoy `PermissionsDialog` (verificar y replicar, no inventar regla);
   sujeto sin permisos devuelve fila vacía.
 
@@ -149,13 +194,29 @@ rechaza borrar roles con `isSystem` (`roles/application/use-cases/delete-role.us
 - Create: `client/src/views/roles/components/RoleDialog.tsx` (adapta `components/dialogs/role-dialog`: nombre + matriz)
 - Delete: `RoleFormDrawer.tsx`, `PermissionsDialog.tsx` (absorbidos por `RoleDialog`)
 
-- [ ] **Step 1:** Roles `isSystem` se muestran sin botón de borrar y con la matriz de solo lectura.
-- [ ] **Step 2:** Prueba e2e `client/tests/e2e/roles.spec.ts`: editar un rol envía los ids esperados;
+- [x] **Step 1:** Roles `isSystem` se muestran sin botón de borrar y con la matriz de solo lectura.
+- [x] **Step 2:** Prueba e2e `client/tests/e2e/roles.spec.ts`: editar un rol envía los ids esperados;
   un rol de sistema no ofrece borrar; `expectAccessible` con el diálogo abierto.
+
+### Notas de implementación
+
+- **Regla verificada:** `PermissionsDialog` era de solo lectura; la edición vivía en `RoleFormDrawer`.
+  - Ahí, la casilla del módulo marcaba o quitaba todas sus acciones, y «Seleccionar todo» hacía lo mismo con todos los permisos.
+  - Marcar `MANAGE` no arrastraba a las demás acciones, así que no se inventó esa cascada.
+  - `permissionMatrix.ts` replica esas reglas con `toggleSubject`, `toggleAll` y `togglePermission`, y además expone `rowState` para la casilla indeterminada.
+  - Las filas empiezan por «Todos» y siguen por nombre; las acciones, por «Gestionar». Son 6 pruebas en Vitest.
+- **Pantalla:** sigue el patrón de `views/apps/roles` y `components/dialogs/role-dialog` de Materio.
+  - Una tarjeta por rol muestra el resumen de permisos, el tipo y la acción «Editar rol» o «Ver permisos». Otra tarjeta, con la ilustración `characters/1.png`, sirve para agregar un rol.
+  - El listado usa `DataTable` en modo de lista completa (`GET /roles` no pagina). Ahí está «Eliminar» para los roles personalizados; los de sistema muestran «No se puede eliminar».
+  - Editar se hace solo desde las tarjetas, para no repetir el mismo botón en dos lugares.
+- **Diálogo:** lleva nombre, descripción, búsqueda de módulo y una tabla de matriz con casilla por módulo y por acción, cada una con nombre accesible («Pacientes: Leer», «Pacientes: todas las acciones»).
+  - Los roles de sistema se abren en solo lectura con el título «Permisos de X», casillas deshabilitadas y solo «Cerrar». El servidor rechaza editarlos y borrarlos (`update-role` y `delete-role`).
+- **Borrado:** `RoleFormDrawer.tsx` y `PermissionsDialog.tsx`. `useRoles` pierde el estado del drawer y `handleDelete` informa si salió bien. La confirmación usa el `ConfirmDialog` compartido con `destructive={false}`.
+- **Pruebas de navegador:** `roles.spec.ts` cubre editar (ids enviados), crear (payload), eliminar con confirmación y el rol de sistema, con `expectAccessible` en la página y con el diálogo abierto.
 
 ---
 
-## UI-24 — Moderación de reseñas
+## UI-24 — Moderación de reseñas ✅
 
 **Rama:** `git fetch origin && git switch -c feat/ui-24-moderacion-resenas origin/staging`
 **Skills:** `mediclick-tenant-safety`, `mattpocock-skills:tdd`, `mediclick-core-review`
@@ -183,11 +244,11 @@ Hecho en la rama `feat/ui-24-moderacion-resenas-backend`, antes que la pantalla 
 - Consumes: `clinicId` del actor (`@CurrentClinic()`), relación reseña → médico → `clinicId`.
 - Produces: moderación limitada a la sede del actor; global para SUPER_ADMIN / ADMIN sin `clinicId`.
 
-- [ ] **Step 1 (rojo):** Specs: staff de sede A oculta reseña de su médico (permitido); staff de sede A
+- [x] **Step 1 (rojo):** Specs: staff de sede A oculta reseña de su médico (permitido); staff de sede A
   sobre reseña de médico de sede B → 404 sin cambios ni recálculo de rating; admin global puede ambas;
   el listado de sede A no devuelve reseñas de sede B; el recálculo de `ratingAvg`/`ratingCount` sigue
   contando solo visibles. Run: `cd server && pnpm test -- reviews --runInBand` → Expected: FAIL.
-- [ ] **Step 2 (verde):** Aplicar el predicado de sede en la lectura previa y en la escritura dentro del
+- [x] **Step 2 (verde):** Aplicar el predicado de sede en la lectura previa y en la escritura dentro del
   `$transaction` (el callback no hereda el tenant). Run igual → PASS; `pnpm build` → PASS.
 
 ### Task 2: Pantalla de moderación
@@ -199,15 +260,24 @@ Hecho en la rama `feat/ui-24-moderacion-resenas-backend`, antes que la pantalla 
 - Modify: `client/src/services/reviews.service.ts` (`listForModeration`, `setVisibility`)
 - Modify: navegación (`navigationFor` de UI-03) con el ítem "Reseñas"
 
-- [ ] **Step 1:** Filtros visible/oculta, rating y médico; acción "Ocultar"/"Mostrar" con confirmación;
+- [x] **Step 1:** Filtros visible/oculta, rating y médico; acción "Ocultar"/"Mostrar" con confirmación;
   la reseña oculta se rotula "Reseña oculta".
-- [ ] **Step 2:** e2e `client/tests/e2e/reviews-moderation.spec.ts`: ocultar envía
+- [x] **Step 2:** e2e `client/tests/e2e/reviews-moderation.spec.ts`: ocultar envía
   `PATCH /reviews/:id/visibility {isVisible:false}` y refresca; `actor: 'PATIENT'` no entra; axe AA.
-- [ ] **Step 3:** Cerrar con `mediclick-core-review` sobre el diff de servidor.
+- [x] **Step 3:** Cerrar con `mediclick-core-review` sobre el diff de servidor.
+
+### Notas de implementación (pantalla)
+
+- `/reviews` en `(staff)` con `RoleGuard` (`UPDATE:REVIEWS`, actor `STAFF`): un paciente vuelve a su inicio sin pedir `GET /reviews`. El menú suma «Reseñas» en Gestión médica, solo para quien puede moderar (con prueba en `navigation.test.ts`).
+- La tabla va sobre `DataTable` de UI-22, con paginación de servidor (`currentPage`, `pageSize`). Los filtros Estado, Calificación y Médico viajan como `isVisible`, `rating` y `doctorId`, y cambiar uno vuelve a la primera página.
+- La calificación usa `Rating` de solo lectura con nombre «N de 5 estrellas», y el estado se rotula «Visible» o «Reseña oculta».
+- «Ocultar» y «Mostrar» confirman con el `ConfirmDialog` compartido, que explica el efecto en la calificación del médico. Después envían `PATCH /reviews/:id/visibility` y vuelven a pedir la lista.
+- **Sin `ReviewsStatistics` ni `TotalReviews`:** el servidor no tiene un endpoint de agregados, y calcularlos sobre la página visible daría números engañosos. Si se quieren, es un endpoint nuevo.
+- `reviews-moderation.spec.ts` cubre filtros, ocultar, mostrar y el bloqueo del paciente, con `expectAccessible` en la tabla y en la confirmación.
 
 ---
 
-## UI-25 — Pagos, dashboard de administración y reportes
+## UI-25 — Pagos, dashboard de administración y reportes ✅
 
 **Rama:** `git fetch origin && git switch -c feat/ui-25-pagos-dashboard-reportes origin/staging`
 **Skills:** `mattpocock-skills:tdd`
@@ -225,9 +295,9 @@ usan recharts.
 - Modify: `client/src/views/payments/index.tsx` (lista sobre `DataTable` con el estilo de `InvoiceListTable.tsx`:
   chips de estado de pago, monto con moneda de la sede, fecha, cita, enlace al comprobante de UI-12)
 
-- [ ] **Step 1 (rojo):** e2e `client/tests/e2e/payments.spec.ts` con `actor: 'PATIENT'` en `/payments`:
+- [x] **Step 1 (rojo):** e2e `client/tests/e2e/payments.spec.ts` con `actor: 'PATIENT'` en `/payments`:
   redirige y **no** se registra ninguna llamada a `GET /payments` (el arnés falla si ocurre).
-- [ ] **Step 2 (verde):** guard de grupo `(staff)` además del permiso. Con `actor: 'ADMIN'`: filtros
+- [x] **Step 2 (verde):** guard de grupo `(staff)` además del permiso. Con `actor: 'ADMIN'`: filtros
   `status`, `dateFrom`, `dateTo` y `limit ≤ 100`; axe AA.
 
 ### Task 2: Dashboard y reportes con tarjetas y gráficos de Materio
@@ -244,16 +314,51 @@ usan recharts.
 - Produces: `toDashboardKpis(summary, occupancy, revenue)` → tarjetas (puro, con porcentajes y
   variaciones redondeadas igual que hoy).
 
-- [ ] **Step 1 (rojo/verde):** Pruebas de `toDashboardKpis`: ocupación con `totalSlots = 0` no divide por
+- [x] **Step 1 (rojo/verde):** Pruebas de `toDashboardKpis`: ocupación con `totalSlots = 0` no divide por
   cero; ingresos con moneda de la sede; estados con etiquetas de `CONTEXT.md`.
-- [ ] **Step 2:** Ningún import de `apexcharts`/`react-apexcharts` en el cliente
+- [x] **Step 2:** Ningún import de `apexcharts`/`react-apexcharts` en el cliente
   (`grep -rn apexcharts client/src` vacío).
-- [ ] **Step 3:** e2e `client/tests/e2e/admin-dashboard.spec.ts` con fixtures de `/reports/*`: tarjetas y
+- [x] **Step 3:** e2e `client/tests/e2e/admin-dashboard.spec.ts` con fixtures de `/reports/*`: tarjetas y
   gráficos renderizan; gráficos con título accesible; axe AA en ambos modos de color.
+
+### Notas de implementación
+
+- **Estado real distinto del plan:**
+  - `/payments` ya vivía en `(staff)`;
+  - no quedaba ApexCharts en el cliente;
+  - el paciente ya no tiene `READ:PAYMENTS` en `rbac-policy.ts` (sin el permiso, antes iba al 401).
+
+  Igual se agregó el guard de grupo, `RoleGuard` con `actors={['STAFF', 'DOCTOR']}`, para que un paciente con permisos viejos en una base sin `seed-rbac` vuelva a su inicio sin pedir `GET /payments`. El médico conserva el acceso porque tiene `READ:PAYMENTS` y la entrada del menú. `misc-pages.spec.ts` prueba ahora el 401 sobre `/reports`.
+- **Pagos:**
+  - lista sobre `DataTable` con filtros de estado, desde y hasta, y tamaños de página 10/25/50/100 (100 es el `@Max` del servidor);
+  - la página se manda como `page` (desde 1) y `limit`;
+  - cada monto va con la moneda de su transacción (`formatPrice`, que respeta la convención de cada moneda: el peso colombiano sin decimales);
+  - estados de la transacción: Aprobada, Pendiente, Seña, Reembolsada, Rechazada y Cancelada;
+  - React Query en lugar del `useEffect` con `fetch`.
+- **Sin enlace al comprobante:** la vista imprimible de UI-12 vive en `(patient)` y carga la cita con `GET /appointments/my/:id`, que solo responde al paciente dueño. Un enlace desde la lista del personal no funcionaría sin un endpoint de cita para el personal; queda fuera de este ítem.
+- **`toDashboardKpis`:**
+  - ocupación redondeada con `Math.round` del porcentaje del servidor, como el dashboard anterior;
+  - progreso por cupos, sin dividir por cero;
+  - ingresos con la moneda del reporte;
+  - los seis estados en orden fijo con las etiquetas de `STATUS_META` (las de la agenda).
+
+  `useDashboard` suma `GET /reports/revenue`, un endpoint existente, y el arnés del administrador tiene su respuesta por defecto.
+- **Dashboard:**
+  - tarjetas `card-statistics/HorizontalWithSubtitle` copiadas de Materio, sin la variación (`trend`), que ningún reporte informa;
+  - citas del mes por estado, ocupación con barra con nombre y los ingresos del mes;
+  - los gráficos de estado y de citas por día, y accesos rápidos.
+
+  Se quitó «Citas completadas hoy», que mezclaba las completadas del mes con las citas de hoy, y «Doctores activos x/x», que siempre daba 100 %. `shell.spec.ts` ya no excluye el contenido del dashboard de axe.
+- **Gráficos:**
+  - `ChartCard` reúne tarjeta, esqueleto, vacío y `AppRecharts` (copiado de Materio, con los ejes en `text-secondary` en vez de `text-disabled`);
+  - cada gráfico es un `role="img"` con una descripción de sus datos;
+  - los colores van por variables CSS del tema (`fill="var(--mui-palette-…)"`), así que el modo oscuro usa su paleta;
+  - el arco de ocupación cambia de color y el número va en el color del texto.
+- **Pendiente para `DataTable` (UI-22):** a 390 px el paginador de `TablePagination` queda un poco recortado a la derecha.
 
 ---
 
-## UI-28 — Pantallas clínicas del personal
+## UI-28 — Pantallas clínicas del personal ✅
 
 **Rama:** `git fetch origin && git switch -c feat/ui-28-pantallas-clinicas origin/staging`
 **Skills:** `mattpocock-skills:tdd`, `mattpocock-skills:code-review`
@@ -286,10 +391,10 @@ Estado verificado (comportamiento a conservar):
 - Produces: mismas acciones; la cita seleccionada se refleja en la URL (`?appointmentId=`) para poder
   compartir y recargar el drawer abierto.
 
-- [ ] **Step 1 (rojo/verde):** Prueba Vitest del parseo de `?appointmentId=` (`functions/selectedAppointment.ts`):
+- [x] **Step 1 (rojo/verde):** Prueba Vitest del parseo de `?appointmentId=` (`functions/selectedAppointment.ts`):
   número válido → id; vacío, negativo o no numérico → `null`.
-- [ ] **Step 2:** Mantener la carga diferida del panel de recetas y el estado de error del panel.
-- [ ] **Step 3:** Etiquetas con vocabulario de `CONTEXT.md` (cita, paciente, médico).
+- [x] **Step 2:** Mantener la carga diferida del panel de recetas y el estado de error del panel.
+- [x] **Step 3:** Etiquetas con vocabulario de `CONTEXT.md` (cita, paciente, médico).
 
 ### Task 2: Antecedentes con tarjetas y lista de Materio
 
@@ -300,24 +405,50 @@ Estado verificado (comportamiento a conservar):
 - Delete: `MedicalHistoryKPIs.tsx` (absorbido); `MedicalHistoryDeleteDialog.tsx` si se usa el `ConfirmDialog` único de UI-22
 - Create: `client/src/views/medical-history/functions/historyCounts.ts` + `historyCounts.test.ts`
 
-- [ ] **Step 1 (rojo/verde):** `historyCounts(entries)` → `{ active, chronic, resolved }` igual que el
+- [x] **Step 1 (rojo/verde):** `historyCounts(entries)` → `{ active, chronic, resolved }` igual que el
   cálculo actual de `MedicalHistoryKPIs.tsx:77-79`; lista vacía → ceros.
-- [ ] **Step 2:** Sin paciente elegido: alta deshabilitada y estado vacío explicativo (como hoy).
+- [x] **Step 2:** Sin paciente elegido: alta deshabilitada y estado vacío explicativo (como hoy).
 
 ### Task 3: Pruebas de navegador
 
 **Files:** Create: `client/tests/e2e/clinical-screens.spec.ts`
 
-- [ ] **Step 1:** `actor: 'DOCTOR'` en `/clinical-notes`: elegir cita abre el drawer con sus notas; guardar
+- [x] **Step 1:** `actor: 'DOCTOR'` en `/clinical-notes`: elegir cita abre el drawer con sus notas; guardar
   envía `POST /clinical-notes` con `appointmentId` y recarga.
-- [ ] **Step 2:** `/prescriptions`: crear receta envía `POST /prescriptions`; "Descargar PDF" pide el PDF de esa cita.
-- [ ] **Step 3:** `/medical-history`: elegir paciente carga lista y tarjetas; cambiar estado envía `PATCH .../status`.
-- [ ] **Step 4:** `actor: 'PATIENT'` no entra a ninguna de las tres rutas; `expectAccessible` con drawer abierto y cerrado.
+- [x] **Step 2:** `/prescriptions`: crear receta envía `POST /prescriptions`; "Descargar PDF" pide el PDF de esa cita.
+- [x] **Step 3:** `/medical-history`: elegir paciente carga lista y tarjetas; cambiar estado envía `PATCH .../status`.
+- [x] **Step 4:** `actor: 'PATIENT'` no entra a ninguna de las tres rutas; `expectAccessible` con drawer abierto y cerrado.
   Run: `cd client && pnpm exec playwright test clinical-screens` → Expected: PASS.
+
+### Notas de implementación
+
+- **Pieza común de notas y recetas** (`views/clinical-shared`):
+  - `ClinicalAppointmentsTable`: filtros desde, hasta, estado y búsqueda, más la tabla de citas sobre `DataTable`. Cada pantalla aporta su columna (notas o receta) y la acción que abre el drawer.
+  - `ClinicalDrawer`: drawer derecho al estilo `AddUserDrawer`, de ancho completo en celular.
+  - `useSelectedAppointmentId`: guarda la cita en `?appointmentId=`, con `parseAppointmentId` y sus pruebas.
+  - Las dos tablas anteriores (`ClinicalNotesTable`, `PrescriptionsTable`) se borraron.
+- **Selección por URL:** la cita abierta sale de la URL, así que recargar o compartir el enlace reabre el drawer.
+  - Si la cita no está en la página visible de la tabla, el título del drawer sale de las notas o de la receta.
+  - Las páginas envuelven la vista en `Suspense`, porque `useSearchParams` lo exige.
+- **Datos del drawer:** las notas y la receta se piden con React Query con las mismas claves que el espacio de atención del médico (UI-16): `['clinical-notes', 'appointment', id]` y `['prescription', 'appointment', id]`. Así las dos vistas comparten caché.
+  - En la receta, un 404 sigue siendo «todavía sin receta».
+  - Crear invalida esa clave y vuelve a pedir la tabla, como antes.
+  - Un error al crear se muestra en el drawer; antes quedaba sin manejar.
+- **Formularios:** se conservan `ClinicalNoteForm` y `PrescriptionForm`, reestilizados y sin cambiar sus reglas ni sus payloads, en lugar de reutilizar las pestañas de UI-16. La receta del personal tiene «Válida hasta», notas por medicamento y la validación de los cuatro campos obligatorios, que la pestaña del médico no tiene.
+- **Estados de la cita:** etiquetas y colores de `views/agenda/status.ts` (vocabulario de `CONTEXT.md`: «Inasistencia», «En curso») en lugar de los propios de cada tabla. La columna dice «Médico», no «Doctor».
+- **Historial médico:**
+  - las tarjetas usan el patrón `HorizontalWithSubtitle` sin tendencia, porque no hay datos de variación. Son un componente local para no chocar con UI-25, que trae `card-statistics`;
+  - la lista pasa de tarjetas a `DataTable` con tamaños 12, 24 y 48. El hook gana `handleLimitChange`;
+  - alta, edición y detalle pasan a drawers; la baja usa el `ConfirmDialog` compartido;
+  - se borraron `MedicalHistoryKPIs`, `MedicalHistoryList` y `MedicalHistoryDeleteDialog`;
+  - los errores de crear, editar, cambiar estado o eliminar, que antes quedaban sin manejar, ahora se avisan con `notify`.
+- **Acceso:** las tres rutas piden además `actors={['DOCTOR', 'STAFF']}`. El paciente tiene `READ:CLINICAL_NOTES`, `READ:PRESCRIPTIONS` y `READ:MEDICAL_HISTORY` para lo suyo; con este filtro vuelve a su inicio sin pedir datos.
+- **Encabezado «Acciones» alineado a la derecha:** va dentro de un elemento, porque la regla `[align='right'] > *` de `table.module.css` alinea hijos y no texto suelto.
+- `SkeletonTable` queda sin uso en estas pantallas pero no se borra aquí: lo borra el último PR de UI-22.
 
 ---
 
-## UI-30 — Lista de espera del personal
+## UI-30 — Lista de espera del personal ✅
 
 **Rama:** `git fetch origin && git switch -c feat/ui-30-lista-espera-personal origin/staging`
 **Skills:** `mattpocock-skills:tdd`, `mattpocock-skills:code-review`
@@ -341,19 +472,30 @@ servidor), tabla `#`, Paciente, Especialidad, Médico preferido, Ventana, Franja
 - Produces: `toWaitlistRows(entries)` → posición, ventana de fechas y franja con textos de `CONTEXT.md`
   ("Entrada en lista de espera", "Prioridad de espera").
 
-- [ ] **Step 1 (rojo/verde):** Pruebas de `toWaitlistRows`: conserva el orden recibido (el servidor ya
+- [x] **Step 1 (rojo/verde):** Pruebas de `toWaitlistRows`: conserva el orden recibido (el servidor ya
   ordena por prioridad y llegada); la posición `#` empieza en 1; médico preferido ausente → "Cualquiera".
-- [ ] **Step 2:** Si `DataTable` (UI-22) no admite lista completa, agregar ese modo allí con su prueba,
+- [x] **Step 2:** Si `DataTable` (UI-22) no admite lista completa, agregar ese modo allí con su prueba,
   sin duplicar paginación en esta vista.
 
 ### Task 2: Pruebas de navegador
 
 **Files:** Create: `client/tests/e2e/waitlist-staff.spec.ts`
 
-- [ ] **Step 1:** `actor: 'RECEPTIONIST'`: filtrar por especialidad envía `specialtyId`; subir prioridad
+- [x] **Step 1:** `actor: 'RECEPTIONIST'`: filtrar por especialidad envía `specialtyId`; subir prioridad
   envía el `delta` elegido y refresca la lista.
-- [ ] **Step 2:** `expectAccessible(page)` con el diálogo abierto.
+- [x] **Step 2:** `expectAccessible(page)` con el diálogo abierto.
   Run: `cd client && pnpm exec playwright test waitlist-staff` → Expected: PASS.
+
+### Notas de implementación
+
+- **`toWaitlistRows`:** devuelve la posición desde 1, el médico preferido (o «Cualquiera»), la ventana de días con `formatDate` (UTC) y la franja con `TIME_PREFERENCE_LABELS`, en el orden que manda el servidor. Son 3 pruebas en Vitest.
+- **Vista:**
+  - sigue el patrón `user/list` de Materio, con una tarjeta «Filtros» (especialidad y médico; «Doctor» pasa a «Médico», como dice `CONTEXT.md`);
+  - la tabla es `DataTable` en modo de lista completa, sin `pagination`, porque `GET /waitlist` no pagina. Ese modo ya venía en `DataTable` (UI-22), así que no hubo que tocarlo;
+  - médico preferido, ventana y franja se ocultan en celular;
+  - cada acción tiene nombre accesible («Subir la prioridad de …»).
+- **`PriorityDialog`:** toma el estilo de Materio con el mismo payload (`{ delta }` de 1 a 100). El valor se reinicia al cambiar de entrada sin `useEffect`.
+- **Pruebas de navegador:** `waitlist-staff.spec.ts` cubre la cola en orden con posición y «Cualquiera», el filtro por especialidad (`specialtyId=2`) y subir la prioridad (`PATCH /waitlist/7/priority {delta: 25}` y vuelve a pedir la cola), con `expectAccessible` en la página y con el diálogo abierto.
 
 ---
 

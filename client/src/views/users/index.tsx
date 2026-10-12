@@ -1,48 +1,26 @@
 'use client';
 
-import Grid from '@mui/material/Grid';
-import Button from '@mui/material/Button';
-import { PageHeader } from '@/components/shared/PageHeader';
-import { useUsers } from './hooks/useUsers';
-import { UsersTable } from './components/UsersTable';
 import dynamic from 'next/dynamic';
-import { notify } from '@/utils/notify';
+import Typography from '@mui/material/Typography';
+import { UsersTable } from './components/UsersTable';
+import { useUsers } from './hooks/useUsers';
 
-const UserDetailDialog = dynamic(
-  () => import('./components/UserDetailDialog').then((m) => m.UserDetailDialog),
-);
+const UserDetailDialog = dynamic(() => import('./components/UserDetailDialog').then((m) => m.UserDetailDialog));
 
+/** Gestión de usuarios del personal: filtro por rol, búsqueda y tabla paginada en el servidor (UI-22). */
 export default function UsersView() {
   const controller = useUsers();
 
-  const handleSuccess = () => {
-    controller.refreshData();
-    notify('Operación realizada exitosamente', 'success');
-  };
-
   return (
-    <Grid container spacing={3}>
-      <Grid size={12}>
-        <PageHeader
-          title="Usuarios"
-          subtitle="Gestiona los usuarios y sus accesos al sistema"
-        >
-          <Button
-            variant="contained"
-            startIcon={<i className="ri-add-line" />}
-            onClick={controller.openCreateDrawer}
-          >
-            Nuevo Usuario
-          </Button>
-        </PageHeader>
-        <UsersTable {...controller} refreshData={handleSuccess} />
-      </Grid>
-
-      <UserDetailDialog
-        user={controller.detailUser}
-        onClose={controller.closeDetail}
-      />
-
-    </Grid>
+    <div className='flex flex-col gap-6'>
+      <div>
+        <Typography variant='h4' component='h1'>
+          Usuarios
+        </Typography>
+        <Typography color='text.secondary'>Las cuentas del personal y su acceso al sistema.</Typography>
+      </div>
+      <UsersTable {...controller} />
+      <UserDetailDialog user={controller.detailUser} onClose={controller.closeDetail} />
+    </div>
   );
 }

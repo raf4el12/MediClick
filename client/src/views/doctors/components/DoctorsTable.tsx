@@ -1,37 +1,31 @@
 'use client';
 
-import { memo, useMemo } from 'react';
-import Card from '@mui/material/Card';
-import Typography from '@mui/material/Typography';
-import Chip from '@mui/material/Chip';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
-import TablePagination from '@mui/material/TablePagination';
-import Table from '@mui/material/Table';
-import TableHead from '@mui/material/TableHead';
-import TableBody from '@mui/material/TableBody';
-import TableRow from '@mui/material/TableRow';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableSortLabel from '@mui/material/TableSortLabel';
-import Box from '@mui/material/Box';
+import { memo, useCallback, useMemo } from 'react';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
-import {
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  useReactTable,
-} from '@tanstack/react-table';
-import { SkeletonTable } from '@/components/shared/SkeletonTable';
-import type { Doctor } from '../types';
-import type { Specialty } from '@/views/specialties/types';
-import type { Clinic } from '@/views/clinics/types';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import CardHeader from '@mui/material/CardHeader';
+import Chip from '@mui/material/Chip';
+import Divider from '@mui/material/Divider';
+import IconButton from '@mui/material/IconButton';
+import Typography from '@mui/material/Typography';
+import { createColumnHelper } from '@tanstack/react-table';
+import OptionMenu from '@core/components/option-menu';
+import { DataTable } from '@/components/shared/DataTable';
+import type { DataTableSorting } from '@/components/shared/DataTable/DataTable';
+import { DebouncedInput } from '@/components/shared/DebouncedInput';
 import type { PaginatedResponse } from '@/types/pagination.types';
-import { DoctorFilters } from './DoctorFilters';
+import type { Clinic } from '@/views/clinics/types';
+import type { Specialty } from '@/views/specialties/types';
+import type { Doctor } from '../types';
 import { AddDoctorDrawer } from './AddDoctorDrawer';
+import { DoctorFilters } from './DoctorFilters';
 
 const columnHelper = createColumnHelper<Doctor>();
+
+/** Columnas que el servidor sabe ordenar: campos propios de `Doctors`. */
+const SORTABLE = ['licenseNumber', 'isActive'];
 
 interface DoctorsTableProps {
   data: PaginatedResponse<Doctor>;
@@ -58,8 +52,12 @@ interface DoctorsTableProps {
   onEdit: (doctor: Doctor) => void;
   onDelete: (doctor: Doctor) => void;
   refreshData: () => void;
+  onCreated: () => void;
 }
 
+const fullName = (d: Doctor) => `${d.profile.name} ${d.profile.lastName}`;
+
+/** Lista de médicos con el patrón `user/list` de Materio sobre `DataTable`. */
 export const DoctorsTable = memo(function DoctorsTable({
   data,
   specialties,
@@ -77,297 +75,142 @@ export const DoctorsTable = memo(function DoctorsTable({
   onEdit,
   onDelete,
   refreshData,
+  onCreated,
 }: DoctorsTableProps) {
   const columns = useMemo(
     () => [
       columnHelper.display({
         id: 'fullName',
-        header: 'Doctor',
+        header: 'Médico',
         cell: ({ row }) => (
-          <Box>
-            <Typography color="text.primary" sx={{ fontWeight: 500 }}>
-              {row.original.profile.name} {row.original.profile.lastName}
+          <div className='flex flex-col'>
+            <Typography color='text.primary' className='font-medium'>
+              {fullName(row.original)}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {row.original.profile.email}
-            </Typography>
-          </Box>
+            <Typography variant='body2'>{row.original.profile.email}</Typography>
+          </div>
         ),
       }),
       columnHelper.accessor('licenseNumber', {
         header: 'CMP',
-        cell: ({ row }) => (
-          <Typography>{row.original.licenseNumber}</Typography>
-        ),
-        meta: { hiddenOnMobile: true, align: 'center' },
+        enableSorting: true,
+        meta: { hiddenOnMobile: true },
+        cell: ({ getValue }) => <Typography>{getValue()}</Typography>,
       }),
       columnHelper.display({
         id: 'specialties',
         header: 'Especialidades',
-        meta: { align: 'center' },
         cell: ({ row }) => (
-          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', justifyContent: 'center' }}>
+          <div className='flex flex-wrap gap-1'>
             {row.original.specialties.map((spec) => (
-              <Chip
-                key={spec.id}
-                label={spec.name}
-                size="small"
-                variant="outlined"
-                color="primary"
-              />
+              <Chip key={spec.id} label={spec.name} size='small' variant='tonal' color='primary' />
             ))}
-          </Box>
+          </div>
         ),
       }),
       columnHelper.display({
         id: 'clinic',
         header: 'Sede',
-        cell: ({ row }) => (
-          <Typography>
-            {row.original.clinic?.name ?? 'Sin asignar'}
-          </Typography>
-        ),
-        meta: { hiddenOnMobile: true, align: 'center' },
+        meta: { hiddenOnMobile: true },
+        cell: ({ row }) => <Typography>{row.original.clinic?.name ?? 'Sin asignar'}</Typography>,
       }),
       columnHelper.display({
         id: 'phone',
         header: 'Teléfono',
-        cell: ({ row }) => (
-          <Typography>
-            {row.original.profile.phone ?? 'N/A'}
-          </Typography>
-        ),
-        meta: { hiddenOnMobile: true, align: 'center' },
+        meta: { hiddenOnMobile: true },
+        cell: ({ row }) => <Typography>{row.original.profile.phone ?? '—'}</Typography>,
       }),
       columnHelper.accessor('isActive', {
         header: 'Estado',
-        meta: { align: 'center' },
-        cell: ({ row }) => (
-          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-            <Chip
-              label={row.original.isActive ? 'Activo' : 'Inactivo'}
-              color={row.original.isActive ? 'success' : 'error'}
-              size="small"
-            />
-          </Box>
+        enableSorting: true,
+        cell: ({ getValue }) => (
+          <Chip label={getValue() ? 'Activo' : 'Inactivo'} size='small' variant='tonal' color={getValue() ? 'success' : 'secondary'} />
         ),
       }),
       columnHelper.display({
         id: 'actions',
         header: 'Acciones',
-        meta: { align: 'center' },
         cell: ({ row }) => (
-          <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
-            <Tooltip title="Ver detalle">
-              <IconButton
-                size="small"
-                color="info"
-                onClick={() => openDetail(row.original)}
-              >
-                <i className="ri-eye-line" style={{ fontSize: 18 }} />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Editar">
-              <IconButton
-                size="small"
-                color="primary"
-                onClick={() => onEdit(row.original)}
-              >
-                <i className="ri-pencil-line" style={{ fontSize: 18 }} />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Eliminar">
-              <IconButton
-                size="small"
-                color="error"
-                onClick={() => onDelete(row.original)}
-              >
-                <i className="ri-delete-bin-line" style={{ fontSize: 18 }} />
-              </IconButton>
-            </Tooltip>
-          </Box>
+          <div className='flex items-center'>
+            <IconButton aria-label={`Editar a ${fullName(row.original)}`} onClick={() => onEdit(row.original)}>
+              <i className='ri-pencil-line text-textSecondary' aria-hidden />
+            </IconButton>
+            <OptionMenu
+              iconButtonProps={{ 'aria-label': `Más acciones para ${fullName(row.original)}` }}
+              iconClassName='text-textSecondary'
+              options={[
+                { text: 'Ver detalle', icon: 'ri-eye-line', menuItemProps: { className: 'flex items-center gap-2', onClick: () => openDetail(row.original) } },
+                { text: 'Eliminar', icon: 'ri-delete-bin-7-line', menuItemProps: { className: 'flex items-center gap-2', onClick: () => onDelete(row.original) } },
+              ]}
+            />
+          </div>
         ),
       }),
     ],
     [openDetail, onEdit, onDelete],
   );
 
-  const table = useReactTable({
-    data: data.rows,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    manualPagination: true,
-    pageCount: pagination.totalPages,
-    state: {
-      pagination: {
-        pageIndex: pagination.currentPage - 1,
-        pageSize: pagination.pageSize,
-      },
+  // DebouncedInput avisa también al montarse; solo se busca si el texto cambió, para no volver a la página 1.
+  const currentSearch = pagination.searchValue;
+  const handleSearch = useCallback(
+    (value: string) => {
+      if (value !== currentSearch) debouncedSearch(value);
     },
-  });
+    [currentSearch, debouncedSearch],
+  );
+
+  const sorting: DataTableSorting | null = SORTABLE.includes(pagination.orderBy)
+    ? { id: pagination.orderBy, desc: pagination.orderByMode === 'desc' }
+    : null;
 
   return (
-    <>
-      <Card>
-        <Box sx={{ p: 3, pt: 4 }}>
-          <DoctorFilters
-            specialties={specialties}
-            selectedSpecialty={pagination.specialtyId}
-            onSpecialtyChange={handleSpecialtyFilter}
-            onSearch={debouncedSearch}
-          />
-
-          {error && (
-            <Alert
-              severity="error"
-              sx={{ mb: 2 }}
-              action={
-                <Button color="inherit" size="small" onClick={refreshData}>
-                  Reintentar
-                </Button>
-              }
-            >
-              {error}
-            </Alert>
-          )}
-
-          <TableContainer sx={{ overflowX: 'auto' }}>
-            <Table sx={{ minWidth: 650 }}>
-              <TableHead>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => {
-                      const meta = header.column.columnDef.meta as Record<string, any> | undefined;
-                      const isHiddenOnMobile = meta?.hiddenOnMobile;
-                      const align = meta?.align || 'left';
-                      return (
-                        <TableCell
-                          key={header.id}
-                          align={align as any}
-                          sx={{
-                            fontWeight: 600,
-                            ...(isHiddenOnMobile && { display: { xs: 'none', sm: 'table-cell' } }),
-                          }}
-                        >
-                          {header.isPlaceholder ? null : (
-                            <TableSortLabel
-                              active={pagination.orderBy === header.id}
-                              direction={
-                                pagination.orderBy === header.id
-                                  ? pagination.orderByMode
-                                  : 'asc'
-                              }
-                              onClick={() => {
-                                if (header.id === 'actions' || header.id === 'specialties') return;
-                                setPagination((prev) => ({
-                                  ...prev,
-                                  orderBy: header.id,
-                                  orderByMode:
-                                    prev.orderBy === header.id &&
-                                      prev.orderByMode === 'asc'
-                                      ? 'desc'
-                                      : 'asc',
-                                  currentPage: 1,
-                                }));
-                              }}
-                              hideSortIcon={header.id === 'actions' || header.id === 'specialties'}
-                            >
-                              {flexRender(
-                                header.column.columnDef.header,
-                                header.getContext(),
-                              )}
-                            </TableSortLabel>
-                          )}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))}
-              </TableHead>
-              <TableBody>
-                {loading ? (
-                  <SkeletonTable
-                    rowsNum={pagination.pageSize}
-                    colNum={columns.length}
-                  />
-                ) : table.getRowModel().rows.length > 0 ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow key={row.id} hover sx={{ cursor: 'pointer' }}>
-                      {row.getVisibleCells().map((cell) => {
-                        const meta = cell.column.columnDef.meta as Record<string, any> | undefined;
-                        const isHiddenOnMobile = meta?.hiddenOnMobile;
-                        const align = meta?.align || 'left';
-                        return (
-                          <TableCell
-                            key={cell.id}
-                            align={align as any}
-                            sx={isHiddenOnMobile ? { display: { xs: 'none', sm: 'table-cell' } } : undefined}
-                          >
-                            {flexRender(
-                              cell.column.columnDef.cell,
-                              cell.getContext(),
-                            )}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      sx={{ textAlign: 'center', py: 6 }}
-                    >
-                      <i className="ri-user-heart-line" style={{ fontSize: 48, display: 'block', marginBottom: 8 }} />
-                      <Typography color="text.secondary" sx={{ mb: 2 }}>
-                        No hay doctores disponibles
-                      </Typography>
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        startIcon={<i className="ri-add-line" />}
-                        onClick={openCreateDrawer}
-                      >
-                        Registrar doctor
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-
-          <TablePagination
-            component="div"
-            rowsPerPageOptions={[8, 15, 25]}
-            count={data.totalRows}
-            rowsPerPage={pagination.pageSize}
-            page={pagination.currentPage - 1}
-            labelRowsPerPage="Filas por página:"
-            onPageChange={(_, page) =>
-              setPagination((prev) => ({
-                ...prev,
-                currentPage: page + 1,
-              }))
-            }
-            onRowsPerPageChange={(e) =>
-              setPagination((prev) => ({
-                ...prev,
-                pageSize: Number(e.target.value),
-                currentPage: 1,
-              }))
-            }
-          />
-        </Box>
-      </Card>
-
-      <AddDoctorDrawer
-        open={drawerOpen}
-        specialties={specialties}
-        clinics={clinics}
-        onClose={closeDrawer}
-        onSuccess={refreshData}
+    <Card>
+      <CardHeader title='Filtros' />
+      <CardContent>
+        <DoctorFilters specialties={specialties} selectedSpecialty={pagination.specialtyId} onSpecialtyChange={handleSpecialtyFilter} />
+      </CardContent>
+      <Divider />
+      <div className='flex flex-col items-start justify-between gap-4 p-5 sm:flex-row sm:items-center'>
+        <DebouncedInput
+          placeholder='Buscar médico'
+          value={pagination.searchValue}
+          onChange={handleSearch}
+          className='max-sm:is-full'
+          slotProps={{ htmlInput: { 'aria-label': 'Buscar médico' } }}
+        />
+        <Button variant='contained' startIcon={<i className='ri-add-line' aria-hidden />} onClick={openCreateDrawer} className='max-sm:is-full'>
+          Nuevo médico
+        </Button>
+      </div>
+      {error && (
+        <Alert
+          severity='error'
+          className='mli-5 mbe-5'
+          action={
+            <Button color='inherit' size='small' onClick={refreshData}>
+              Reintentar
+            </Button>
+          }
+        >
+          {error}
+        </Alert>
+      )}
+      <DataTable
+        label='Médicos'
+        columns={columns}
+        rows={data.rows}
+        totalRows={data.totalRows}
+        pagination={{ pageIndex: pagination.currentPage - 1, pageSize: pagination.pageSize }}
+        onPaginationChange={({ pageIndex, pageSize }) =>
+          setPagination((prev) => ({ ...prev, currentPage: pageSize === prev.pageSize ? pageIndex + 1 : 1, pageSize }))
+        }
+        pageSizeOptions={[8, 15, 25]}
+        sorting={sorting}
+        onSortingChange={(s) => setPagination((prev) => ({ ...prev, orderBy: s.id, orderByMode: s.desc ? 'desc' : 'asc', currentPage: 1 }))}
+        isLoading={loading}
+        emptyMessage='No hay médicos que coincidan con los filtros.'
       />
-    </>
+      <AddDoctorDrawer open={drawerOpen} specialties={specialties} clinics={clinics} onClose={closeDrawer} onSuccess={onCreated} />
+    </Card>
   );
 });

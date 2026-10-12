@@ -31,7 +31,7 @@ export function useMedicalHistory() {
   const [error, setError] = useState<string | null>(null);
 
   const [page, setPage] = useState(1);
-  const [limit] = useState(12);
+  const [limit, setLimit] = useState(12);
   const [statusFilter, setStatusFilter] = useState<MedicalHistoryStatus | ''>('');
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -108,6 +108,11 @@ export function useMedicalHistory() {
 
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
+  }, []);
+
+  const handleLimitChange = useCallback((newLimit: number) => {
+    setLimit(newLimit);
+    setPage(1);
   }, []);
 
   // CRUD
@@ -196,6 +201,7 @@ export function useMedicalHistory() {
     statusFilter,
     handleStatusFilter,
     handlePageChange,
+    handleLimitChange,
 
     // Diálogos
     createOpen,

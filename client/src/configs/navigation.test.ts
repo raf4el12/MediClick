@@ -54,6 +54,12 @@ describe('navigationFor', () => {
     expect(paths('ADMIN')).not.toContain('/doctor');
   });
 
+  it('la moderación de reseñas es solo para quien puede moderar', () => {
+    expect(paths('ADMIN')).toContain('/reviews');
+    expect(paths('RECEPTIONIST')).not.toContain('/reviews');
+    expect(paths('DOCTOR')).not.toContain('/reviews');
+  });
+
   it('ningún rol recibe una sección vacía', () => {
     for (const role of Object.keys(rolePermissions) as Role[]) {
       for (const section of menuFor(role).sections) {

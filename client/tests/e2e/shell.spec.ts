@@ -46,7 +46,8 @@ test.describe('portal del paciente', () => {
 
   test('el desplegable muestra las no leídas y marca una como leída', async ({ page, api }) => {
     const marked: number[] = [];
-    api.on('GET /notifications/unread-count', { count: 1 });
+    // El contador se vuelve a pedir tras marcar: refleja lo marcado, como el servidor.
+    api.on('GET /notifications/unread-count', () => ({ count: marked.length ? 0 : 1 }));
     api.on('GET /notifications', { data: [notification], total: 1, page: 1, limit: 5, totalPages: 1 });
     api.on('PATCH /notifications/:id/read', ({ path }: { path: string }) => {
       marked.push(Number(path.split('/')[2]));
@@ -73,9 +74,7 @@ test.describe('personal de sede', () => {
     await expect(page.getByRole('link', { name: 'Dashboard' })).toBeVisible();
     await expect(page.getByText('Gestión Médica')).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Navegación principal' })).toHaveCount(0);
-    // El contenido del dashboard de administración se rediseña en la Fase 6 (UI-25):
-    // hoy tiene barras de progreso sin nombre y leyendas con contraste insuficiente.
-    await expectAccessible(page, { exclude: ['#main-content'] });
+    await expectAccessible(page);
   });
 
   test('en /notifications conserva su propio shell', async ({ page }) => {

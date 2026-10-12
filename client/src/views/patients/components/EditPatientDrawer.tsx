@@ -132,6 +132,7 @@ export function EditPatientDrawer({ open, patient, onClose, onSuccess }: EditPat
             onClose={handleClose}
             ModalProps={KEEP_MOUNTED}
             sx={{ '& .MuiDrawer-paper': { width: { xs: 320, sm: 480 } } }}
+      slotProps={{ paper: { role: 'dialog', 'aria-modal': true, 'aria-labelledby': 'editar-paciente-titulo' } }}
         >
             <Box
                 sx={{
@@ -142,7 +143,7 @@ export function EditPatientDrawer({ open, patient, onClose, onSuccess }: EditPat
                     py: 2,
                 }}
             >
-                <Typography variant="h5">Editar Paciente</Typography>
+                <Typography variant="h5" component="h2" id="editar-paciente-titulo">Editar paciente</Typography>
                 <IconButton size="small" onClick={handleClose} aria-label="Cerrar formulario">
                     <i className="ri-close-line" style={{ fontSize: 24 }} />
                 </IconButton>
@@ -157,7 +158,7 @@ export function EditPatientDrawer({ open, patient, onClose, onSuccess }: EditPat
                 {submitError && <Alert severity="error">{submitError}</Alert>}
 
                 <Typography variant="subtitle2" color="primary" sx={{ fontWeight: 600 }}>
-                    Datos Personales
+                    Datos personales
                 </Typography>
 
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
@@ -168,7 +169,8 @@ export function EditPatientDrawer({ open, patient, onClose, onSuccess }: EditPat
                             <TextField
                                 {...field}
                                 fullWidth
-                                label="Nombre *"
+                                label="Nombre"
+                required
                                 error={!!errors.name}
                                 helperText={errors.name?.message}
                             />
@@ -181,7 +183,8 @@ export function EditPatientDrawer({ open, patient, onClose, onSuccess }: EditPat
                             <TextField
                                 {...field}
                                 fullWidth
-                                label="Apellido *"
+                                label="Apellido"
+                required
                                 error={!!errors.lastName}
                                 helperText={errors.lastName?.message}
                             />
@@ -243,7 +246,7 @@ export function EditPatientDrawer({ open, patient, onClose, onSuccess }: EditPat
                 <Divider />
 
                 <Typography variant="subtitle2" color="primary" sx={{ fontWeight: 600 }}>
-                    Información Médica
+                    Información médica
                 </Typography>
 
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
@@ -255,12 +258,13 @@ export function EditPatientDrawer({ open, patient, onClose, onSuccess }: EditPat
                                 value={field.value}
                                 onChange={(val) => field.onChange(val ?? '')}
                                 error={errors.emergencyContact?.message}
-                                label="Contacto de emergencia *"
+                                label="Contacto de emergencia"
+                required
                             />
                         )}
                     />
-                    <FormControl fullWidth error={!!errors.bloodType}>
-                        <InputLabel id="edit-patient-blood-label">Tipo de sangre *</InputLabel>
+                    <FormControl fullWidth required error={!!errors.bloodType}>
+                        <InputLabel id="edit-patient-blood-label">Tipo de sangre</InputLabel>
                         <Controller
                             name="bloodType"
                             control={control}
@@ -268,7 +272,7 @@ export function EditPatientDrawer({ open, patient, onClose, onSuccess }: EditPat
                                 <Select
                                     {...field}
                                     labelId="edit-patient-blood-label"
-                                    label="Tipo de sangre *"
+                                    label="Tipo de sangre"
                                     value={field.value || ''}
                                 >
                                     {['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'].map((t) => (
@@ -331,7 +335,7 @@ export function EditPatientDrawer({ open, patient, onClose, onSuccess }: EditPat
                             'Actualizar'
                         )}
                     </Button>
-                    <Button variant="outlined" color="error" onClick={handleClose}>
+                    <Button variant="outlined" onClick={handleClose}>
                         Cancelar
                     </Button>
                 </Box>

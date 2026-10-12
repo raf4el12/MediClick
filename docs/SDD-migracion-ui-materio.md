@@ -223,12 +223,12 @@ expectAccessible(page)                          // axe WCAG 2.0/2.1 A y AA
 | UI-20 ✅ | 5 Registro | Rediseño del registro del paciente, que ya tiene 4 pasos, con el wizard de Materio | — | UI-04 | `tdd` |
 | UI-21 ✅ | 5 Expediente | Expediente con la vista de usuario de Materio sobre `patientRecord` (el arnés enruta su GraphQL) | — | UI-02, UI-03 | `tdd` |
 | UI-31 ✅ | 5 Cuenta | Cuenta y notificaciones en el grupo `(shared)`: `/profile` y `/patient/profile` editan los mismos datos que `/settings/account`, se unifican ahí y pasan a redirigir | — | UI-03 | `tdd` |
-| UI-22 | 6 Admin | Tablas de gestión con filtros, tarjetas y drawer (pacientes, médicos, usuarios, sedes, especialidades, categorías); un PR por entidad si hace falta | — | UI-03 | `tdd` |
-| UI-23 | 6 Admin | Roles y permisos con las vistas de Materio | — | UI-22 | `tdd` |
-| UI-24 | 6 Admin | Moderación de reseñas con alcance de sede y listado por sede (backend ✅; pantalla pendiente de UI-03) | Sí | UI-22 | `mediclick-tenant-safety` + `tdd` |
-| UI-25 | 6 Admin | Pagos, dashboard de administración y reportes en recharts; `/payments` solo en `(staff)` | — | UI-22 | `tdd` |
-| UI-28 | 6 Admin | Pantallas clínicas del personal: notas clínicas, recetas e historia médica | — | UI-22 | `tdd` |
-| UI-30 | 6 Admin | Lista de espera del personal | — | UI-22 | `tdd` |
+| UI-22 ✅ | 6 Admin | Tablas de gestión con filtros, tarjetas y drawer (pacientes, médicos, usuarios, sedes, especialidades, categorías); un PR por entidad si hace falta | — | UI-03 | `tdd` |
+| UI-23 ✅ | 6 Admin | Roles y permisos con las vistas de Materio | — | UI-22 | `tdd` |
+| UI-24 ✅ | 6 Admin | Moderación de reseñas con alcance de sede y listado por sede | Sí | UI-22 | `mediclick-tenant-safety` + `tdd` |
+| UI-25 ✅ | 6 Admin | Pagos, dashboard de administración y reportes en recharts; `/payments` solo en `(staff)` | — | UI-22 | `tdd` |
+| UI-28 ✅ | 6 Admin | Pantallas clínicas del personal: notas clínicas, recetas e historia médica | — | UI-22 | `tdd` |
+| UI-30 ✅ | 6 Admin | Lista de espera del personal | — | UI-22 | `tdd` |
 | UI-26 ✅ | 7 Público | Endpoints públicos del perfil del médico: solo campos profesionales y reseñas visibles, con throttle; bloqueado hasta corregir el throttle evadible (§9) | Sí | — | `mediclick-tenant-safety` + `tdd` |
 | UI-27 | 7 Público | Landing de Materio y perfil público del médico | — | UI-26, UI-04, UI-08 (médico preseleccionado) | `tdd` |
 

@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useDebouncedCallback } from '@/hooks/useDebouncedCallback';
 import { appointmentsService } from '@/services/appointments.service';
 import { prescriptionsService } from '@/services/prescriptions.service';
 import type { PaginatedResponse } from '@/types/pagination.types';
+import { extractApiError } from '@/utils/extractApiError';
 import type { Appointment, AppointmentFilters } from '@/views/appointments/types';
+import { useSelectedAppointmentId } from '@/views/clinical-shared/hooks/useSelectedAppointmentId';
 import type { Prescription, CreatePrescriptionPayload } from '../types';
 
 const DEFAULT_PAGINATION = {
@@ -25,6 +28,7 @@ const DEFAULT_DATA: PaginatedResponse<Appointment> = {
 };
 
 export function usePrescriptions() {
+  const queryClient = useQueryClient();
   const [data, setData] = useState<PaginatedResponse<Appointment>>(DEFAULT_DATA);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,12 +36,13 @@ export function usePrescriptions() {
   const [pagination, setPagination] = useState(DEFAULT_PAGINATION);
   const [filters, setFilters] = useState<AppointmentFilters>({});
 
-  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
-  const [prescription, setPrescription] = useState<Prescription | null>(null);
-  const [loadingPrescription, setLoadingPrescription] = useState(false);
-  const [loadingCreate, setLoadingCreate] = useState(false);
+  // La cita abierta vive en la URL; se recuerda la fila elegida por si cambia la página de la tabla.
+  const { selectedId, select, clear } = useSelectedAppointmentId();
+  const [chosen, setChosen] = useState<Appointment | null>(null);
+  const selectedAppointment = data.rows.find((a) => a.id === selectedId) ?? (chosen?.id === selectedId ? chosen : null);
+
   const [loadingDownload, setLoadingDownload] = useState(false);
-  const [panelError, setPanelError] = useState<string | null>(null);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -83,65 +88,53 @@ export function usePrescriptions() {
     setPagination((prev) => ({ ...prev, currentPage: 1 }));
   }, []);
 
-  const loadPrescription = useCallback(async (appointmentId: number) => {
-    setLoadingPrescription(true);
-    setPanelError(null);
-    setPrescription(null);
-    try {
-      const result = await prescriptionsService.getByAppointment(appointmentId);
-      setPrescription(result);
-    } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } })?.response?.status;
-      if (status === 403) {
-        setPanelError('No tienes permiso para ver la receta de esta cita');
-      } else if (status === 404) {
-        // Sin receta aún — estado normal, no es error
-        setPrescription(null);
-      } else {
-        setPanelError('Error al cargar la receta');
+  // Misma clave que el espacio de atención del médico (UI-16). Un 404 es "todavía sin receta".
+  const prescription = useQuery<Prescription | null>({
+    queryKey: ['prescription', 'appointment', selectedId],
+    queryFn: async () => {
+      try {
+        return await prescriptionsService.getByAppointment(selectedId!);
+      } catch (err) {
+        if (extractApiError(err).status === 404) return null;
+        throw err;
       }
-    } finally {
-      setLoadingPrescription(false);
-    }
-  }, []);
+    },
+    enabled: selectedId !== null,
+  });
+
+  const panelError = prescription.error
+    ? extractApiError(prescription.error).status === 403
+      ? 'No tienes permiso para ver la receta de esta cita'
+      : 'Error al cargar la receta'
+    : downloadError;
+
+  const create = useMutation({
+    mutationFn: (payload: CreatePrescriptionPayload) => prescriptionsService.create(payload),
+    onSuccess: async (_, payload) => {
+      await Promise.all([queryClient.invalidateQueries({ queryKey: ['prescription', 'appointment', payload.appointmentId] }), fetchData()]);
+    },
+  });
 
   const selectAppointment = useCallback(
     (appointment: Appointment) => {
-      setSelectedAppointment(appointment);
-      void loadPrescription(appointment.id);
+      setChosen(appointment);
+      setDownloadError(null);
+      select(appointment.id);
     },
-    [loadPrescription],
+    [select],
   );
-
-  const clearSelection = useCallback(() => {
-    setSelectedAppointment(null);
-    setPrescription(null);
-    setPanelError(null);
-  }, []);
 
   const downloadPdf = useCallback(async (appointmentId: number) => {
     setLoadingDownload(true);
+    setDownloadError(null);
     try {
       await prescriptionsService.downloadPdf(appointmentId);
     } catch {
-      setPanelError('Error al descargar la receta');
+      setDownloadError('Error al descargar la receta');
     } finally {
       setLoadingDownload(false);
     }
   }, []);
-
-  const createPrescription = useCallback(
-    async (payload: CreatePrescriptionPayload) => {
-      setLoadingCreate(true);
-      try {
-        await prescriptionsService.create(payload);
-        await Promise.all([loadPrescription(payload.appointmentId), fetchData()]);
-      } finally {
-        setLoadingCreate(false);
-      }
-    },
-    [loadPrescription, fetchData],
-  );
 
   return {
     data,
@@ -152,15 +145,18 @@ export function usePrescriptions() {
     filters,
     debouncedSearch,
     updateFilters,
+    refresh: fetchData,
+    selectedId,
     selectedAppointment,
     selectAppointment,
-    clearSelection,
-    prescription,
-    loadingPrescription,
-    loadingCreate,
-    loadingDownload,
+    clearSelection: clear,
+    prescription: prescription.data ?? null,
+    loadingPrescription: prescription.isLoading,
     panelError,
-    createPrescription,
+    createPrescription: (payload: CreatePrescriptionPayload) => create.mutateAsync(payload),
+    loadingCreate: create.isPending,
+    createError: create.error ? extractApiError(create.error, 'No se pudo crear la receta').message : null,
     downloadPdf,
+    loadingDownload,
   };
 }

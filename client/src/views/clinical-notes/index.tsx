@@ -1,67 +1,78 @@
 'use client';
 
-import { useMemo } from 'react';
-import Grid from '@mui/material/Grid';
-import { PageHeader } from '@/components/shared/PageHeader';
-import Collapse from '@mui/material/Collapse';
+import { useCallback, useMemo } from 'react';
+import type { ColumnDef } from '@tanstack/react-table';
+import Typography from '@mui/material/Typography';
+import { formatDate } from '@/utils/formatDate';
+import type { Appointment } from '@/views/appointments/types';
+import ClinicalAppointmentsTable from '@/views/clinical-shared/components/ClinicalAppointmentsTable';
+import ClinicalDrawer from '@/views/clinical-shared/components/ClinicalDrawer';
+import { ClinicalNotePanel } from './components/ClinicalNotePanel';
 import { useClinicalNotes } from './hooks/useClinicalNotes';
-import { ClinicalNotesTable } from './components/ClinicalNotesTable';
-import dynamic from 'next/dynamic';
 
-const ClinicalNotePanel = dynamic(
-  () => import('./components/ClinicalNotePanel').then((m) => m.ClinicalNotePanel),
-);
+const notesLabel = (count: number) => (count === 0 ? '—' : `${count} ${count === 1 ? 'nota' : 'notas'}`);
 
+/** Notas clínicas por cita: tabla de citas y drawer con las notas de la cita elegida. */
 export default function ClinicalNotesView() {
   const controller = useClinicalNotes();
-  const hasDetail = !!controller.selectedAppointment;
+  const { selectedId, selectedAppointment, notes } = controller;
 
-  // Mapa de conteo de notas por cita para mostrar indicador en la tabla
-  const notesCounts = useMemo(() => {
-    if (!controller.selectedAppointment) return {};
+  const notesColumn = useMemo<ColumnDef<Appointment, unknown>>(
+    () => ({
+      id: 'notes',
+      header: 'Notas',
+      cell: ({ row }) => notesLabel(row.original.id === selectedId ? notes.length : (row.original.notesCount ?? 0)),
+    }),
+    [selectedId, notes.length],
+  );
+  const ariaLabel = useCallback((name: string) => `Ver notas de ${name}`, []);
 
-    return {
-      [controller.selectedAppointment.id]: controller.notes.length,
-    };
-  }, [controller.selectedAppointment, controller.notes]);
+  // Con un enlace directo a una cita de otra página, el nombre sale de sus notas.
+  const title = selectedAppointment
+    ? `${selectedAppointment.patient.name} ${selectedAppointment.patient.lastName}`
+    : notes[0]
+      ? `${notes[0].patient.name} ${notes[0].patient.lastName}`
+      : `Cita ${selectedId ?? ''}`;
+  const subtitle = selectedAppointment
+    ? `${selectedAppointment.schedule.specialty.name} · ${formatDate(selectedAppointment.schedule.scheduleDate)}`
+    : undefined;
 
   return (
-    <>
-      <PageHeader title="Notas Clínicas" subtitle="Registro de notas clínicas por cita médica" />
-
-      <Grid container spacing={3}>
-        <Grid size={{ xs: 12, md: hasDetail ? 8 : 12 }} sx={{ transition: 'all 0.3s ease' }}>
-          <ClinicalNotesTable
-            data={controller.data}
-            loading={controller.loading}
-            error={controller.error}
-            pagination={controller.pagination}
-            filters={controller.filters}
-            setPagination={controller.setPagination}
-            debouncedSearch={controller.debouncedSearch}
-            updateFilters={controller.updateFilters}
-            selectedAppointment={controller.selectedAppointment}
-            onSelectAppointment={controller.selectAppointment}
-            notesCounts={notesCounts}
+    <div className='flex flex-col gap-6'>
+      <div>
+        <Typography variant='h4' component='h1'>
+          Notas clínicas
+        </Typography>
+        <Typography color='text.secondary'>Diagnóstico, resumen y plan de cada cita.</Typography>
+      </div>
+      <ClinicalAppointmentsTable
+        data={controller.data}
+        loading={controller.loading}
+        error={controller.error}
+        pagination={controller.pagination}
+        setPagination={controller.setPagination}
+        filters={controller.filters}
+        updateFilters={controller.updateFilters}
+        debouncedSearch={controller.debouncedSearch}
+        onRetry={() => void controller.refresh()}
+        extraColumn={notesColumn}
+        actionLabel='Notas'
+        actionAriaLabel={ariaLabel}
+        onOpen={controller.selectAppointment}
+      />
+      <ClinicalDrawer open={selectedId !== null} label='Notas clínicas' title={title} subtitle={subtitle} onClose={controller.clearSelection}>
+        {selectedId !== null && (
+          <ClinicalNotePanel
+            appointmentId={selectedId}
+            notes={notes}
+            loadingNotes={controller.loadingNotes}
+            loadingCreate={controller.loadingCreate}
+            panelError={controller.panelError}
+            createError={controller.createError}
+            onCreateNote={controller.createNote}
           />
-        </Grid>
-
-        {hasDetail ? (
-          <Grid size={{ xs: 12, md: 4 }}>
-            <Collapse in={hasDetail} orientation="horizontal" unmountOnExit>
-              <ClinicalNotePanel
-                appointment={controller.selectedAppointment}
-                notes={controller.notes}
-                loadingNotes={controller.loadingNotes}
-                loadingCreate={controller.loadingCreate}
-                panelError={controller.panelError}
-                onClose={controller.clearSelection}
-                onCreateNote={controller.createNote}
-              />
-            </Collapse>
-          </Grid>
-        ) : null}
-      </Grid>
-    </>
+        )}
+      </ClinicalDrawer>
+    </div>
   );
 }

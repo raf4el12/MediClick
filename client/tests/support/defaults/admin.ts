@@ -29,5 +29,6 @@ export const admin: ActorProfile = {
       availableSlots: 0,
       occupancyRate: 0,
     },
+    'GET /reports/revenue': { projectedRevenue: 0, actualRevenue: 0, currency: 'PEN' },
   },
 };

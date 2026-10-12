@@ -1,14 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
-import Typography from '@mui/material/Typography';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
-import Divider from '@mui/material/Divider';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import type { CreatePrescriptionPayload, PrescriptionItemPayload } from '../types';
 
 interface PrescriptionItemRow {
@@ -27,10 +25,16 @@ const emptyItem = (): PrescriptionItemRow => ({
   notes: '',
 });
 
+const REQUIRED = [
+  { key: 'dosage', label: 'Dosis' },
+  { key: 'frequency', label: 'Frecuencia' },
+  { key: 'duration', label: 'Duración' },
+] as const;
+
 interface PrescriptionFormProps {
   appointmentId: number;
   loading: boolean;
-  onSubmit: (payload: CreatePrescriptionPayload) => Promise<void>;
+  onSubmit: (payload: CreatePrescriptionPayload) => Promise<unknown>;
 }
 
 export function PrescriptionForm({ appointmentId, loading, onSubmit }: PrescriptionFormProps) {
@@ -43,33 +47,19 @@ export function PrescriptionForm({ appointmentId, loading, onSubmit }: Prescript
     setItems((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)));
   };
 
-  const addItem = () => {
-    setItems((prev) => [...prev, emptyItem()]);
-  };
-
-  const removeItem = (index: number) => {
-    setItems((prev) => prev.filter((_, i) => i !== index));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
-    // Validar que hay al menos 1 ítem con todos los campos requeridos
     if (items.length === 0) {
-      setFormError('Debes agregar al menos un medicamento.');
-
+      setFormError('Agrega al menos un medicamento.');
       return;
     }
 
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i]!;
-
-      if (!item.medication.trim() || !item.dosage.trim() || !item.frequency.trim() || !item.duration.trim()) {
-        setFormError(`El medicamento #${i + 1} tiene campos obligatorios incompletos (medicamento, dosis, frecuencia, duración).`);
-
-        return;
-      }
+    const incomplete = items.findIndex((item) => !item.medication.trim() || !item.dosage.trim() || !item.frequency.trim() || !item.duration.trim());
+    if (incomplete >= 0) {
+      setFormError(`Al medicamento ${incomplete + 1} le faltan datos: medicamento, dosis, frecuencia y duración son obligatorios.`);
+      return;
     }
 
     const mappedItems: PrescriptionItemPayload[] = items.map((item) => ({
@@ -80,160 +70,102 @@ export function PrescriptionForm({ appointmentId, loading, onSubmit }: Prescript
       ...(item.notes.trim() ? { notes: item.notes.trim() } : {}),
     }));
 
-    const payload: CreatePrescriptionPayload = {
-      appointmentId,
-      ...(instructions.trim() ? { instructions: instructions.trim() } : {}),
-      ...(validUntil ? { validUntil } : {}),
-      items: mappedItems,
-    };
-
-    await onSubmit(payload);
+    try {
+      await onSubmit({
+        appointmentId,
+        ...(instructions.trim() ? { instructions: instructions.trim() } : {}),
+        ...(validUntil ? { validUntil } : {}),
+        items: mappedItems,
+      });
+    } catch {
+      // El drawer muestra el mensaje del servidor.
+    }
   };
 
   return (
-    <Box component="form" onSubmit={(e) => { void handleSubmit(e); }}>
-      <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2 }}>
+    <form className='flex flex-col gap-4' onSubmit={(e) => void handleSubmit(e)}>
+      <Typography variant='h6' component='h3'>
         Nueva receta
       </Typography>
-
-      {formError && (
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          {formError}
-        </Alert>
-      )}
-
+      {formError && <Alert severity='warning'>{formError}</Alert>}
       <TextField
-        label="Instrucciones generales"
+        id='receta-instrucciones'
+        label='Instrucciones generales'
         value={instructions}
         onChange={(e) => setInstructions(e.target.value)}
         fullWidth
         multiline
         minRows={2}
-        size="small"
-        sx={{ mb: 2 }}
+        size='small'
         disabled={loading}
       />
-
       <TextField
-        label="Válida hasta"
-        type="date"
+        id='receta-valida-hasta'
+        label='Válida hasta'
+        type='date'
         value={validUntil}
         onChange={(e) => setValidUntil(e.target.value)}
         fullWidth
-        size="small"
-        sx={{ mb: 3 }}
+        size='small'
         disabled={loading}
         slotProps={{ inputLabel: { shrink: true } }}
       />
-
-      <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1.5 }}>
-        Medicamentos
+      <Typography variant='body2' color='text.secondary'>
+        Medicamento, dosis, frecuencia y duración son obligatorios.
       </Typography>
-
       {items.map((item, index) => (
-        <Box
-          key={index}
-          sx={{
-            border: '1px solid',
-            borderColor: 'divider',
-            borderRadius: 1,
-            p: 2,
-            mb: 2,
-            position: 'relative',
-          }}
-        >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-            <Typography variant="caption" color="text.secondary">
-              Medicamento #{index + 1}
+        <fieldset key={index} className='flex flex-col gap-3 m-0 p-4 rounded' style={{ border: '1px solid var(--mui-palette-divider)' }}>
+          <div className='flex items-center justify-between'>
+            <Typography component='legend' variant='subtitle2' className='p-0'>
+              Medicamento {index + 1}
             </Typography>
             {items.length > 1 && (
-              <IconButton
-                size="small"
-                color="error"
-                onClick={() => removeItem(index)}
-                disabled={loading}
-              >
-                <i className="ri-close-line" style={{ fontSize: 16 }} />
+              <IconButton size='small' aria-label={`Quitar medicamento ${index + 1}`} onClick={() => setItems((prev) => prev.filter((_, i) => i !== index))} disabled={loading}>
+                <i className='ri-close-line' aria-hidden />
               </IconButton>
             )}
-          </Box>
-
+          </div>
           <TextField
-            label="Medicamento *"
+            id={`receta-${index}-medicamento`}
+            label='Medicamento'
             value={item.medication}
             onChange={(e) => updateItem(index, 'medication', e.target.value)}
             fullWidth
-            size="small"
-            sx={{ mb: 1.5 }}
+            size='small'
             disabled={loading}
           />
-
-          <Box sx={{ display: 'flex', gap: 1.5, mb: 1.5 }}>
-            <TextField
-              label="Dosis *"
-              value={item.dosage}
-              onChange={(e) => updateItem(index, 'dosage', e.target.value)}
-              fullWidth
-              size="small"
-              disabled={loading}
-            />
-            <TextField
-              label="Frecuencia *"
-              value={item.frequency}
-              onChange={(e) => updateItem(index, 'frequency', e.target.value)}
-              fullWidth
-              size="small"
-              disabled={loading}
-            />
-          </Box>
-
+          <div className='grid gap-3 sm:grid-cols-3'>
+            {REQUIRED.map(({ key, label }) => (
+              <TextField
+                key={key}
+                id={`receta-${index}-${key}`}
+                label={label}
+                value={item[key]}
+                onChange={(e) => updateItem(index, key, e.target.value)}
+                fullWidth
+                size='small'
+                disabled={loading}
+              />
+            ))}
+          </div>
           <TextField
-            label="Duración *"
-            value={item.duration}
-            onChange={(e) => updateItem(index, 'duration', e.target.value)}
-            fullWidth
-            size="small"
-            sx={{ mb: 1.5 }}
-            disabled={loading}
-          />
-
-          <TextField
-            label="Notas (opcional)"
+            id={`receta-${index}-notas`}
+            label='Notas (opcional)'
             value={item.notes}
             onChange={(e) => updateItem(index, 'notes', e.target.value)}
             fullWidth
-            size="small"
+            size='small'
             disabled={loading}
           />
-        </Box>
+        </fieldset>
       ))}
-
-      <Button
-        variant="outlined"
-        size="small"
-        onClick={addItem}
-        disabled={loading}
-        startIcon={<i className="ri-add-line" />}
-        sx={{ mb: 3 }}
-      >
+      <Button variant='outlined' size='small' className='self-start' onClick={() => setItems((prev) => [...prev, emptyItem()])} disabled={loading} startIcon={<i className='ri-add-line' aria-hidden />}>
         Agregar medicamento
       </Button>
-
-      <Divider sx={{ mb: 2 }} />
-
-      <Alert severity="info" sx={{ mb: 2 }}>
-        Esto completará la cita automáticamente al crear la receta.
-      </Alert>
-
-      <Button
-        type="submit"
-        variant="contained"
-        fullWidth
-        disabled={loading}
-        startIcon={loading ? <CircularProgress size={16} color="inherit" /> : undefined}
-      >
-        {loading ? 'Creando receta...' : 'Crear Receta'}
+      <Alert severity='info'>Al crear la receta, la cita queda completada.</Alert>
+      <Button type='submit' variant='contained' disabled={loading} startIcon={loading ? <CircularProgress size={16} color='inherit' /> : undefined}>
+        Crear receta
       </Button>
-    </Box>
+    </form>
   );
 }
