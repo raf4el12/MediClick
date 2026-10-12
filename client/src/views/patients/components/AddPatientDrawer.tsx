@@ -56,6 +56,7 @@ export function AddPatientDrawer({
       onClose={handleReset}
       ModalProps={KEEP_MOUNTED}
       sx={{ '& .MuiDrawer-paper': { width: { xs: 320, sm: 480 } } }}
+      slotProps={{ paper: { role: 'dialog', 'aria-modal': true, 'aria-labelledby': 'nuevo-paciente-titulo' } }}
     >
       <Box
         sx={{
@@ -66,7 +67,7 @@ export function AddPatientDrawer({
           py: 2,
         }}
       >
-        <Typography variant="h5">Nuevo Paciente</Typography>
+        <Typography variant="h5" component="h2" id="nuevo-paciente-titulo">Nuevo paciente</Typography>
         <IconButton size="small" onClick={handleReset} aria-label="Cerrar formulario de paciente">
           <i className="ri-close-line" style={{ fontSize: 24 }} />
         </IconButton>
@@ -84,7 +85,7 @@ export function AddPatientDrawer({
 
         {/* Sección: Datos personales */}
         <Typography variant="subtitle2" color="primary" sx={{ fontWeight: 600 }}>
-          Datos Personales
+          Datos personales
         </Typography>
 
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
@@ -95,7 +96,8 @@ export function AddPatientDrawer({
               <TextField
                 {...field}
                 fullWidth
-                label="Nombre *"
+                label="Nombre"
+                required
                 placeholder="Juan"
                 error={!!errors.name}
                 helperText={errors.name?.message}
@@ -110,7 +112,8 @@ export function AddPatientDrawer({
               <TextField
                 {...field}
                 fullWidth
-                label="Apellido *"
+                label="Apellido"
+                required
                 placeholder="Pérez"
                 error={!!errors.lastName}
                 helperText={errors.lastName?.message}
@@ -127,7 +130,8 @@ export function AddPatientDrawer({
               {...field}
               fullWidth
               type="email"
-              label="Email *"
+              label="Email"
+                required
               placeholder="correo@email.com"
               error={!!errors.email}
               helperText={errors.email?.message}
@@ -190,8 +194,8 @@ export function AddPatientDrawer({
         />
 
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
-          <FormControl fullWidth error={!!errors.typeDocument}>
-            <InputLabel id="patient-doc-type-label">Tipo documento *</InputLabel>
+          <FormControl fullWidth required error={!!errors.typeDocument}>
+            <InputLabel id="patient-doc-type-label">Tipo de documento</InputLabel>
             <Controller
               name="typeDocument"
               control={control}
@@ -199,7 +203,7 @@ export function AddPatientDrawer({
                 <Select
                   {...field}
                   labelId="patient-doc-type-label"
-                  label="Tipo documento *"
+                  label="Tipo de documento"
                   value={field.value || ''}
                 >
                   <MenuItem value="DNI">DNI</MenuItem>
@@ -220,7 +224,8 @@ export function AddPatientDrawer({
               <TextField
                 {...field}
                 fullWidth
-                label="Nro. documento *"
+                label="Número de documento"
+                required
                 placeholder="12345678"
                 error={!!errors.numberDocument}
                 helperText={errors.numberDocument?.message}
@@ -228,9 +233,10 @@ export function AddPatientDrawer({
                   input: {
                     endAdornment: (
                       <InputAdornment position="end">
-                        <Tooltip title="Buscar datos en RENIEC">
+                        <Tooltip title="Buscar datos en RENIEC" describeChild>
                           <span>
                             <IconButton
+                              aria-label="Buscar datos en RENIEC"
                               size="small"
                               onClick={() => void handleLookupDocument()}
                               disabled={lookingUp || !canLookup}
@@ -267,7 +273,7 @@ export function AddPatientDrawer({
 
         {/* Sección: Información médica */}
         <Typography variant="subtitle2" color="primary" sx={{ fontWeight: 600 }}>
-          Información Médica
+          Información médica
         </Typography>
 
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
@@ -279,13 +285,14 @@ export function AddPatientDrawer({
                 value={field.value}
                 onChange={(val) => field.onChange(val ?? '')}
                 error={errors.emergencyContact?.message}
-                label="Contacto de emergencia *"
+                label="Contacto de emergencia"
+                required
               />
             )}
           />
 
-          <FormControl fullWidth error={!!errors.bloodType}>
-            <InputLabel id="patient-blood-label">Tipo de sangre *</InputLabel>
+          <FormControl fullWidth required error={!!errors.bloodType}>
+            <InputLabel id="patient-blood-label">Tipo de sangre</InputLabel>
             <Controller
               name="bloodType"
               control={control}
@@ -293,7 +300,7 @@ export function AddPatientDrawer({
                 <Select
                   {...field}
                   labelId="patient-blood-label"
-                  label="Tipo de sangre *"
+                  label="Tipo de sangre"
                   value={field.value || ''}
                 >
                   {['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'].map((t) => (
@@ -357,10 +364,10 @@ export function AddPatientDrawer({
                 Guardando...
               </>
             ) : (
-              'Registrar'
+              'Guardar'
             )}
           </Button>
-          <Button variant="outlined" color="error" onClick={handleReset}>
+          <Button variant="outlined" onClick={handleReset}>
             Cancelar
           </Button>
         </Box>

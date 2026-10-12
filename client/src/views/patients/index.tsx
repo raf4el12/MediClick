@@ -1,107 +1,132 @@
 'use client';
 
-import Grid from '@mui/material/Grid';
-import Fade from '@mui/material/Fade';
+import { useCallback } from 'react';
+import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
-import { usePatients } from './hooks/usePatients';
-import { PatientsTable } from './components/PatientsTable';
-import { EditPatientDrawer } from './components/EditPatientDrawer';
-import { ConfirmDialog } from '@/components/shared/ConfirmDialog/ConfirmDialog';
-import dynamic from 'next/dynamic';
-import CircularProgress from '@mui/material/CircularProgress';
-import Box from '@mui/material/Box';
-import { PageHeader } from '@/components/shared/PageHeader';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import Divider from '@mui/material/Divider';
+import Typography from '@mui/material/Typography';
+import CustomAvatar from '@core/components/mui/Avatar';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import type { DataTablePagination, DataTableSorting } from '@/components/shared/DataTable';
 import { notify } from '@/utils/notify';
+import { AddPatientDrawer } from './components/AddPatientDrawer';
+import { EditPatientDrawer } from './components/EditPatientDrawer';
+import { PatientFilters } from './components/PatientFilters';
+import { PatientsTable } from './components/PatientsTable';
+import { usePatients } from './hooks/usePatients';
 
-const DynamicLoading = () => (
-  <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-    <CircularProgress size={28} />
-  </Box>
-);
-
-const PatientDetailDialog = dynamic(
-  () => import('./components/PatientDetailDialog').then((m) => m.PatientDetailDialog),
-  { loading: DynamicLoading },
-);
-
+/** Gestión de pacientes con el patrón `user/list` de Materio: tarjetas, filtros y tabla. */
 export default function PatientsView() {
-  const controller = usePatients();
-  const hasDetail = !!controller.detailPatient;
+  const c = usePatients();
+  const active = c.data.activeCount ?? 0;
+  const inactive = c.data.inactiveCount ?? 0;
+  const { setPagination } = c;
 
-  const handleCreateSuccess = () => {
-    controller.refreshData();
-    notify('Paciente registrado exitosamente', 'success');
-  };
+  const onPaginationChange = useCallback(
+    ({ pageIndex, pageSize }: DataTablePagination) => setPagination((p) => ({ ...p, currentPage: pageIndex + 1, pageSize })),
+    [setPagination],
+  );
+  const onSortingChange = useCallback(
+    ({ id, desc }: DataTableSorting) => setPagination((p) => ({ ...p, orderBy: id, orderByMode: desc ? 'desc' : 'asc', currentPage: 1 })),
+    [setPagination],
+  );
 
-  const handleEditSuccess = () => {
-    controller.closeEditDrawer();
-    controller.refreshData();
-    notify('Paciente actualizado exitosamente', 'success');
-  };
-
-  const handleDelete = async () => {
-    const success = await controller.confirmDelete();
-    if (success) {
-      notify('Paciente eliminado exitosamente', 'success');
-    } else {
-      notify('Error al eliminar el paciente', 'error');
-    }
-  };
+  const cards = [
+    { title: 'Pacientes', value: active + inactive, icon: 'ri-group-line', color: 'primary' as const },
+    { title: 'Activos', value: active, icon: 'ri-user-follow-line', color: 'success' as const },
+    { title: 'Inactivos', value: inactive, icon: 'ri-user-unfollow-line', color: 'secondary' as const },
+  ];
 
   return (
-    <Grid container spacing={3}>
-      <Grid size={{ xs: 12, md: hasDetail ? 8 : 12 }} sx={{ transition: 'all 0.3s ease' }}>
-        <PageHeader
-          title="Pacientes"
-          subtitle="Visualiza y administra todos los pacientes registrados"
-        >
-          <Button
-            variant="contained"
-            startIcon={<i className="ri-add-line" />}
-            onClick={controller.openCreateDrawer}
-          >
-            Registrar Paciente
-          </Button>
-        </PageHeader>
-        <PatientsTable
-          {...controller}
-          refreshData={handleCreateSuccess}
-          onEdit={controller.openEditDrawer}
-          onDelete={controller.openDeleteDialog}
+    <div className='flex flex-col gap-6'>
+      <div>
+        <Typography variant='h4' component='h1'>
+          Pacientes
+        </Typography>
+        <Typography color='text.secondary'>Pacientes registrados en la sede, con acceso a su expediente.</Typography>
+      </div>
+      <section aria-label='Resumen de pacientes' className='grid gap-6 sm:grid-cols-3'>
+        {cards.map((card) => (
+          <Card key={card.title}>
+            <CardContent className='flex justify-between gap-2'>
+              <div className='flex flex-col gap-1'>
+                <Typography color='text.primary'>{card.title}</Typography>
+                <Typography variant='h4' className='tabular-nums'>
+                  {card.value}
+                </Typography>
+              </div>
+              <CustomAvatar color={card.color} skin='light' variant='rounded' size={42}>
+                <i className={`${card.icon} text-[26px]`} aria-hidden />
+              </CustomAvatar>
+            </CardContent>
+          </Card>
+        ))}
+      </section>
+      <Card>
+        <PatientFilters
+          searchValue={c.pagination.searchValue}
+          onSearch={c.debouncedSearch}
+          status={c.pagination.statusFilter}
+          onStatusChange={c.setStatusFilter}
+          onCreate={c.openCreateDrawer}
         />
-      </Grid>
+        <Divider />
+        {c.error && (
+          <Alert
+            severity='error'
+            className='m-5'
+            action={
+              <Button color='inherit' size='small' onClick={c.refreshData}>
+                Reintentar
+              </Button>
+            }
+          >
+            {c.error}
+          </Alert>
+        )}
+        <PatientsTable
+          rows={c.data.rows}
+          totalRows={c.data.totalRows}
+          loading={c.loading}
+          pagination={c.pagination}
+          onPaginationChange={onPaginationChange}
+          onSortingChange={onSortingChange}
+          onEdit={c.openEditDrawer}
+          onDelete={c.openDeleteDialog}
+        />
+      </Card>
 
-      {hasDetail ? (
-        <Grid size={{ xs: 12, md: 4 }}>
-          <Fade in={hasDetail} timeout={300}>
-            <div>
-              <PatientDetailDialog
-                patient={controller.detailPatient}
-                onClose={controller.closeDetail}
-              />
-            </div>
-          </Fade>
-        </Grid>
-      ) : null}
-
+      <AddPatientDrawer
+        open={c.drawerOpen}
+        onClose={c.closeDrawer}
+        onSuccess={() => {
+          c.refreshData();
+          notify('Paciente registrado');
+        }}
+      />
       <EditPatientDrawer
-        open={!!controller.editPatient}
-        patient={controller.editPatient}
-        onClose={controller.closeEditDrawer}
-        onSuccess={handleEditSuccess}
+        open={!!c.editPatient}
+        patient={c.editPatient}
+        onClose={c.closeEditDrawer}
+        onSuccess={() => {
+          c.closeEditDrawer();
+          c.refreshData();
+          notify('Paciente actualizado');
+        }}
       />
-
       <ConfirmDialog
-        open={!!controller.deletePatient}
-        title="¿Eliminar paciente?"
-        description={`Se eliminará al paciente ${controller.deletePatient?.profile.name ?? ''} ${controller.deletePatient?.profile.lastName ?? ''}. Esta acción no se puede deshacer.`}
-        confirmLabel="Eliminar"
-        cancelLabel="Cancelar"
-        destructive
-        onConfirm={() => void handleDelete()}
-        onCancel={controller.closeDeleteDialog}
+        open={!!c.deletePatient}
+        title='Eliminar paciente'
+        description={c.deletePatient ? `¿Eliminar a ${c.deletePatient.profile.name} ${c.deletePatient.profile.lastName}? Esta acción no se puede deshacer.` : undefined}
+        destructive={false}
+        onCancel={c.closeDeleteDialog}
+        onConfirm={async () => {
+          const ok = await c.confirmDelete();
+          notify(ok ? 'Paciente eliminado' : 'No se pudo eliminar el paciente', ok ? 'success' : 'error');
+        }}
       />
-
-    </Grid>
+    </div>
   );
 }
