@@ -1,26 +1,22 @@
 'use client';
 
-import { useCallback } from 'react';
-import Grid from '@mui/material/Grid';
 import { PageHeader } from '@/components/shared/PageHeader';
+import { notify } from '@/utils/notify';
 import { useClinics } from './hooks/useClinics';
 import { ClinicsTable } from './components/ClinicsTable';
-import { notify } from '@/utils/notify';
 
 export default function ClinicsView() {
   const controller = useClinics();
 
-  const handleSuccess = useCallback(() => {
+  const handleSaved = () => {
     controller.refreshData();
-    notify('Operación realizada exitosamente', 'success');
-  }, [controller.refreshData]);
+    notify(controller.drawerData.action === 'Update' ? 'Sede actualizada' : 'Sede creada', 'success');
+  };
 
   return (
-    <Grid container spacing={3}>
-      <Grid size={12}>
-        <PageHeader title="Clínicas" subtitle="Administra las sedes y sucursales" />
-        <ClinicsTable {...controller} refreshData={handleSuccess} />
-      </Grid>
-    </Grid>
+    <div className='flex flex-col gap-6'>
+      <PageHeader title='Sedes' subtitle='Administra las sedes, su zona horaria y su moneda' />
+      <ClinicsTable {...controller} onSaved={handleSaved} />
+    </div>
   );
 }

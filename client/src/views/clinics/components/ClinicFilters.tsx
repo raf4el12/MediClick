@@ -1,56 +1,34 @@
 'use client';
 
-import { useState } from 'react';
-import Box from '@mui/material/Box';
+import { useCallback } from 'react';
 import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import InputAdornment from '@mui/material/InputAdornment';
+import { DebouncedInput } from '@/components/shared/DebouncedInput';
 
 interface ClinicFiltersProps {
+  searchValue: string;
   onSearch: (value: string) => void;
   onAddClick: () => void;
 }
 
-export function ClinicFilters({ onSearch, onAddClick }: ClinicFiltersProps) {
-  const [searchValue, setSearchValue] = useState('');
+/** Búsqueda y alta de sedes (barra de la lista de usuarios de Materio). */
+export function ClinicFilters({ searchValue, onSearch, onAddClick }: ClinicFiltersProps) {
+  // DebouncedInput avisa también al montar: solo se busca si el texto cambió.
+  const handleSearch = useCallback((value: string) => {
+    if (value !== searchValue) onSearch(value);
+  }, [searchValue, onSearch]);
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: 2,
-        mb: 3,
-        flexWrap: 'wrap',
-      }}
-    >
-      <TextField
-        size="small"
-        placeholder="Buscar sedes..."
+    <div className='flex flex-wrap items-center justify-between gap-4 p-5'>
+      <DebouncedInput
         value={searchValue}
-        onChange={(e) => {
-          setSearchValue(e.target.value);
-          onSearch(e.target.value);
-        }}
-        sx={{ minWidth: 250 }}
-        slotProps={{
-          input: {
-            startAdornment: (
-              <InputAdornment position="start">
-                <i className="ri-search-line" style={{ fontSize: 18 }} />
-              </InputAdornment>
-            ),
-          },
-        }}
+        onChange={handleSearch}
+        placeholder='Buscar sedes'
+        className='max-sm:is-full sm:is-72'
+        slotProps={{ htmlInput: { 'aria-label': 'Buscar sedes' } }}
       />
-      <Button
-        variant="contained"
-        startIcon={<i className="ri-add-line" />}
-        onClick={onAddClick}
-      >
-        Nueva Sede
+      <Button variant='contained' startIcon={<i className='ri-add-line' aria-hidden />} onClick={onAddClick} className='max-sm:is-full'>
+        Nueva sede
       </Button>
-    </Box>
+    </div>
   );
 }

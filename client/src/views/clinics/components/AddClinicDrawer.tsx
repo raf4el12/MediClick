@@ -1,21 +1,18 @@
 'use client';
 
-import Drawer from '@mui/material/Drawer';
-import Divider from '@mui/material/Divider';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
-import TextField from '@mui/material/TextField';
-import Button from '@mui/material/Button';
-import Box from '@mui/material/Box';
-import CircularProgress from '@mui/material/CircularProgress';
 import Alert from '@mui/material/Alert';
 import Autocomplete from '@mui/material/Autocomplete';
+import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
+import Divider from '@mui/material/Divider';
+import Drawer from '@mui/material/Drawer';
+import IconButton from '@mui/material/IconButton';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import { Controller } from 'react-hook-form';
-import { useClinicForm } from '../hooks/useClinicForm';
 import { InternationalPhoneInput } from '@/components/shared/InternationalPhoneInput';
+import { useClinicForm } from '../hooks/useClinicForm';
 import type { Clinic } from '../types';
-
-const KEEP_MOUNTED = { keepMounted: true };
 
 const COMMON_TIMEZONES = [
   'America/Lima',
@@ -44,109 +41,80 @@ interface AddClinicDrawerProps {
   onSuccess: () => void;
 }
 
-export function AddClinicDrawer({
-  open,
-  drawerData,
-  onClose,
-  onSuccess,
-}: AddClinicDrawerProps) {
-  const { control, errors, handleSubmit, isLoading, submitError, handleReset } =
-    useClinicForm({ drawerData, onSuccess, onClose });
+/** Alta y edición de una sede (estructura de `AddUserDrawer` de Materio). */
+export function AddClinicDrawer({ open, drawerData, onClose, onSuccess }: AddClinicDrawerProps) {
+  const { control, errors, handleSubmit, isLoading, submitError, handleReset } = useClinicForm({ drawerData, onSuccess, onClose });
+  const title = drawerData.action === 'Update' ? 'Editar sede' : 'Nueva sede';
 
   return (
     <Drawer
       open={open}
-      anchor="right"
-      variant="temporary"
+      anchor='right'
+      variant='temporary'
       onClose={handleReset}
-      ModalProps={KEEP_MOUNTED}
-      sx={{ '& .MuiDrawer-paper': { width: { xs: 320, sm: 420 } } }}
+      ModalProps={{ keepMounted: true }}
+      slotProps={{ paper: { role: 'dialog', 'aria-modal': true, 'aria-labelledby': 'sede-drawer-titulo' } }}
+      sx={{ '& .MuiDrawer-paper': { width: { xs: 300, sm: 420 } } }}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          px: 3,
-          py: 2,
-        }}
-      >
-        <Typography variant="h5">
-          {drawerData.action === 'Update' ? 'Editar Sede' : 'Nueva Sede'}
+      <div className='flex items-center justify-between pli-5 plb-4'>
+        <Typography id='sede-drawer-titulo' variant='h5' component='h2'>
+          {title}
         </Typography>
-        <IconButton size="small" onClick={handleReset}>
-          <i className="ri-close-line" style={{ fontSize: 24 }} />
+        <IconButton size='small' onClick={handleReset} aria-label='Cerrar'>
+          <i className='ri-close-line text-2xl' aria-hidden />
         </IconButton>
-      </Box>
+      </div>
       <Divider />
-
-      <Box
-        component="form"
-        onSubmit={handleSubmit}
-        sx={{ p: 3, display: 'flex', flexDirection: 'column', gap: 2.5 }}
-      >
-        {submitError && <Alert severity="error">{submitError}</Alert>}
+      <form onSubmit={handleSubmit} noValidate className='flex flex-col gap-5 p-5'>
+        {submitError && <Alert severity='error'>{submitError}</Alert>}
 
         <Controller
-          name="name"
+          name='name'
           control={control}
           render={({ field }) => (
-            <TextField
-              {...field}
-              fullWidth
-              label="Nombre"
-              placeholder="Ej: Sede Principal"
-              error={!!errors.name}
-              helperText={errors.name?.message}
-            />
+            <TextField {...field} id='sede-nombre' fullWidth label='Nombre' placeholder='Sede Principal' error={!!errors.name} helperText={errors.name?.message} />
           )}
         />
-
         <Controller
-          name="address"
+          name='address'
           control={control}
           render={({ field }) => (
             <TextField
               {...field}
+              id='sede-direccion'
               fullWidth
-              label="Dirección"
-              placeholder="Ej: Av. Javier Prado 123, Lima"
+              label='Dirección'
+              placeholder='Av. Javier Prado 123, Lima'
               error={!!errors.address}
               helperText={errors.address?.message}
             />
           )}
         />
-
         <Controller
-          name="phone"
+          name='phone'
           control={control}
           render={({ field }) => (
-            <InternationalPhoneInput
-              value={field.value}
-              onChange={(val) => field.onChange(val ?? '')}
-              error={errors.phone?.message}
-              label="Teléfono"
-            />
+            <InternationalPhoneInput value={field.value} onChange={(val) => field.onChange(val ?? '')} error={errors.phone?.message} label='Teléfono' />
           )}
         />
-
         <Controller
-          name="email"
+          name='email'
           control={control}
           render={({ field }) => (
             <TextField
               {...field}
+              id='sede-email'
               fullWidth
-              label="Email"
-              placeholder="Ej: sede@mediclick.com"
+              type='email'
+              label='Correo electrónico'
+              placeholder='sede@mediclick.com'
               error={!!errors.email}
               helperText={errors.email?.message}
             />
           )}
         />
-
         <Controller
-          name="timezone"
+          name='timezone'
           control={control}
           render={({ field }) => (
             <Autocomplete
@@ -156,20 +124,13 @@ export function AddClinicDrawer({
               onChange={(_, value) => field.onChange(value ?? '')}
               onInputChange={(_, value) => field.onChange(value)}
               renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Zona Horaria"
-                  placeholder="Ej: America/Lima"
-                  error={!!errors.timezone}
-                  helperText={errors.timezone?.message}
-                />
+                <TextField {...params} id='sede-zona' label='Zona horaria' placeholder='America/Lima' error={!!errors.timezone} helperText={errors.timezone?.message} />
               )}
             />
           )}
         />
-
         <Controller
-          name="currency"
+          name='currency'
           control={control}
           render={({ field }) => (
             <Autocomplete
@@ -179,41 +140,21 @@ export function AddClinicDrawer({
               onChange={(_, value) => field.onChange(value ?? '')}
               onInputChange={(_, value) => field.onChange(value)}
               renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Moneda"
-                  placeholder="Ej: PEN"
-                  error={!!errors.currency}
-                  helperText={errors.currency?.message}
-                />
+                <TextField {...params} id='sede-moneda' label='Moneda' placeholder='PEN' error={!!errors.currency} helperText={errors.currency?.message} />
               )}
             />
           )}
         />
 
-        <Box sx={{ display: 'flex', gap: 2, mt: 1 }}>
-          <Button
-            variant="contained"
-            type="submit"
-            disabled={isLoading}
-            sx={{ minWidth: 120 }}
-          >
-            {isLoading ? (
-              <>
-                <CircularProgress size={20} color="inherit" sx={{ mr: 1 }} />
-                Guardando...
-              </>
-            ) : drawerData.action === 'Update' ? (
-              'Actualizar'
-            ) : (
-              'Crear'
-            )}
+        <div className='flex items-center gap-4'>
+          <Button variant='contained' type='submit' disabled={isLoading} startIcon={isLoading ? <CircularProgress size={18} color='inherit' /> : undefined}>
+            {drawerData.action === 'Update' ? 'Actualizar' : 'Crear'}
           </Button>
-          <Button variant="outlined" color="error" onClick={handleReset}>
+          <Button variant='outlined' onClick={handleReset}>
             Cancelar
           </Button>
-        </Box>
-      </Box>
+        </div>
+      </form>
     </Drawer>
   );
 }
