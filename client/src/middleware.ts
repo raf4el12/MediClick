@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { roleFromAccessToken } from '@/utils/sessionRole';
 
 const PUBLIC_PATHS = [
   '/login',
@@ -12,19 +13,10 @@ const PUBLIC_PATHS = [
   '/payment/pending',
   // Enlace del recordatorio por correo: el token firmado autoriza la respuesta.
   '/appointment/respond',
+  // Directorio y perfil público de médicos (UI-27).
+  '/medicos',
 ];
 const AUTH_ONLY_PATHS = ['/login', '/register', '/forgot-password', '/reset-password'];
-
-function getRoleFromToken(token: string): string | null {
-  try {
-    const parts = token.split('.');
-    if (parts.length < 2) return null;
-    const payload = JSON.parse(atob(parts[1] as string));
-    return (payload.roleName as string) ?? null;
-  } catch {
-    return null;
-  }
-}
 
 function getDefaultRoute(role: string | null): string {
   if (role === 'PATIENT') return '/patient';
@@ -41,7 +33,7 @@ export function middleware(request: NextRequest) {
 
   // Authenticated user visiting auth pages → redirect based on role
   if (AUTH_ONLY_PATHS.some((p) => pathname.startsWith(p)) && accessToken) {
-    const role = getRoleFromToken(accessToken);
+    const role = roleFromAccessToken(accessToken);
     return NextResponse.redirect(new URL(getDefaultRoute(role), request.url));
   }
 
