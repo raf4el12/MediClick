@@ -1,102 +1,41 @@
 'use client';
 
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import CardHeader from '@mui/material/CardHeader';
-import Skeleton from '@mui/material/Skeleton';
+import { PolarAngleAxis, RadialBar, RadialBarChart, ResponsiveContainer } from 'recharts';
 import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import {
-  RadialBarChart,
-  RadialBar,
-  ResponsiveContainer,
-} from 'recharts';
-import { useTheme } from '@mui/material/styles';
 import type { ScheduleOccupancy } from '../types';
+import ChartCard from './ChartCard';
 
 interface ScheduleOccupancyChartProps {
   occupancy: ScheduleOccupancy | null;
   loading: boolean;
 }
 
-export default function ScheduleOccupancyChart({
-  occupancy,
-  loading,
-}: ScheduleOccupancyChartProps) {
-  const theme = useTheme();
-
+export default function ScheduleOccupancyChart({ occupancy, loading }: ScheduleOccupancyChartProps) {
   const rate = occupancy?.occupancyRate ?? 0;
-  const data = [
-    { name: 'Ocupación', value: rate, fill: theme.palette.warning.main },
-  ];
-
-  const colorByRate =
-    rate >= 80
-      ? theme.palette.success.main
-      : rate >= 50
-        ? theme.palette.warning.main
-        : theme.palette.error.main;
-
-  const dataColored = [{ ...data[0], fill: colorByRate }];
+  // El arco cambia de color según la ocupación; el número va en el color del texto para llegar a AA.
+  const color = rate >= 80 ? 'success' : rate >= 50 ? 'warning' : 'error';
+  const description = occupancy
+    ? `Ocupación de cupos del mes: ${rate} %, ${occupancy.bookedSlots} de ${occupancy.totalSlots} cupos reservados.`
+    : 'Ocupación de cupos sin datos.';
 
   return (
-    <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', height: '100%' }}>
-      <CardHeader
-        title="Ocupación de Horarios"
-        titleTypographyProps={{ variant: 'subtitle1', fontWeight: 600 }}
-        subheader="Porcentaje del mes"
-        subheaderTypographyProps={{ variant: 'caption' }}
-      />
-      <CardContent>
-        {loading ? (
-          <Skeleton variant="rectangular" height={280} />
-        ) : !occupancy ? (
-          <Box display="flex" alignItems="center" justifyContent="center" height={280}>
-            <Typography color="text.secondary" variant="body2">
-              Sin datos para este período
+    <ChartCard title='Ocupación de cupos' subheader='Porcentaje del mes' loading={loading} empty={!occupancy} description={description}>
+      <div className='relative bs-full'>
+        <ResponsiveContainer width='100%' height='100%'>
+          <RadialBarChart cx='50%' cy='50%' innerRadius='70%' outerRadius='90%' startAngle={225} endAngle={-45} data={[{ value: rate }]}>
+            <PolarAngleAxis type='number' domain={[0, 100]} tick={false} />
+            <RadialBar dataKey='value' cornerRadius={8} fill={`var(--mui-palette-${color}-main)`} background={{ fill: 'var(--mui-palette-action-hover)' }} />
+          </RadialBarChart>
+        </ResponsiveContainer>
+        <div className='absolute inset-0 flex flex-col items-center justify-center'>
+          <Typography variant='h4'>{rate} %</Typography>
+          {occupancy && (
+            <Typography variant='body2' color='text.secondary'>
+              {occupancy.bookedSlots} de {occupancy.totalSlots} cupos
             </Typography>
-          </Box>
-        ) : (
-          <Box position="relative">
-            <ResponsiveContainer width="100%" height={280}>
-              <RadialBarChart
-                cx="50%"
-                cy="50%"
-                innerRadius="55%"
-                outerRadius="80%"
-                startAngle={225}
-                endAngle={-45}
-                data={dataColored}
-              >
-                <RadialBar
-                  dataKey="value"
-                  cornerRadius={8}
-                  background={{ fill: theme.palette.action.hover }}
-                />
-              </RadialBarChart>
-            </ResponsiveContainer>
-            {/* Valor central superpuesto */}
-            <Box
-              position="absolute"
-              top={0}
-              left={0}
-              right={0}
-              bottom={0}
-              display="flex"
-              flexDirection="column"
-              alignItems="center"
-              justifyContent="center"
-            >
-              <Typography variant="h4" fontWeight={700} color={colorByRate}>
-                {rate}%
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {occupancy.bookedSlots} / {occupancy.totalSlots} horarios
-              </Typography>
-            </Box>
-          </Box>
-        )}
-      </CardContent>
-    </Card>
+          )}
+        </div>
+      </div>
+    </ChartCard>
   );
 }

@@ -1,108 +1,41 @@
 'use client';
 
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import CardHeader from '@mui/material/CardHeader';
-import Skeleton from '@mui/material/Skeleton';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from 'recharts';
-import { useTheme } from '@mui/material/styles';
+import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
+import { ALL_STATUSES, STATUS_META } from '@/views/agenda/status';
+import ChartCard from './ChartCard';
 
 interface AppointmentsByStatusChartProps {
   byStatus: Record<string, number>;
   loading: boolean;
+  title?: string;
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  PENDING: 'Pendiente',
-  CONFIRMED: 'Confirmada',
-  IN_PROGRESS: 'En Progreso',
-  COMPLETED: 'Completada',
-  CANCELLED: 'Cancelada',
-  NO_SHOW: 'No Asistió',
-};
+/** Estados con citas, con las etiquetas y colores del glosario (los mismos de la agenda). */
+export function statusSlices(byStatus: Record<string, number>) {
+  return ALL_STATUSES.filter((s) => (byStatus[s] ?? 0) > 0).map((s) => ({
+    name: STATUS_META[s].label,
+    value: byStatus[s]!,
+    color: `var(--mui-palette-${STATUS_META[s].color}-main)`,
+  }));
+}
 
-export default function AppointmentsByStatusChart({
-  byStatus,
-  loading,
-}: AppointmentsByStatusChartProps) {
-  const theme = useTheme();
-
-  const COLORS = [
-    theme.palette.warning.main,
-    theme.palette.info.main,
-    theme.palette.primary.main,
-    theme.palette.success.main,
-    theme.palette.error.main,
-    theme.palette.grey[500],
-  ];
-
-  const data = Object.entries(byStatus)
-    .filter(([, value]) => value > 0)
-    .map(([key, value]) => ({
-      name: STATUS_LABELS[key] ?? key,
-      value,
-    }));
+export default function AppointmentsByStatusChart({ byStatus, loading, title = 'Citas por estado' }: AppointmentsByStatusChartProps) {
+  const data = statusSlices(byStatus);
+  const description = `${title}: ${data.map((d) => `${d.value} ${d.name.toLowerCase()}`).join(', ')}.`;
 
   return (
-    <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider', height: '100%' }}>
-      <CardHeader
-        title="Citas por Estado"
-        titleTypographyProps={{ variant: 'subtitle1', fontWeight: 600 }}
-        subheader="Distribución por status"
-        subheaderTypographyProps={{ variant: 'caption' }}
-      />
-      <CardContent>
-        {loading ? (
-          <Skeleton variant="rectangular" height={280} />
-        ) : data.length === 0 ? (
-          <Box display="flex" alignItems="center" justifyContent="center" height={280}>
-            <Typography color="text.secondary" variant="body2">
-              Sin datos para este período
-            </Typography>
-          </Box>
-        ) : (
-          <ResponsiveContainer width="100%" height={280}>
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="45%"
-                innerRadius={60}
-                outerRadius={100}
-                paddingAngle={3}
-                dataKey="value"
-              >
-                {data.map((entry, index) => (
-                  <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{
-                  background: theme.palette.background.paper,
-                  border: `1px solid ${theme.palette.divider}`,
-                  borderRadius: 8,
-                  fontSize: 12,
-                }}
-                formatter={(value, name) => [value, name]}
-              />
-              <Legend
-                iconType="circle"
-                iconSize={8}
-                wrapperStyle={{ fontSize: 11 }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-        )}
-      </CardContent>
-    </Card>
+    <ChartCard title={title} subheader='Distribución del mes' loading={loading} empty={data.length === 0} description={description}>
+      <ResponsiveContainer width='100%' height='100%'>
+        <PieChart>
+          <Pie data={data} cx='50%' cy='45%' innerRadius={60} outerRadius={100} paddingAngle={3} dataKey='value' stroke='var(--mui-palette-background-paper)'>
+            {data.map((entry) => (
+              <Cell key={entry.name} fill={entry.color} />
+            ))}
+          </Pie>
+          <Tooltip />
+          <Legend iconType='circle' iconSize={8} />
+        </PieChart>
+      </ResponsiveContainer>
+    </ChartCard>
   );
 }

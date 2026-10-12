@@ -74,9 +74,7 @@ test.describe('personal de sede', () => {
     await expect(page.getByRole('link', { name: 'Dashboard' })).toBeVisible();
     await expect(page.getByText('Gestión Médica')).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Navegación principal' })).toHaveCount(0);
-    // El contenido del dashboard de administración se rediseña en la Fase 6 (UI-25):
-    // hoy tiene barras de progreso sin nombre y leyendas con contraste insuficiente.
-    await expectAccessible(page, { exclude: ['#main-content'] });
+    await expectAccessible(page);
   });
 
   test('en /notifications conserva su propio shell', async ({ page }) => {

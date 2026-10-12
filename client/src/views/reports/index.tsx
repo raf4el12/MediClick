@@ -1,12 +1,9 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import Grid from '@mui/material/Grid';
-import Box from '@mui/material/Box';
-import { PageHeader } from '@/components/shared/PageHeader';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
-import Divider from '@mui/material/Divider';
+import Typography from '@mui/material/Typography';
 import { useReports } from './hooks/useReports';
 import KpiCards from './components/KpiCards';
 
@@ -16,68 +13,47 @@ const RevenueComparisonChart = dynamic(() => import('./components/RevenueCompari
 const TopDoctorsChart = dynamic(() => import('./components/TopDoctorsChart'), { ssr: false });
 const ScheduleOccupancyChart = dynamic(() => import('./components/ScheduleOccupancyChart'), { ssr: false });
 
-const MONTHS = [
-  { value: 1, label: 'Enero' },
-  { value: 2, label: 'Febrero' },
-  { value: 3, label: 'Marzo' },
-  { value: 4, label: 'Abril' },
-  { value: 5, label: 'Mayo' },
-  { value: 6, label: 'Junio' },
-  { value: 7, label: 'Julio' },
-  { value: 8, label: 'Agosto' },
-  { value: 9, label: 'Septiembre' },
-  { value: 10, label: 'Octubre' },
-  { value: 11, label: 'Noviembre' },
-  { value: 12, label: 'Diciembre' },
-];
+const MONTHS = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
 const currentYear = new Date().getFullYear();
 const YEARS = Array.from({ length: 5 }, (_, i) => currentYear - i);
 
 export default function ReportsView() {
-  const {
-    filters,
-    setFilters,
-    revenue,
-    topDoctors,
-    summary,
-    occupancy,
-    loadingRevenue,
-    loadingTopDoctors,
-    loadingSummary,
-    loadingOccupancy,
-  } = useReports();
+  const { filters, setFilters, revenue, topDoctors, summary, occupancy, loadingRevenue, loadingTopDoctors, loadingSummary, loadingOccupancy } = useReports();
 
   return (
-    <Box sx={{ p: { xs: 2, md: 3 } }}>
-      {/* Encabezado y filtros */}
-      <PageHeader title="Reportes" subtitle="Análisis y estadísticas del sistema">
-        <Box display="flex" gap={2} flexWrap="wrap" sx={{ width: { xs: '100%', sm: 'auto' } }}>
+    <div className='flex flex-col gap-6'>
+      <div className='flex flex-wrap items-end justify-between gap-4'>
+        <div>
+          <Typography variant='h4' component='h1'>
+            Reportes
+          </Typography>
+          <Typography color='text.secondary'>Citas, ingresos y ocupación de cupos del mes elegido.</Typography>
+        </div>
+        <div className='flex flex-wrap gap-3'>
           <TextField
             select
-            size="small"
-            label="Mes"
+            id='reportes-mes'
+            size='small'
+            label='Mes'
             value={filters.month}
-            onChange={(e) =>
-              setFilters((f) => ({ ...f, month: Number(e.target.value) }))
-            }
-            sx={{ minWidth: { xs: '100%', sm: 130 } }}
+            onChange={(e) => setFilters((f) => ({ ...f, month: Number(e.target.value) }))}
+            className='is-36'
           >
-            {MONTHS.map((m) => (
-              <MenuItem key={m.value} value={m.value}>
-                {m.label}
+            {MONTHS.map((label, i) => (
+              <MenuItem key={label} value={i + 1}>
+                {label}
               </MenuItem>
             ))}
           </TextField>
           <TextField
             select
-            size="small"
-            label="Año"
+            id='reportes-anio'
+            size='small'
+            label='Año'
             value={filters.year}
-            onChange={(e) =>
-              setFilters((f) => ({ ...f, year: Number(e.target.value) }))
-            }
-            sx={{ minWidth: { xs: '100%', sm: 100 } }}
+            onChange={(e) => setFilters((f) => ({ ...f, year: Number(e.target.value) }))}
+            className='is-28'
           >
             {YEARS.map((y) => (
               <MenuItem key={y} value={y}>
@@ -85,55 +61,29 @@ export default function ReportsView() {
               </MenuItem>
             ))}
           </TextField>
-        </Box>
-      </PageHeader>
+        </div>
+      </div>
 
-      <Divider sx={{ mb: 3 }} />
+      <KpiCards
+        summary={summary}
+        revenue={revenue}
+        topDoctors={topDoctors}
+        occupancy={occupancy}
+        loadingSummary={loadingSummary}
+        loadingRevenue={loadingRevenue}
+        loadingTopDoctors={loadingTopDoctors}
+        loadingOccupancy={loadingOccupancy}
+      />
 
-      <Grid container spacing={3}>
-        {/* KPIs */}
-        <Grid size={12}>
-          <KpiCards
-            summary={summary}
-            revenue={revenue}
-            topDoctors={topDoctors}
-            occupancy={occupancy}
-            loadingSummary={loadingSummary}
-            loadingRevenue={loadingRevenue}
-            loadingTopDoctors={loadingTopDoctors}
-            loadingOccupancy={loadingOccupancy}
-          />
-        </Grid>
-
-        {/* Tendencia diaria + Comparación de ingresos */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <AppointmentsTrendChart
-            daily={summary?.daily ?? []}
-            loading={loadingSummary}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <RevenueComparisonChart revenue={revenue} loading={loadingRevenue} />
-        </Grid>
-
-        {/* Top doctores + Ocupación */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <TopDoctorsChart topDoctors={topDoctors} loading={loadingTopDoctors} />
-        </Grid>
-        <Grid size={{ xs: 12, md: 6 }}>
-          <ScheduleOccupancyChart occupancy={occupancy} loading={loadingOccupancy} />
-        </Grid>
-
-        {/* Citas por estado — último chart sin compañero, lo centramos */}
-        <Grid size={12}>
-          <Box sx={{ maxWidth: { xs: '100%', md: 560 }, mx: 'auto' }}>
-            <AppointmentsByStatusChart
-              byStatus={summary?.byStatus ?? {}}
-              loading={loadingSummary}
-            />
-          </Box>
-        </Grid>
-      </Grid>
-    </Box>
+      <div className='grid gap-6 lg:grid-cols-2'>
+        <AppointmentsTrendChart daily={summary?.daily ?? []} loading={loadingSummary} />
+        <RevenueComparisonChart revenue={revenue} loading={loadingRevenue} />
+        <TopDoctorsChart topDoctors={topDoctors} loading={loadingTopDoctors} />
+        <ScheduleOccupancyChart occupancy={occupancy} loading={loadingOccupancy} />
+        <div className='lg:col-span-2 lg:max-is-[560px] lg:mli-auto is-full'>
+          <AppointmentsByStatusChart byStatus={summary?.byStatus ?? {}} loading={loadingSummary} />
+        </div>
+      </div>
+    </div>
   );
 }
