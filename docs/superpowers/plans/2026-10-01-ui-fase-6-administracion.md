@@ -178,7 +178,7 @@ rechaza borrar roles con `isSystem` (`roles/application/use-cases/delete-role.us
 
 ---
 
-## UI-24 — Moderación de reseñas
+## UI-24 — Moderación de reseñas ✅
 
 **Rama:** `git fetch origin && git switch -c feat/ui-24-moderacion-resenas origin/staging`
 **Skills:** `mediclick-tenant-safety`, `mattpocock-skills:tdd`, `mediclick-core-review`
@@ -206,11 +206,11 @@ Hecho en la rama `feat/ui-24-moderacion-resenas-backend`, antes que la pantalla 
 - Consumes: `clinicId` del actor (`@CurrentClinic()`), relación reseña → médico → `clinicId`.
 - Produces: moderación limitada a la sede del actor; global para SUPER_ADMIN / ADMIN sin `clinicId`.
 
-- [ ] **Step 1 (rojo):** Specs: staff de sede A oculta reseña de su médico (permitido); staff de sede A
+- [x] **Step 1 (rojo):** Specs: staff de sede A oculta reseña de su médico (permitido); staff de sede A
   sobre reseña de médico de sede B → 404 sin cambios ni recálculo de rating; admin global puede ambas;
   el listado de sede A no devuelve reseñas de sede B; el recálculo de `ratingAvg`/`ratingCount` sigue
   contando solo visibles. Run: `cd server && pnpm test -- reviews --runInBand` → Expected: FAIL.
-- [ ] **Step 2 (verde):** Aplicar el predicado de sede en la lectura previa y en la escritura dentro del
+- [x] **Step 2 (verde):** Aplicar el predicado de sede en la lectura previa y en la escritura dentro del
   `$transaction` (el callback no hereda el tenant). Run igual → PASS; `pnpm build` → PASS.
 
 ### Task 2: Pantalla de moderación
@@ -222,11 +222,20 @@ Hecho en la rama `feat/ui-24-moderacion-resenas-backend`, antes que la pantalla 
 - Modify: `client/src/services/reviews.service.ts` (`listForModeration`, `setVisibility`)
 - Modify: navegación (`navigationFor` de UI-03) con el ítem "Reseñas"
 
-- [ ] **Step 1:** Filtros visible/oculta, rating y médico; acción "Ocultar"/"Mostrar" con confirmación;
+- [x] **Step 1:** Filtros visible/oculta, rating y médico; acción "Ocultar"/"Mostrar" con confirmación;
   la reseña oculta se rotula "Reseña oculta".
-- [ ] **Step 2:** e2e `client/tests/e2e/reviews-moderation.spec.ts`: ocultar envía
+- [x] **Step 2:** e2e `client/tests/e2e/reviews-moderation.spec.ts`: ocultar envía
   `PATCH /reviews/:id/visibility {isVisible:false}` y refresca; `actor: 'PATIENT'` no entra; axe AA.
-- [ ] **Step 3:** Cerrar con `mediclick-core-review` sobre el diff de servidor.
+- [x] **Step 3:** Cerrar con `mediclick-core-review` sobre el diff de servidor.
+
+### Notas de implementación (pantalla)
+
+- `/reviews` en `(staff)` con `RoleGuard` (`UPDATE:REVIEWS`, actor `STAFF`): un paciente vuelve a su inicio sin pedir `GET /reviews`. El menú suma «Reseñas» en Gestión médica, solo para quien puede moderar (con prueba en `navigation.test.ts`).
+- La tabla va sobre `DataTable` de UI-22, con paginación de servidor (`currentPage`, `pageSize`). Los filtros Estado, Calificación y Médico viajan como `isVisible`, `rating` y `doctorId`, y cambiar uno vuelve a la primera página.
+- La calificación usa `Rating` de solo lectura con nombre «N de 5 estrellas», y el estado se rotula «Visible» o «Reseña oculta».
+- «Ocultar» y «Mostrar» confirman con el `ConfirmDialog` compartido, que explica el efecto en la calificación del médico. Después envían `PATCH /reviews/:id/visibility` y vuelven a pedir la lista.
+- **Sin `ReviewsStatistics` ni `TotalReviews`:** el servidor no tiene un endpoint de agregados, y calcularlos sobre la página visible daría números engañosos. Si se quieren, es un endpoint nuevo.
+- `reviews-moderation.spec.ts` cubre filtros, ocultar, mostrar y el bloqueo del paciente, con `expectAccessible` en la tabla y en la confirmación.
 
 ---
 
