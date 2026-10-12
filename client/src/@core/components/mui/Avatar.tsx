@@ -19,10 +19,11 @@ export type CustomAvatarProps = AvatarProps & {
 
 const Avatar = styled(MuiAvatar)<CustomAvatarProps>(({ skin, color, size, theme }) => {
   return {
+    // Texto mezclado hacia --contrast-mix para llegar a AA sobre el fondo tonal (iniciales en 15px).
     ...(color &&
       skin === 'light' && {
         backgroundColor: `var(--mui-palette-${color}-lightOpacity)`,
-        color: `var(--mui-palette-${color}-main)`
+        color: `color-mix(in srgb, var(--mui-palette-${color}-main) 55%, var(--contrast-mix, black))`
       }),
     ...(color &&
       skin === 'light-static' && {

@@ -15,6 +15,7 @@ interface InternationalPhoneInputProps {
   error?: string;
   label?: string;
   disabled?: boolean;
+  required?: boolean;
 }
 
 const MuiPhoneTextField = forwardRef<HTMLInputElement, React.ComponentProps<typeof TextField>>(
@@ -32,7 +33,7 @@ const MuiPhoneTextField = forwardRef<HTMLInputElement, React.ComponentProps<type
 );
 
 export const InternationalPhoneInput = forwardRef<HTMLDivElement, InternationalPhoneInputProps>(
-  function InternationalPhoneInput({ value, onChange, error, label = 'Teléfono', disabled }, ref) {
+  function InternationalPhoneInput({ value, onChange, error, label = 'Teléfono', disabled, required }, ref) {
     return (
       <FormControl fullWidth error={!!error} ref={ref}>
         <PhoneInput
@@ -45,6 +46,7 @@ export const InternationalPhoneInput = forwardRef<HTMLDivElement, InternationalP
           inputComponent={MuiPhoneTextField}
           numberInputProps={{
             label,
+            required,
             error: !!error,
           }}
           style={{
