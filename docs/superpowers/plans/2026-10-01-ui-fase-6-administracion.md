@@ -54,7 +54,7 @@ Feriados (`/holidays`) no entra en UI-22: se rediseña sobre el calendario en UI
 
 ---
 
-## UI-22 — Tablas de gestión
+## UI-22 — Tablas de gestión ✅
 
 **Rama:** `git fetch origin && git switch -c feat/ui-22-tablas-gestion origin/staging`
 **Skills:** `mattpocock-skills:codebase-design`, `mattpocock-skills:tdd`
@@ -97,9 +97,9 @@ primero con `DataTable` + pacientes.
 
 - [x] **Step 1:** Pacientes primero; `PatientDetailDialog` se reemplaza por la acción "Ver expediente"
   (UI-21) más el drawer de edición; borrar el diálogo si queda sin uso.
-- [ ] **Step 2:** Resto de entidades. Tarjetas de resumen (`card-statistics/HorizontalWithSubtitle`) solo
+- [x] **Step 2:** Resto de entidades. Tarjetas de resumen (`card-statistics/HorizontalWithSubtitle`) solo
   si el endpoint ya devuelve el conteo; no agregar llamadas `pageSize: 1` nuevas.
-- [ ] **Step 3:** Confirmación de borrado con el `ConfirmDialog` compartido existente o
+- [x] **Step 3:** Confirmación de borrado con el `ConfirmDialog` compartido existente o
   `components/dialogs/confirmation-dialog` de Materio (uno solo; borrar el otro).
 
 ### Notas de implementación (DataTable y pacientes)
@@ -125,19 +125,41 @@ primero con `DataTable` + pacientes.
   - `InternationalPhoneInput` acepta `required`;
   - `shell.spec.ts` tenía una carrera: el contador de notificaciones del fixture no bajaba tras marcar como leída.
 
+### Notas de implementación (resto de entidades y cierre)
+
+Se entregó en seis PRs: #81 (`DataTable` y pacientes), #87 (médicos), #89 (usuarios), #80 (sedes), #88 (especialidades) y #90 (categorías).
+
+- **Orden por columna:**
+  - todas las tablas anteriores mandaban como `orderBy` el id de cualquier columna (nombre completo, rol, sede, categoría, teléfono…), y los repositorios lo usan como campo de Prisma, así que esas columnas fallaban en el servidor;
+  - ahora solo se ordena por campos escalares del modelo: médicos por CMP y estado; usuarios por nombre y estado; sedes, especialidades y categorías por nombre, zona horaria, moneda, teléfono, duración, precio, orden o estado.
+- **Búsqueda:** `DebouncedInput` emitía el valor inicial al montarse y la tabla volvía a la página 1 un segundo después de cargar. Ahora solo emite cuando el texto difiere del valor recibido (con prueba). Algunas vistas conservan además su propia guarda, que es inofensiva.
+- **Acciones de fila:**
+  - pacientes, sedes, especialidades y categorías usan botones con nombre por fila;
+  - médicos y usuarios dejan «Editar» visible y el resto en `option-menu` («Más acciones para …»).
+- **Tarjetas de resumen:** solo en pacientes, cuyo endpoint ya devuelve los conteos. Las demás entidades no los traen y no se agregaron llamadas nuevas.
+- **Textos y accesibilidad comunes:**
+  - drawers con rol de diálogo y título;
+  - campos obligatorios con `required`;
+  - «Cancelar» y las confirmaciones sin rojo;
+  - chips tonales de estado («Activo/a», «Inactivo/a»);
+  - «Sedes» en lugar de «Clínicas» y «Médico» en lugar de «Doctor» en las pantallas (el menú todavía dice «Doctores»);
+  - en especialidades y categorías, el selector de sede muestra «Global (todas las sedes)».
+- **`SkeletonTable` no se borró:** todavía lo usa la lista de citas del personal (`views/appointments/components/AppointmentsTable.tsx`), que no es parte de esta fase.
+- **Sin probar contra un backend real.** La edición desde el drawer de sedes, especialidades y categorías no tiene escenario propio en las specs.
+
 ### Task 3: Pruebas de navegador
 
 **Files:** Create: `client/tests/e2e/admin-tables.spec.ts`
 
-- [ ] **Step 1:** Tabla de prueba por entidad con `actor: 'ADMIN'`: lista con fixture paginado, búsqueda
+- [x] **Step 1:** Tabla de prueba por entidad con `actor: 'ADMIN'`: lista con fixture paginado, búsqueda
   envía `searchValue`, página 2 envía `currentPage=2`, crear desde el drawer envía el payload esperado.
-- [ ] **Step 2:** `expectAccessible(page)` en cada ruta y con el drawer abierto.
+- [x] **Step 2:** `expectAccessible(page)` en cada ruta y con el drawer abierto.
   Run: `cd client && pnpm exec playwright test admin-tables` → Expected: PASS.
 
 ### Task 4: Verificación y limpieza
 
-- [ ] Run: `cd client && pnpm exec tsc --noEmit && pnpm exec eslint <archivos tocados> && pnpm test && pnpm build && pnpm test:a11y` → PASS.
-- [ ] Ningún `*Table.tsx` de gestión reimplementa paginación ni skeleton fuera de `DataTable`.
+- [x] Run: `cd client && pnpm exec tsc --noEmit && pnpm exec eslint <archivos tocados> && pnpm test && pnpm build && pnpm test:a11y` → PASS.
+- [x] Ningún `*Table.tsx` de gestión reimplementa paginación ni skeleton fuera de `DataTable`.
 
 ---
 
